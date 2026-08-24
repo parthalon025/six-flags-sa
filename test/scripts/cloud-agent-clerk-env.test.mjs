@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  CLERK_CI_STUB_ENV,
+  CLERK_CI_KEYLESS_ENV,
   CLERK_ENV_DEFAULTS,
   CLERK_REQUIRED_SECRET_KEYS,
   PARKBOUND_CLOUD_ENV_URL,
@@ -18,7 +18,7 @@ import {
   clerkEnvFromProcess,
   ensureClerkEnvForCi,
   formatEnvFile,
-  isClerkCiStubEnv,
+  isClerkCiKeylessEnv,
   writePartyTrackerClerkEnv,
 } from '../../scripts/lib/cloud-agent-clerk-env.mjs';
 
@@ -69,12 +69,12 @@ try {
   assert.match(text, /^CLERK_SECRET_KEY=sk_test_y/m);
   assert.match(text, /^NEXT_PUBLIC_CLERK_SIGN_IN_URL=\/sign-in/m);
 
-  const stubbed = ensureClerkEnvForCi(scratch, {});
-  assert.equal(stubbed.wrote, true);
-  assert.equal(stubbed.source, 'stub');
-  assert.equal(isClerkCiStubEnv(CLERK_CI_STUB_ENV), true);
-  const stubText = readFileSync(stubbed.path, 'utf8');
-  assert.match(stubText, new RegExp(`^NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${CLERK_CI_STUB_ENV.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}`, 'm'));
+  const keyless = ensureClerkEnvForCi(scratch, {});
+  assert.equal(keyless.wrote, true);
+  assert.equal(keyless.source, 'keyless');
+  assert.equal(isClerkCiKeylessEnv(CLERK_CI_KEYLESS_ENV), true);
+  const keylessText = readFileSync(keyless.path, 'utf8');
+  assert.match(keylessText, /^NEXT_PUBLIC_CLERK_CI_KEYLESS_OK=1/m);
 } finally {
   rmSync(scratch, { recursive: true, force: true });
 }

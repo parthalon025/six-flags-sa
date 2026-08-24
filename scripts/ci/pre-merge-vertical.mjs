@@ -145,9 +145,9 @@ export async function runPreMergeVertical({
         console.error(`pre-merge-vertical: ${clerkEnv.reason}`);
         return 1;
       }
-      if (clerkEnv.source === 'stub') {
+      if (clerkEnv.source === 'keyless') {
         console.log(
-          'pre-merge-vertical: Clerk CI stub keys materialized for app build — Clerk-on auth e2e still needs real keys in the runner env',
+          'pre-merge-vertical: Clerk keyless CI env materialized for app build — Clerk-on auth e2e still needs real keys in the runner env',
         );
       }
     }

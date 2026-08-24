@@ -4,7 +4,7 @@
  * Google OAuth redirect is opt-in (`CLERK_E2E_GOOGLE=1`) until that provider is enabled.
  */
 
-import { clerkEnvFileHasPublishableKey } from './cloud-agent-clerk-env.mjs';
+import { clerkEnvFileAllowsCiBuild } from './cloud-agent-clerk-env.mjs';
 
 export const AUTH_E2E_PATH_NEEDLES = [
   'apps/party-tracker/app/page.js',
@@ -42,7 +42,7 @@ export function clerkE2eBlockReason({
     return 'auth UI changed — Clerk-on browser e2e is required (do not --skip-browser)';
   }
   if (clerkPublishableKeyPresent(env)) return null;
-  if (clerkEnvFileHasPublishableKey(cwd)) {
+  if (clerkEnvFileAllowsCiBuild(cwd)) {
     return null;
   }
   return 'auth UI changed — set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and run the auth module against a Clerk-on build';

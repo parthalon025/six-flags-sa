@@ -22,6 +22,11 @@ export function clerkMandatory() {
   return true;
 }
 
+/** CI browser vertical may boot the map without Clerk keys baked into the build. */
+export function clerkCiKeylessOk() {
+  return process.env.NEXT_PUBLIC_CLERK_CI_KEYLESS_OK === '1';
+}
+
 /** @returns {{ ok: boolean, missing: string[] }} */
 export function clerkConfigStatus() {
   /** @type {string[]} */

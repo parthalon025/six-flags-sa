@@ -29,18 +29,16 @@ export const CLERK_ENV_DEFAULTS = {
 };
 
 /**
- * Well-known stub keys for CI / local browser vertical when Cloud secrets are
- * absent. Inlined at build time so the map boots; Clerk-on auth e2e still needs
- * real keys in the test runner env.
+ * CI / browser vertical may boot the map without Clerk keys. Production and
+ * local dev still require real keys (ClerkSetupRequired when absent).
  */
-export const CLERK_CI_STUB_ENV = {
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_ci_parkbound_stub',
-  CLERK_SECRET_KEY: 'sk_test_ci_parkbound_stub',
+export const CLERK_CI_KEYLESS_ENV = {
+  NEXT_PUBLIC_CLERK_CI_KEYLESS_OK: '1',
 };
 
 /** @param {NodeJS.ProcessEnv} env */
-export function isClerkCiStubEnv(env = process.env) {
-  return env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === CLERK_CI_STUB_ENV.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+export function isClerkCiKeylessEnv(env = process.env) {
+  return env.NEXT_PUBLIC_CLERK_CI_KEYLESS_OK === '1';
 }
 
 /** @param {string} root */
@@ -49,10 +47,12 @@ export function partyTrackerEnvLocalPath(root) {
 }
 
 /** @param {string} root */
-export function clerkEnvFileHasPublishableKey(root) {
+export function clerkEnvFileAllowsCiBuild(root) {
   const path = partyTrackerEnvLocalPath(root);
   if (!existsSync(path)) return false;
-  return /^NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_/m.test(readFileSync(path, 'utf8'));
+  const text = readFileSync(path, 'utf8');
+  return /^NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_/m.test(text)
+    || /^NEXT_PUBLIC_CLERK_CI_KEYLESS_OK=1/m.test(text);
 }
 
 /** @param {NodeJS.ProcessEnv} env */
@@ -109,9 +109,9 @@ export function writePartyTrackerClerkEnv(root, env = process.env) {
 
 /**
  * Materialize Clerk env before an app build. Prefer Cloud secrets; fall back to
- * CI stubs so mandatory-Clerk builds still draw the map in browser verticals.
+ * keyless CI mode so browser verticals still draw the map without fake keys.
  *
- * @returns {{ wrote: true, path: string, source: 'cloud' | 'stub' } | { wrote: false, reason: string }}
+ * @returns {{ wrote: true, path: string, source: 'cloud' | 'keyless' } | { wrote: false, reason: string }}
  */
 export function ensureClerkEnvForCi(root, env = process.env) {
   const status = clerkCloudSecretsStatus(env);
@@ -120,14 +120,8 @@ export function ensureClerkEnvForCi(root, env = process.env) {
     if (!result.wrote) return result;
     return { ...result, source: 'cloud' };
   }
-  const result = writePartyTrackerClerkEnv(root, { ...env, ...CLERK_CI_STUB_ENV });
-  if (!result.wrote) return result;
-  return { ...result, source: 'stub' };
-}
-
-/** Copy materialized Clerk vars into `process.env` for `next build`. */
-export function applyClerkEnvToProcess(env = process.env, vars = clerkEnvFromProcess(env)) {
-  for (const [key, value] of Object.entries(vars)) {
-    if (!env[key]) env[key] = value;
-  }
+  const path = partyTrackerEnvLocalPath(root);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, formatEnvFile(CLERK_CI_KEYLESS_ENV), 'utf8');
+  return { wrote: true, path, source: 'keyless' };
 }
