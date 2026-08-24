@@ -510,5 +510,11 @@
     "items": [
       "fix: snap map camera back to GPS after free look (#605)"
     ]
+  },
+  "1.28.3": {
+    "title": "What's new",
+    "items": [
+      "One door to a World's Places: fold the Overlay in at the store"
+    ]
   }
 }
