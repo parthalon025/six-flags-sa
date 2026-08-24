@@ -17,6 +17,7 @@
 import path from 'node:path';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson, writeJson, venueSidecar } from './venue-io.mjs';
+import { readTruth } from './map-factory/map-io.mjs';
 import { buildTiles } from './display-tiles.mjs';
 import { buildWorldTier } from './display-world.mjs';
 import { buildPyramid, pyramidFile } from './display-pyramid.mjs';
@@ -541,9 +542,7 @@ export function certifyDisplayPack({ spec, map, template, materials, textures = 
 }
 
 export function loadTruthFor(id) {
-  const map = readJson(path.join(VENUE_DIR, `${id}.map.json`), null);
-  const pois = readJson(path.join(VENUE_DIR, `${id}.pois.json`), null);
-  if (!map || !pois) throw new Error(`Venue "${id}" is missing map.json or pois.json`);
+  const { map, pois } = readTruth(id);
   return { map, pois };
 }
 

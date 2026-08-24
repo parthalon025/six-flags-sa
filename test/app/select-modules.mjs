@@ -20,6 +20,7 @@ import {
   toGithubOutputs,
   partitionModules,
 } from './lib/module-select.mjs';
+import { factoryLegGithubOutputs } from '../../scripts/lib/factory-legs.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../..');
@@ -66,6 +67,7 @@ function explicitFiles() {
 
 const manifest = loadModulesManifest();
 let selection;
+let changedFiles = [];
 
 if (wantAll) {
   selection = {
@@ -74,18 +76,18 @@ if (wantAll) {
     fullSuite: true,
   };
 } else {
-  const files = explicitFiles() || gitDiffNames(base);
-  if (!files) {
+  changedFiles = explicitFiles() || gitDiffNames(base);
+  if (!changedFiles) {
     selection = {
       modules: manifest.modules.map((m) => m.id),
       reasons: Object.fromEntries(manifest.modules.map((m) => [m.id, 'git fallback'])),
       fullSuite: true,
     };
-  } else if (!files.length) {
+  } else if (!changedFiles.length) {
     // Empty diff (e.g. workflow_dispatch on same commit) — selects nothing.
     selection = selectModulesFromFiles([], manifest);
   } else {
-    selection = selectModulesFromFiles(files, manifest);
+    selection = selectModulesFromFiles(changedFiles, manifest);
   }
 }
 
@@ -94,7 +96,7 @@ const parts = partitionModules(selection.modules, manifest);
 if (format === 'json') {
   console.log(JSON.stringify({ ...selection, parts }, null, 2));
 } else if (format === 'github') {
-  const outs = toGithubOutputs(selection, manifest);
+  const outs = { ...toGithubOutputs(selection, manifest), ...factoryLegGithubOutputs(changedFiles) };
   const lines = Object.entries(outs).map(([k, v]) => `${k}=${v}`);
   console.log(lines.join('\n'));
   if (process.env.GITHUB_OUTPUT) {
