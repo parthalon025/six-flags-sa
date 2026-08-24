@@ -6,6 +6,8 @@
  * is how a gate that cannot go red ships.
  */
 
+import { appOrigin } from './app-test-origin.mjs';
+
 /** Floor a throttled phone must hold. ADR-0019's 30 fps low-end row. */
 export const MIN_FPS_FLOOR = 30;
 
@@ -108,7 +110,7 @@ const SWEEP_FIX = { lat: 39.34395, lng: -84.2673, venue: 'kings-island' };
  * The missing-world stub (`[data-testid=park-map-gl].mapMissing`) is not a map.
  */
 export async function runLiveZoomSweep({
-  baseUrl = 'http://127.0.0.1:3000',
+  baseUrl = appOrigin(),
   minFps = MIN_FPS_FLOOR,
   throttle = 4,
 } = {}) {

@@ -212,10 +212,11 @@ export async function runPreMergeVertical({
   } else if (!browserWanted) {
     console.log('pre-merge-vertical: no UI modules for diff — browser vertical skipped');
   } else {
-    const port = await reserveAppPort();
-    const baseUrl = appOrigin(port);
+    const held = await reserveAppPort();
+    const baseUrl = appOrigin(held.port);
     console.log(`\npre-merge-vertical: starting app for browser vertical on ${baseUrl}`);
-    startProductionServer({ root: cwd, port });
+    await held.release();
+    startProductionServer({ root: cwd, port: held.port });
     await waitForHealth({ url: healthUrl(baseUrl) });
     await runValidateUiChanged(baseRef, cwd, { baseUrl });
     const sweep = await runLiveZoomSweep({ minFps: 30, throttle: 4, baseUrl });

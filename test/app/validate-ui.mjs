@@ -5,7 +5,7 @@
  * Run after UI changes to confirm regressions did not slip in and that a
  * first-time visitor can still complete core tasks.
  *
- *   npm run build && npm start &
+ *   npm run build && PORT=3118 npm start &
  *   npm run test:validate-ui
  *
  * Environment:
