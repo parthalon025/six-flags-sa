@@ -588,8 +588,9 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .worldMark { cursor: pointer; }
 .worldSkinActions { display: flex; gap: 8px; padding: 0 16px 8px; }
 .worldSkinRow .row { border-bottom: none; }
+/* Meet-up pin — pinDrop on an inner group; ParkMapGl keeps translate(mark) on
+   the parent so pinDrop's closing `transform: none` cannot reset map position. */
 .meetPin {
-  transform-box: fill-box; transform-origin: 50% 100%;
   animation: pinDrop var(--t3) var(--ease) both;
   filter: drop-shadow(0 2px 5px rgba(0, 0, 0, .35));
 }

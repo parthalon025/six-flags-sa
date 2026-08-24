@@ -394,46 +394,59 @@ export default function ParkMapGl({
             const nameInk = mark.kind === 'place' && state !== 'not'
               ? labelInk(pinPalette?.categories?.[mark.category])
               : null;
+            const pinDrop = mark.className === 'meetPin';
+            const contents = (
+              <>
+                <title>{mark.name}</title>
+                {mark.kind === 'place' && mark.pin !== false ? (
+                  <PoiMarker
+                    category={mark.category}
+                    colour={pinPalette?.categories?.[mark.category] || '#888'}
+                    barredInk={pinPalette?.barred}
+                    r={mark.radius}
+                    state={state}
+                    selected={mark.id === selectedId}
+                  />
+                ) : style.drawsPin && mark.pin !== false ? (
+                  mark.kind === 'car' ? (
+                    <g>
+                      <circle r="8" />
+                      <Glyph name="car" size={13} colour="#fff" />
+                    </g>
+                  ) : (
+                    <circle r="8" />
+                  )
+                ) : null}
+                {mark.self ? <circle className="mePulse" r="14" /> : null}
+                {mark.label ? (
+                  <text
+                    className={`${style.className}${state === 'not' ? ' barred' : ''}`}
+                    y={style.dy}
+                    style={{
+                      fontSize: `${style.size}px`,
+                      ...(nameInk ? { fill: nameInk } : {}),
+                      ...(state === 'not' && pinPalette?.barred ? { fill: pinPalette.barred } : {}),
+                    }}
+                  >
+                    {mark.name}
+                  </text>
+                ) : null}
+              </>
+            );
+            if (pinDrop) {
+              return (
+                <g key={`${mark.kind}:${mark.id}`} transform={`translate(${mark.x},${mark.y})`}>
+                  <g className={mark.className}>{contents}</g>
+                </g>
+              );
+            }
             return (
             <g
               key={`${mark.kind}:${mark.id}`}
               className={mark.className}
               transform={`translate(${mark.x},${mark.y})`}
             >
-              <title>{mark.name}</title>
-              {mark.kind === 'place' && mark.pin !== false ? (
-                <PoiMarker
-                  category={mark.category}
-                  colour={pinPalette?.categories?.[mark.category] || '#888'}
-                  barredInk={pinPalette?.barred}
-                  r={mark.radius}
-                  state={state}
-                  selected={mark.id === selectedId}
-                />
-              ) : style.drawsPin && mark.pin !== false ? (
-                mark.kind === 'car' ? (
-                  <g>
-                    <circle r="8" />
-                    <Glyph name="car" size={13} colour="#fff" />
-                  </g>
-                ) : (
-                  <circle r="8" />
-                )
-              ) : null}
-              {mark.self ? <circle className="mePulse" r="14" /> : null}
-              {mark.label ? (
-                <text
-                  className={`${style.className}${state === 'not' ? ' barred' : ''}`}
-                  y={style.dy}
-                  style={{
-                    fontSize: `${style.size}px`,
-                    ...(nameInk ? { fill: nameInk } : {}),
-                    ...(state === 'not' && pinPalette?.barred ? { fill: pinPalette.barred } : {}),
-                  }}
-                >
-                  {mark.name}
-                </text>
-              ) : null}
+              {contents}
             </g>
             );
           })}
