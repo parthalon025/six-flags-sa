@@ -5,11 +5,11 @@ import { normaliseRideName } from '@/lib/mapSymbols.js';
 
 export const VENUE = 'kings-island';
 
-/** Three readable-land plates. Beautiful first, guest-readable, not Google and not night experiments. */
+/** Three jobs on one souvenir plate. Not palettes or themes. */
 export const VARIANTS = [
-  { key: 'A', name: 'Souvenir wash', thesis: 'Lands are the picture. Names sit on the wash. One selected track.' },
-  { key: 'B', name: 'Land poster', thesis: 'Districts shout. Rides are a numbered catalog, not spaghetti.' },
-  { key: 'C', name: 'Quiet midways', thesis: 'Lands plus cream walkways so you can see how districts connect.' },
+  { key: 'A', name: 'Enter a land', thesis: 'The unit is a district. You walk into Rivertown.' },
+  { key: 'B', name: 'Pick a ride', thesis: 'The unit is a destination. Lands stay the picture behind the catalog.' },
+  { key: 'C', name: 'Walk from the gate', thesis: 'The unit is the course. Arrival land + destination land + midways.' },
 ];
 
 /** Souvenir-strength district fills. Venue day tints are too pale to read as land. */
@@ -64,6 +64,40 @@ export function wrapLand(name) {
   const parts = String(name || '').split(' ');
   if (parts.length === 2 && name.length >= 12) return parts;
   return [name];
+}
+
+export function landNamesOf(world) {
+  return (world?.lands || []).map((l) => l.name);
+}
+
+/** Honest Zone from the POI. Racer fragments tagged to the World sit on Coney Mall. */
+export function rideZone(poi, landNames) {
+  const names = landNames instanceof Set ? landNames : new Set(landNames || []);
+  if (poi?.a && names.has(poi.a)) return poi.a;
+  if (poi?.n && /racer/i.test(poi.n) && names.has('Coney Mall')) return 'Coney Mall';
+  return null;
+}
+
+export function ridesInZone(coasters, zone, landNames) {
+  return (coasters || []).filter((p) => rideZone(p, landNames) === zone);
+}
+
+export function landFocusBounds(land, pad = 0.22) {
+  const b = boundsOf([[land.ring]]);
+  const dx = (b.maxLng - b.minLng) || 0.002;
+  const dy = (b.maxLat - b.minLat) || 0.002;
+  return {
+    minLng: b.minLng - dx * pad,
+    maxLng: b.maxLng + dx * pad,
+    minLat: b.minLat - dy * pad,
+    maxLat: b.maxLat + dy * pad,
+  };
+}
+
+export function ringHitsBounds(ring, b) {
+  return (ring || []).some(([lng, lat]) => (
+    lng >= b.minLng && lng <= b.maxLng && lat >= b.minLat && lat <= b.maxLat
+  ));
 }
 
 const QUEUE_NAME = /queue|line|entrance|exit|station/i;
@@ -187,6 +221,7 @@ export function readWorld(map, pois) {
   })).filter((t) => Array.isArray(t.ring) && t.ring.length > 1);
 
   const coasters = (pois || []).filter((p) => p.c === 'coaster' && Number.isFinite(p.lat) && Number.isFinite(p.lng));
+  const gates = (pois || []).filter((p) => p.c === 'gate' && Number.isFinite(p.lat) && Number.isFinite(p.lng));
 
   const park = ringsOf(map.park);
   const lands = (map.lands || []).map((row, i) => ({
@@ -244,6 +279,7 @@ export function readWorld(map, pois) {
     paths,
     bounds,
     anchors: map.landAnchors || {},
+    gates,
   };
 }
 

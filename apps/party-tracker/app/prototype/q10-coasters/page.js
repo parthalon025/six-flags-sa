@@ -1,18 +1,26 @@
 'use client';
 
-/* PROTOTYPE. Three readable-land plates, switchable via ?variant=.
- * A souvenir wash · B land poster · C quiet midways
- * Goal: beautiful land, easily readable for a guest. */
+/* PROTOTYPE. Three jobs on one souvenir plate, switchable via ?variant=.
+ * A enter a land · B pick a ride · C walk from the gate
+ * Same paint. Not palettes, themes, or new visuals. */
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PrototypeSwitcher from '@/components/prototype/PrototypeSwitcher.jsx';
-import VariantSouvenir from './VariantSouvenir.jsx';
-import VariantPoster from './VariantPoster.jsx';
-import VariantMidway from './VariantMidway.jsx';
-import { VARIANTS, VENUE, projector, readWorld } from './q10World.js';
+import VariantRooms from './VariantRooms.jsx';
+import VariantPostcards from './VariantPostcards.jsx';
+import VariantCourse from './VariantCourse.jsx';
+import {
+  VARIANTS,
+  VENUE,
+  landNamesOf,
+  projector,
+  readWorld,
+  rideZone,
+  ridesInZone,
+} from './q10World.js';
 
-const VIEWS = { A: VariantSouvenir, B: VariantPoster, C: VariantMidway };
+const VIEWS = { A: VariantRooms, B: VariantPostcards, C: VariantCourse };
 
 function Q10Coasters() {
   const params = useSearchParams();
@@ -42,20 +50,36 @@ function Q10Coasters() {
     };
   }, []);
 
+  const names = pack ? landNamesOf(pack) : [];
   const primary = params.get('primary')
     || pack?.coasters?.find((p) => p.n === 'The Beast')?.n
     || pack?.coasters?.[0]?.n
     || 'The Beast';
+  const fromRide = pack ? rideZone(pack.coasters.find((p) => p.n === primary), names) : null;
+  const land = params.get('land') || fromRide || pack?.lands?.[0]?.name || '';
   const project = useMemo(
     () => (pack ? projector(pack.bounds, 720, 920) : null),
     [pack],
   );
 
-  const pick = (name) => {
+  const write = (patch) => {
     const next = new URLSearchParams(params.toString());
     next.set('variant', key);
-    next.set('primary', name);
+    Object.entries(patch).forEach(([k, v]) => {
+      if (v) next.set(k, v);
+    });
     router.replace(`?${next.toString()}`, { scroll: false });
+  };
+
+  const pick = (name) => {
+    const zone = pack ? rideZone(pack.coasters.find((p) => p.n === name), names) : null;
+    write({ primary: name, land: zone || land });
+  };
+
+  const pickLand = (name) => {
+    const here = pack ? ridesInZone(pack.coasters, name, names) : [];
+    const keep = here.some((p) => p.n === primary);
+    write({ land: name, primary: keep ? primary : (here[0]?.n || primary) });
   };
 
   if (process.env.NODE_ENV === 'production') {
@@ -75,11 +99,18 @@ function Q10Coasters() {
         <strong>Q10 · readable land</strong>
         <span>{thesis.name} — {thesis.thesis}</span>
         <span>
-          {pack.lands.length} lands · {pack.coasters.length} rides · primary {primary}
+          {pack.lands.length} lands · {pack.coasters.length} rides · land {land} · primary {primary}
         </span>
       </header>
       <div style={{ flex: 1, minHeight: 0 }}>
-        <View world={pack} project={project} primary={primary} onPick={pick} />
+        <View
+          world={pack}
+          project={project}
+          primary={primary}
+          land={land}
+          onPick={pick}
+          onLand={pickLand}
+        />
       </div>
       <PrototypeSwitcher variants={VARIANTS} current={key} />
     </main>
