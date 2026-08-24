@@ -1880,7 +1880,6 @@ a.row .rowText, a.row .rowValue { text-decoration: none; }
 .sheet.full .poiList, .sheet.full .venueList,
 .sheet.full .diagTable, .sheet.full .stepList,
 .sheet.full .rowList { background: var(--grouped2); }
-.sheet.full .glanceCard { background: var(--grouped2); }
 .poiList > *, .venueList > *, .diagTable > *, .stepList > * {
   border-radius: 0;
 }
@@ -3454,15 +3453,14 @@ html:not([data-intro="seen"]) .app[data-intro-map] > .mapWrap {
 .app[data-sel] .mapFurniture { display: none; }
 
 /* ---- the locate card ----
-   What the resting sheet says on a phone with no fix. It replaced the glance
-   rail's `.glanceEmpty`, which said the same thing in a sentence with nothing
-   to press; this one carries the control, because "turn on location" is an
+   What the resting sheet says on a phone with no fix. It replaced the old glance
+   rail empty state, which said the same thing in a sentence with nothing to
+   press; this one carries the control, because "turn on location" is an
    instruction the app can follow itself.
 
    Opaque --bg2 with a hairline rather than the glass every other floating card
    takes: this one is inside the sheet, on the sheet's own surface, and a lens
-   over a lens reads as a smudge. --shadow1 lifts it off the sheet by the same
-   amount .glanceCard used to be lifted off it.
+   over a lens reads as a smudge. --shadow1 lifts it off the sheet.
 
    Its height is SHEET_LOCATE_PX (80) in lib/sheet.js — 72 of card, measured on
    a 390px phone where the hint wraps to a second line, plus the 8 that
@@ -3484,147 +3482,6 @@ html:not([data-intro="seen"]) .app[data-intro-map] > .mapWrap {
 /* The button never gives way — a two-line hint is allowed to wrap, the way out
    is not allowed to shrink under the thumb. */
 .btn.locateGo { flex: none; }
-
-/* ============================================================
-   glance rail — the live dashboard in the sheet's peek state
-   ---- NOT MOUNTED. Explore is search → context → list; components/GlanceRail
-   .jsx is still on disk but nothing renders it, so everything below this line
-   is dead paint. It stays with the component, and goes when the component
-   goes, so that removing the rail is one revert rather than two.
-   ============================================================ */
-/* The rail's height is the collapsed sheet's height, and the collapsed sheet's
-   height is map you cannot see. So the card carries what answers "which way,
-   and how long" and nothing that merely could be shown: time and range share a
-   line, and the compass point came off the foot because the arrow beside the
-   time is the same answer, aimed relative to the way you are facing. */
-.glanceRail {
-  flex: none; min-height: 104px;
-  display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory;
-  padding: 4px 16px 10px;
-}
-.glanceRail::-webkit-scrollbar { display: none; }
-.glanceCard {
-  /* 200, not 180. Room for the walk time and a full short range ("800 ft")
-     beside the actions column — at 180 the range truncated to "80…", which
-     is a wrong number rather than a shorter one. The rail scrolls sideways. */
-  flex: none; width: 200px; scroll-snap-align: start; text-align: left;
-  background: var(--glassTint);
-  border: none;
-  border-radius: var(--r3); padding: 10px 8px 10px 13px;
-  display: grid; grid-template-columns: 1fr auto; align-items: stretch;
-  box-shadow: var(--shadow1);
-  animation: railIn var(--t2) var(--easeOut) both;
-  transition: opacity var(--t1) var(--easeOut), box-shadow var(--t2) var(--easeOut);
-}
-.glanceCard:nth-child(1) { animation-delay: 0s; }
-.glanceCard:nth-child(2) { animation-delay: .04s; }
-.glanceCard:nth-child(3) { animation-delay: .08s; }
-.glanceCard:nth-child(4) { animation-delay: .12s; }
-.glanceCard:nth-child(5) { animation-delay: .16s; }
-.glanceCard:nth-child(n+6) { animation-delay: .2s; }
-.glanceCard:active { opacity: .6; }
-.glanceCard.help {
-  background: var(--helpTint);
-  animation: railIn var(--t2) var(--easeOut) both, alertRing 1.8s ease-out infinite .4s;
-}
-.glanceCard.goNow {
-  box-shadow: var(--shadow1), 0 0 0 2px color-mix(in srgb, var(--adventure) 55%, transparent);
-}
-.glanceCard.selected { box-shadow: var(--shadow1), 0 0 0 2px var(--blue); }
-.glanceCard.stale { opacity: .45; }
-/* Footnote. The line-height is stated rather than inherited: without it this
-   picks up the body's 22px and quietly costs the rail four pixels. */
-.glanceEyebrow {
-  font-family: var(--display); font-size: 12px; font-weight: 700;
-  line-height: 16px; letter-spacing: .04em;
-  text-transform: uppercase;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.glanceMain { display: flex; align-items: center; gap: 9px; margin: 3px 0 1px; }
-.glanceArrow {
-  width: 22px; height: 22px; flex: none;
-  transition: transform var(--t3) var(--easeOut);
-}
-/* Title 3 beside Caption 1, on one baseline, and neither of them allowed to
-   wrap: "<1 min" breaking over two lines takes the card past the rail's height
-   and the bottom of it disappears under the tab bar. The time is never
-   shortened, so it keeps its width; the range gives way and truncates. */
-.glanceWalk { display: flex; align-items: baseline; gap: 5px; min-width: 0; flex-wrap: nowrap; }
-.glanceWalk b {
-  flex: none; white-space: nowrap;
-  font-family: var(--display); font-size: 20px; font-weight: 700;
-  line-height: 25px; letter-spacing: -.02em;
-  font-variant-numeric: tabular-nums;
-}
-.glanceWalk em {
-  flex: 0 1 auto; min-width: 0;
-  font-style: normal; font-size: 12px; line-height: 16px; letter-spacing: 0;
-  color: var(--label2); font-variant-numeric: tabular-nums;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-/* User actions live in their own column so Go and the remove control never
-   sit on top of the eyebrow or the footnote they used to share a corner with. */
-.glanceActions {
-  grid-column: 2; grid-row: 1;
-  display: flex; flex-direction: column; justify-content: space-between;
-  align-items: center; width: 44px; flex: none; padding-left: 2px;
-  overflow: hidden;
-}
-.glanceShed {
-  position: relative;
-  display: grid; place-items: center;
-  width: 28px; height: 28px;
-  color: var(--label3); opacity: .85;
-}
-.glanceShed::before { content: ''; position: absolute; inset: -12px; }
-.glanceShed:active { opacity: .5; }
-.glanceCard { position: relative; }
-
-.glanceTitle {
-  font-family: var(--display); font-size: 15px; font-weight: 600;
-  line-height: 20px; letter-spacing: -.02em;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.glanceFoot {
-  font-size: 12px; line-height: 16px; letter-spacing: 0; color: var(--label3);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.glanceEmpty {
-  flex: none; padding: 8px 16px 16px; font-size: 15px; letter-spacing: -.24px;
-  color: var(--label2); display: flex; align-items: center; min-height: 64px;
-  animation: fadeIn var(--t2) var(--easeOut) both;
-}
-.glanceEmpty .btn { margin: 0; }
-
-/* ---- the rail, in one line ----
-   The last rung before the sheet has nothing on it at all. A visitor who has
-   pulled the sheet nearly shut has said they want the map, and taking them at
-   their word means giving back the twenty-six pixels that still answer "which
-   way, and how long" — the arrow, the walking time and the name — and letting
-   the count stand in for the rest of the rail rather than pretending to be it.
-   Measured as SHEET_DIGEST_PX in lib/sheet.js; the two have to agree. */
-.glanceDigest {
-  flex: none; display: flex; align-items: center; gap: 7px;
-  width: 100%; height: 26px; padding: 0 16px 8px;
-  text-align: left; font-size: 13px; line-height: 18px; letter-spacing: -.08px;
-  animation: fadeIn var(--t2) var(--easeOut) both;
-}
-.glanceDigest .glanceArrow { width: 15px; height: 15px; flex: none; }
-.glanceDigest b { flex: none; font-weight: 600; font-variant-numeric: tabular-nums; }
-.glanceDigestName {
-  flex: 0 1 auto; min-width: 0; color: var(--label);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-/* The eyebrow is the first thing to go when the line is short: it is the only
-   part of the strip the arrow and the name do not already imply. */
-.glanceDigest em {
-  flex: 1 1 auto; min-width: 0; font-style: normal; font-weight: 400;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.glanceDigestMore { flex: none; color: var(--label3); font-variant-numeric: tabular-nums; }
-.glanceDigest.quiet { color: var(--label2); }
-.glanceDigest.help { color: var(--crimson); }
-.glanceDigest:active { opacity: .5; }
 
 /* ---- active height filter badge over the map ---- */
 .filterBadge {
@@ -4020,10 +3877,10 @@ p.wxWhy.warn { color: var(--orange); }
    the control, 44px in both directions, and taking the taps that land near
    enough to have been meant for it. Nothing moves, and nothing has to be aimed
    at. */
-.chip, .tier, .glanceGo, .navBack, .searchClear, .mapKeyToggle, .segmented .tab, .moreHint {
+.chip, .tier, .navBack, .searchClear, .mapKeyToggle, .segmented .tab, .moreHint {
   position: relative;
 }
-.chip::after, .tier::after, .glanceGo::after, .navBack::after, .searchClear::after,
+.chip::after, .tier::after, .navBack::after, .searchClear::after,
 .mapKeyToggle::after, .segmented .tab::after, .moreHint::after {
   content: '';
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -4108,7 +3965,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
 input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px; }
 @supports (scrollbar-width: none) {
-  .chips, .glanceRail, .previewAlts { scrollbar-width: none; }
+  .chips, .previewAlts { scrollbar-width: none; }
 }
 /* The home indicator is cleared by the sheet's own `bottom` at the floating
    stops and by the tab bar's padding at the full stop, so there is deliberately
@@ -4414,27 +4271,6 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
 .fabs.go { bottom: calc(96px + var(--bot)); }
 .fabs.preview { bottom: calc(214px + var(--bot)); }
 .fab.resume { background: var(--blue); color: var(--onTint); border-color: transparent; }
-
-/* ---- the Go button on a glance card ---- */
-.glanceHit {
-  grid-column: 1; grid-row: 1; min-width: 0;
-  display: flex; flex-direction: column; gap: 1px; text-align: left;
-  padding: 0; background: none; border: none; color: inherit;
-}
-.glanceCard.walking { background: color-mix(in srgb, var(--blue) 12%, var(--grouped2)); }
-.glanceGo {
-  position: relative;
-  width: 36px; min-width: 36px; min-height: 36px;
-  padding: 0;
-  border-radius: var(--rCapsule); border: none;
-  display: grid; place-items: center;
-  background: color-mix(in srgb, var(--blue) 14%, var(--fill3));
-  color: var(--blue);
-  transition: opacity var(--t1) var(--easeOut), background var(--t1) var(--easeOut);
-}
-.glanceGo:active { opacity: .55; }
-.glanceGo.on { background: var(--blue); color: var(--onTint); }
-.glanceGo .icn { display: block; }
 
 /* ---- the full step list in the sheet ---- */
 .stepList { list-style: none; margin: 0 0 10px; padding: 0; }
