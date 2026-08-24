@@ -84,6 +84,9 @@ export function outranks(a, b) {
 /** How many 1% battery steps a challenger must beat the incumbent by before a silent steal. */
 export const STEAL_STEPS = 5;
 
+/** Defaults for a frame that carries no rank numbers — serving host is unbeatable. */
+export const UNSCORED_RANK_DEFAULTS = { score: Infinity, joinOrder: -1 };
+
 /**
  * True when the challenger should take Host: strictly better, and by enough
  * that a 1% battery wobble does not flap the mesh.
@@ -397,15 +400,18 @@ export function createElection({
     if (!f || typeof f !== 'object' || typeof f.from !== 'string' || f.from === selfId) return;
     // An unscored VICTORY is treated as unbeatable: yielding to a host that is
     // already serving is always safe, promoting a second one never is.
-    const theirs = readRank(f, { score: Infinity, joinOrder: -1 });
+    const theirs = readRank(f, UNSCORED_RANK_DEFAULTS);
     if (!theirs.id) return;
     const mine = myClaim || selfClaim();
 
-    if (promoted && !shouldYield(mine, theirs)) {
-      // Already hosting and not beaten by a clear margin: re-assert if we
-      // still outrank, otherwise hold. A 1% lead is not a steal.
-      if (outranks(mine, theirs) && now() - lastVictorySentAt >= reassertGapMs) sendVictory();
-      return;
+    if (promoted) {
+      if (outranks(mine, theirs)) {
+        if (now() - lastVictorySentAt >= reassertGapMs) sendVictory();
+        return;
+      }
+      // outranks(theirs, mine) — stand down via the shared demote path below.
+      // `shouldYield`'s steal margin is for client challengers, not two live
+      // hosts reconciling (#594).
     }
 
     cancelElection();

@@ -70,7 +70,7 @@ const APP = '../../apps/party-tracker/';
 const { createClient } = await import(`${APP}lib/party/client.js`);
 const { createHostService } = await import(`${APP}lib/party/hostService.js`);
 const { adoptSnapshot } = await import(`${APP}lib/core/state.js`);
-const { readRank, shouldYield } = await import(`${APP}lib/party/election.js`);
+const { readRank, outranks, UNSCORED_RANK_DEFAULTS, shouldYield } = await import(`${APP}lib/party/election.js`);
 const { open } = await import(`${APP}lib/core/crypto.js`);
 const { BYE, CLAIM, PING, VICTORY, WELCOME } = await import(`${APP}lib/core/protocol.js`);
 const { createBus, captureTimers, partyKey } = await import('./lib/partyBus.mjs');
@@ -120,10 +120,9 @@ function makePeer({ id, name, bus, key, partyId, clock }) {
   /**
    * partyRuntime.js:572-581. The floor between unprompted re-assertions.
    *
-   * Load-bearing, and not obviously so: two hosts that will not stand down for
-   * each other (see BUG #split-brain) answer each other's VICTORY forever. This
-   * throttle is the only thing turning that infinite loop into a 1.5s beacon
-   * war. Reproduced faithfully because a harness without it hangs.
+   * Load-bearing when two hosts briefly disagree: without this throttle,
+   * re-assertions would fire every frame. After #594, reconciliation settles
+   * on one host; this gap still bounds beacon traffic during the hand-over.
    */
   const ASSERT_GAP_MS = 1500;
   let lastAssertAt = 0;
@@ -147,9 +146,9 @@ function makePeer({ id, name, bus, key, partyId, clock }) {
       stepDown(frame.from, frame.body?.snapshot ?? null);
       return;
     }
-    // partyRuntime.js:619 — unscored is unbeatable. Duplicated at election.js:400.
-    const theirs = readRank(frame, { score: Infinity, joinOrder: -1 });
-    if (shouldYield({ ...mine, id: session.selfId }, theirs)) {
+    const theirs = readRank(frame, UNSCORED_RANK_DEFAULTS);
+    const mineWithId = { ...mine, id: session.selfId };
+    if (outranks(theirs, mineWithId)) {
       stepDown(theirs.id, frame.body?.snapshot ?? null);
       return;
     }
@@ -494,21 +493,12 @@ await check('the loser follows the winner without ever seeing an empty roster', 
 
 console.log('two hosts — real election');
 
-await check('BUG #split-brain: two phones that promote at once BOTH keep hosting', async () => {
+await check('two phones that promote at once settle on one host via the total order (#594)', async () => {
   // The claim windows overlap but the transport underneath is repairing
   // itself, so neither hears the other in time (partyRuntime.js:583-597). The
-  // block says this "is survivable only if the pair can settle it afterwards
-  // without a human", and :624-626 claims "the total order admits exactly one
-  // winner, so this cannot ping-pong".
-  //
-  // It cannot ping-pong. It also never resolves. `reconcile` stands a host
-  // down only on `shouldYield`, which demands a margin of STEAL_STEPS battery
-  // steps (5e10); the tiebreak tiers of `outranks` that actually separate two
-  // otherwise-identical phones — join order and id — are worth at most 1. So
-  // `outranks` names a winner that `shouldYield` will never ratify, and both
-  // phones assert at each other for the rest of the trip.
-  //
-  // Pinned as OBSERVED, not endorsed. See the PR body.
+  // pair must settle afterwards without a human — both sides apply the election's
+  // total order. Reconciling two live hosts uses `outranks`, not `shouldYield`'s
+  // steal margin (#594).
   const party = await makeParty({ clients: 2 });
   try {
     party.bus.partition('phone-a');
@@ -535,32 +525,29 @@ await check('BUG #split-brain: two phones that promote at once BOTH keep hosting
     }
 
     const stillHosting = party.clients.filter((p) => p.host);
-    assert.equal(
-      stillHosting.length,
-      2,
-      'behaviour changed — the split brain resolves now, check the follow-up fix',
-    );
-    assert.ok(!party.clients[0].events.includes('step-down'));
-    assert.ok(!party.clients[1].events.includes('step-down'));
+    assert.equal(stillHosting.length, 1, 'exactly one host remains after reconciliation');
+    assert.equal(stillHosting[0].id, 'phone-b', 'the earlier joiner wins the total order');
+    const loser = party.clients.find((p) => p.events.includes('step-down'));
+    assert.ok(loser, 'the lower-ranked phone stood down');
+    assert.equal(loser.id, 'phone-c');
   } finally {
     await party.teardown();
   }
 });
 
-await check('BUG #split-brain: the order names a winner that the margin refuses to ratify', async () => {
-  // The arithmetic behind the test above, isolated. Two candidates identical
-  // but for join order: `outranks` separates them, `shouldYield` does not.
-  const { scoreCandidate, outranks, STEAL_STEPS } = await import(`${APP}lib/party/election.js`);
+await check('host-vs-host reconciliation uses outranks, not the steal margin (#594)', async () => {
+  // Two candidates identical but for join order: `outranks` separates them.
+  // `shouldYield` still requires a battery margin — correct for steals, wrong
+  // for reconciling two live hosts.
+  const { scoreCandidate, outranks, shouldYield, STEAL_STEPS } = await import(`${APP}lib/party/election.js`);
   const shared = { battery: 0.8, signal: 0.5, network: 1, performance: 0.5 };
   const first = { id: 'phone-b', score: scoreCandidate({ ...shared, joinOrder: 1 }), joinOrder: 1 };
   const second = { id: 'phone-c', score: scoreCandidate({ ...shared, joinOrder: 2 }), joinOrder: 2 };
 
-  assert.equal(outranks(first, second), true, 'the total order no longer names a winner');
+  assert.equal(outranks(first, second), true, 'the total order names phone-b');
   assert.equal(outranks(second, first), false);
-  // ...and yet neither will stand down for the other.
-  assert.equal(shouldYield(second, first), false, 'behaviour changed — the loser yields now');
+  assert.equal(shouldYield(second, first), false, 'steal margin does not apply to a tiebreak gap');
   assert.equal(shouldYield(first, second), false);
-  // Because the gap the tiebreak can produce is ~1 and the margin wanted is 5e10.
   assert.ok(first.score - second.score < 1);
   assert.ok(STEAL_STEPS * (1e12 / 100) > 1e10);
 });
@@ -685,28 +672,23 @@ await check('TRANSCRIBED: a CLAIM against a live host is answered, never yielded
 
 console.log('the unscored-is-unbeatable rule');
 
-await check('an unscored rival outranks any real claim, both places it is written', async () => {
-  const unscored = readRank({ from: 'phone-z', body: {} }, { score: Infinity, joinOrder: -1 });
+await check('the unscored-is-unbeatable default is shared from election.js', async () => {
+  const unscored = readRank({ from: 'phone-z', body: {} }, UNSCORED_RANK_DEFAULTS);
   assert.equal(unscored.score, Infinity);
   assert.equal(unscored.joinOrder, -1);
   // One host too few repairs itself in a timeout; one host too many never does.
   assert.equal(shouldYield({ id: 'me', score: 9e9, joinOrder: 0 }, unscored), true);
   // A rival that does say what it won on is compared on the numbers.
-  const scored = readRank({ from: 'phone-z', body: { score: 1, joinOrder: 5 } }, { score: Infinity, joinOrder: -1 });
+  const scored = readRank({ from: 'phone-z', body: { score: 1, joinOrder: 5 } }, UNSCORED_RANK_DEFAULTS);
   assert.equal(shouldYield({ id: 'me', score: 9e9, joinOrder: 0 }, scored), false);
 });
 
-await check('the rule is still written out in both files, and identically', async () => {
-  // election.js:400 and partyRuntime.js:619 hold the same literal with no
-  // shared constant between them. Pinned so the follow-up cannot change one
-  // and leave the other — the failure mode is two hosts, which never repairs.
+await check('partyRuntime imports the shared unscored default from election.js', async () => {
   const { readFile } = await import('node:fs/promises');
-  const files = ['lib/party/election.js', 'lib/partyRuntime.js'];
-  const pattern = /readRank\(\s*f(?:rame)?\s*,\s*\{\s*score:\s*Infinity\s*,\s*joinOrder:\s*-1\s*\}\s*\)/;
-  for (const rel of files) {
-    const src = await readFile(new URL(`${APP}${rel}`, import.meta.url), 'utf8');
-    assert.match(src, pattern, `${rel} no longer carries the unscored-is-unbeatable default`);
-  }
+  const runtime = await readFile(new URL(`${APP}lib/partyRuntime.js`, import.meta.url), 'utf8');
+  const election = await readFile(new URL(`${APP}lib/party/election.js`, import.meta.url), 'utf8');
+  assert.match(runtime, /UNSCORED_RANK_DEFAULTS/);
+  assert.match(election, /export const UNSCORED_RANK_DEFAULTS/);
 });
 
 /* ------------------------------------------- the documented path that is dead */
@@ -804,7 +786,7 @@ console.log('the transcription');
 const TRANSCRIBED_FROM = [
   ['seedHost', 'partyRuntime.js:558-570', '4fb69935fdef7959'],
   ['assertHost', 'partyRuntime.js:572-581', '57882eace55375dd'],
-  ['reconcile', 'partyRuntime.js:598-627', 'dde630159493ea42'],
+  ['reconcile', 'partyRuntime.js:598-627', '099eb9a11b86cb99'],
   ['startHost', 'partyRuntime.js:634-667', '2d2b03a6f4145427'],
   ['startClient', 'partyRuntime.js:671-694', 'b0bcc3e55e2e5818'],
   ['promote', 'partyRuntime.js:699-706', '4416f5d52f62c8c0'],
