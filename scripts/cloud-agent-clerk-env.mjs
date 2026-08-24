@@ -7,6 +7,7 @@
  *
  *   node scripts/cloud-agent-clerk-env.mjs
  *   node scripts/cloud-agent-clerk-env.mjs --require
+ *   node scripts/cloud-agent-clerk-env.mjs --ci
  */
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,11 +15,23 @@ import {
   CLERK_REQUIRED_SECRET_KEYS,
   PARKBOUND_CLOUD_ENV_URL,
   clerkCloudSecretsStatus,
+  ensureClerkEnvForCi,
   writePartyTrackerClerkEnv,
 } from './lib/cloud-agent-clerk-env.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const requireSecrets = process.argv.includes('--require');
+const ciFallback = process.argv.includes('--ci');
+
+if (ciFallback) {
+  const result = ensureClerkEnvForCi(root);
+  if (!result.wrote) {
+    console.error(`cloud-agent-clerk-env: failed (${result.reason})`);
+    process.exit(1);
+  }
+  console.log(`cloud-agent-clerk-env: wrote ${result.path} (${result.source})`);
+  process.exit(0);
+}
 
 const status = clerkCloudSecretsStatus();
 if (!status.ok) {

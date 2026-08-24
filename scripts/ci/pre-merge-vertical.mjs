@@ -35,6 +35,7 @@ import {
   writeLocalCiPass,
 } from '../lib/local-ci-pass.mjs';
 import { clerkE2eBlockReason } from '../lib/clerk-e2e.mjs';
+import { ensureClerkEnvForCi } from '../lib/cloud-agent-clerk-env.mjs';
 import {
   requiredVerticals,
   verticalById,
@@ -138,6 +139,18 @@ export async function runPreMergeVertical({
   }
 
   for (const args of STATIC_NPM_STEPS) {
+    if (args[1] === 'build') {
+      const clerkEnv = ensureClerkEnvForCi(cwd);
+      if (!clerkEnv.wrote) {
+        console.error(`pre-merge-vertical: ${clerkEnv.reason}`);
+        return 1;
+      }
+      if (clerkEnv.source === 'stub') {
+        console.log(
+          'pre-merge-vertical: Clerk CI stub keys materialized for app build — Clerk-on auth e2e still needs real keys in the runner env',
+        );
+      }
+    }
     console.log(`\npre-merge-vertical: npm ${args.join(' ')}`);
     const code = runNpmStep(args, cwd);
     if (code !== 0) return code;

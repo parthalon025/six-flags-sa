@@ -226,6 +226,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Materialize Clerk env for mandatory-Clerk build
+        run: node scripts/cloud-agent-clerk-env.mjs --ci
+
       - name: Build Next.js app
         run: npm run build -w @party-tracker/app
 
