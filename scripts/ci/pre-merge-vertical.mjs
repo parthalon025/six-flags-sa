@@ -98,7 +98,7 @@ function runValidateUiChanged(baseRef, cwd = root, { baseUrl } = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(
       'npm',
-      ['run', 'test:validate-ui:changed', '--', '--base', baseRef, '--no-health'],
+      ['run', 'test:validate-ui:changed', '--', '--base', baseRef],
       {
         cwd,
         stdio: 'inherit',
