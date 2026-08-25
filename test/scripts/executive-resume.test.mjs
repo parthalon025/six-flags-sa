@@ -3,9 +3,11 @@
  * Executive resume — merge, drift, render, agent patch boundaries.
  */
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   agentPatch,
   applySessionPlatform,
@@ -28,6 +30,7 @@ import {
   saveLocal,
   subscribeTimerInstructions,
   wrapJsonComment,
+  initDashboardIssue,
 } from '../../scripts/lib/executive-resume.mjs';
 
 const scratch = mkdtempSync(join(tmpdir(), 'exec-resume-'));
@@ -132,21 +135,50 @@ assert.equal(resolved.issueNumber, 643);
 assert.equal(resolved.url, 'https://github.com/example/repo/issues/643');
 assert.equal(resolved.jsonCommentId, null);
 
-// Scratch overlays durable (session-local comment id cache)
+// Scratch overlays durable (session-local comment id cache only)
 writeFileSync(
   join(root, '.scratch/executive-dashboard.json'),
-  `${JSON.stringify({ issueNumber: 643, jsonCommentId: 999, url: 'https://github.com/example/repo/issues/643' }, null, 2)}\n`,
+  `${JSON.stringify({ jsonCommentId: 999 }, null, 2)}\n`,
 );
 const overlaid = resolvePointer(root);
 assert.equal(overlaid.issueNumber, 643);
 assert.equal(overlaid.jsonCommentId, 999);
+assert.equal(overlaid.url, 'https://github.com/example/repo/issues/643');
 
-// linkDashboard writes the committed durable pointer
+// Stale scratch issueNumber/url must not override durable
+writeFileSync(
+  join(root, '.scratch/executive-dashboard.json'),
+  `${JSON.stringify({ issueNumber: 1, url: 'https://stale.example/1', jsonCommentId: 42 }, null, 2)}\n`,
+);
+const durableWins = resolvePointer(root);
+assert.equal(durableWins.issueNumber, 643);
+assert.equal(durableWins.url, 'https://github.com/example/repo/issues/643');
+assert.equal(durableWins.jsonCommentId, 42);
+
+// linkDashboard writes durable; scratch cache is jsonCommentId-only
 rmSync(join(root, '.scratch/executive-dashboard.json'), { force: true });
 linkDashboard({ issueNumber: 643, url: 'https://github.com/example/repo/issues/643', root });
 const durableOnDisk = JSON.parse(readFileSync(join(root, DURABLE_POINTER_FILE), 'utf8'));
 assert.equal(durableOnDisk.issueNumber, 643);
+const scratchCache = JSON.parse(readFileSync(join(root, '.scratch/executive-dashboard.json'), 'utf8'));
+assert.deepEqual(Object.keys(scratchCache).sort(), ['jsonCommentId']);
 assert.equal(resolvePointer(root).issueNumber, 643);
+
+// link without --url fails loudly when gh cannot resolve (no fake owner/repo)
+assert.throws(
+  () =>
+    linkDashboard({
+      issueNumber: 99,
+      root,
+      runner: () => {
+        throw new Error('gh offline');
+      },
+    }),
+  /needs --url/,
+);
+
+// init is first-time only when durable already linked
+assert.throws(() => initDashboardIssue({ root, runner }), /already linked/);
 
 // pullFromIssue uses durable pointer when scratch is gone
 rmSync(join(root, '.scratch/executive-dashboard.json'), { force: true });
@@ -169,6 +201,12 @@ const pullRunner = (cmd, args) => {
 };
 const pulled = pullFromIssue({ root, runner: pullRunner });
 assert.equal(pulled.now.task, 'From durable pointer');
+
+// CLI entry: resume:link without --issue exits 1 (spec table row)
+const cli = join(fileURLToPath(new URL('../..', import.meta.url)), 'scripts/executive-resume.mjs');
+const missingIssue = spawnSync(process.execPath, [cli, 'link'], { encoding: 'utf8' });
+assert.equal(missingIssue.status, 1);
+assert.match(missingIssue.stderr, /requires --issue/);
 
 rmSync(scratch, { recursive: true, force: true });
 console.log('executive-resume tests ok');

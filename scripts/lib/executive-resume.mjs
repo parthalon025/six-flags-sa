@@ -189,27 +189,37 @@ export function loadDurablePointer(root = REPO) {
 /**
  * Resolve dashboard pointer: durable issue number + optional scratch jsonCommentId.
  * Cloud sessions with empty .scratch/ still find #643 via docs/agents/executive-dashboard.json.
+ * When durable exists it always wins for issueNumber/url — scratch never overrides them.
  */
 export function resolvePointer(root = REPO) {
   const durable = loadDurablePointer(root);
   const scratch = loadPointer(root);
-  if (!durable && !scratch) return null;
-  const issueNumber = durable?.issueNumber ?? scratch?.issueNumber ?? null;
-  if (!issueNumber) return null;
-  return {
-    issueNumber: Number(issueNumber),
-    url: durable?.url || scratch?.url || null,
-    jsonCommentId: scratch?.jsonCommentId ?? durable?.jsonCommentId ?? null,
-  };
+  if (durable?.issueNumber) {
+    return {
+      issueNumber: Number(durable.issueNumber),
+      url: durable.url ?? null,
+      jsonCommentId: scratch?.jsonCommentId ?? null,
+    };
+  }
+  // Legacy: scratch-only pointer from before durable files existed
+  if (scratch?.issueNumber) {
+    return {
+      issueNumber: Number(scratch.issueNumber),
+      url: scratch.url ?? null,
+      jsonCommentId: scratch.jsonCommentId ?? null,
+    };
+  }
+  return null;
 }
 
-/** Write session-local scratch pointer (comment id cache). */
+/** Write session-local jsonCommentId cache only (durable owns issueNumber/url). */
 export function savePointer(pointer, root = REPO) {
   ensureScratch(root);
-  writeFileSync(join(root, POINTER_FILE), `${JSON.stringify(pointer, null, 2)}\n`);
+  const cache = { jsonCommentId: pointer?.jsonCommentId ?? null };
+  writeFileSync(join(root, POINTER_FILE), `${JSON.stringify(cache, null, 2)}\n`);
 }
 
-/** Write committed durable pointer (and scratch cache). */
+/** Write committed durable pointer; refresh scratch comment-id cache. */
 export function saveDurablePointer(pointer, root = REPO) {
   const { durablePointer } = resumePaths(root);
   mkdirSync(dirname(durablePointer), { recursive: true });
@@ -218,40 +228,30 @@ export function saveDurablePointer(pointer, root = REPO) {
     url: pointer.url || null,
   };
   writeFileSync(durablePointer, `${JSON.stringify(durable, null, 2)}\n`);
-  savePointer(
-    {
-      issueNumber: durable.issueNumber,
-      url: durable.url,
-      jsonCommentId: pointer.jsonCommentId ?? null,
-    },
-    root,
-  );
+  savePointer({ jsonCommentId: pointer.jsonCommentId ?? null }, root);
   return durable;
 }
 
 /**
  * Link this repo to an existing executive dashboard issue (e.g. #643).
  * Does not create a new issue — use init for first-time setup.
+ * Pass --url when gh cannot resolve the repo; never invent a placeholder URL.
  */
-export function linkDashboard({ issueNumber, url = null, root = REPO } = {}) {
+export function linkDashboard({ issueNumber, url = null, root = REPO, runner = execFileSync } = {}) {
   if (!issueNumber) throw new Error('linkDashboard requires issueNumber');
-  const resolvedUrl =
-    url || `https://github.com/${guessRepoSlug(root)}/issues/${issueNumber}`;
+  const resolvedUrl = url || deriveIssueUrl(issueNumber, { root, runner });
   return saveDurablePointer({ issueNumber, url: resolvedUrl, jsonCommentId: null }, root);
 }
 
-function guessRepoSlug(root) {
+function deriveIssueUrl(issueNumber, { root, runner }) {
+  let slug;
   try {
-    const out = execFileSync('gh', ['repo', 'view', '--json', 'nameWithOwner', '-q', '.nameWithOwner'], {
-      cwd: root,
-      encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-    }).trim();
-    if (out) return out;
-  } catch {
-    /* fall through */
+    slug = runGh(['repo', 'view', '--json', 'nameWithOwner', '-q', '.nameWithOwner'], { cwd: root, runner });
+  } catch (err) {
+    throw new Error(`resume:link needs --url when gh cannot resolve the repo (${err.message})`);
   }
-  return 'owner/repo';
+  if (!slug) throw new Error('resume:link needs --url when gh cannot resolve the repo');
+  return `https://github.com/${slug}/issues/${issueNumber}`;
 }
 
 function runGh(args, { cwd = REPO, runner = execFileSync } = {}) {

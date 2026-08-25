@@ -30,7 +30,6 @@ import {
   pushToIssue,
   refreshInventory,
   renderMarkdown,
-  resolvePointer,
   saveLocal,
   sessionStartBrief,
   subscribeTimerInstructions,
@@ -75,7 +74,7 @@ try {
       }
       const pointer = linkDashboard({ issueNumber: Number(issue), url: argValue('--url') || null, root });
       console.log(JSON.stringify(pointer, null, 2));
-      console.error(`Linked durable pointer → #${pointer.issueNumber} (${resolvePointer(root)?.url || ''})`);
+      console.error(`Linked durable pointer → #${pointer.issueNumber}${pointer.url ? ` (${pointer.url})` : ''}`);
       break;
     }
     case 'pull': {
