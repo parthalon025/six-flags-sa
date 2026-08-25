@@ -2,7 +2,8 @@
 /**
  * Executive resume — NOW + inventory across sessions and platforms.
  *
- *   npm run resume:init     Create GitHub executive dashboard issue + pointer
+ *   npm run resume:init     Create GitHub executive dashboard issue + durable pointer
+ *   npm run resume:link -- --issue <n>   Link committed pointer to existing issue (e.g. 643)
  *   npm run resume:pull     Issue → .scratch/resume.json (+ refresh inventory)
  *   npm run resume:push     Local now/human → issue + refresh
  *   npm run resume:refresh  Regenerate inventory only
@@ -23,11 +24,13 @@ import {
   checkDrift,
   endTurn,
   initDashboardIssue,
+  linkDashboard,
   loadLocal,
   pullFromIssue,
   pushToIssue,
   refreshInventory,
   renderMarkdown,
+  resolvePointer,
   saveLocal,
   sessionStartBrief,
   subscribeTimerInstructions,
@@ -45,6 +48,7 @@ function argValue(flag) {
 
 const USAGE = `Usage:
   node scripts/executive-resume.mjs init
+  node scripts/executive-resume.mjs link --issue <number> [--url <url>]
   node scripts/executive-resume.mjs pull | push | refresh | print | check | start
   node scripts/executive-resume.mjs agent-patch --next "<step>" [--doing "<text>"]
   node scripts/executive-resume.mjs end-turn --next "<step>" [--doing "<text>"]
@@ -60,6 +64,18 @@ try {
       const resume = initDashboardIssue({ root });
       console.log(renderMarkdown(resume));
       console.error('\nPin the JSON comment on the issue, then set NOW in GitHub or .scratch/resume.json human fields.');
+      break;
+    }
+    case 'link': {
+      const issue = argValue('--issue');
+      if (!issue) {
+        console.error('resume:link requires --issue <number> (e.g. 643)');
+        code = 1;
+        break;
+      }
+      const pointer = linkDashboard({ issueNumber: Number(issue), url: argValue('--url') || null, root });
+      console.log(JSON.stringify(pointer, null, 2));
+      console.error(`Linked durable pointer → #${pointer.issueNumber} (${resolvePointer(root)?.url || ''})`);
       break;
     }
     case 'pull': {

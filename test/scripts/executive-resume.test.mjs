@@ -11,15 +11,20 @@ import {
   applySessionPlatform,
   checkDrift,
   createGoalObjective,
+  DURABLE_POINTER_FILE,
   emptyResume,
   endTurn,
   gatherDraftPrs,
+  linkDashboard,
   loadLocal,
+  loadPointer,
   mergeFromRemote,
   parseJsonComment,
   platformChange,
+  pullFromIssue,
   refreshInventory,
   renderMarkdown,
+  resolvePointer,
   saveLocal,
   subscribeTimerInstructions,
   wrapJsonComment,
@@ -114,6 +119,56 @@ assert.ok(timerFired.timer.lastFiredAt);
 const sub = subscribeTimerInstructions();
 assert.equal(sub.name, 'executive-resume-12h');
 assert.equal(sub.delaySeconds, 43200);
+
+// Durable pointer — survives missing .scratch/executive-dashboard.json
+mkdirSync(join(root, 'docs/agents'), { recursive: true });
+writeFileSync(
+  join(root, DURABLE_POINTER_FILE),
+  `${JSON.stringify({ issueNumber: 643, url: 'https://github.com/example/repo/issues/643' }, null, 2)}\n`,
+);
+assert.equal(loadPointer(root), null, 'scratch pointer absent');
+const resolved = resolvePointer(root);
+assert.equal(resolved.issueNumber, 643);
+assert.equal(resolved.url, 'https://github.com/example/repo/issues/643');
+assert.equal(resolved.jsonCommentId, null);
+
+// Scratch overlays durable (session-local comment id cache)
+writeFileSync(
+  join(root, '.scratch/executive-dashboard.json'),
+  `${JSON.stringify({ issueNumber: 643, jsonCommentId: 999, url: 'https://github.com/example/repo/issues/643' }, null, 2)}\n`,
+);
+const overlaid = resolvePointer(root);
+assert.equal(overlaid.issueNumber, 643);
+assert.equal(overlaid.jsonCommentId, 999);
+
+// linkDashboard writes the committed durable pointer
+rmSync(join(root, '.scratch/executive-dashboard.json'), { force: true });
+linkDashboard({ issueNumber: 643, url: 'https://github.com/example/repo/issues/643', root });
+const durableOnDisk = JSON.parse(readFileSync(join(root, DURABLE_POINTER_FILE), 'utf8'));
+assert.equal(durableOnDisk.issueNumber, 643);
+assert.equal(resolvePointer(root).issueNumber, 643);
+
+// pullFromIssue uses durable pointer when scratch is gone
+rmSync(join(root, '.scratch/executive-dashboard.json'), { force: true });
+const remoteBody = wrapJsonComment({
+  schema: 1,
+  now: { task: 'From durable pointer', ticket: null, doneWhen: [], nextStep: '', inScope: [], worktree: null, branch: null, draftPr: null },
+  human: { parkingLot: [], blockedOnMe: [], notes: '' },
+  lastStop: { iWasDoing: '', at: null },
+  timer: { everyHours: 12, lastFiredAt: null },
+});
+const pullRunner = (cmd, args) => {
+  if (cmd === 'gh' && args[0] === 'pr' && args[1] === 'list') return '[]';
+  if (cmd === 'gh' && args[0] === 'issue' && args[1] === 'list') return '[]';
+  if (cmd === 'gh' && args[0] === 'issue' && args[1] === 'view') {
+    return JSON.stringify({ body: `# Executive\n\n${remoteBody}`, comments: [] });
+  }
+  if (cmd === 'git' && args[0] === 'worktree') return '';
+  if (cmd === 'node' && args[0]?.includes('train-plan')) return 'nothing next';
+  throw new Error(`unexpected ${cmd} ${args.join(' ')}`);
+};
+const pulled = pullFromIssue({ root, runner: pullRunner });
+assert.equal(pulled.now.task, 'From durable pointer');
 
 rmSync(scratch, { recursive: true, force: true });
 console.log('executive-resume tests ok');

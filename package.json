@@ -98,6 +98,7 @@
     "workflow:skills": "node scripts/matt-workflow.mjs skills",
     "workflow:efforts": "node scripts/matt-workflow.mjs efforts",
     "resume:init": "node scripts/executive-resume.mjs init",
+    "resume:link": "node scripts/executive-resume.mjs link",
     "resume:pull": "node scripts/executive-resume.mjs pull",
     "resume:push": "node scripts/executive-resume.mjs push",
     "resume:refresh": "node scripts/executive-resume.mjs refresh",

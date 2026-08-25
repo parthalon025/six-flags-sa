@@ -22,6 +22,7 @@ Works with the **Matt workflow gate** (`npm run workflow:next`, `workflow:check`
 | End-of-turn agent update | `npm run resume:end-turn -- --next "..." [--doing "..."]` |
 | 12h timer fired | `npm run resume:timer-fired` |
 | First-time setup | `npm run resume:init` |
+| Link existing dashboard issue | `npm run resume:link -- --issue 643` |
 | 12h timer prompt text | `npm run resume:timer-prompt` |
 | Timer subscription args | `npm run resume:subscribe-timer` |
 | Which Matt skill now | `npm run workflow:next` |
@@ -32,6 +33,8 @@ Works with the **Matt workflow gate** (`npm run workflow:next`, `workflow:check`
 - **`now` + `human.*`** → GitHub executive dashboard issue (pinned JSON comment)
 - **`inventory`** → regenerated locally (never trusted from GitHub)
 - **`.scratch/resume.md`** → rendered view; do not hand-edit
+- **`docs/agents/executive-dashboard.json`** → committed durable pointer (issue number); survives ephemeral cloud `.scratch/`
+- **`.scratch/executive-dashboard.json`** → session cache only (`jsonCommentId`)
 
 ### Who may edit what
 
@@ -75,12 +78,13 @@ On fire: `npm run resume:timer-fired`, then ask user “Still on NOW or switch?�
 ### GitHub executive dashboard
 
 ```bash
-npm run resume:init   # creates issue + .scratch/executive-dashboard.json
+npm run resume:init                          # first time only — creates issue + durable pointer
+npm run resume:link -- --issue 643           # link / retarget committed pointer (no new issue)
 ```
 
 Pin the comment containing `<!-- executive-resume-json:v1 -->`.
 
-**Issue #643** is the repo dashboard (pointer file stores the number). Cloud agent tokens may lack issue-write — use local `gh` for `resume:push` / `resume:pull`, or edit the pinned JSON by hand.
+**Issue #643** is the repo dashboard. The committed file `docs/agents/executive-dashboard.json` stores the number so `resume:start` / `resume:pull` work on fresh cloud VMs without a local `.scratch` pointer. Cloud agent tokens may lack issue-write — use local `gh` for `resume:push`, or edit the pinned JSON by hand.
 
 ### Out of scope
 
@@ -90,6 +94,7 @@ Pin the comment containing `<!-- executive-resume-json:v1 -->`.
 ## Ask before guessing
 
 - **No dashboard issue** → `npm run resume:init`, pin the JSON comment, set NOW
+- **Pointer missing on cloud** → ensure `docs/agents/executive-dashboard.json` is committed (`resume:link -- --issue 643`); do not re-`init`
 - **Drift warnings** → confirm NOW or update worktree/branch/PR fields
 - **`workflow:check` failed** → invoke the skill `workflow:next` names; do not implement through the gate
 
