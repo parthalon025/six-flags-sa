@@ -128,6 +128,7 @@ export const TEST_ESTATE = {
   'test/app/transport-contract.test.mjs': ['test:unit'],
   'test/app/transport-registry.test.mjs': ['test:unit'],
   'test/app/validate-ui-queue.test.mjs': ['test:unit'],
+  'test/app/validate-ui-origin.test.mjs': ['test:unit'],
   'test/app/validate-ui.mjs': ['app-vertical'],
   'test/app/venue-download.test.mjs': ['test:unit'],
   'test/app/venue-store.test.mjs': ['test:unit'],
@@ -188,6 +189,7 @@ export const TEST_ESTATE = {
   'test/scripts/design-bundle.test.mjs': ['test:unit'],
   'test/scripts/drift-watch.test.mjs': ['ci-gate'],
   'test/scripts/git-env.test.mjs': ['ci-gate'],
+  'test/scripts/app-origin.test.mjs': ['ci-gate'],
   'test/scripts/glance-rail-dead-code.test.mjs': ['ci-gate'],
   'test/scripts/gitnexus-detect-changes.test.mjs': ['ci-gate'],
   'test/scripts/gitnexus-docs.test.mjs': ['ci-gate'],
@@ -252,6 +254,8 @@ export const TEST_ESTATE_EXCLUDED = {
     'library, not a suite: the shared README-gallery manifest (CAPTURE_SCRIPT, recordCapture, shotsNeedingRefresh) imported by readme-shots.mjs and readme-shots-check.mjs. Asserted through readme-shots-check.mjs.',
   'test/app/lib/validate-ui-queue.mjs':
     'library, not a suite: the suite plan for validate-ui.mjs, split out precisely because validate-ui.mjs runs suites on import. Asserted by test/app/validate-ui-queue.test.mjs.',
+  'test/app/lib/validate-ui-origin.mjs':
+    'library, not a suite: origin-loss classification for validate-ui.mjs so a dead server aborts the queue before bogus party-mesh failures. Asserted by test/app/validate-ui-origin.test.mjs.',
   'test/app/map-skin-visual-points.mjs':
     'visual Skin drift matrix run by hand (`npm run test:map-skin-points`). Takes a fixed 20-point comparison across map Skins; needs a running app, and the output is a set of screenshots a person compares Skin to Skin.',
   'test/app/readme-shots.mjs':

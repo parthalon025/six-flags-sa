@@ -28,6 +28,11 @@ import {
   waitForHealth,
 } from './party-tracker-ui.mjs';
 import {
+  allocateEphemeralPort,
+  baseUrlFromPort,
+  healthUrlFromBase,
+} from '../lib/app-origin.mjs';
+import {
   STATIC_STEPS,
   buildLocalCiContext,
   readLocalCiPass,
@@ -97,12 +102,17 @@ export function runNpmStep(args, cwd = root) {
   return r.status ?? 1;
 }
 
-function runValidateUiChanged(baseRef, cwd = root) {
+function runValidateUiChanged(baseRef, cwd = root, baseUrl) {
   return new Promise((resolve, reject) => {
     const child = spawn(
       'npm',
       ['run', 'test:validate-ui:changed', '--', '--base', baseRef, '--no-health'],
-      { cwd, stdio: 'inherit', env: process.env, shell: process.platform === 'win32' },
+      {
+        cwd,
+        stdio: 'inherit',
+        env: { ...process.env, BASE_URL: baseUrl },
+        shell: process.platform === 'win32',
+      },
     );
     child.on('error', reject);
     child.on('close', (code) => {
@@ -210,22 +220,24 @@ export async function runPreMergeVertical({
   } else if (!browserWanted) {
     console.log('pre-merge-vertical: no UI modules for diff — browser vertical skipped');
   } else {
-    if (await healthAlreadyServing()) {
+    const port = await allocateEphemeralPort();
+    const baseUrl = baseUrlFromPort(port);
+    const healthUrl = healthUrlFromBase(baseUrl);
+    if (await healthAlreadyServing({ url: healthUrl })) {
       console.error(
         [
-          'pre-merge-vertical: something is already serving the app port.',
-          'A leftover server from an earlier run holds the build it started with,',
+          'pre-merge-vertical: something is already serving the allocated app port.',
+          `Port ${port} answered /api/health before this run started its server,`,
           'so the browser vertical would prove that build, not the one just made.',
-          'Stop it and re-run:',
-          "  pkill -f 'next start' || pkill -f next-server",
+          'Stop it and re-run.',
         ].join('\n'),
       );
       return 1;
     }
-    console.log('\npre-merge-vertical: starting app for browser vertical');
-    startProductionServer({ root: cwd });
-    await waitForHealth();
-    await runValidateUiChanged(baseRef, cwd);
+    console.log(`\npre-merge-vertical: starting app for browser vertical on port ${port}`);
+    startProductionServer({ root: cwd, port });
+    await waitForHealth({ url: healthUrl });
+    await runValidateUiChanged(baseRef, cwd, baseUrl);
     const sweep = await runLiveZoomSweep({ minFps: 30, throttle: 4 });
     if (!sweep.ok) {
       console.error(

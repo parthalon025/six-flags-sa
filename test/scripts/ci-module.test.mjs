@@ -102,6 +102,7 @@ assert.ok(slept >= 0);
   let unrefCalls = 0;
   startProductionServer({
     root: '/tmp/parkbound-ci',
+    port: 3118,
     spawnFn: (_cmd, _args, opts) => {
       spawnOpts = opts;
       return {
@@ -111,6 +112,7 @@ assert.ok(slept >= 0);
       };
     },
   });
+  assert.equal(spawnOpts?.env?.PORT, '3118', 'production server receives the chosen port');
   assert.equal(spawnOpts?.detached, true, 'production server must detach from the CI step');
   assert.equal(spawnOpts?.stdio, 'ignore');
   assert.equal(unrefCalls, 1, 'child must unref so waitForHealth can exit');

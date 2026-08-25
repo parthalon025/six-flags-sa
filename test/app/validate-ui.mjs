@@ -9,7 +9,7 @@
  *   npm run test:validate-ui
  *
  * Environment:
- *   BASE_URL       app origin (default http://127.0.0.1:3000)
+ *   BASE_URL       app origin (default http://127.0.0.1:3118)
  *   CHROMIUM_PATH  system Chromium for Playwright
  *   TEST_MODULES   comma-separated module ids (see test/app/modules.json)
  *
@@ -37,10 +37,18 @@ import {
   partitionModules,
 } from './lib/module-select.mjs';
 import { buildQueue } from './lib/validate-ui-queue.mjs';
+import {
+  shouldAbortAfterSuiteFailure,
+} from './lib/validate-ui-origin.mjs';
+import {
+  originLostMidRunMessage,
+  originProbeFailureMessage,
+  resolveDefaultBaseUrl,
+} from '../../scripts/lib/app-origin.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../..');
-const BASE = (process.env.BASE_URL || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+const BASE = resolveDefaultBaseUrl();
 
 const args = process.argv.slice(2);
 const functionalOnly = args.includes('--functional-only');
@@ -177,14 +185,28 @@ async function runPool(queue, limit) {
   const pending = [...queue];
   const failures = [];
   const passed = [];
+  let originLost = false;
   const worker = async () => {
     for (;;) {
+      if (originLost) return;
       const suite = pending.shift();
       if (!suite) return;
       try {
         await runSuite(suite.name, suite.script, suite.args, { buffered: limit > 1 });
         passed.push(suite.id);
       } catch (err) {
+        let originAlive = true;
+        try {
+          await healthCheck();
+        } catch {
+          originAlive = false;
+        }
+        if (shouldAbortAfterSuiteFailure({ suiteError: err.message, originAlive })) {
+          originLost = true;
+          failures.push(originLostMidRunMessage(BASE));
+          pending.length = 0;
+          return;
+        }
         failures.push(`${suite.id}: ${err.message}`);
       }
     }
@@ -238,7 +260,7 @@ try {
   const sec = ((Date.now() - started) / 1000).toFixed(0);
   console.error(`\n${'='.repeat(60)}`);
   console.error(`  UI validation FAILED after ${sec}s`);
-  console.error(`  ${err.message}`);
+  console.error(`  ${originProbeFailureMessage(BASE, err)}`);
   console.error(`${'='.repeat(60)}\n`);
   process.exitCode = 1;
 }
