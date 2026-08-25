@@ -216,7 +216,9 @@ await check('a host also warms the best mailbox, so a joiner HELLO is never miss
   await mgr.close();
 });
 
-await check('a host on LAN warms the cloud mailbox for joiners on mobile data', async () => {
+await check('a host on LAN also warms the cloud mailbox for joiners on mobile data', async () => {
+  // When both LAN and relay are available, the host sends over LAN but keeps
+  // the relay warm so a joiner that can only reach the cloud is heard.
   const cloud = relay();
   const local = lan();
   const mgr = manager([local, cloud], { session: { role: 'host' } });
@@ -232,7 +234,7 @@ await check('a host on LAN warms the cloud mailbox for joiners on mobile data', 
   await mgr.close();
 });
 
-await check('the active transport is not opened twice during connect', async () => {
+await check('a host opens the active transport only once', async () => {
   const local = lan();
   const mgr = manager([local, relay()], { session: { role: 'host' } });
   await mgr.connect();
