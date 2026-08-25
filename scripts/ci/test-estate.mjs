@@ -163,6 +163,7 @@ export const TEST_ESTATE = {
   'test/builder/overture-buildings.mjs': ['test:builder'],
   'test/builder/paths.mjs': ['test:builder'],
   'test/builder/postdb-io.mjs': ['test:builder'],
+  'test/builder/postdb-sync.mjs': ['test:builder'],
   'test/builder/poly-haven.mjs': ['test:builder'],
   'test/builder/skin-distinct.mjs': ['test:unit', 'test:builder'],
   'test/builder/terrain.mjs': ['test:builder'],
