@@ -32,7 +32,8 @@ Code and data are canonical. Non-deterministic LLM assists from deterministic da
 - PR checkbox archaeology as the macro source (optional detail later, not this ship)  
 - Merging full Matt workflow session brief into the resume print (workflow stays `npm run workflow:next`)  
 - Dumping entire `map.md` bodies or train-plan walls into the brief  
-- Using local `.scratch` **implementation** tickets as the GitHub hanging backlog (that source stays the two triage labels)  
+- Using local **uncommitted** `.scratch` **implementation** noise as the GitHub hanging backlog (hanging source stays the two triage labels)  
+- Leaving wayfinder maps gitignored-only (that breaks Cloud/macro tracking)  
 
 ## Template (fixed slots)
 
@@ -57,9 +58,10 @@ Printed as terminal prose (markdown-ish, not HTML). Section order is fixed:
  One short standing line: outcome + where it stands.>
 
 ## Wayfinder
-<active .scratch efforts that still have a map + open decision fog:
+<active **committed** .scratch efforts that still have a map + open decision fog:
  effort name, derived phase, destination one-liner when parseable,
- frontier decision tickets by title (name). Not the full map body.>
+ frontier decision tickets by title (name). Not the full map body.
+ Same view on every clone — maps are not gitignored session junk.>
 
 ## Hanging / waiting on you
 - <GitHub ready-for-agent / ready-for-human by title>
@@ -88,14 +90,25 @@ Empty Wayfinder: one honest line (“No active wayfinder map.” or “Maps clea
 | NOW + `human.*` | Dashboard issue **#643** pinned JSON (durable pointer in `docs/agents/executive-dashboard.json`) |
 | Open inventory (worktrees, draft PRs, …) | Regenerated locally — never trusted from GitHub |
 | Incomplete cross-session work (GitHub) | Issues labeled **`ready-for-agent`** or **`ready-for-human` only** — listed under **Hanging**, not under Factories/App/Wayfinder |
-| Wayfinder fog | `.scratch/<effort>/` with `map.md`; phase + frontier from existing **`effortPhase` / ticket loaders in `scripts/lib/matt-workflow.mjs`** — do not re-parse maps in a second algorithm. List open/claimed **wayfinder decision** tickets by **title**; optional Destination line from `map.md` heading/section |
+| Wayfinder fog | **Committed** `.scratch/<effort>/` trees that have `map.md` (decision tickets + map). Phase + frontier from **`effortPhase` / ticket loaders in `scripts/lib/matt-workflow.mjs`**. List open/claimed **wayfinder decision** tickets by **title**; optional Destination line from `map.md`. **Invariant:** these trees are in git so Cloud/local/macro view all see the same fog — not session-only scratch |
 | Version health (when shown) | **Clerk package/SDK vs lockfile** — not app version vs `main` |
 | Factories standing | From NOW + inventory touching factory surfaces (`packages/venue-builder`, venue/display bakes, train H/I scripts) plus any `human.*` note that names factories — **one** outcome/standing paragraph |
 | App standing | From NOW + inventory touching `apps/party-tracker` (and related product/UI packages) plus any matching `human.*` note — **one** outcome/standing paragraph |
 
 If inventory cannot tell Factories from App, each section still prints one honest line; do not invent a split. Ticket lines use **title (name)**; numbers may trail in parentheses for deep links.
 
-**Split preserved:** Wayfinder answers “what decisions are still foggy?”; `workflow:next` still answers “which skill now?”; Hanging answers “what GitHub triage / human blocks remain?”
+**Split preserved:** Wayfinder answers “what decisions are still foggy?” from **committed** maps; `workflow:next` still answers “which skill now?”; Hanging answers “what GitHub triage / human blocks remain?”
+
+### Committed wayfinder (macro track)
+
+Today `.gitignore` blanks all of `.scratch/`, which hides fog from every fresh Cloud checkout. This design requires:
+
+1. **Wayfinder efforts are committed** — at least `map.md` and `issues/*.md` for each active wayfinder slug (path stays `.scratch/<effort>/` so matt-workflow keeps working).
+2. **Allowlist in scripts** — e.g. `scripts/lib/wayfinder-committed.json` lists slugs that must be tracked; a small check (`wayfinder:check` or part of resume gather warnings) fails or warns if an allowlisted effort is missing on disk or still ignored.
+3. **Still gitignored:** resume local cache (`.scratch/resume.json`, `.scratch/resume.md`, `.scratch/executive-dashboard.json` pointer cache), and non-wayfinder ephemeral scratch not on the allowlist.
+4. **Policy fix:** [local-issue-tracker](../../agents/policies/local-issue-tracker.md) currently says all `.scratch/` is session-local — amend to: wayfinder maps are **repo truth**; other scratch may stay local.
+
+No second dashboard package — git + allowlist script is enough for the macro view to track fog.
 
 ## Architecture (deep module)
 
@@ -128,11 +141,12 @@ Assert the **printed string** from `fillHumanBrief` (or start brief builder), no
 
 1. Fixed section headings present in order  
 2. Ticket filter: only `ready-for-agent` / `ready-for-human` appear under Hanging when fixtures include other labels  
-3. Wayfinder section lists frontier decision tickets by title from fixture `.scratch/<effort>/`; omitted when no map / no open decisions (honest empty line)  
-4. Clerk health line reflects fixture lockfile vs package mismatch when that slot is populated  
-5. Overview + Factories + App never duplicate the same sentence  
-6. Existing NOW / drift / CreateGoal behaviour unchanged unless a test explicitly updates it  
-7. Start print is still **one** human brief — not brief + full `workflow:session` dump  
+3. Wayfinder section lists frontier decision tickets by title from fixture **and** from committed allowlisted efforts when present in the repo checkout  
+4. Allowlist / gitignore: committed wayfinder trees are readable on a clean clone (test or `wayfinder:check` asserts allowlisted path is not ignored / exists)  
+5. Clerk health line reflects fixture lockfile vs package mismatch when that slot is populated  
+6. Overview + Factories + App never duplicate the same sentence  
+7. Existing NOW / drift / CreateGoal behaviour unchanged unless a test explicitly updates it  
+8. Start print is still **one** human brief — not brief + full `workflow:session` dump  
 
 Gate: unit tests under `test/scripts/executive-resume.test.mjs`; include in pre-merge vertical when the resume script suite is already listed.
 

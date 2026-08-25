@@ -14,7 +14,8 @@
 
 - One printed human brief only — never brief + second spoken/workflow dump as required reading  
 - Hanging tickets: GitHub labels `ready-for-agent` or `ready-for-human` only  
-- Wayfinder: `.scratch/<effort>/map.md` + open/claimed wayfinder decision tickets by **title**; phase from `effortPhase`  
+- Wayfinder: **committed** `.scratch/<effort>/` (allowlisted) + open/claimed wayfinder decision tickets by **title**; phase from `effortPhase`  
+- Resume JSON / local pointer cache stay gitignored; wayfinder maps do **not**  
 - Version health (when shown): Clerk package vs lockfile — not app version vs `main`  
 - Terminal prose / markdown headings — no HTML  
 - Do not edit app version stamp files  
