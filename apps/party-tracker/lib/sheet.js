@@ -108,7 +108,9 @@ export const SHEET_OPEN = { half: 0.52, full: 0.88 };
  *            22px line, over 2
  *   title    .placeDetailName — 21px type on a 26px line, over 5 to the meta
  *   meta     .placeDetailLine — one 18px line
- *   actions  .placeActions.labelled — a 44px button under 12 of margin
+ *   actions  .placeActions.labelled — a 44px button under 12 of margin; below
+ *            390px viewport width the three labels wrap to two rows (see
+ *            {@link sheetPlaceActionsPx})
  *
  * The back chevron overlays the title rather than taking a row of its own, so
  * it costs nothing here — see .navHead.placeNav.
@@ -122,7 +124,39 @@ export const SHEET_OPEN = { half: 0.52, full: 0.88 };
 export const SHEET_PLACE_HEAD_PX = 24;
 export const SHEET_PLACE_TITLE_PX = 31;
 export const SHEET_PLACE_META_PX = 18;
+/** One row of labelled actions: 12 of margin over a 44px button. */
 export const SHEET_PLACE_ACTIONS_PX = 56;
+/** Second row when the three labels wrap — 6px flex gap between rows. */
+export const SHEET_PLACE_ACTIONS_WRAP_PX = 50;
+/**
+ * Viewport widths at or below this budget labelled actions for two rows.
+ * globals.css measured 390px as one-row slack; 375px wraps the third button.
+ */
+export const SHEET_PLACE_ACTIONS_NARROW_MAX_W = 389;
+
+/**
+ * The labelled action row's cost at this viewport width. Wide enough for one
+ * row returns {@link SHEET_PLACE_ACTIONS_PX}; narrow phones that wrap pay for
+ * two.
+ */
+export function sheetPlaceActionsPx(viewportW = 390) {
+  return viewportW <= SHEET_PLACE_ACTIONS_NARROW_MAX_W
+    ? SHEET_PLACE_ACTIONS_PX + SHEET_PLACE_ACTIONS_WRAP_PX
+    : SHEET_PLACE_ACTIONS_PX;
+}
+
+/** Place-detail sheet height for a viewport width — actions row may wrap. */
+export function sheetPlacePx(viewportW = 390) {
+  return (
+    SHEET_CHROME_PX +
+    SHEET_PLACE_HEAD_PX +
+    SHEET_PLACE_TITLE_PX +
+    SHEET_PLACE_META_PX +
+    sheetPlaceActionsPx(viewportW) +
+    8
+  );
+}
+
 export const SHEET_PLACE_PX =
   SHEET_CHROME_PX +
   SHEET_PLACE_HEAD_PX +
