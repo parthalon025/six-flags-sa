@@ -78,6 +78,8 @@ You already named: **Clerk Pro, Vercel, Cloudflare, Databricks, local Docker, Hi
 
 Resend (Clerk already mails), Sentry, UptimeRobot, Stripe (only if web checkout besides IAP), OpenAI API (rejected — per-token), R2, D1, Lakebase, MotherDuck, Cloudflare Workers AI (paid Gemini covers concept stills).
 
+**Attribution (owner, 2026-08-25):** licenses whose extra duty is a credit line are **allowed** when `scripts/lib/credits-registry.json` uses the right distro (`on-map` | `credits-screen` | `placed-link:<where>`). Do not reject Geoapify/LocationIQ/Poly Haven API-credit/CC-BY/Meshy-if-attribution-only solely for needing a name on screen. Still rejected: AGPL, GPL, NC, CC-BY-SA, no-redistribution. ADR-0023.
+
 ---
 
 ## Verdict by job (if you split the question)
