@@ -16,6 +16,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   loadModulesManifest,
+  needsPostgresIntegration,
   selectModulesFromFiles,
   toGithubOutputs,
   partitionModules,
@@ -96,7 +97,15 @@ const parts = partitionModules(selection.modules, manifest);
 if (format === 'json') {
   console.log(JSON.stringify({ ...selection, parts }, null, 2));
 } else if (format === 'github') {
-  const outs = { ...toGithubOutputs(selection, manifest), ...factoryLegGithubOutputs(changedFiles) };
+  const outs = {
+    ...toGithubOutputs(selection, manifest),
+    ...factoryLegGithubOutputs(changedFiles),
+    postgres_integration: needsPostgresIntegration(changedFiles, {
+      fullSuite: selection.fullSuite,
+    })
+      ? 'true'
+      : 'false',
+  };
   const lines = Object.entries(outs).map(([k, v]) => `${k}=${v}`);
   console.log(lines.join('\n'));
   if (process.env.GITHUB_OUTPUT) {

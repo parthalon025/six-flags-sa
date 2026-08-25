@@ -47,6 +47,7 @@ jobs:
       ui_matrix: ${{ steps.mods.outputs.ui_matrix }}
       modules: ${{ steps.mods.outputs.modules }}
       full_suite: ${{ steps.mods.outputs.full_suite }}
+      postgres_integration: ${{ steps.mods.outputs.postgres_integration }}
       skip_ui: ${{ steps.local_pass.outputs.skip_ui }}
       skip_ci: ${{ steps.local_pass.outputs.skip_ci }}
       local_ci_tag: ${{ steps.local_pass.outputs.local_ci_tag }}
@@ -156,6 +157,40 @@ jobs:
         with:
           node-version: '24'
       - run: node test/app/module-select.test.mjs
+
+  postgres-integration:
+    name: Postgres integration
+    needs: select
+    if: >-
+      needs.select.outputs.postgres_integration == 'true' &&
+      needs.select.outputs.skip_ci != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: parkbound
+          POSTGRES_PASSWORD: parkbound
+          POSTGRES_DB: parkbound_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U parkbound -d parkbound_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Contribution store Postgres path (#438)
+        env:
+          TEST_DATABASE_URL: postgres://parkbound:parkbound@localhost:5432/parkbound_test
+        run: npm run test:postgres
 
   boundaries:
     name: Package boundaries
@@ -466,6 +501,7 @@ jobs:
       - gate
       - select
       - module-select-unit
+      - postgres-integration
       - boundaries
       - lint
       - builder

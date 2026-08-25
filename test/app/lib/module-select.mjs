@@ -211,6 +211,21 @@ export function partitionModules(moduleIds, manifest = loadModulesManifest()) {
 }
 
 /** GitHub Actions step outputs helper. */
+/** Paths that should run Postgres integration tests in CI (#438). */
+export const POSTGRES_INTEGRATION_PATHS = [
+  'apps/party-tracker/lib/contributions/**',
+  'apps/party-tracker/lib/db/**',
+  'db/migrations/**',
+  'test/app/contributions-postgres.test.mjs',
+  'test/lib/postgres-test-db.mjs',
+];
+
+export function needsPostgresIntegration(files = [], { fullSuite = false } = {}) {
+  if (fullSuite) return true;
+  const norm = files.map((f) => f.replace(/\\/g, '/').replace(/^\.\//, ''));
+  return norm.some((f) => pathMatchesAny(f, POSTGRES_INTEGRATION_PATHS));
+}
+
 export function toGithubOutputs(selection, manifest = loadModulesManifest()) {
   const parts = partitionModules(selection.modules, manifest);
   const uiMatrix = [...parts.functional];

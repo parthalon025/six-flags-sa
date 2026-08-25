@@ -89,6 +89,12 @@ export const TEST_RUNNERS = {
     npmScript: 'test:validate-ui:changed',
     spawnedFrom: 'test/app/lib/validate-ui-queue.mjs',
   },
+  'postgres-integration-job': {
+    label:
+      'npm run test:postgres — the `postgres-integration` GitHub job (#438); skips when no TEST_DATABASE_URL.',
+    npmScript: 'test:postgres',
+    job: 'postgres-integration',
+  },
 };
 
 /** path → the runner ids that execute it. */
@@ -96,6 +102,7 @@ export const TEST_ESTATE = {
   // --- test/app: behaviour in a browser, and the pure logic behind it -------
   'test/app/appUpdate.test.mjs': ['test:unit'],
   'test/app/band-plan.test.mjs': ['test:unit'],
+  'test/app/contributions-postgres.test.mjs': ['postgres-integration-job'],
   'test/app/contributions-thanks.test.mjs': ['test:unit'],
   'test/app/custom-map.test.mjs': ['test:unit'],
   'test/app/displaySpike.test.mjs': ['test:unit'],
@@ -252,6 +259,8 @@ export const TEST_ESTATE_EXCLUDED = {
     'library, not a suite: the shared README-gallery manifest (CAPTURE_SCRIPT, recordCapture, shotsNeedingRefresh) imported by readme-shots.mjs and readme-shots-check.mjs. Asserted through readme-shots-check.mjs.',
   'test/app/lib/validate-ui-queue.mjs':
     'library, not a suite: the suite plan for validate-ui.mjs, split out precisely because validate-ui.mjs runs suites on import. Asserted by test/app/validate-ui-queue.test.mjs.',
+  'test/lib/postgres-test-db.mjs':
+    'library, not a suite: migration runner and seed helpers for contributions-postgres.test.mjs (#438). Asserted through that integration suite.',
   'test/app/map-skin-visual-points.mjs':
     'visual Skin drift matrix run by hand (`npm run test:map-skin-points`). Takes a fixed 20-point comparison across map Skins; needs a running app, and the output is a set of screenshots a person compares Skin to Skin.',
   'test/app/readme-shots.mjs':
