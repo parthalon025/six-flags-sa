@@ -552,5 +552,11 @@
     "items": [
       "feat(venue-builder): extract Map/Visual/Delivery factory module seams (ticket 14)"
     ]
+  },
+  "1.33.1": {
+    "title": "What's new",
+    "items": [
+      "fix(party): reconcile split-brain hosts and warm cloud inbox on LAN (#594, #595) (#661)"
+    ]
   }
 }
