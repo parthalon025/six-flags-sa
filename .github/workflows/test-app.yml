@@ -200,6 +200,22 @@ jobs:
     if: needs.select.outputs.builder == 'true' && needs.select.outputs.skip_ci != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: parkbound
+          POSTGRES_PASSWORD: parkbound
+          POSTGRES_DB: parkbound
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://parkbound:parkbound@localhost:5432/parkbound
     steps:
       - uses: actions/checkout@v4
 
@@ -209,6 +225,9 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      - name: PostDB migrate
+        run: node scripts/postdb-migrate.mjs
 
       - name: Builder unit + compare
         run: npm run test:builder
@@ -219,6 +238,22 @@ jobs:
     if: needs.select.outputs.map_factory == 'true' && needs.select.outputs.skip_ci != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: parkbound
+          POSTGRES_PASSWORD: parkbound
+          POSTGRES_DB: parkbound
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://parkbound:parkbound@localhost:5432/parkbound
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -226,6 +261,8 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - name: PostDB migrate
+        run: node scripts/postdb-migrate.mjs
       - run: node test/builder/factory-modules.mjs --leg map
 
   map-factory-result:
@@ -250,6 +287,22 @@ jobs:
     if: needs.select.outputs.visual_factory == 'true' && needs.select.outputs.skip_ci != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: parkbound
+          POSTGRES_PASSWORD: parkbound
+          POSTGRES_DB: parkbound
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://parkbound:parkbound@localhost:5432/parkbound
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -257,6 +310,8 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - name: PostDB migrate
+        run: node scripts/postdb-migrate.mjs
       - run: node test/builder/factory-modules.mjs --leg visual
 
   visual-factory-result:
@@ -281,6 +336,22 @@ jobs:
     if: needs.select.outputs.delivery_factory == 'true' && needs.select.outputs.skip_ci != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: parkbound
+          POSTGRES_PASSWORD: parkbound
+          POSTGRES_DB: parkbound
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://parkbound:parkbound@localhost:5432/parkbound
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -288,6 +359,8 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - name: PostDB migrate
+        run: node scripts/postdb-migrate.mjs
       - run: node test/builder/factory-modules.mjs --leg delivery
 
   delivery-factory-result:
