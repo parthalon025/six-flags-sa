@@ -9,76 +9,66 @@ Related: [ADR-0008](../adr/0008-databricks-back-office.md), [ADR-0010](../adr/00
 
 ---
 
-## Consolidated pick (fewest sources to operate)
+## Master recommended list (2026-08-25)
 
-**Operate two things:** the laptop (Docker Postgres + DuckDB + `venues:*`) and **Vercel** (app + CDN + Neon via Marketplace). Everything else is parked or already a store/auth bill you cannot fold in (Clerk, Apple, Play).
+Owner accounts in hand: Clerk Pro, Vercel, Cloudflare, Databricks, local Docker, Higgsfield, Meshy, Unreal/Unity/Godot, Claude Code Max, Cursor, Google AI, Apple Developer, Google Play.
 
-```
-Laptop + GitHub Actions     factory PostDB, OSM, DuckDB batch     $0 fixed
-Vercel (+ Neon Marketplace) app UI, E0 API, seed public/venues    $0 Hobby / $20 Pro
-Cloudflare DNS only         existing domain                       $0
-```
+**Invariant:** phone never calls a warehouse; factory writes PostDB (Postgres); app reads exported hash-verified bundles. ADR-0010 / 0016 / 0017 / 0023 / 0024.
 
-**Do not operate:** Databricks, R2, Workers, D1, Lakebase, MotherDuck, Vercel Blob as a second store, jsDelivr as a pipeline.
+### Operate (this is the product)
 
-| | Fixed | Variable (same invoices) | Capability you actually get |
-|--|-------|--------------------------|-----------------------------|
-| **Hobby + Docker** (pre-commercial) | **$0** | Hard caps (100 GB FDT, Neon 0.5 GB / 100 CU-h). No overage — it pauses. | Four flagship JSON venues, factory, E0 API. Hobby is **non-commercial**. |
-| **Pro + Docker** (ship a paid product) | **$20/mo** Vercel (1 seat + $20 credit, **1 TB** FDT, 10M edge req) | FDT ~$0.15/GB after 1 TB; function CPU; Neon Launch if Free fills. Neon CU-hours. | Same factory + real production origin. PMTiles for a small fleet fit in 1 TB. |
-| **Add R2** | still $20 + $0 R2 | Almost none on bytes (egress $0) | Same, plus viral tile traffic. **One extra vendor** — only when a Vercel transfer bill appears. |
-| **Add Databricks** | $20 + $0 idle jobs | DBUs per run; App is **$100–400/mo** | Spark/UC. **Third vendor** — only when DuckDB/Postgres cannot finish the join. |
+| # | Source | Job | Cost | Notes |
+|---|--------|-----|------|-------|
+| 1 | **Laptop + Docker Postgres** | Factory PostDB, `venues:*`, DuckDB batch | $0 | Not a vendor. CI uses GitHub Actions `postgres:16`. |
+| 2 | **GitHub** | Code + Actions | $0 public | Already the repo. |
+| 3 | **Vercel** (+ **Neon** Marketplace) | App UI, E0 API, seed `public/venues` CDN | Hobby $0 / **Pro $20/mo** when commercial | One hosted bill. Attach Neon if not already. |
+| 4 | **Upstash Redis** (Vercel Marketplace) | Party store across functions | $0 Free | Skip only if Party never runs on Vercel. |
+| 5 | **Cloudflare DNS** | Domain / SSL (`parkbound.kurat0r.ai`) | $0 | DNS only. No R2, Workers, D1. |
+| 6 | **Clerk Pro** | Profile auth + Clerk-sent mail | already paying | Do not add Resend. |
+| 7 | **Cursor + Claude Code Max** | Code + factory briefs (`VENUE_LLM_PROVIDER=agent`) | already paying | **One Claude brain** per brief. |
+| 8 | **Google AI** (paid Gemini) | Vision, concept stills, Train I agent-vision | already paying | Not Maps Platform. No Gemini API keys in CI. |
+| 9 | **Apple Developer** | App Store, SIWA, `apple-app-site-association` | $99/yr | Set `IOS_TEAM_ID` on Vercel. SBP team `CDHJC4MH4G`. |
+| 10 | **Google Play Console** | Play, App Signing, `assetlinks.json` | $25 once | Set `ANDROID_CERT_SHA256` on Vercel. Same Google login ≠ Gemini ≠ Maps. |
+| 11 | **Local Blender** (when E.1 fires) | Flagship ortho bake → PMTiles | $0 software | Not Unity/Unreal/Godot. |
 
-**Why this is the consolidation, not “all Cloudflare” or “all Databricks”:** the app is already Next.js on Vercel; Neon is already the E0 Postgres; the factory already speaks `pg`. Folding hosted OLTP + CDN + API into **one Vercel bill** removes Databricks, R2, D1, and Lakebase from the operating model. Moving the app to Workers to “only have Cloudflare” still needs a Postgres (Neon/PlanetScale) and a factory laptop — more migration, not fewer sources.
+### Attach once (not new logins)
 
-**Capability you give up by consolidating:** free egress at tile-firehose scale (R2), Spark (Databricks), and a steward lakehouse UI. None of those are required to author or wear four parks.
+1. Vercel Marketplace → **Neon Free** (`DATABASE_URL` on the project). Docker does not survive serverless.
+2. Vercel Marketplace → **Upstash** if Party is on Vercel (`UPSTASH_*` or `KV_REST_API_*`).
+3. Vercel env: `IOS_TEAM_ID`, `ANDROID_CERT_SHA256`.
 
-**Add-a-vendor triggers (do not pre-provision):**
+### Park (keep the account, do not operate)
 
-1. Vercel FDT or Blob would bill → Cloudflare **R2** for heavy packs only.  
-2. Neon Free suspends or 0.5 GB fills → Neon **Launch** (still one Vercel Marketplace row).  
-3. Laptop DuckDB/Postgres melts on traces/OSM → Databricks **one paused job**, run by hand.  
-4. Paid product ships → Vercel **Hobby → Pro**. That is a plan flip, not a new source.
+| Source | Why parked |
+|--------|------------|
+| **Databricks** | Spark at volume only. Jobs **PAUSED**. No Lakebase, no App (~$100–400/mo). |
+| **Cloudflare R2 / Workers / D1** | R2 only when Vercel Fast Data Transfer would bill. Workers Free = 100k req/day trap. D1 is not PostDB. |
+| **Higgsfield, Meshy, Workers AI** | Paid Gemini covers stills. Meshy mesh only if Blender-baked **and** ToS is attribution-not-NC. |
+| **Unity, Unreal, Godot** | ADR-0016: not on phone or certification. Material Maker (Godot-based) only if a PBR graph has no CC0 source. |
 
-### Owner account inventory (2026-08-25)
+### Do not add
 
-You already named: **Clerk Pro, Vercel, Cloudflare, Databricks, local Docker, Higgsfield, Meshy, Unreal/Unity/Godot, Claude Code Max, Cursor, Google AI, Apple Developer, Google Play**.
+OpenAI API (per-token), Resend, Sentry, UptimeRobot, Stripe (unless web checkout besides IAP), Lakebase, MotherDuck, Vercel Blob as a second store, Google Maps Platform (until Train I geocoding), jsDelivr as a pipeline.
 
-| Already have | Job it covers | Operate? |
-|--------------|---------------|----------|
-| Clerk Pro | Profile auth (and Clerk-sent mail) | Yes — required |
-| Vercel | App + E0 API + seed CDN | Yes — required |
-| Cloudflare | DNS/SSL (and later R2) | DNS yes; R2/Workers **no** until FDT bills |
-| Databricks | Parked Spark | **No** — idle; do not add Lakebase/App |
-| Local Docker | Factory PostDB | Yes — required |
-| Higgsfield (free) | Extra image/video gen | **No** — paid Gemini covers concept stills |
-| Meshy.ai (free) | Text/image → 3D mesh | **No** for phone/CI. Beauty-lane only if a mesh is then **Blender-baked** into the world pack; check Meshy ToS before `original`-class ledger (free tiers are often non-commercial) |
-| Unreal / Unity subscriptions | Game engines | **No** — ADR-0016 rejects engines anywhere certification or the phone can see. Full per-park scene export is skipped ([industry comparison](./2026-08-24-factory-industry-comparison.md)) |
-| Godot | Game engine | **No** on the phone. Only adjacent adopt: **Material Maker** (Godot-based) if a design request needs a PBR graph no CC0 library has |
-| Claude Code Max + Cursor | Code + factory briefs | **Yes — one Claude brain.** One session answers each brief. |
-| **Google AI subscription** | Gemini vision, concept/reference stills, Train I agent-vision claims | **Yes — Gemini half of ADR-0017**, not a new backend. Paid unlocks image models the free AI Studio tier dropped. Stay on the agent-brief seam (no Gemini API keys in CI). Do not also wire Workers AI / Higgsfield for the same job. **Not** Google Maps Platform — that is a separate key if Train I geocoding fires. |
-| **Apple Developer** | App Store, Sign in with Apple, `.well-known/apple-app-site-association` | **Yes — store, not backend.** Team `CDHJC4MH4G` / SBP in the pricing note. Set `IOS_TEAM_ID` on Vercel. |
-| **Google Play Console** | Play uploads, Play App Signing, `assetlinks.json` | **Yes — store, not backend.** Same Google login is not Maps Platform and not Gemini. Set `ANDROID_CERT_SHA256` on Vercel. |
+### Money
 
-**3D that *is* on the Park Bound path:** local **Blender** (headless, pinned, E.1) + Node bake → PMTiles/MapLibre. Not an account. OSM2World → glTF is watch. Runtime three.js/KTX2 is deferred.
+| Mode | Fixed | Variable (same invoices) |
+|------|-------|--------------------------|
+| Pre-commercial Hobby + Docker | **$0** Vercel/Neon (caps pause, no overage) + Clerk Pro + Apple $99/yr | Clerk MRU after 50k |
+| **Ship paid product** | **Vercel Pro $20/mo** (1 TB FDT, 10M edge, $20 credit) + Clerk Pro + Apple | FDT ~$0.15/GB after 1 TB; Neon Launch if Free fills |
 
-**On those bills already, or not a new login**
+Hobby is **non-commercial**. Paid Profile → Pro is a plan flip, not a new vendor.
 
-- **GitHub** (repo + Actions CI Postgres) — you have this; it is not extra.
-- **Cursor** — factory briefs (`VENUE_LLM_PROVIDER=agent`).
-- **Cloudflare DNS** for `parkbound.kurat0r.ai` — already in Cloudflare.
+### Attribution (allowed)
 
-**Required and often missing from that list**
+Credit-line licenses ship via `scripts/lib/credits-registry.json`: `on-map` · `credits-screen` · `placed-link:<where>`. Ledger token `licensed`. Still **out:** AGPL, GPL, NC, CC-BY-SA, no-redistribution. ADR-0023.
 
-| Account | Why | Fold into |
-|---------|-----|-----------|
-| **Neon Free** (Vercel Marketplace) | Serverless E0 + hosted PostDB. Docker does not survive Vercel instances. | Same Vercel dashboard |
-| **Upstash Redis** (Marketplace, optional until Party must span functions) | Party store on Vercel. Skip only for a single Node process. | Same Vercel dashboard |
+### Add a vendor only when
 
-**Nice-to-have, do not sign up to “complete the set”**
-
-Resend (Clerk already mails), Sentry, UptimeRobot, Stripe (only if web checkout besides IAP), OpenAI API (rejected — per-token), R2, D1, Lakebase, MotherDuck, Cloudflare Workers AI (paid Gemini covers concept stills).
-
-**Attribution (owner, 2026-08-25):** licenses whose extra duty is a credit line are **allowed** when `scripts/lib/credits-registry.json` uses the right distro (`on-map` | `credits-screen` | `placed-link:<where>`). Do not reject Geoapify/LocationIQ/Poly Haven API-credit/CC-BY/Meshy-if-attribution-only solely for needing a name on screen. Still rejected: AGPL, GPL, NC, CC-BY-SA, no-redistribution. ADR-0023.
+1. Paid product ships → Vercel Hobby → **Pro**.
+2. Neon Free suspends → Neon **Launch** (still Marketplace).
+3. Vercel transfer would **bill** → Cloudflare **R2** for heavy packs.
+4. DuckDB/Postgres cannot finish the join → Databricks **one paused job**, run by hand.
 
 ---
 
@@ -95,7 +85,7 @@ Resend (Clerk already mails), Sentry, UptimeRobot, Stripe (only if web checkout 
 
 **Databricks is not more capable than Docker for the factory.** It is more capable than Docker for *fleet-scale batch* — and that capability is almost entirely **off** on the free/limited budget.
 
-**Vercel is not an alternative to Databricks or PostDB.** It is the one hosted source to keep. **R2** is the only extra vendor worth adding, and only when Vercel transfer would bill. See **Consolidated pick** above.
+**Vercel is not an alternative to Databricks or PostDB.** It is the one hosted source to keep. **R2** is the only extra vendor worth adding, and only when Vercel transfer would bill. See **Master recommended list** above.
 
 ---
 
