@@ -7,7 +7,7 @@
  * lands, ride clusters, dining, water, and the park spine rather than at one
  * convenient screenshot.
  *
- *   npm run test:map-skin-points   (needs the app on BASE_URL, port 3000)
+ *   npm run test:map-skin-points   (needs the app on BASE_URL, default port 3118)
  */
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
