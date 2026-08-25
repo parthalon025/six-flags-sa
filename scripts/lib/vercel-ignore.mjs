@@ -26,6 +26,7 @@ import {
 } from './vercel-budget.mjs';
 import { isVersionStampOnlyChange } from './version-stamp.mjs';
 import { checkLiveAutomationGate } from './vercel-deploy-gate.mjs';
+import { checkProductionDatabaseGuard } from './production-database-guard.mjs';
 
 /** Agent / worktree branches — never preview unless the user directed it. */
 const AGENT_PREVIEW_BRANCH = /^(worktree-|cursor\/)/;
@@ -138,6 +139,22 @@ export async function applyLiveAutomationGate(decision, liveGateOptions = {}) {
   };
 }
 
+/**
+ * Block production deploys that would serve without DATABASE_URL (#436).
+ * Previews and skipped builds are untouched; dev memory mode is not this path.
+ */
+export function applyProductionDatabaseGuard(decision, env = process.env.VERCEL_ENV, runtimeEnv = process.env) {
+  if (!decision.build || env !== 'production') return decision;
+  const guard = checkProductionDatabaseGuard(runtimeEnv);
+  if (guard.ok) return decision;
+  return {
+    ...decision,
+    build: false,
+    category: 'production-database-missing',
+    reason: guard.reason,
+  };
+}
+
 function git(args) {
   try {
     return execFileSync('git', args, { env: scrubGitEnv(), encoding: 'utf8' }).trim();
@@ -186,6 +203,7 @@ export async function runIgnoreCli({
       );
     }
   }
+  decision = applyProductionDatabaseGuard(decision, env, process.env);
   log(decision.reason);
   return decision.build ? 1 : 0;
 }

@@ -3,6 +3,8 @@
  * Without DATABASE_URL the app uses in-memory contribution storage (dev/tests).
  */
 
+import { isProductionRuntime, PRODUCTION_DATABASE_GUARD_MESSAGE } from './productionDatabaseGuard.js';
+
 const URL = process.env.DATABASE_URL || '';
 
 /** @type {import('pg').Pool | null} */
@@ -32,7 +34,12 @@ export async function getPool() {
 
 /** Cheap round trip for /api/ready. */
 export async function pingPostgres() {
-  if (!URL) return { ok: true, backend: 'memory' };
+  if (!URL) {
+    if (isProductionRuntime()) {
+      return { ok: false, backend: 'memory', error: PRODUCTION_DATABASE_GUARD_MESSAGE };
+    }
+    return { ok: true, backend: 'memory' };
+  }
   try {
     const p = await getPool();
     await p.query('SELECT 1');

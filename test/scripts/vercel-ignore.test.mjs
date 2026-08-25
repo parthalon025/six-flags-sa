@@ -13,6 +13,7 @@ import {
   decideVercelBuild,
   isAgentPreviewBranch,
   applyLiveAutomationGate,
+  applyProductionDatabaseGuard,
 } from '../../scripts/lib/vercel-ignore.mjs';
 import { isVersionStampOnlyChange } from '../../scripts/lib/version-stamp.mjs';
 import {
@@ -205,6 +206,7 @@ for (const path of [
   'scripts/lib/vercel-ignore.mjs',
   'scripts/lib/vercel-budget.mjs',
   'scripts/lib/vercel-deploy-gate.mjs',
+  'scripts/lib/production-database-guard.mjs',
   'scripts/lib/version-stamp.mjs',
   'scripts/lib/version-stamp-paths.json',
   'scripts/lib/repo-path.mjs',
@@ -290,6 +292,26 @@ assert.equal(
   assert.equal(gated.build, true);
   assert.equal(gated.liveGate.tier, 'warn');
   assert.match(gated.reason, /approaching the cap/, 'warn-tier reason must reach the logged decision');
+}
+
+{
+  const prodBuild = decideVercelBuild({
+    files: ['apps/party-tracker/lib/party/hostService.js'],
+    env: 'production',
+    gitRef: 'main',
+  });
+  const blocked = applyProductionDatabaseGuard(prodBuild, 'production', {
+    NODE_ENV: 'production',
+    DATABASE_URL: '',
+  });
+  assert.equal(blocked.build, false);
+  assert.equal(blocked.category, 'production-database-missing');
+  assert.match(blocked.reason, /DATABASE_URL/);
+  const allowed = applyProductionDatabaseGuard(prodBuild, 'production', {
+    NODE_ENV: 'production',
+    DATABASE_URL: 'postgres://x',
+  });
+  assert.equal(allowed.build, true);
 }
 
 console.log('vercel-ignore: ok');
