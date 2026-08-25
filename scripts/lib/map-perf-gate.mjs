@@ -5,6 +5,7 @@
  * missing frame trace is a failed sweep, not a passing floor: inventing 30 fps
  * is how a gate that cannot go red ships.
  */
+import { resolveDefaultBaseUrl } from './app-origin.mjs';
 
 /** Floor a throttled phone must hold. ADR-0019's 30 fps low-end row. */
 export const MIN_FPS_FLOOR = 30;
@@ -108,7 +109,7 @@ const SWEEP_FIX = { lat: 39.34395, lng: -84.2673, venue: 'kings-island' };
  * The missing-world stub (`[data-testid=park-map-gl].mapMissing`) is not a map.
  */
 export async function runLiveZoomSweep({
-  baseUrl = 'http://127.0.0.1:3000',
+  baseUrl = resolveDefaultBaseUrl(),
   minFps = MIN_FPS_FLOOR,
   throttle = 4,
 } = {}) {

@@ -238,7 +238,7 @@ export async function runPreMergeVertical({
     startProductionServer({ root: cwd, port });
     await waitForHealth({ url: healthUrl });
     await runValidateUiChanged(baseRef, cwd, baseUrl);
-    const sweep = await runLiveZoomSweep({ minFps: 30, throttle: 4 });
+    const sweep = await runLiveZoomSweep({ baseUrl, minFps: 30, throttle: 4 });
     if (!sweep.ok) {
       console.error(
         `pre-merge-vertical: zoom sweep failed (${sweep.reason || `${sweep.fps} fps < ${sweep.minFps}`})`,
