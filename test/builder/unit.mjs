@@ -7261,6 +7261,7 @@ await check('a map-tapped place card stays leaner than peek and half', () => {
 await check('place sheet budgets two labelled action rows below 390px', () => {
   // globals.css: three worded buttons wrap on a 375px phone — 12 + 44 + 6 + 44.
   assert.equal(sheetPlacePx(375), 271);
+  assert.equal(sheetPlacePx(389), 271);
   assert.equal(sheetPlacePx(390), SHEET_PLACE_PX);
   return true;
 });
