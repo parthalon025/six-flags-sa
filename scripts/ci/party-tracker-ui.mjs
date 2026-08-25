@@ -4,7 +4,7 @@
  * Interface (testable):
  *   unpackBuildArtifact({ root, artifact, appDir })
  *   waitForHealth({ url, attempts, delayMs, fetchFn, sleep })
- *   healthAlreadyServing({ url, fetchFn })
+ *   healthAlreadyServing({ url, fetchFn }) — test/CLI seam; pre-merge-vertical uses allocateAppPort instead
  *
  * CLI:
  *   node scripts/ci/party-tracker-ui.mjs unpack
@@ -14,8 +14,10 @@ import { execFileSync, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { appOrigin, healthUrl, FALLBACK_APP_PORT } from '../lib/app-test-origin.mjs';
 
-export const DEFAULT_HEALTH_URL = 'http://127.0.0.1:3000/api/health';
+export const DEFAULT_APP_PORT = FALLBACK_APP_PORT;
+export const DEFAULT_HEALTH_URL = healthUrl(appOrigin());
 export const DEFAULT_ARTIFACT = 'party-tracker-next.tgz';
 export const DEFAULT_APP_DIR = 'apps/party-tracker';
 
@@ -82,10 +84,12 @@ export async function waitForHealth({
 
 export function startProductionServer({
   root = join(dirname(fileURLToPath(import.meta.url)), '../..'),
+  port = DEFAULT_APP_PORT,
   spawnFn = spawn,
 } = {}) {
   // Detach + unref so `start` can wait for health and exit while Next keeps
   // running for the Playwright step (bash `npm start &` used to do this).
+  const env = { ...process.env, PORT: String(port) };
   const isWin = process.platform === 'win32';
   const child = isWin
     ? spawnFn(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', 'npm run start -w @party-tracker/app'], {
@@ -93,11 +97,13 @@ export function startProductionServer({
         stdio: 'ignore',
         detached: true,
         windowsHide: true,
+        env,
       })
     : spawnFn('npm', ['run', 'start', '-w', '@party-tracker/app'], {
         cwd: root,
         stdio: 'ignore',
         detached: true,
+        env,
       });
   child.unref?.();
   return child;
