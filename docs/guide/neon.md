@@ -14,7 +14,7 @@ This runbook covers **Vercel preview database strategy**, **connection pooling**
 
 A Vercel **preview** without `DATABASE_URL` therefore boots quietly in memory mode — contributions from that preview vanish on the next cold start. That is intentional for local dev and tests, but previews that exercise the contribution path should set `DATABASE_URL`.
 
-**Production guard (#436):** when `NODE_ENV=production` (or Vercel **Production** environment) and `DATABASE_URL` is missing, the deploy gate / readiness path will fail closed with a message naming `DATABASE_URL` — memory backend must not report fully ready in production. Dev, test, and preview without the variable stay unchanged until you opt in. See issue #436 for the shipped guard; until it lands, treat any production deploy without `DATABASE_URL` as misconfigured.
+**Production guard (#436):** when `NODE_ENV=production` (or Vercel **Production** environment) and `DATABASE_URL` is missing, the planned deploy gate / readiness path will fail closed with a message naming `DATABASE_URL` — memory backend must not report fully ready in production. Dev, test, and preview without the variable stay unchanged until you opt in. Track implementation in issue #436; until it lands, treat any production deploy without `DATABASE_URL` as misconfigured.
 
 ## Vercel preview database strategy
 
@@ -62,6 +62,25 @@ One Neon database (or `docker compose` on a shared host) serves all previews via
 | Fits free tier when branch limits bite | Does not mirror production isolation |
 
 Point **Preview** and optionally **Development** at the shared dev connection string; keep **Production** on main.
+
+**`DATABASE_URL` wiring (recommended default)**
+
+| Vercel scope | Value |
+| --- | --- |
+| **Production** | Neon **main** branch, **pooled** endpoint |
+| **Preview** | Shared **dev** branch connection string (pooled) — same URL for every preview |
+| **Development** | Optional — local `docker compose`, or the same shared dev branch |
+
+**Migrations on the shared dev database**
+
+1. Apply new `db/migrations/*.sql` to the shared dev branch **once** when they merge to `main` (not per preview deploy):
+
+   ```bash
+   DATABASE_URL='postgres://…shared-dev…' npm run postdb:migrate
+   ```
+
+2. Coordinate with other open PRs — a migration that renames or drops objects can break previews still on old code. Prefer additive migrations until the PR ships.
+3. Previews without `DATABASE_URL` still run memory mode and never touch the shared DB.
 
 ### Recommendation
 
