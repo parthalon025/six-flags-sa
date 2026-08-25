@@ -1,6 +1,6 @@
 # Issue tracker: local markdown
 
-Feature work, wayfinding, and specs for this repo live as markdown files under `.scratch/` (gitignored — session-local scratch).
+Feature work, wayfinding, and specs for this repo live as markdown files under `.scratch/`. Resume caches and non-allowlisted scratch stay local; **wayfinder maps listed in `scripts/lib/wayfinder-committed.json` are committed repo truth** for macro tracking.
 
 ## Conventions
 
