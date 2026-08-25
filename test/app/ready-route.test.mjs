@@ -153,8 +153,9 @@ await check('fail: postgres probe fails -> 503 naming postgres', async () => {
   assert.equal(res.status, 503);
   const body = await res.json();
   assert.equal(body.ready, false);
-  assert.equal(body.backend, 'postgres');
+  assert.equal(body.backend, 'upstash');
   assert.match(body.error, /connection refused/);
+  assert.equal(body.durable, true);
   assert.equal(body.postgres.ok, false);
 });
 
@@ -177,6 +178,7 @@ await check('fail: store ping fails -> 503 naming the store backend', async () =
   assert.equal(body.ready, false);
   assert.equal(body.backend, 'upstash');
   assert.match(body.error, /Upstash 503/);
+  assert.equal(body.durable, true);
   assert.equal(body.postgres.ok, true);
 });
 

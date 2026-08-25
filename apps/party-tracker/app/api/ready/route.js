@@ -25,6 +25,7 @@ export async function GET() {
         ready: false,
         backend: storeProbe.backend,
         error: storeProbe.error,
+        durable: usingRedis,
         postgres: postgresProbe,
         clerk,
       },
@@ -35,8 +36,9 @@ export async function GET() {
     return json(
       {
         ready: false,
-        backend: postgresProbe.backend,
+        backend: storeProbe.backend,
         error: postgresProbe.error,
+        durable: usingRedis,
         postgres: postgresProbe,
         clerk,
       },
