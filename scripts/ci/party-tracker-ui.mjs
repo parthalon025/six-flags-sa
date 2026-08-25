@@ -4,7 +4,7 @@
  * Interface (testable):
  *   unpackBuildArtifact({ root, artifact, appDir })
  *   waitForHealth({ url, attempts, delayMs, fetchFn, sleep })
- *   healthAlreadyServing({ url, fetchFn })
+ *   healthAlreadyServing({ url, fetchFn }) — test/CLI seam; pre-merge-vertical uses allocateAppPort instead
  *
  * CLI:
  *   node scripts/ci/party-tracker-ui.mjs unpack

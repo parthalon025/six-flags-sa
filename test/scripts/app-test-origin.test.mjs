@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:net';
 import {
   FALLBACK_APP_PORT,
+  allocateAppPort,
   appOrigin,
   healthUrl,
   probeAppHealth,
@@ -28,6 +29,15 @@ await assert.rejects(
   () => probeAppHealth('http://127.0.0.1:3118/api/health', { fetchFn: async () => ({ ok: false, status: 503 }) }),
   /\/api\/health returned 503/i,
 );
+
+await assert.rejects(
+  () => probeAppHealth('http://127.0.0.1:1/api/health', { fetchFn: async () => { throw new Error('ECONNRESET'); } }),
+  /no app is listening/i,
+  'reset connection names the origin clearly',
+);
+
+const allocated = await allocateAppPort();
+assert.ok(Number.isInteger(allocated) && allocated > 0, 'allocateAppPort yields a positive integer');
 
 const port = await reserveAppPort();
 assert.ok(Number.isInteger(port.port) && port.port > 0, 'reserveAppPort yields a positive integer');

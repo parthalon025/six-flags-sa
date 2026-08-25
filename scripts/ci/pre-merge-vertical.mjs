@@ -22,7 +22,7 @@ import {
   loadModulesManifest,
   selectModulesFromFiles,
 } from '../../test/app/lib/module-select.mjs';
-import { appOrigin, healthUrl, reserveAppPort } from '../lib/app-test-origin.mjs';
+import { allocateAppPort, appOrigin, healthUrl } from '../lib/app-test-origin.mjs';
 import { startProductionServer, waitForHealth } from './party-tracker-ui.mjs';
 import {
   STATIC_STEPS,
@@ -212,11 +212,10 @@ export async function runPreMergeVertical({
   } else if (!browserWanted) {
     console.log('pre-merge-vertical: no UI modules for diff — browser vertical skipped');
   } else {
-    const held = await reserveAppPort();
-    const baseUrl = appOrigin(held.port);
+    const port = await allocateAppPort();
+    const baseUrl = appOrigin(port);
     console.log(`\npre-merge-vertical: starting app for browser vertical on ${baseUrl}`);
-    startProductionServer({ root: cwd, port: held.port });
-    await held.release();
+    startProductionServer({ root: cwd, port });
     await waitForHealth({ url: healthUrl(baseUrl) });
     await runValidateUiChanged(baseRef, cwd, { baseUrl });
     const sweep = await runLiveZoomSweep({ minFps: 30, throttle: 4, baseUrl });

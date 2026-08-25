@@ -7,6 +7,7 @@
  *   FALLBACK_APP_PORT
  *   appOrigin(port?, host?)
  *   healthUrl(origin)
+ *   allocateAppPort()
  *   reserveAppPort()
  *   probeAppHealth(url, { fetchFn, timeoutMs })
  *   watchOriginHealth(url, { fetchFn, intervalMs, onDown }) → stop
@@ -24,6 +25,23 @@ export function healthUrl(origin) {
   return `${origin.replace(/\/+$/, '')}/api/health`;
 }
 
+/** Pick a free ephemeral port and release the probe listener before returning. */
+export function allocateAppPort({ host = '127.0.0.1' } = {}) {
+  return new Promise((resolve, reject) => {
+    const server = createServer();
+    server.once('error', reject);
+    server.listen(0, host, () => {
+      const addr = server.address();
+      const port = typeof addr === 'object' && addr ? addr.port : null;
+      server.close((err) => {
+        if (err) reject(err);
+        else resolve(port);
+      });
+    });
+  });
+}
+
+/** Hold a port until release() — for tests proving the hold blocks concurrent bind. */
 export function reserveAppPort({ host = '127.0.0.1' } = {}) {
   return new Promise((resolve, reject) => {
     const server = createServer();
@@ -63,7 +81,7 @@ export async function probeAppHealth(
       throw new Error(formatProbeFailure(origin, 'health probe timed out'));
     }
     const msg = String(err?.message || err);
-    if (/ECONNREFUSED|fetch failed|Failed to fetch|ENOTFOUND/i.test(msg)) {
+    if (/ECONNREFUSED|ECONNRESET|fetch failed|Failed to fetch|ENOTFOUND/i.test(msg)) {
       throw new Error(formatProbeFailure(origin, msg));
     }
     throw err;
