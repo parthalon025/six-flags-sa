@@ -37,11 +37,11 @@ import {
   partitionModules,
 } from './lib/module-select.mjs';
 import { buildQueue } from './lib/validate-ui-queue.mjs';
-import { appOrigin, healthUrl, probeAppHealth, watchOriginHealth } from '../../scripts/lib/app-test-origin.mjs';
+import { healthUrl, probeAppHealth, watchOriginHealth } from '../../scripts/lib/app-test-origin.mjs';
+import { BASE } from './browser.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../..');
-const BASE = (process.env.BASE_URL || appOrigin()).replace(/\/+$/, '');
 
 const args = process.argv.slice(2);
 const functionalOnly = args.includes('--functional-only');
