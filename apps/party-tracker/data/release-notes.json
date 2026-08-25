@@ -564,5 +564,11 @@
     "items": [
       "fix(app): POI tap targets and Marks venue persistence (#596) (#650)"
     ]
+  },
+  "1.33.3": {
+    "title": "What's new",
+    "items": [
+      "PostDB Slice 1 + Databricks Lakebase setup"
+    ]
   }
 }
