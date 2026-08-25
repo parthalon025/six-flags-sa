@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * Apply db/migrations/*.sql in lexical order via pg when DATABASE_URL is set.
+ * Apply db/migrations/*.sql in lexical order (CI + local Docker Postgres).
  *
  *   npm run postdb:migrate
- *   DATABASE_URL=postgres://... node scripts/postdb-migrate.mjs
+ *   DATABASE_URL=postgres://parkbound:parkbound@localhost:5432/parkbound \
+ *     node scripts/postdb-migrate.mjs
  */
 
 import { readFileSync } from 'node:fs';
@@ -12,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { migrationFiles, migrationPath } from './lib/lakebase-config.mjs';
 import { getPool } from '../packages/venue-builder/lib/db/postgres.mjs';
 
-/** @returns {string[]} SQL migration basenames in apply order */
+/** @returns {string[]} */
 export function orderedMigrationFiles() {
   return migrationFiles();
 }
