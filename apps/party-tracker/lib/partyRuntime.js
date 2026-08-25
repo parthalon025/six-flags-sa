@@ -62,7 +62,7 @@ import {
   WORLD_WITHDRAW,
 } from '@/lib/core/protocol';
 import { emptyWorld } from '@/lib/world.js';
-import { readRank, shouldYield } from '@/lib/party/election';
+import { outranks, readRank } from '@/lib/party/election';
 import {
   clearSession,
   createSession,
@@ -616,8 +616,11 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     // Unscored is unbeatable: a peer that is serving and will not say what it
     // won on gets the benefit of the doubt, because one host too few repairs
     // itself in a timeout and one host too many never does.
+    const mineRanked = { ...mine, id: session.selfId };
     const theirs = readRank(frame, { score: Infinity, joinOrder: -1 });
-    if (shouldYield({ ...mine, id: session.selfId }, theirs)) {
+    // Two live hosts settle on the election's total order — the margin rule in
+    // shouldYield is for a client stealing from a serving incumbent, not here.
+    if (outranks(theirs, mineRanked)) {
       stepDown(theirs.id, frame.body?.snapshot ?? null);
       return;
     }
