@@ -28,7 +28,7 @@ Owner Round 1 (factories-to-app Wayfinder) confirmed **PostDB** as that canonica
 2. **ADR-0018 clauses 2–4 and 6 stand, with the 2026-08-25 operating-stack pause.** CI freshness gates, CDN + download manager delivery, and Train F sequencing stay. Databricks remains back-office only (ADR-0008 / ADR-0010) but jobs stay **PAUSED** — not Lakebase, not a Databricks App. Spark is the add-vendor trigger when DuckDB/Postgres cannot finish the join. Machine-readable list: [`scripts/lib/operating-stack.json`](../../scripts/lib/operating-stack.json).
 
 3. **Supersedes ADR-0018 clause 5 (publication).** Publication is **export from PostDB to Delivery**, not "merge into `public/` as source of truth."
-   - **Slice 1:** API manifest + same-origin blobs; seed bundles remain in the app for flagship venues.
+   - **Slice 1:** API manifest + same-origin blobs; seed bundles remain in the app for flagship venues. Query `?since=<revision_id>` is reserved (stub in `packages/venue-builder/lib/delivery/delta-sync.mjs`); delta filtering is ticket 17.
    - **Later:** object storage (`storage_uri` + sha256) behind the same manifest contract — **Cloudflare R2** only when Vercel Fast Data Transfer would bill.
    - Reviewed deploys still gate what reaches production origins; the diff may be an export job output rather than hand-edited `public/venues/` JSON.
    - ADR-0019 / ADR-0021 amendments to clause 5 (PMTiles streaming, on-wear sync withdrawn) apply to **exported** packs, not to where those packs are authored.

@@ -18,6 +18,10 @@
  * — bytes already in any cache that hash correctly are adopted without a
  * network fetch. Nothing here throws: offline is an ordinary state, and the
  * map a phone already holds is never worse off for a failed sync.
+ *
+ * Delivery `?since=<revision_id>` (ticket 17) is a server query on the
+ * origin manifest. This module still plans from the full bundle + hashes
+ * (`planBundleSync`). Slice 1 stub: `packages/venue-builder/lib/delivery/delta-sync.mjs`.
  */
 
 /* Must match BUNDLE_CACHE in public/sw.js — the worker cannot import this

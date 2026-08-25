@@ -19,7 +19,7 @@ const legArg = process.argv.find((a) => a.startsWith('--leg='))?.slice('--leg='.
 
 const { buildTruth } = await import('../../packages/venue-builder/lib/map-factory/index.mjs');
 const { compileDisplay } = await import('../../packages/venue-builder/lib/visual-factory/index.mjs');
-const { publishBundle, freshnessDecision } = await import('../../packages/venue-builder/lib/delivery/index.mjs');
+const { publishBundle, freshnessDecision, parseSinceParam, SINCE_QUERY } = await import('../../packages/venue-builder/lib/delivery/index.mjs');
 const { getRoute, assertCatalogComplete } = await import('../../packages/venue-builder/lib/factory-types.mjs');
 
 assert.equal(typeof buildTruth, 'function', 'buildTruth exported');
@@ -66,6 +66,11 @@ if (!legArg || legArg === 'delivery') {
   const published = await publishBundle('kings-island', { skipReindex: true, filesOnly: true });
   assert.ok(published.bundle?.files?.length, 'seed bundle readable through delivery export seam');
   assert.equal(published.revisionId, null);
+  assert.equal(SINCE_QUERY, 'since');
+  const since = parseSinceParam(new URLSearchParams('since=rev-ki'));
+  assert.equal(since.since, 'rev-ki');
+  assert.equal(since.mode, 'full');
+  assert.equal(since.stub, true);
 }
 
 // dependency-cruiser boundary rules (visual → map-io only)

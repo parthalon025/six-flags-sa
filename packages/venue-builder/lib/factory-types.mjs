@@ -293,7 +293,7 @@ export const ROUTES = Object.freeze([
       },
     ],
     requirement: 'required',
-    description: 'Bundle manifest — ADR-0018 phone download contract',
+    description: 'Bundle manifest — ADR-0018 phone download contract. `?since=revision_id` is documented (ticket 16 stub) and implemented in ticket 17.',
   },
 ]);
 
