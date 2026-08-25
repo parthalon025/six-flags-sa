@@ -187,7 +187,7 @@ export const TEST_ESTATE = {
   'test/scripts/clerk-apple-prod.test.mjs': ['ci-gate'],
   'test/scripts/clerk-e2e.test.mjs': ['ci-gate'],
   'test/scripts/cloud-agent-clerk-env.test.mjs': ['ci-gate', 'test:unit'],
-  'test/scripts/cloud-agent-neon-env.test.mjs': ['ci-gate', 'test:unit'],
+  'test/scripts/cloud-agent-neon-env.test.mjs': ['ci-gate'],
   'test/scripts/credits.test.mjs': ['ci-gate'],
   'test/scripts/dependency-boundaries.test.mjs': ['ci-gate'],
   'test/scripts/deploy-version-report.test.mjs': ['ci-gate', 'test:unit'],
