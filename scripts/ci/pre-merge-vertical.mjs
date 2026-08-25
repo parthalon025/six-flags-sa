@@ -215,8 +215,7 @@ export async function runPreMergeVertical({
     const held = await reserveAppPort();
     const baseUrl = appOrigin(held.port);
     console.log(`\npre-merge-vertical: starting app for browser vertical on ${baseUrl}`);
-    await held.release();
-    startProductionServer({ root: cwd, port: held.port });
+    await startProductionServer({ root: cwd, port: held.port, beforeBind: held.release });
     await waitForHealth({ url: healthUrl(baseUrl) });
     await runValidateUiChanged(baseRef, cwd, { baseUrl });
     const sweep = await runLiveZoomSweep({ minFps: 30, throttle: 4, baseUrl });

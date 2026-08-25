@@ -82,11 +82,14 @@ export async function waitForHealth({
   throw new Error(`party-tracker-ui: health check timed out (${url})`);
 }
 
-export function startProductionServer({
+export async function startProductionServer({
   root = join(dirname(fileURLToPath(import.meta.url)), '../..'),
   port = DEFAULT_APP_PORT,
+  /** Release a port reservation immediately before spawn — same tick, minimal TOCTOU. */
+  beforeBind,
   spawnFn = spawn,
 } = {}) {
+  if (beforeBind) await beforeBind();
   // Detach + unref so `start` can wait for health and exit while Next keeps
   // running for the Playwright step (bash `npm start &` used to do this).
   const env = { ...process.env, PORT: String(port) };
@@ -117,7 +120,7 @@ async function runCli(argv = process.argv.slice(2)) {
     return;
   }
   if (cmd === 'start') {
-    startProductionServer({ root });
+    await startProductionServer({ root });
     await waitForHealth();
     return;
   }
