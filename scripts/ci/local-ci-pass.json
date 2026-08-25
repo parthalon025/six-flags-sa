@@ -1,8 +1,8 @@
 {
   "schema": 3,
   "tag": "local-ci-verified",
-  "diffHash": "18ebb0006f8e816a",
-  "head": "82dd02fffa53565fa4291300088dd64594059f27",
+  "diffHash": "35b5b5c6322d5ba5",
+  "head": "92bb68407f4b55f244d8bdcfdbb405b565862e90",
   "mergeBase": "7d60f5886d6418d545af069386e5db2d4eb4a3db",
   "baseRef": "origin/cursor/postdb-slice1-c9a6",
   "modules": [
@@ -34,5 +34,5 @@
   ],
   "lockHash": "d456791a67455a3c",
   "manifestHash": "5ab5e7a18fef87d7",
-  "recordedAt": "2026-08-25T15:25:56.122Z"
+  "recordedAt": "2026-08-25T16:16:55.843Z"
 }
