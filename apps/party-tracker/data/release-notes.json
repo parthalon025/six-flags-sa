@@ -558,5 +558,11 @@
     "items": [
       "fix(party): reconcile split-brain hosts and warm cloud inbox on LAN (#594, #595) (#661)"
     ]
+  },
+  "1.33.2": {
+    "title": "What's new",
+    "items": [
+      "fix(app): POI tap targets and Marks venue persistence (#596) (#650)"
+    ]
   }
 }
