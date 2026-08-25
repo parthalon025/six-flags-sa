@@ -100,6 +100,26 @@ You have not tagged a `store/*` release yet. Finish [`SUBMISSION.md`](../../fast
 - **Vercel previews for validation** — local build + CI; previews only when you direct (`[vercel build]`).
 - **Version bumps in feature PRs** — `main` owns stamps after merge ([app-updates.md](../app-updates.md)).
 
+## Post-deploy smoke (#443)
+
+After production deploy (or when validating a URL by hand), run the full-stack readiness gate:
+
+```bash
+npm run deploy:post-check -- --url https://parkbound.kurat0r.ai
+```
+
+The script exits non-zero with a per-check report when anything fails:
+
+| Check | What it proves |
+|-------|----------------|
+| `/api/ready` | Configured backends answer (Redis, Postgres when probed, Clerk keys) |
+| `schema_migrations` | Deployed Postgres ledger matches `db/migrations/*.sql` in this repo (`DATABASE_URL` required) |
+| `/api/webhooks/clerk` | Webhook route is mounted (verification failure is OK; 404 is not) |
+
+Set `POST_DEPLOY_URL` instead of `--url` in CI. Use `--skip-migrations` when Postgres is not reachable from the runner (readiness + webhook only).
+
+Run manually after merge or wire into a post-deploy workflow when production credentials are available.
+
 ## Commands
 
 | Command | Purpose |
@@ -108,6 +128,7 @@ You have not tagged a `store/*` release yet. Finish [`SUBMISSION.md`](../../fast
 | `npm run version:matrix` | Repo vs Vercel vs stores (also on every merge to `main`) |
 | `npm run store:release-plan` | Classify paths: web vs metadata vs native |
 | `npm run test:pre-merge-vertical` | Pre-merge gate before you merge |
+| `npm run deploy:post-check -- --url <base>` | Post-deploy readiness + migrations + Clerk webhook |
 | `bundle exec fastlane ios beta` | Local TestFlight (macOS + secrets) |
 
 Policy config: [`scripts/lib/release-cycle.json`](../../scripts/lib/release-cycle.json).

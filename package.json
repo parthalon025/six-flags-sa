@@ -52,6 +52,7 @@
     "databricks:lakebase-setup": "node --env-file-if-exists=.env scripts/databricks-lakebase-setup.mjs",
     "clerk:setup": "node scripts/clerk-setup.mjs",
     "billing:sync-check": "node scripts/billing-sync-check.mjs",
+    "deploy:post-check": "node scripts/post-deploy-check.mjs",
     "ios:wire-watch": "node scripts/ios/wire-watch-target.mjs",
     "ios:check-watch": "node scripts/ios/wire-watch-target.mjs --check",
     "clerk:check": "node scripts/clerk-check.mjs",
