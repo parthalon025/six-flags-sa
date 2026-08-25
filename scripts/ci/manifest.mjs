@@ -55,6 +55,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/billing-sync-check.test.mjs',
   'test/scripts/lakebase-config.test.mjs',
   'test/scripts/postdb-migrate.test.mjs',
+  'test/scripts/neon-runbook.test.mjs',
   'test/scripts/databricks-auth.test.mjs',
   'test/scripts/profile-max-rank.test.mjs',
   'test/scripts/app-store-connect.test.mjs',

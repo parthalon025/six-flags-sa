@@ -25,6 +25,7 @@ Full documentation split out of the root README. Start with [Features](features.
 | [Store releases](store-releases.md) | Web vs metadata vs native — when App Store review applies. |
 | [Apple Developer](apple-developer.md) | Identifiers vs Xcode vs Keys; SIWA Services ID. |
 | [Release cycle](release-cycle.md) | Merge-driven web shipping; when to dispatch store.yml. |
+| [Neon Postgres](neon.md) | Preview branching, `DATABASE_URL` wiring, pooling, and exhaustion. |
 
 ## See also
 
