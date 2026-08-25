@@ -401,9 +401,18 @@ export function createElection({
     if (!theirs.id) return;
     const mine = myClaim || selfClaim();
 
-    if (promoted && !shouldYield(mine, theirs)) {
-      // Already hosting and not beaten by a clear margin: re-assert if we
-      // still outrank, otherwise hold. A 1% lead is not a steal.
+    if (promoted) {
+      if (outranks(theirs, mine)) {
+        cancelElection();
+        const wasPromoted = promoted;
+        promoted = false;
+        leaderId = theirs.id;
+        lastHostSeen = now();
+        if (wasPromoted) emitter.emit('demote', { leader: theirs.id });
+        emitter.emit('elected', { leader: theirs.id, self: false });
+        return;
+      }
+      // Already hosting and still ahead on the total order: re-assert once.
       if (outranks(mine, theirs) && now() - lastVictorySentAt >= reassertGapMs) sendVictory();
       return;
     }
