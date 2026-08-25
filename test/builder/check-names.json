@@ -444,6 +444,7 @@
     "push :: nothing readable reaches the push service",
     "sheet :: the stops come out where the CSS puts them",
     "sheet :: a map-tapped place card stays leaner than peek and half",
+    "sheet :: a narrow phone budgets two labelled action rows for place detail",
     "sheet :: a release away from every stop stays exactly where it was let go",
     "sheet :: a release near a stop is taken by it",
     "sheet :: a flick coasts, and a hard one reaches the ceiling",

@@ -1943,7 +1943,8 @@ a.row .rowText, a.row .rowValue { text-decoration: none; }
    the side padding 8 — six pixels of slack, and none at all on a 375px phone,
    where the third button drops to a second row. That is the right failure: a
    second row of buttons is a great deal better than "Walk me the", and the
-   sheet body scrolls to it. SHEET_PLACE_ACTIONS_PX budgets the one-row case.
+   sheet must open tall enough to show both rows without scrolling — see
+   sheetPlacePx in lib/sheet.js for the narrow-width budget.
 
    Not indented past the back chevron either — that overlay sits on the title's
    line, forty pixels above this. */
