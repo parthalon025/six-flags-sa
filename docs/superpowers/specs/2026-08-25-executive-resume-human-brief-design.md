@@ -1,9 +1,8 @@
 # Design: Executive resume human brief (single template)
 
 **Date:** 2026-08-25  
-**Status:** Draft — awaiting user review of this file  
-**Related:** [executive-resume policy](../../agents/policies/executive-resume.md), `scripts/lib/executive-resume.mjs`, dashboard issue **#643**  
-**Non-related (keep separate):** Matt workflow (`workflow:next`), wayfinder maps (`.scratch/<effort>/map.md`)
+**Status:** Approved (amended: include Wayfinder in the brief)  
+**Related:** [executive-resume policy](../../agents/policies/executive-resume.md), `scripts/lib/executive-resume.mjs`, dashboard issue **#643**, [matt-workflow](../../agents/policies/matt-workflow.md) / [local-issue-tracker](../../agents/policies/local-issue-tracker.md) for map + phase derivation
 
 ---
 
@@ -31,8 +30,9 @@ Code and data are canonical. Non-deterministic LLM assists from deterministic da
 - Dump + agent ritual that produces two briefs  
 - PR titles / draft-PR inventory as the main feed  
 - PR checkbox archaeology as the macro source (optional detail later, not this ship)  
-- Merging wayfinder or workflow phase into the resume brief  
-- Local `.scratch` / train plan as the incomplete-work backlog source  
+- Merging full Matt workflow session brief into the resume print (workflow stays `npm run workflow:next`)  
+- Dumping entire `map.md` bodies or train-plan walls into the brief  
+- Using local `.scratch` **implementation** tickets as the GitHub hanging backlog (that source stays the two triage labels)  
 
 ## Template (fixed slots)
 
@@ -56,10 +56,14 @@ Printed as terminal prose (markdown-ish, not HTML). Section order is fixed:
 <what is true / in flight for party-tracker / product UI.
  One short standing line: outcome + where it stands.>
 
+## Wayfinder
+<active .scratch efforts that still have a map + open decision fog:
+ effort name, derived phase, destination one-liner when parseable,
+ frontier decision tickets by title (name). Not the full map body.>
+
 ## Hanging / waiting on you
-- <not done across sessions that still matter>
-- <blocked on human>
-- <ready-for-human tickets by name>
+- <GitHub ready-for-agent / ready-for-human by title>
+- <blocked on human / parking lot from human.*>
 ```
 
 ### Purpose of each slot
@@ -70,9 +74,12 @@ Printed as terminal prose (markdown-ish, not HTML). Section order is fixed:
 | **NOW** | Single focus; create goal from this only |
 | **Factories** | Macro for factory track without opening PRs |
 | **App** | Macro for product track without opening PRs |
-| **Hanging / waiting** | Surfaces incomplete cross-session work and human blockers |
+| **Wayfinder** | Surface foggy multi-session maps and open decision tickets without opening `map.md` |
+| **Hanging / waiting** | Surfaces incomplete GitHub triage work and human blockers |
 
 Empty Factories or App: print one honest line (“Nothing in flight under this label set.”) — never invent progress.
+
+Empty Wayfinder: one honest line (“No active wayfinder map.” or “Maps clear — no open decision tickets.”) — never invent fog.
 
 ## Data sources (canonical)
 
@@ -80,25 +87,28 @@ Empty Factories or App: print one honest line (“Nothing in flight under this l
 |------|--------|
 | NOW + `human.*` | Dashboard issue **#643** pinned JSON (durable pointer in `docs/agents/executive-dashboard.json`) |
 | Open inventory (worktrees, draft PRs, …) | Regenerated locally — never trusted from GitHub |
-| Incomplete cross-session work | GitHub issues labeled **`ready-for-agent`** or **`ready-for-human` only** — listed under **Hanging**, not under Factories/App |
+| Incomplete cross-session work (GitHub) | Issues labeled **`ready-for-agent`** or **`ready-for-human` only** — listed under **Hanging**, not under Factories/App/Wayfinder |
+| Wayfinder fog | `.scratch/<effort>/` with `map.md`; phase + frontier from existing **`effortPhase` / ticket loaders in `scripts/lib/matt-workflow.mjs`** — do not re-parse maps in a second algorithm. List open/claimed **wayfinder decision** tickets by **title**; optional Destination line from `map.md` heading/section |
 | Version health (when shown) | **Clerk package/SDK vs lockfile** — not app version vs `main` |
 | Factories standing | From NOW + inventory touching factory surfaces (`packages/venue-builder`, venue/display bakes, train H/I scripts) plus any `human.*` note that names factories — **one** outcome/standing paragraph |
 | App standing | From NOW + inventory touching `apps/party-tracker` (and related product/UI packages) plus any matching `human.*` note — **one** outcome/standing paragraph |
 
-If inventory cannot tell Factories from App, each section still prints one honest line; do not invent a split. Ticket lines use **issue title (name)**; numbers may trail in parentheses for deep links.
+If inventory cannot tell Factories from App, each section still prints one honest line; do not invent a split. Ticket lines use **title (name)**; numbers may trail in parentheses for deep links.
+
+**Split preserved:** Wayfinder answers “what decisions are still foggy?”; `workflow:next` still answers “which skill now?”; Hanging answers “what GitHub triage / human blocks remain?”
 
 ## Architecture (deep module)
 
 Extend the existing resume module; do not add a second dashboard package.
 
 ```text
-gatherBriefFacts(env)     → { now, human, inventory, tickets, clerkHealth, … }
+gatherBriefFacts(env)     → { now, human, inventory, githubTickets, wayfinder, clerkHealth, … }
 fillHumanBrief(facts)     → string   // only template filler
-print on resume:start     → one brief (+ existing CreateGoal / ritual lines as today)
+print on resume:start     → one brief (+ CreateGoal / ritual; do not also dump full workflow session brief)
 ```
 
 - **External seam:** `fillHumanBrief` / start command print path.  
-- **Internal:** gh queries, Clerk lockfile compare, label filters — not part of the caller interface.  
+- **Internal:** gh queries, Clerk lockfile compare, label filters, wayfinder fact gather via matt-workflow exports — not part of the caller interface.  
 - Policy stays a **pointer** to `npm run resume:start`; do not restate template logic in `AGENTS.md`.
 
 Optional later (not this ship): `--json` or detail flag for agents; default human print stays the template above.
@@ -118,9 +128,11 @@ Assert the **printed string** from `fillHumanBrief` (or start brief builder), no
 
 1. Fixed section headings present in order  
 2. Ticket filter: only `ready-for-agent` / `ready-for-human` appear under Hanging when fixtures include other labels  
-3. Clerk health line reflects fixture lockfile vs package mismatch when that slot is populated  
-4. Overview + Factories + App never duplicate the same sentence  
-5. Existing NOW / drift / CreateGoal behaviour unchanged unless a test explicitly updates it  
+3. Wayfinder section lists frontier decision tickets by title from fixture `.scratch/<effort>/`; omitted when no map / no open decisions (honest empty line)  
+4. Clerk health line reflects fixture lockfile vs package mismatch when that slot is populated  
+5. Overview + Factories + App never duplicate the same sentence  
+6. Existing NOW / drift / CreateGoal behaviour unchanged unless a test explicitly updates it  
+7. Start print is still **one** human brief — not brief + full `workflow:session` dump  
 
 Gate: unit tests under `test/scripts/executive-resume.test.mjs`; include in pre-merge vertical when the resume script suite is already listed.
 
