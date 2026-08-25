@@ -16,6 +16,8 @@ import {
   writeJson,
 } from '../venue-io.mjs';
 
+export { writeTruth as writeTruthToPostdb } from '../postdb-io.mjs';
+
 /**
  * Read the published truth trio for one venue.
  * @param {string} venueId

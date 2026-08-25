@@ -3,15 +3,12 @@
  * Apply db/migrations/*.sql in lexical order (CI + local Docker Postgres).
  *
  *   npm run postdb:migrate
- *   DATABASE_URL=postgres://parkbound:parkbound@localhost:5432/parkbound \
- *     node scripts/postdb-migrate.mjs
  */
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { migrationFiles, migrationPath } from './lib/lakebase-config.mjs';
-import { getPool } from '../packages/venue-builder/lib/db/postgres.mjs';
 
 /** @returns {string[]} */
 export function orderedMigrationFiles() {
@@ -31,14 +28,19 @@ export async function applyMigrations(client, files = orderedMigrationFiles()) {
 }
 
 async function main() {
-  if (!process.env.DATABASE_URL) {
+  const url = process.env.DATABASE_URL;
+  if (!url) {
     console.error('postdb-migrate: DATABASE_URL is required');
     process.exit(1);
   }
-
-  const pool = await getPool();
-  await applyMigrations(pool);
-  console.log('postdb-migrate: all migrations applied');
+  const { default: pg } = await import('pg');
+  const pool = new pg.Pool({ connectionString: url, max: 1 });
+  try {
+    await applyMigrations(pool);
+    console.log('postdb-migrate: all migrations applied');
+  } finally {
+    await pool.end();
+  }
 }
 
 if (fileURLToPath(import.meta.url) === resolve(process.argv[1] || '')) {
