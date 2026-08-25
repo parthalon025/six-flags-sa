@@ -39,6 +39,38 @@ Cloudflare DNS only         existing domain                       $0
 3. Laptop DuckDB/Postgres melts on traces/OSM → Databricks **one paused job**, run by hand.  
 4. Paid product ships → Vercel **Hobby → Pro**. That is a plan flip, not a new source.
 
+### Owner account inventory (2026-08-25)
+
+You already named: **Clerk Pro, Vercel, Cloudflare, Databricks, local Docker, free Higgsfield**.
+
+| Already have | Job it covers | Operate? |
+|--------------|---------------|----------|
+| Clerk Pro | Profile auth (and Clerk-sent mail) | Yes — required |
+| Vercel | App + E0 API + seed CDN | Yes — required |
+| Cloudflare | DNS/SSL (and later R2) | DNS yes; R2/Workers **no** until FDT bills |
+| Databricks | Parked Spark | **No** — idle; do not add Lakebase/App |
+| Local Docker | Factory PostDB | Yes — required |
+| Higgsfield (free) | Extra image/video gen | **No** — not in ADR-0017. Factory LLM is the Cursor/Claude (or Gemini) session + optional Cloudflare Workers AI |
+
+**On those bills already, or not a new login**
+
+- **GitHub** (repo + Actions CI Postgres) — you have this; it is not extra.
+- **Cursor** — factory briefs (`VENUE_LLM_PROVIDER=agent`).
+- **Cloudflare DNS** for `parkbound.kurat0r.ai` — already in Cloudflare.
+
+**Required and often missing from that list**
+
+| Account | Why | Fold into |
+|---------|-----|-----------|
+| **Neon Free** (Vercel Marketplace) | Serverless E0 + hosted PostDB. Docker does not survive Vercel instances. | Same Vercel dashboard |
+| **Upstash Redis** (Marketplace, optional until Party must span functions) | Party store on Vercel. Skip only for a single Node process. | Same Vercel dashboard |
+| **Apple Developer** ($99/yr) | App Store. SBP enrollment already in the pricing note (team `CDHJC4MH4G`). | Store, not backend |
+| **Google Play Console** ($25 once) | Play. | Store, not backend |
+
+**Nice-to-have, do not sign up to “complete the set”**
+
+Resend (Clerk already mails), Sentry, UptimeRobot, Gemini AI Studio, Stripe (only if web checkout besides IAP), OpenAI API (rejected — per-token), R2, D1, Lakebase, MotherDuck.
+
 ---
 
 ## Verdict by job (if you split the question)
@@ -218,7 +250,7 @@ Closest CF analogue: **R2 Data Catalog (Iceberg) + R2 SQL** — query Parquet in
 
 Direct R2 / `r2.dev` / S3 API: **no egress fee**. Fronting R2 with a Worker burns the 100k/day Free cap — already flagged in the [API catalog](./2026-08-20-free-tier-api-catalog.md). Prefer public R2 or custom domain cache for guest GETs; Worker only for signed/head manifests.
 
-Cloudflare **complements** Docker/Neon/Vercel. It does **not** replace Databricks until R2 SQL is enough (it is not, yet, for Spark-scale traces). It **does** beat Vercel Hobby/Pro bandwidth for large venue packs because R2 egress is free.
+Cloudflare **complements** Docker/Neon/Vercel. It does **not** replace Databricks until R2 SQL is enough (it is not, yet, for Spark-scale traces). It **does** beat Vercel Hobby/Pro bandwidth for large venue packs because R2 egress is free. Under **Consolidated pick**, that win is a later trigger — do not add R2 until Vercel transfer would bill.
 
 ---
 
