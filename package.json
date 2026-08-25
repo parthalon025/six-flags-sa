@@ -1,6 +1,6 @@
 {
   "name": "parkbound",
-  "version": "1.33.2",
+  "version": "1.33.3",
   "license": "MIT",
   "private": true,
   "packageManager": "npm@10.9.2",
