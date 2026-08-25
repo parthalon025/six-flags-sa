@@ -41,7 +41,7 @@ Cloudflare DNS only         existing domain                       $0
 
 ### Owner account inventory (2026-08-25)
 
-You already named: **Clerk Pro, Vercel, Cloudflare, Databricks, local Docker, free Higgsfield**.
+You already named: **Clerk Pro, Vercel, Cloudflare, Databricks, local Docker, Higgsfield, Meshy, Unreal/Unity/Godot, Claude Code Max, Cursor, Google AI subscription**.
 
 | Already have | Job it covers | Operate? |
 |--------------|---------------|----------|
@@ -50,11 +50,12 @@ You already named: **Clerk Pro, Vercel, Cloudflare, Databricks, local Docker, fr
 | Cloudflare | DNS/SSL (and later R2) | DNS yes; R2/Workers **no** until FDT bills |
 | Databricks | Parked Spark | **No** — idle; do not add Lakebase/App |
 | Local Docker | Factory PostDB | Yes — required |
-| Higgsfield (free) | Extra image/video gen | **No** — not in ADR-0017. Factory LLM is the Cursor/Claude (or Gemini) session + optional Cloudflare Workers AI |
+| Higgsfield (free) | Extra image/video gen | **No** — paid Gemini covers concept stills |
 | Meshy.ai (free) | Text/image → 3D mesh | **No** for phone/CI. Beauty-lane only if a mesh is then **Blender-baked** into the world pack; check Meshy ToS before `original`-class ledger (free tiers are often non-commercial) |
 | Unreal / Unity subscriptions | Game engines | **No** — ADR-0016 rejects engines anywhere certification or the phone can see. Full per-park scene export is skipped ([industry comparison](./2026-08-24-factory-industry-comparison.md)) |
 | Godot | Game engine | **No** on the phone. Only adjacent adopt: **Material Maker** (Godot-based) if a design request needs a PBR graph no CC0 library has |
-| Claude Code Max + Cursor | Agent sessions | **Yes, as one factory brain.** ADR-0017: briefs on disk, answered by the invoking subscription agent (`VENUE_LLM_PROVIDER=agent`). Do not run two parallel factory pipelines. Cursor = this repo’s agent UX; Claude Code Max = the paid tokens. Pick one session to answer each brief |
+| Claude Code Max + Cursor | Code + factory briefs | **Yes — one Claude brain.** One session answers each brief. |
+| **Google AI subscription** | Gemini vision, concept/reference stills, Train I agent-vision claims | **Yes — Gemini half of ADR-0017**, not a new backend. Paid unlocks image models the free AI Studio tier dropped. Stay on the agent-brief seam (no Gemini API keys in CI). Do not also wire Workers AI / Higgsfield for the same job. **Not** Google Maps Platform — that is a separate key if Train I geocoding fires. |
 
 **3D that *is* on the Park Bound path:** local **Blender** (headless, pinned, E.1) + Node bake → PMTiles/MapLibre. Not an account. OSM2World → glTF is watch. Runtime three.js/KTX2 is deferred.
 
@@ -75,7 +76,7 @@ You already named: **Clerk Pro, Vercel, Cloudflare, Databricks, local Docker, fr
 
 **Nice-to-have, do not sign up to “complete the set”**
 
-Resend (Clerk already mails), Sentry, UptimeRobot, Gemini AI Studio, Stripe (only if web checkout besides IAP), OpenAI API (rejected — per-token), R2, D1, Lakebase, MotherDuck.
+Resend (Clerk already mails), Sentry, UptimeRobot, Stripe (only if web checkout besides IAP), OpenAI API (rejected — per-token), R2, D1, Lakebase, MotherDuck, Cloudflare Workers AI (paid Gemini covers concept stills).
 
 ---
 
