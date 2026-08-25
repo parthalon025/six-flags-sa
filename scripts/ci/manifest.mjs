@@ -56,6 +56,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/profile-max-rank.test.mjs',
   'test/scripts/app-store-connect.test.mjs',
   'test/scripts/store-screenshot-compose.test.mjs',
+  'test/scripts/app-test-origin.test.mjs',
 ];
 
 /**

@@ -5,18 +5,18 @@
  * Run after UI changes to confirm regressions did not slip in and that a
  * first-time visitor can still complete core tasks.
  *
- *   npm run build && npm start &
+ *   npm run build && PORT=3118 npm start &
  *   npm run test:validate-ui
  *
  * Environment:
- *   BASE_URL       app origin (default http://127.0.0.1:3000)
+ *   BASE_URL       app origin (default http://127.0.0.1:3118 — not 3000)
  *   CHROMIUM_PATH  system Chromium for Playwright
  *   TEST_MODULES   comma-separated module ids (see test/app/modules.json)
  *
  * Flags:
  *   --functional-only   skip grandma
  *   --grandma-only      skip functional (e2e)
- *   --no-health         do not probe /api/health first
+ *   --no-health         skip pre-flight /api/health probe (mid-run origin watch still runs)
  *   --changed           select modules from git diff vs --base / origin/main
  *   --base <ref>        git base for --changed (default origin/main)
  *   --modules=a,b       run only these modules (functional ids + grandma)
@@ -37,10 +37,11 @@ import {
   partitionModules,
 } from './lib/module-select.mjs';
 import { buildQueue } from './lib/validate-ui-queue.mjs';
+import { appOrigin, healthUrl, probeAppHealth, watchOriginHealth } from '../../scripts/lib/app-test-origin.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../..');
-const BASE = (process.env.BASE_URL || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+const BASE = (process.env.BASE_URL || appOrigin()).replace(/\/+$/, '');
 
 const args = process.argv.slice(2);
 const functionalOnly = args.includes('--functional-only');
@@ -125,10 +126,7 @@ if (grandmaOnly) {
 }
 
 async function healthCheck() {
-  const res = await fetch(`${BASE}/api/health`, { signal: AbortSignal.timeout(10_000) });
-  if (!res.ok) throw new Error(`/api/health returned ${res.status}`);
-  const body = await res.json().catch(() => ({}));
-  if (body.ok === false) throw new Error('health body not ok');
+  await probeAppHealth(healthUrl(BASE));
 }
 
 function banner(name) {
@@ -173,12 +171,13 @@ function runSuite(name, script, scriptArgs = [], { buffered = false } = {}) {
  * fails: a run that stops at the first red hides the other three reds behind it
  * and costs another full pass to find them.
  */
-async function runPool(queue, limit) {
+async function runPool(queue, limit, { originLost } = {}) {
   const pending = [...queue];
   const failures = [];
   const passed = [];
   const worker = async () => {
     for (;;) {
+      if (originLost?.current) return;
       const suite = pending.shift();
       if (!suite) return;
       try {
@@ -194,12 +193,16 @@ async function runPool(queue, limit) {
 }
 
 const started = Date.now();
+const originLost = { current: null };
+let stopOriginWatch = () => {};
 
 try {
   if (!skipHealth) {
-    process.stdout.write(`Probing ${BASE}/api/health … `);
+    process.stdout.write(`Probing ${healthUrl(BASE)} … `);
     await healthCheck();
     console.log('ok');
+  } else {
+    console.log(`validate-ui: skipping pre-flight health (--no-health); mid-run origin watch still active`);
   }
 
   const functionalIds = runFunctional
@@ -220,7 +223,18 @@ try {
     console.log(`validate-ui: ${queue.length} suites, ${jobs} at a time`);
   }
 
-  const { passed, failures } = await runPool(queue, jobs);
+  if (queue.length) {
+    stopOriginWatch = watchOriginHealth(healthUrl(BASE), {
+      onDown: (err) => {
+        originLost.current = err;
+      },
+    });
+  }
+
+  const { passed, failures } = await runPool(queue, jobs, { originLost });
+  if (originLost.current) {
+    failures.unshift(`origin-lost: ${originLost.current.message}`);
+  }
 
   const sec = ((Date.now() - started) / 1000).toFixed(0);
   if (failures.length) {
@@ -241,4 +255,6 @@ try {
   console.error(`  ${err.message}`);
   console.error(`${'='.repeat(60)}\n`);
   process.exitCode = 1;
+} finally {
+  stopOriginWatch();
 }

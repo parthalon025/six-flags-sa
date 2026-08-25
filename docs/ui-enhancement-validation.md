@@ -29,7 +29,7 @@ npm run test:validate-ui -- --grandma-only
 
 Optional env:
 
-- `BASE_URL` — default `http://127.0.0.1:3000`
+- `BASE_URL` — default `http://127.0.0.1:3118` (not 3000 — dev servers fight for it)
 - `CHROMIUM_PATH` — use a system Chromium instead of Playwright's download
 
 ## What each suite checks
