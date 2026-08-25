@@ -418,11 +418,9 @@ export function createElection({
     }
 
     cancelElection();
-    const wasPromoted = promoted;
     promoted = false;
     leaderId = theirs.id;
     lastHostSeen = now();
-    if (wasPromoted) emitter.emit('demote', { leader: theirs.id });
     emitter.emit('elected', { leader: theirs.id, self: false });
   }
 
