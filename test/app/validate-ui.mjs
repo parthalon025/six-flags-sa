@@ -16,7 +16,7 @@
  * Flags:
  *   --functional-only   skip grandma
  *   --grandma-only      skip functional (e2e)
- *   --no-health         skip pre-flight /api/health probe (mid-run origin watch still runs)
+ *   --no-health         skip pre-flight /api/health probe and mid-run origin watch
  *   --changed           select modules from git diff vs --base / origin/main
  *   --base <ref>        git base for --changed (default origin/main)
  *   --modules=a,b       run only these modules (functional ids + grandma)
@@ -202,7 +202,7 @@ try {
     await healthCheck();
     console.log('ok');
   } else {
-    console.log(`validate-ui: skipping pre-flight health (--no-health); mid-run origin watch still active`);
+    console.log('validate-ui: skipping health probes (--no-health)');
   }
 
   const functionalIds = runFunctional
@@ -223,7 +223,7 @@ try {
     console.log(`validate-ui: ${queue.length} suites, ${jobs} at a time`);
   }
 
-  if (queue.length) {
+  if (queue.length && !skipHealth) {
     stopOriginWatch = watchOriginHealth(healthUrl(BASE), {
       onDown: (err) => {
         originLost.current = err;

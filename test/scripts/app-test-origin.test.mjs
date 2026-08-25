@@ -17,7 +17,7 @@ import {
 } from '../../scripts/lib/app-test-origin.mjs';
 
 assert.equal(appOrigin(), `http://127.0.0.1:${FALLBACK_APP_PORT}`);
-assert.equal(healthUrl('http://127.0.0.1:3118/'), 'http://127.0.0.1:3118/api/health');
+assert.equal(healthUrl(appOrigin()), healthUrl(`http://127.0.0.1:${FALLBACK_APP_PORT}/`));
 
 await assert.rejects(
   () => probeAppHealth('http://127.0.0.1:1/api/health', { fetchFn: async () => { throw new Error('ECONNREFUSED'); } }),
