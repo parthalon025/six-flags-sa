@@ -24,6 +24,7 @@ export async function GET() {
         ready: false,
         backend: storeProbe.backend,
         error: storeProbe.error,
+        durable: usingRedis,
         postgres: postgresProbe,
         clerk,
       },

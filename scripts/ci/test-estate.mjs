@@ -120,6 +120,7 @@ export const TEST_ESTATE = {
   'test/app/party-runtime.test.mjs': ['test:unit'],
   'test/app/quest-sync.test.mjs': ['test:unit'],
   'test/app/rank-prizes.test.mjs': ['test:unit'],
+  'test/app/ready-route.test.mjs': ['test:unit'],
   'test/app/readme-shots-check.mjs': ['test:unit', 'gate-job'],
   'test/app/select-modules.mjs': ['select-job'],
   'test/app/server-store.test.mjs': ['test:unit'],
@@ -132,7 +133,6 @@ export const TEST_ESTATE = {
   'test/app/venue-download.test.mjs': ['test:unit'],
   'test/app/venue-store.test.mjs': ['test:unit'],
   'test/app/visual.mjs': ['visual-job'],
-  'test/app/ready-route.test.mjs': ['test:unit'],
   'test/app/weather-route.test.mjs': ['test:unit'],
   'test/app/zoom-bands.test.mjs': ['test:unit'],
 
