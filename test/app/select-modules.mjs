@@ -97,14 +97,15 @@ const parts = partitionModules(selection.modules, manifest);
 if (format === 'json') {
   console.log(JSON.stringify({ ...selection, parts }, null, 2));
 } else if (format === 'github') {
+  const baseOuts = toGithubOutputs(selection, manifest);
   const outs = {
-    ...toGithubOutputs(selection, manifest),
+    ...baseOuts,
     ...factoryLegGithubOutputs(changedFiles),
-    postgres_integration: needsPostgresIntegration(changedFiles, {
-      fullSuite: selection.fullSuite,
-    })
-      ? 'true'
-      : 'false',
+    postgres_integration:
+      needsPostgresIntegration(changedFiles, { fullSuite: selection.fullSuite }) ||
+      baseOuts.any_ui === 'true'
+        ? 'true'
+        : 'false',
   };
   const lines = Object.entries(outs).map(([k, v]) => `${k}=${v}`);
   console.log(lines.join('\n'));

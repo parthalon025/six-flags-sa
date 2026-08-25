@@ -11,6 +11,7 @@ import {
   wantModule,
   loadModulesManifest,
   MODULE_KINDS,
+  needsPostgresIntegration,
   toGithubOutputs,
 } from './lib/module-select.mjs';
 
@@ -188,6 +189,18 @@ const manifest = loadModulesManifest();
   assert(gh.lint === 'false', 'docs github lint false');
   assert(gh.any_ui === 'false', 'docs github any_ui false');
   assert(gh.ui_matrix === '[]', 'docs github empty matrix');
+}
+
+{
+  assert(
+    needsPostgresIntegration(['apps/party-tracker/lib/contributions/store.js']),
+    'contributions store path triggers postgres integration',
+  );
+  assert(
+    !needsPostgresIntegration(['docs/guide/testing.md']),
+    'docs-only change does not trigger postgres integration',
+  );
+  assert(needsPostgresIntegration([], { fullSuite: true }), 'full suite triggers postgres integration');
 }
 
 // Fail closed on an unrouted kind. partitionModules is the only place that

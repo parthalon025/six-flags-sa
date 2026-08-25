@@ -183,6 +183,23 @@ await check('thanks dedupe and impact_helped persist in Postgres', async () => {
   assert.equal(self.reason, 'self');
 });
 
+await check('unknown contribution and missing thanker are refused on Postgres', async () => {
+  await resetContributionTables(pool);
+  await seedUsers(pool, [{ id: 'usr_finder' }]);
+  const finder = await insertContribution({
+    authorId: 'usr_finder',
+    venueId: 'kings-island',
+    kind: 'height_rule',
+    payload: { min: 48 },
+  });
+  const gone = await thankContribution({ contributionId: 'c_missing', thankerId: 'usr_fan' });
+  assert.equal(gone.ok, false);
+  assert.equal(gone.reason, 'not_found');
+  const anon = await thankContribution({ contributionId: finder.id, thankerId: '' });
+  assert.equal(anon.ok, false);
+  assert.equal(anon.reason, 'thanker_required');
+});
+
 await pool.end();
 
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);

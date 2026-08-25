@@ -91,7 +91,7 @@ export const TEST_RUNNERS = {
   },
   'postgres-integration-job': {
     label:
-      'npm run test:postgres — the `postgres-integration` GitHub job (#438); skips when no TEST_DATABASE_URL.',
+      'npm run test:postgres — the `postgres-integration` GitHub job (#438); skips when no reachable TEST_DATABASE_URL.',
     npmScript: 'test:postgres',
     job: 'postgres-integration',
   },
