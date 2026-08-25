@@ -28,15 +28,75 @@
 
 | File | Responsibility |
 |------|----------------|
+| `scripts/lib/wayfinder-committed.json` | **New.** Allowlist of wayfinder effort slugs that must be tracked in git |
+| `scripts/lib/wayfinder-committed.mjs` | **New.** `listCommittedWayfinderSlugs()`, `assertWayfinderTracked(root)` (exists + not ignored) |
+| `.gitignore` | Keep ignoring `.scratch/` broadly; un-ignore allowlisted effort trees (`!.scratch/<slug>/`, `!.scratch/<slug>/**`) |
+| `docs/agents/policies/local-issue-tracker.md` | Amend: wayfinder maps are committed repo truth |
 | `scripts/lib/executive-resume-brief.mjs` | **New.** `gatherBriefFacts`, `fillHumanBrief`, path classifiers, Clerk health, GitHub triage gather, wayfinder gather |
 | `scripts/lib/executive-resume.mjs` | Call brief module from `sessionStartBrief` / optionally `print`; keep NOW/inventory/JSON unchanged |
-| `scripts/lib/matt-workflow.mjs` | **Reuse only** (`listEfforts`, `effortPhase`, `loadTickets`). Export nothing new unless a tiny helper is required for destination parse locality |
+| `scripts/lib/matt-workflow.mjs` | **Reuse only** (`listEfforts`, `effortPhase`, `loadTickets`). Prefer scanning allowlisted committed efforts for the brief (union with on-disk efforts that have `map.md`) |
 | `test/scripts/executive-resume-brief.test.mjs` | **New.** Output assertions on `fillHumanBrief` / gather helpers |
+| `test/scripts/wayfinder-committed.test.mjs` | **New.** Allowlist + gitignore check |
 | `test/scripts/executive-resume.test.mjs` | Keep existing NOW/drift tests; add start-brief smoke that human brief headings appear and full workflow dump does not |
 | `docs/agents/policies/executive-resume.md` | One pointer to the design + note that start prints the human brief |
-| `docs/superpowers/specs/2026-08-25-executive-resume-human-brief-design.md` | Already approved (incl. Wayfinder) — do not re-litigate in code comments |
+| `docs/superpowers/specs/2026-08-25-executive-resume-human-brief-design.md` | Already approved (incl. Wayfinder + committed maps) — do not re-litigate in code comments |
 
 `renderMarkdown` remains the **ops inventory** view for `resume:print` / push body unless a later task explicitly switches `print` — this plan switches **`start`** (and documents that `print` stays inventory until optional follow-up).
+
+---
+
+### Task 0: Commit wayfinder trees (allowlist + gitignore)
+
+**Files:**
+- Create: `scripts/lib/wayfinder-committed.json`
+- Create: `scripts/lib/wayfinder-committed.mjs`
+- Create: `test/scripts/wayfinder-committed.test.mjs`
+- Modify: `.gitignore`
+- Modify: `docs/agents/policies/local-issue-tracker.md`
+- Modify: `scripts/ci/manifest.mjs` + `scripts/ci/test-estate.mjs` (register test)
+- Create or restore: `.scratch/factories-to-app/map.md` (+ any open decision tickets that belong in the macro) if missing from the tree — content from current local/session truth or the “Active wayfinder effort” row in local-issue-tracker; do not invent resolved decisions
+
+**Interfaces:**
+- Produces: `listCommittedWayfinderSlugs() => string[]`, `wayfinderEffortTracked(root, slug) => { ok: boolean, reason?: string }`
+
+`.gitignore` pattern (after `.scratch/`):
+
+```gitignore
+# Wayfinder efforts — committed so macro / Cloud resume can track fog
+!/.scratch/factories-to-app/
+!/.scratch/factories-to-app/**
+```
+
+JSON allowlist:
+
+```json
+{
+  "efforts": ["factories-to-app"]
+}
+```
+
+`wayfinderEffortTracked`: for each allowlisted slug, `existsSync(.scratch/<slug>/map.md)` and `git check-ignore -q` returns non-zero (not ignored). Soft-warn in brief gather later; hard-assert in unit test on repo root.
+
+- [ ] **Step 1: Failing test** — `listCommittedWayfinderSlugs` includes `factories-to-app`; `wayfinderEffortTracked(REPO, 'factories-to-app')` fails while still fully ignored / missing map
+
+- [ ] **Step 2: Run — expect FAIL**
+
+- [ ] **Step 3: Add JSON module, gitignore exceptions, minimal committed map+ticket files, policy sentence:**
+
+In `local-issue-tracker.md` replace “gitignored — session-local scratch” with: resume caches and non-allowlisted scratch stay local; **wayfinder maps listed in `scripts/lib/wayfinder-committed.json` are committed repo truth** for macro tracking.
+
+- [ ] **Step 4: Tests PASS**; `git check-ignore -v .scratch/factories-to-app/map.md` prints nothing / exit 1
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add .gitignore scripts/lib/wayfinder-committed.json scripts/lib/wayfinder-committed.mjs test/scripts/wayfinder-committed.test.mjs docs/agents/policies/local-issue-tracker.md .scratch/factories-to-app scripts/ci/manifest.mjs scripts/ci/test-estate.mjs
+git commit -m "feat(agents): commit allowlisted wayfinder scratch for macro tracking"
+```
+
+Then renumber: former Task 1 stays Task 1, Task 2 gather uses allowlist:
+
+`gatherWayfinderFacts` unions `listEfforts(root)` with `listCommittedWayfinderSlugs()` so a missing local effort still warns via `warnings` when allowlisted but absent.
 
 ---
 
@@ -227,11 +287,14 @@ git commit -m "feat(agents): fillHumanBrief fixed executive template"
 - Produces: `gatherWayfinderFacts(root: string) => BriefFacts['wayfinder']`
 
 Rules:
-- Include effort only if `map.md` exists  
+- Seed effort list from `listCommittedWayfinderSlugs()` ∪ `listEfforts(root)`  
+- Include effort only if `map.md` exists; if allowlisted but missing, push a brief warning (do not invent fog)  
 - Phase from `effortPhase(slug, root).phase`  
 - Tickets: from `loadTickets`, keep those with `ticket.isWayfinder === true` and status in `open` | `claimed`  
 - Destination: first non-empty bullet or paragraph under `## Destination` (or `# Destination`) in `map.md`; if missing, omit  
 - If maps exist but no open/claimed wayfinder tickets, still return the effort rows with `tickets: []` so `fillHumanBrief` can say “Maps clear…”
+
+Import `listCommittedWayfinderSlugs` from `./wayfinder-committed.mjs` (Task 0).
 
 - [ ] **Step 1: Write the failing test**
 
@@ -584,6 +647,7 @@ Capture stdout to `/opt/cursor/artifacts/resume-start-brief.txt` for the PR walk
 | Path B single template | 1, 4 |
 | Overview / NOW / Factories / App / Hanging | 1, 3 |
 | **Wayfinder** section + matt-workflow reuse | 2, 3 |
+| **Committed** wayfinder allowlist + gitignore | 0 |
 | GitHub label filter only | 3 |
 | Clerk package vs lockfile | 3 |
 | No second workflow dump on start | 4 |
