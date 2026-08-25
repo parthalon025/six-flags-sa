@@ -70,7 +70,7 @@ const APP = '../../apps/party-tracker/';
 const { createClient } = await import(`${APP}lib/party/client.js`);
 const { createHostService } = await import(`${APP}lib/party/hostService.js`);
 const { adoptSnapshot } = await import(`${APP}lib/core/state.js`);
-const { readRank, shouldYield, outranks } = await import(`${APP}lib/party/election.js`);
+const { readRank, shouldYield, outranks, UNSCORED_RANK_DEFAULTS } = await import(`${APP}lib/party/election.js`);
 const { open } = await import(`${APP}lib/core/crypto.js`);
 const { BYE, CLAIM, PING, VICTORY, WELCOME } = await import(`${APP}lib/core/protocol.js`);
 const { createBus, captureTimers, partyKey } = await import('./lib/partyBus.mjs');
@@ -134,7 +134,7 @@ function makePeer({ id, name, bus, key, partyId, clock }) {
     peer.host?.assert();
   }
 
-  /** partyRuntime.js:598-627. */
+  /** partyRuntime.js:598-630. */
   function reconcile(frame) {
     if (!peer.host || !frame?.from || frame.from === session.selfId) return;
     if (frame.kind !== CLAIM && frame.kind !== VICTORY && frame.kind !== PING) return;
@@ -147,9 +147,8 @@ function makePeer({ id, name, bus, key, partyId, clock }) {
       stepDown(frame.from, frame.body?.snapshot ?? null);
       return;
     }
-    // partyRuntime.js:619 — unscored is unbeatable. Duplicated at election.js:400.
     const mineRanked = { ...mine, id: session.selfId };
-    const theirs = readRank(frame, { score: Infinity, joinOrder: -1 });
+    const theirs = readRank(frame, UNSCORED_RANK_DEFAULTS);
     if (outranks(theirs, mineRanked)) {
       stepDown(theirs.id, frame.body?.snapshot ?? null);
       return;
@@ -662,23 +661,22 @@ await check('TRANSCRIBED: a CLAIM against a live host is answered, never yielded
 console.log('the unscored-is-unbeatable rule');
 
 await check('an unscored rival outranks any real claim, both places it is written', async () => {
-  const unscored = readRank({ from: 'phone-z', body: {} }, { score: Infinity, joinOrder: -1 });
+  const unscored = readRank({ from: 'phone-z', body: {} }, UNSCORED_RANK_DEFAULTS);
   assert.equal(unscored.score, Infinity);
   assert.equal(unscored.joinOrder, -1);
   // One host too few repairs itself in a timeout; one host too many never does.
   assert.equal(shouldYield({ id: 'me', score: 9e9, joinOrder: 0 }, unscored), true);
   // A rival that does say what it won on is compared on the numbers.
-  const scored = readRank({ from: 'phone-z', body: { score: 1, joinOrder: 5 } }, { score: Infinity, joinOrder: -1 });
+  const scored = readRank({ from: 'phone-z', body: { score: 1, joinOrder: 5 } }, UNSCORED_RANK_DEFAULTS);
   assert.equal(shouldYield({ id: 'me', score: 9e9, joinOrder: 0 }, scored), false);
 });
 
 await check('the rule is still written out in both files, and identically', async () => {
-  // election.js:400 and partyRuntime.js:619 hold the same literal with no
-  // shared constant between them. Pinned so the follow-up cannot change one
-  // and leave the other — the failure mode is two hosts, which never repairs.
+  // election.js and partyRuntime.js both pass UNSCORED_RANK_DEFAULTS — pinned so
+  // a follow-up cannot change one file and leave the other.
   const { readFile } = await import('node:fs/promises');
   const files = ['lib/party/election.js', 'lib/partyRuntime.js'];
-  const pattern = /readRank\(\s*f(?:rame)?\s*,\s*\{\s*score:\s*Infinity\s*,\s*joinOrder:\s*-1\s*\}\s*\)/;
+  const pattern = /readRank\(\s*f(?:rame)?\s*,\s*UNSCORED_RANK_DEFAULTS\s*\)/;
   for (const rel of files) {
     const src = await readFile(new URL(`${APP}${rel}`, import.meta.url), 'utf8');
     assert.match(src, pattern, `${rel} no longer carries the unscored-is-unbeatable default`);
@@ -780,7 +778,7 @@ console.log('the transcription');
 const TRANSCRIBED_FROM = [
   ['seedHost', 'partyRuntime.js:558-570', '4fb69935fdef7959'],
   ['assertHost', 'partyRuntime.js:572-581', '57882eace55375dd'],
-  ['reconcile', 'partyRuntime.js:598-627', '982da430856fa3c7'],
+  ['reconcile', 'partyRuntime.js:598-630', '88ec527c981e2bd1'],
   ['startHost', 'partyRuntime.js:634-667', '2d2b03a6f4145427'],
   ['startClient', 'partyRuntime.js:671-694', 'b0bcc3e55e2e5818'],
   ['promote', 'partyRuntime.js:699-706', '4416f5d52f62c8c0'],
