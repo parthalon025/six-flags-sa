@@ -249,7 +249,7 @@ Closest CF analogue: **R2 Data Catalog (Iceberg) + R2 SQL** — query Parquet in
 
 Direct R2 / `r2.dev` / S3 API: **no egress fee**. Fronting R2 with a Worker burns the 100k/day Free cap — already flagged in the [API catalog](./2026-08-20-free-tier-api-catalog.md). Prefer public R2 or custom domain cache for guest GETs; Worker only for signed/head manifests.
 
-Cloudflare **complements** Docker/Neon/Vercel. It does **not** replace Databricks until R2 SQL is enough (it is not, yet, for Spark-scale traces). It **does** beat Vercel Hobby/Pro bandwidth for large venue packs because R2 egress is free. Under **Consolidated pick**, that win is a later trigger — do not add R2 until Vercel transfer would bill.
+Cloudflare **complements** Docker/Neon/Vercel. It does **not** replace Databricks until R2 SQL is enough (it is not, yet, for Spark-scale traces). It **does** beat Vercel Hobby/Pro bandwidth for large venue packs because R2 egress is free. Under **Master recommended list**, that win is a later trigger — do not add R2 until Vercel transfer would bill.
 
 ---
 
@@ -285,7 +285,7 @@ ADR-0018 still ships seed packs with the app origin. Large PMTiles/worlds should
 
 **Keep Vercel** for the app UI, E0 API, and seed JSON. Do not add R2 or Blob until transfer would bill. Do not put the factory bus or Spark on Vercel.
 
-Same operating model as **Consolidated pick** (top of this note).
+Same operating model as **Master recommended list** (top of this note).
 
 ---
 
