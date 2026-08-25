@@ -116,9 +116,9 @@ The script exits non-zero with a per-check report when anything fails:
 | `schema_migrations` | Deployed Postgres ledger matches `db/migrations/*.sql` in this repo (`DATABASE_URL` required) |
 | `/api/webhooks/clerk` | Webhook route is mounted (verification failure is OK; 404 is not) |
 
-Set `POST_DEPLOY_URL` instead of `--url` in CI. Use `--skip-migrations` when Postgres is not reachable from the runner (readiness + webhook only).
+Set `POST_DEPLOY_URL` instead of `--url` in CI. Use `--skip-migrations` when Postgres is not reachable from the runner (readiness + webhook only). On legacy databases, run `npm run postdb:migrate` once to backfill `schema_migrations` before the migration check can pass.
 
-Run manually after merge or wire into a post-deploy workflow when production credentials are available.
+Run manually after merge as the post-deploy checklist, or wire into a post-deploy workflow when production credentials are available.
 
 ## Commands
 

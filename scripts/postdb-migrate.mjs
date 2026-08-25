@@ -30,6 +30,27 @@ export async function readAppliedMigrationNames(client) {
 }
 
 /**
+ * Databases migrated before the ledger existed have schema but no rows.
+ * @param {{ query: (sql: string, params?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>>> }} client
+ * @param {string[]} files
+ */
+export async function backfillLedgerIfLegacy(client, files) {
+  const applied = await readAppliedMigrationNames(client);
+  if (applied.length > 0) return;
+  const legacy = await client.query(`
+    SELECT EXISTS (
+      SELECT FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = 'users'
+    ) AS exists
+  `);
+  if (!legacy.rows[0]?.exists) return;
+  for (const file of files) {
+    await client.query('INSERT INTO schema_migrations (name) VALUES ($1) ON CONFLICT DO NOTHING', [file]);
+  }
+  console.log('> backfilled schema_migrations for legacy database');
+}
+
+/**
  * @param {{ query: (sql: string, params?: unknown[]) => Promise<unknown> }} client pg Client or Pool
  * @param {string[]} [files]
  */
@@ -40,6 +61,7 @@ export async function applyMigrations(client, files = orderedMigrationFiles()) {
       applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `);
+  await backfillLedgerIfLegacy(client, files);
   const applied = await readAppliedMigrationNames(client);
   for (const file of files) {
     if (applied.includes(file)) {
