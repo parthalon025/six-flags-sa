@@ -23,10 +23,10 @@
  */
 
 import path from 'node:path';
-import { runDisplayStage } from '../lib/display-pack.mjs';
+import { runDisplayStage, loadTruthFor } from '../lib/display-pack.mjs';
 import { VENUE_DIR, readJson, venueSidecar } from '../lib/venue-io.mjs';
-import { loadTruthFor } from '../lib/display-pack.mjs';
 import { prepareVenueTerrain } from '../lib/terrain/venue-terrain.mjs';
+import { mirrorDisplayPacksToPostdb } from '../lib/visual-factory/postdb-sync.mjs';
 
 const argv = process.argv.slice(2);
 /**
@@ -85,6 +85,7 @@ for (const id of targets) {
       if (!json && !terrain) console.log(`${id}: no DEM coverage — compiling flat`);
     }
     const result = runDisplayStage(id, { tiles, terrain, ...(bake ? { bake: {} } : {}) });
+    await mirrorDisplayPacksToPostdb(id, result.packs);
     if (bake && result.bakeCerts?.length) {
       const { cutPackedMidPyramid } = await import('../lib/display-pack.mjs');
       await cutPackedMidPyramid({
