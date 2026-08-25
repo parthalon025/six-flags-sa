@@ -41,6 +41,7 @@ import {
   campDetailsFromTags, classify, isCampground, isCampPitch, isLand, isVenueOutline, wayAttributes,
 } from '../lib/osm-tags.mjs';
 import { OVERRIDE_DIR, gapsDocumentFor, readJson, readOverrides, reindex, serializeVenue, slugify, VENUE_DIR, writeVenue, venueSidecar } from '../lib/venue-io.mjs';
+import { mirrorTruthToPostdb } from '../lib/map-factory/postdb-sync.mjs';
 import {
   argsFromRecipe, listRecipes, readRecipe, recipeFile, recipeFrom, writeRecipe,
 } from '../lib/venue-recipe.mjs';
@@ -931,7 +932,7 @@ export function heightAudit(pois) {
  * @param only    a single venue id, or null for every venue on disk
  * @param strict  refuse to leave a venue with rides and no height rules
  */
-function reapply(only, { strict = true } = {}) {
+async function reapply(only, { strict = true } = {}) {
   const ids = readdirSync(VENUE_DIR)
     .filter((f) => f.endsWith('.pois.json'))
     .map((f) => f.slice(0, -'.pois.json'.length))
@@ -988,6 +989,13 @@ function reapply(only, { strict = true } = {}) {
     const tints = landTints(overrides);
     if (tints) next = { ...next, lands: tints };
     writeVenue({ meta: next, map, pois });
+    const postdb = await mirrorTruthToPostdb(id, {
+      map: { meta: next, ...map },
+      pois,
+      gaps: gapsDocumentFor({ meta: next, pois, map }),
+      routeId: 'map.truth',
+    });
+    if (postdb?.revisionId) console.error(`  · postdb: truth revision ${postdb.revisionId}`);
 
     const audit = heightAudit(pois);
     console.error(
@@ -1463,7 +1471,7 @@ async function main() {
   }
 
   if (args.reapply) {
-    reapply(typeof args.reapply === 'string' ? args.reapply : null, { strict: !args['allow-no-heights'] });
+    await reapply(typeof args.reapply === 'string' ? args.reapply : null, { strict: !args['allow-no-heights'] });
     return;
   }
 
@@ -1951,6 +1959,13 @@ async function buildOne(args, { previous = null } = {}) {
   if (published) console.error(`  · inventory: published ${published} field(s) onto places`);
 
   const written = writeVenue({ meta, map: builtMap, pois });
+  const postdb = await mirrorTruthToPostdb(id, {
+    map: { meta, ...builtMap },
+    pois,
+    gaps: gapsDocumentFor({ meta, pois, map: builtMap }),
+    routeId: 'map.truth',
+  });
+  if (postdb?.revisionId) console.error(`  · postdb: truth revision ${postdb.revisionId}`);
   /* The ledger, beside the overrides file rather than under public/, because it
      is not a download and because the numbers in it are the thing a human
      reviews when a rebuild moves something. Written only when its bytes change,

@@ -5,4 +5,4 @@
  */
 
 export { buildTruth } from './build-truth.mjs';
-export { readTruth, truthStamp, truthPaths, writeVenue } from './map-io.mjs';
+export { readTruth, readTruthAsync, truthStamp, truthPaths, writeVenue } from './map-io.mjs';
