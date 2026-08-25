@@ -11,6 +11,8 @@ Related: [ADR-0008](../adr/0008-databricks-back-office.md), [ADR-0010](../adr/00
 
 ## Master recommended list (2026-08-25)
 
+Machine-readable canon (factory epic NOW + operate/park/do-not-add): [`scripts/lib/operating-stack.json`](../../scripts/lib/operating-stack.json). This section is the narrative. `npm run workflow:next` prints the epic NOW from that JSON when the effort is `factories-to-app`. ADR-0024 clause 6.
+
 Owner accounts in hand: Clerk Pro, Vercel, Cloudflare, Databricks, local Docker, Higgsfield, Meshy, Unreal/Unity/Godot, Claude Code Max, Cursor, Google AI, Apple Developer, Google Play.
 
 **Invariant:** phone never calls a warehouse; factory writes PostDB (Postgres); app reads exported hash-verified bundles. ADR-0010 / 0016 / 0017 / 0023 / 0024.

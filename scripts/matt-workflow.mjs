@@ -24,6 +24,7 @@ import {
   sessionBrief,
   skillMeta,
 } from './lib/matt-workflow.mjs';
+import { epicNowCli, factoryEpicNow, loadOperatingStack, shouldPrintEpicNow } from './lib/operating-stack.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -55,6 +56,7 @@ function runSession() {
 function runNext() {
   const efforts = listEfforts(root);
   const slug = effort || efforts[0];
+  const stack = loadOperatingStack();
   if (!slug) {
     console.log(sessionBrief({ cwd: root, situation: situation || 'unsure' }));
     return 0;
@@ -63,7 +65,14 @@ function runNext() {
   const meta = phaseMeta(state.phase);
   const sk = skillMeta(meta.skill);
   if (json) {
-    console.log(JSON.stringify({ effort: slug, phase: state.phase, skill: meta.skill, invoke: sk?.invoke, frontier: state.frontier }, null, 2));
+    console.log(JSON.stringify({
+      effort: slug,
+      phase: state.phase,
+      skill: meta.skill,
+      invoke: sk?.invoke,
+      frontier: state.frontier,
+      epicNow: shouldPrintEpicNow(slug, stack) ? factoryEpicNow(stack) : null,
+    }, null, 2));
     return 0;
   }
   console.log(`effort:  ${slug}`);
@@ -73,6 +82,7 @@ function runNext() {
   if (state.frontier) {
     console.log(`ticket:  ${state.frontier.id} ${state.frontier.title} (${state.frontier.status})`);
   }
+  if (shouldPrintEpicNow(slug, stack)) console.log(epicNowCli(stack));
   if (meta.forbid.length) console.log(`avoid:   ${meta.forbid.map((f) => `/${f}`).join(', ')}`);
   return 0;
 }
