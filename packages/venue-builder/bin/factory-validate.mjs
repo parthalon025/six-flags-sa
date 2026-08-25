@@ -9,7 +9,8 @@
  */
 
 import process from 'node:process';
-import { validateVenue, validateAll, renderValidationReport } from '../lib/factory-validate.mjs';
+import { assertPostdbAvailable } from '../lib/postdb-io.mjs';
+import { validateVenueAsync, validateAll, renderValidationReport } from '../lib/factory-validate.mjs';
 
 const USAGE = `
 Factory validation — walk a venue through the Map factory and Visual factory routes.
@@ -32,19 +33,20 @@ function parseArgs(argv) {
   return out;
 }
 
-function main() {
+async function main() {
+  assertPostdbAvailable();
   const args = parseArgs(process.argv.slice(2));
 
   let docs;
   if (args.all) {
-    docs = validateAll();
+    docs = await validateAll();
   } else {
     const id = args._[0];
     if (!id) {
       console.error(USAGE.trim());
       process.exit(1);
     }
-    docs = [validateVenue(id)];
+    docs = [await validateVenueAsync(id)];
   }
 
   if (args.json) {
@@ -62,4 +64,7 @@ function main() {
   process.exit(failed.length ? 1 : 0);
 }
 
-main();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
