@@ -1533,8 +1533,8 @@ function ParkApp({ isSignedIn }) {
   }, []);
 
   const publishMark = useCallback(
-    (mark) => {
-      if (!mark?.type) return;
+    async (mark) => {
+      if (!mark?.type) return false;
       runtime.current?.dropWorldMark?.({
         id: mark.id,
         type: mark.type,
@@ -1545,28 +1545,31 @@ function ParkApp({ isSignedIn }) {
         phrase: mark.phrase,
       });
       const profileId = authSession?.userId;
-      if (!profileId || !venue?.id) return;
-      fetch(`/api/world/${encodeURIComponent(venue.id)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'mark',
-          profileId,
-          partyId: party?.partyId || null,
-          id: mark.id,
-          type: mark.type,
-          placeId: mark.placeId,
-          lat: mark.lat,
-          lng: mark.lng,
-          phrase: mark.phrase,
-          now: mark.createdAt,
-        }),
-      })
-        .then((r) => r.json())
-        .then((data) => {
-          if (data?.world) setParkWorld(data.world);
-        })
-        .catch(() => {});
+      if (!profileId || !venue?.id) return false;
+      try {
+        const r = await fetch(`/api/world/${encodeURIComponent(venue.id)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'mark',
+            profileId,
+            partyId: party?.partyId || null,
+            id: mark.id,
+            type: mark.type,
+            placeId: mark.placeId,
+            lat: mark.lat,
+            lng: mark.lng,
+            phrase: mark.phrase,
+            now: mark.createdAt,
+          }),
+        });
+        const data = await r.json().catch(() => null);
+        if (!r.ok || !data?.world) return false;
+        setParkWorld(data.world);
+        return true;
+      } catch {
+        return false;
+      }
     },
     [authSession?.userId, venue?.id, party?.partyId],
   );

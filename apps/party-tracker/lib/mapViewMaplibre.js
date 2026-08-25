@@ -32,7 +32,12 @@ import {
 /** Among overlapping place hit-targets, the nearest geometry wins — not
  *  source order. Park-wide ride discs sit on top of each other; first-in-
  *  layer was opening Castaway Cove when the tap was on Aruba Tuba. */
-export function closestPlaceId(features, point, project) {
+/** Screen-space slop for resolving a tap to a Place. The visible SVG pin is
+ *  much larger than the old 5px MapLibre hit disc, and labels sit ~24px below
+ *  the anchor — without slop, taps on what guests see miss every time. */
+export const PLACE_PICK_SLOP_PX = 28;
+
+export function closestPlaceId(features, point, project, maxDistSq = Infinity) {
   let bestId = null;
   let bestD = Infinity;
   for (const feature of features || []) {
@@ -45,6 +50,7 @@ export function closestPlaceId(features, point, project) {
     bestD = d;
     bestId = feature.properties?.id ?? feature.id ?? null;
   }
+  if (bestId == null || bestD > maxDistSq) return null;
   return bestId;
 }
 
@@ -200,11 +206,15 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
 
     pick(point) {
       if (!map || !loaded || !map.getLayer(PLACES_LAYER)) return null;
-      const features = map.queryRenderedFeatures([point.x, point.y], { layers: [PLACES_LAYER] });
+      const slop = PLACE_PICK_SLOP_PX;
+      const features = map.queryRenderedFeatures(
+        [[point.x - slop, point.y - slop], [point.x + slop, point.y + slop]],
+        { layers: [PLACES_LAYER] },
+      );
       return closestPlaceId(features, point, ({ lng, lat }) => {
         const at = map.project([lng, lat]);
         return { x: at.x, y: at.y };
-      });
+      }, slop * slop);
     },
 
     project({ lng, lat } = {}) {
