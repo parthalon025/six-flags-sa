@@ -14,11 +14,12 @@ Works with the **Matt workflow gate** (`npm run workflow:next`, `workflow:check`
 
 | Concern | Use this |
 |---------|----------|
-| Session start brief | `npm run resume:start` |
+| Session start brief | `npm run resume:start` (natural prose in the terminal) |
 | Regenerate open inventory | `npm run resume:refresh` |
 | Pull NOW + human from GitHub | `npm run resume:pull` |
 | Push NOW + human to GitHub | `npm run resume:push` |
 | Drift check (NOW vs inventory) | `npm run resume:check` |
+| Print human message | `npm run resume:print` (add `--markdown` for full inventory) |
 | End-of-turn agent update | `npm run resume:end-turn -- --next "..." [--doing "..."]` |
 | 12h timer fired | `npm run resume:timer-fired` |
 | First-time setup | `npm run resume:init` |
@@ -32,7 +33,7 @@ Works with the **Matt workflow gate** (`npm run workflow:next`, `workflow:check`
 
 - **`now` + `human.*`** → GitHub executive dashboard issue (pinned JSON comment)
 - **`inventory`** → regenerated locally (never trusted from GitHub)
-- **`.scratch/resume.md`** → rendered view; do not hand-edit
+- **`.scratch/resume.md`** → rendered markdown archive; do not hand-edit. Terminal humans see `renderProse`, not this wall.
 - **`docs/agents/executive-dashboard.json`** → committed durable pointer (issue number); survives ephemeral cloud `.scratch/`
 - **`.scratch/executive-dashboard.json`** → session cache only (`jsonCommentId`)
 

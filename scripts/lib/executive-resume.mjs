@@ -7,7 +7,7 @@
  *   - resume.md      → rendered view; never hand-edited
  *
  * Interface:
- *   emptyResume, loadLocal, saveLocal, renderMarkdown, refreshInventory, checkDrift
+ *   emptyResume, loadLocal, saveLocal, renderMarkdown, renderProse, refreshInventory, checkDrift
  *   agentPatch, mergeFromRemote, pullFromIssue, pushToIssue, sessionStartBrief
  *   endTurn, subscribeTimerInstructions, platformChange, createGoalObjective
  *   timerPrompt, TIMER_HOURS
@@ -438,6 +438,66 @@ export function markTimerFired(resume) {
   };
 }
 
+/**
+ * Human-facing resume: one natural-language terminal message (ADHD keep-me-on-track).
+ * Inventory stays summarized — no HTML, no dashboard wall.
+ */
+export function renderProse(resume) {
+  const { now, human, lastStop, inventory, platform, updatedAt } = resume;
+  const paras = [];
+
+  if (!now?.task?.trim()) {
+    paras.push('No NOW task is set yet. Pick one thing before coding.');
+  } else {
+    const ticket = now.ticket ? ` (${now.ticket})` : '';
+    paras.push(`Right now you're on ${now.task.trim()}${ticket}.`);
+  }
+
+  if (now?.nextStep?.trim()) {
+    paras.push(`Next up: ${now.nextStep.trim()}`);
+  } else if (now?.task?.trim()) {
+    paras.push('Next step is unset — say what to do next.');
+  }
+
+  if (lastStop?.iWasDoing?.trim()) {
+    const when = lastStop.at ? ` (${lastStop.at})` : '';
+    paras.push(`Last stop: ${lastStop.iWasDoing.trim()}${when}`);
+  }
+
+  if (human?.blockedOnMe?.length) {
+    paras.push(`Waiting on you: ${human.blockedOnMe.join('; ')}`);
+  }
+  if (human?.parkingLot?.length) {
+    paras.push(`Parked for later: ${human.parkingLot.join('; ')}`);
+  }
+  if (human?.notes?.trim()) {
+    paras.push(human.notes.trim());
+  }
+
+  const prs = inventory?.draftPrs?.length || 0;
+  const trees = inventory?.worktrees?.length || 0;
+  const handoffs = inventory?.handoffIssues?.length || 0;
+  const claimed = inventory?.claimedTickets?.length || 0;
+  const bits = [];
+  if (prs) bits.push(`${prs} draft PR${prs === 1 ? '' : 's'}`);
+  if (trees) bits.push(`${trees} worktree${trees === 1 ? '' : 's'}`);
+  if (handoffs) bits.push(`${handoffs} handoff${handoffs === 1 ? '' : 's'}`);
+  if (claimed) bits.push(`${claimed} claimed ticket${claimed === 1 ? '' : 's'}`);
+  if (bits.length) {
+    paras.push(
+      `Background noise (not NOW): ${bits.join(', ')}. Ask for inventory if you need the list.`,
+    );
+  }
+
+  paras.push('Still on this, or switch?');
+
+  const meta = [`platform ${platform || 'unknown'}`];
+  if (updatedAt) meta.push(`updated ${updatedAt}`);
+  paras.push(`(${meta.join(' · ')})`);
+
+  return `${paras.join('\n\n')}\n`;
+}
+
 export function renderMarkdown(resume) {
   const lines = [
     '# Executive resume — Parkbound',
@@ -662,33 +722,28 @@ export function sessionStartBrief({ root = REPO, runner = execFileSync, situatio
   const drift = checkDrift(resume);
   const goal = createGoalObjective(resume);
   const lines = [
-    renderMarkdown(resume),
-    '',
+    renderProse(resume),
     '---',
     '',
-    mattWorkflowBrief({ cwd: root, situation }),
-    '',
-    '## Session start ritual',
-    '1. **Platform** — inventory above was regenerated (worktrees + draft PRs + handoffs + train + workflow).',
   ];
   if (changed) {
-    lines.push(`2. ⚠️ **Platform changed:** \`${previous}\` → \`${current}\` — confirm NOW or say **switch**.`);
-  } else {
-    lines.push('2. Confirm NOW or say **switch**.');
+    lines.push(`Platform moved ${previous} → ${current}. Confirm NOW or say switch.`);
+    lines.push('');
   }
-  lines.push(
-    '3. Run `npm run workflow:check -- --intent implement` before coding.',
-    '4. **CreateGoal** (required):',
-    '```',
-    goal,
-    '```',
-    '5. Do not edit human.parkingLot or human.blockedOnMe.',
-    '6. **End of every turn** with code changes: `npm run resume:end-turn -- --next "..." --doing "..."`',
-  );
   if (drift.warnings.length) {
-    lines.push('', '⚠️ **Drift warnings:**', ...drift.warnings.map((w) => `- ${w}`), '', 'Still on NOW? Say yes or switch.');
+    lines.push('Drift: ' + drift.warnings.join('; '));
+    lines.push('');
   }
-  return lines.join('\n');
+  lines.push(`CreateGoal: ${goal}`);
+  lines.push('');
+  lines.push(
+    'Ritual: workflow:check before implement · end-turn with --next/--doing after code · do not edit parkingLot/blockedOnMe without asking.',
+  );
+  lines.push('');
+  lines.push(mattWorkflowBrief({ cwd: root, situation }).trim());
+  lines.push('');
+  lines.push('(Full markdown inventory: npm run resume:print -- --markdown)');
+  return `${lines.join('\n')}\n`;
 }
 
 export function timerPrompt() {

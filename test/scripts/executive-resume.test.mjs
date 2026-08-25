@@ -26,6 +26,7 @@ import {
   pullFromIssue,
   refreshInventory,
   renderMarkdown,
+  renderProse,
   resolvePointer,
   saveLocal,
   subscribeTimerInstructions,
@@ -95,6 +96,23 @@ assert.equal(afterSwitch.previousPlatform, 'cursor-local');
 // CreateGoal objective
 assert.match(createGoalObjective({ now: { task: 'Ship resume', nextStep: 'Run tests' } }), /Ship resume — next: Run tests/);
 assert.match(createGoalObjective({ now: { task: 'Ship resume', nextStep: '' } }), /Ship resume/);
+
+// Human prose — terminal message, not a dashboard wall
+const proseResume = emptyResume({ platform: 'cursor-cloud' });
+proseResume.now.task = 'Executive resume + ADHD keep-me-on-track';
+proseResume.now.ticket = '#643';
+proseResume.now.nextStep = 'Ship durable pointer';
+proseResume.lastStop.iWasDoing = 'Wrote resolvePointer';
+proseResume.human.blockedOnMe = ['Pick the view'];
+proseResume.inventory.draftPrs = [{ number: 1 }, { number: 2 }];
+const prose = renderProse(proseResume);
+assert.match(prose, /Right now you're on Executive resume/);
+assert.match(prose, /Next up: Ship durable pointer/);
+assert.match(prose, /Waiting on you: Pick the view/);
+assert.match(prose, /2 draft PRs/);
+assert.match(prose, /Still on this, or switch\?/);
+assert.doesNotMatch(prose, /## Open inventory/);
+assert.doesNotMatch(prose, /<!DOCTYPE html>/i);
 
 // Draft PRs — all open drafts, not @me only
 const drafts = gatherDraftPrs({
