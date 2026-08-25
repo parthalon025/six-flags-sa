@@ -69,28 +69,34 @@ The `party` service depends on `db` health. One container, one pool — no PgBou
 
 ## Readiness probe
 
-`GET /api/ready` answers whether this instance can serve traffic. Today it probes the durable store (Upstash Redis or memory). `pingPostgres()` in `lib/db/postgres.js` is the Postgres seam:
+`GET /api/ready` answers whether this instance can serve traffic. **Today** it probes only the durable store (Upstash Redis or memory) — not Postgres.
+
+Postgres liveness lives in `pingPostgres()` (`lib/db/postgres.js`):
 
 - No `DATABASE_URL` → `{ ok: true, backend: 'memory' }` (contributions in-process)
 - Configured and reachable → `{ ok: true, backend: 'postgres' }`
 - Configured but failing → `{ ok: false, backend: 'postgres', error: '<message>' }`
 
-When `/api/ready` includes Postgres (see #437), a 503 body will surface `postgres.error` alongside the durable-store probe. Until then, call `pingPostgres()` from a one-off script or watch Neon metrics directly.
+Use `pingPostgres()` for connection-exhaustion diagnosis until #437 wires it into `/api/ready`. After #437 lands, a 503 from `/api/ready` will include a `postgres` field with the same `error` surface.
 
 ## Connection exhaustion — symptoms and diagnosis
 
-**Symptoms**
+**Symptoms (today)**
 
-- `/api/ready` returns 503 with `postgres.error` mentioning `too many connections`, `remaining connection slots`, or timeouts
 - Neon dashboard → **Monitoring** shows connections at the plan limit
 - Intermittent 500s on contribution or profile routes under load, fine when cold
+- `pingPostgres()` returns `{ ok: false, error: '…too many connections…' }` (or similar) when run with production env
+
+**Symptoms (after #437 — `/api/ready` probes Postgres)**
+
+- `/api/ready` returns 503 with `postgres.error` mentioning `too many connections`, `remaining connection slots`, or timeouts
 
 **Diagnosis**
 
 1. Check Neon **Connections** graph — flat line at the limit means exhaustion, not slow queries.
 2. Confirm Vercel uses the **pooled** `DATABASE_URL`, not direct.
 3. Inspect `PG_POOL_MAX` — try lowering to 2 on Vercel if instance count is high.
-4. Hit `/api/ready` (or run `pingPostgres()` locally with production env) and read `error`.
+4. Run `pingPostgres()` with production env (or, after #437, read `postgres.error` from `/api/ready`).
 5. Look for connection leaks: long-running handlers holding transactions open (rare in this app; most queries are single-statement).
 
 **Mitigations**
