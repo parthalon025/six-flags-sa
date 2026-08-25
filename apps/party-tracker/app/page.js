@@ -1092,11 +1092,6 @@ function ParkApp({ isSignedIn }) {
   }, [party?.active]);
 
   useLayoutEffect(() => {
-    setViewportH(window.innerHeight);
-    setViewportW(window.innerWidth);
-  }, []);
-
-  useEffect(() => {
     const measure = () => {
       const h = window.innerHeight;
       setViewportH(h);
@@ -1112,6 +1107,11 @@ function ParkApp({ isSignedIn }) {
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
   }, []);
+
+  useEffect(() => {
+    if (view !== 'place') return;
+    fitPlaceSheet();
+  }, [viewportW, view, fitPlaceSheet]);
 
   // Where the sheet was left last time, clamped to this screen. Read once, on
   // the client, so the server and the first paint agree on the default.
