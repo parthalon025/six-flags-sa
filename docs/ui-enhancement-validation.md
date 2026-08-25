@@ -13,7 +13,7 @@ Neither replaces the other. Functional tests may use helpers like `go()` that kn
 
 ```bash
 npx playwright install chromium   # once
-npm run build && npm start &      # wait for /api/health
+npm run build && PORT=3118 npm start &      # wait for /api/health
 
 npm run test:validate-ui          # functional + grandma
 ```

@@ -16,7 +16,7 @@
  * Flags:
  *   --functional-only   skip grandma
  *   --grandma-only      skip functional (e2e)
- *   --no-health         do not probe /api/health first
+ *   --no-health         skip the initial /api/health probe (mid-run origin watch still runs)
  *   --changed           select modules from git diff vs --base / origin/main
  *   --base <ref>        git base for --changed (default origin/main)
  *   --modules=a,b       run only these modules (functional ids + grandma)
@@ -221,7 +221,7 @@ try {
     console.log(`validate-ui: ${queue.length} suites, ${jobs} at a time`);
   }
 
-  if (!skipHealth && queue.length) {
+  if (queue.length) {
     stopOriginWatch = watchOriginHealth(healthUrl(BASE), {
       onDown: (err) => {
         originLost.current = err;

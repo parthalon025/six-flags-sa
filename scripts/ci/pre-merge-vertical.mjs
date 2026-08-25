@@ -215,18 +215,23 @@ export async function runPreMergeVertical({
     const held = await reserveAppPort();
     const baseUrl = appOrigin(held.port);
     console.log(`\npre-merge-vertical: starting app for browser vertical on ${baseUrl}`);
-    await held.release();
     startProductionServer({ root: cwd, port: held.port });
-    await waitForHealth({ url: healthUrl(baseUrl) });
-    await runValidateUiChanged(baseRef, cwd, { baseUrl });
-    const sweep = await runLiveZoomSweep({ minFps: 30, throttle: 4, baseUrl });
-    if (!sweep.ok) {
-      console.error(
-        `pre-merge-vertical: zoom sweep failed (${sweep.reason || `${sweep.fps} fps < ${sweep.minFps}`})`,
-      );
-      return 1;
+    try {
+      await waitForHealth({ url: healthUrl(baseUrl) });
+      await held.release();
+      await runValidateUiChanged(baseRef, cwd, { baseUrl });
+      const sweep = await runLiveZoomSweep({ minFps: 30, throttle: 4, baseUrl });
+      if (!sweep.ok) {
+        console.error(
+          `pre-merge-vertical: zoom sweep failed (${sweep.reason || `${sweep.fps} fps < ${sweep.minFps}`})`,
+        );
+        return 1;
+      }
+      if (required.includes('app')) ran.push('app');
+    } catch (err) {
+      await held.release().catch(() => {});
+      throw err;
     }
-    if (required.includes('app')) ran.push('app');
   }
 
   const block = verticalE2eBlockReason({ files, ran, skipBrowser });
