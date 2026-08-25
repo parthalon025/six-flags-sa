@@ -177,6 +177,7 @@ await check('fail: store ping fails -> 503 naming the store backend', async () =
   assert.equal(body.ready, false);
   assert.equal(body.backend, 'upstash');
   assert.match(body.error, /Upstash 503/);
+  assert.equal(body.postgres.ok, true);
 });
 
 await check('probes run concurrently', async () => {
