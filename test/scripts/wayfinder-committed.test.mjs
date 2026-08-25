@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { scrubGitEnv } from '../../scripts/lib/git-env.mjs';
 import {
   REPO,
   listCommittedWayfinderSlugs,
@@ -23,7 +24,7 @@ const tracked = wayfinderEffortTracked(REPO, 'factories-to-app');
 assert.equal(tracked.ok, true, tracked.reason ?? 'wayfinder effort should be tracked');
 
 try {
-  execFileSync('git', ['check-ignore', '-q', mapRel], { cwd: REPO });
+  execFileSync('git', ['check-ignore', '-q', mapRel], { cwd: REPO, env: scrubGitEnv() });
   assert.fail(`${mapRel} must not be gitignored`);
 } catch (err) {
   assert.ok(err.status !== 0 || err.code, 'git check-ignore exit non-zero means not ignored');

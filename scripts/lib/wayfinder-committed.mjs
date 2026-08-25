@@ -10,6 +10,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { scrubGitEnv } from './git-env.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const REPO = join(here, '../..');
@@ -33,7 +34,7 @@ export function wayfinderEffortTracked(root, slug) {
     return { ok: false, reason: `missing map: ${mapRel}` };
   }
   try {
-    execFileSync('git', ['check-ignore', '-q', mapRel], { cwd: root });
+    execFileSync('git', ['check-ignore', '-q', mapRel], { cwd: root, env: scrubGitEnv() });
     return { ok: false, reason: `${mapRel} is gitignored` };
   } catch {
     return { ok: true };
