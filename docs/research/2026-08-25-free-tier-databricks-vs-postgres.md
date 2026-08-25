@@ -51,6 +51,12 @@ You already named: **Clerk Pro, Vercel, Cloudflare, Databricks, local Docker, fr
 | Databricks | Parked Spark | **No** — idle; do not add Lakebase/App |
 | Local Docker | Factory PostDB | Yes — required |
 | Higgsfield (free) | Extra image/video gen | **No** — not in ADR-0017. Factory LLM is the Cursor/Claude (or Gemini) session + optional Cloudflare Workers AI |
+| Meshy.ai (free) | Text/image → 3D mesh | **No** for phone/CI. Beauty-lane only if a mesh is then **Blender-baked** into the world pack; check Meshy ToS before `original`-class ledger (free tiers are often non-commercial) |
+| Unreal / Unity subscriptions | Game engines | **No** — ADR-0016 rejects engines anywhere certification or the phone can see. Full per-park scene export is skipped ([industry comparison](./2026-08-24-factory-industry-comparison.md)) |
+| Godot | Game engine | **No** on the phone. Only adjacent adopt: **Material Maker** (Godot-based) if a design request needs a PBR graph no CC0 library has |
+| Claude Code Max + Cursor | Agent sessions | **Yes, as one factory brain.** ADR-0017: briefs on disk, answered by the invoking subscription agent (`VENUE_LLM_PROVIDER=agent`). Do not run two parallel factory pipelines. Cursor = this repo’s agent UX; Claude Code Max = the paid tokens. Pick one session to answer each brief |
+
+**3D that *is* on the Park Bound path:** local **Blender** (headless, pinned, E.1) + Node bake → PMTiles/MapLibre. Not an account. OSM2World → glTF is watch. Runtime three.js/KTX2 is deferred.
 
 **On those bills already, or not a new login**
 
