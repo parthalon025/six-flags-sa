@@ -184,6 +184,57 @@ export async function writeDisplayPack(venueId, skinId, body, basedOnRevisionId)
 }
 
 /**
+ * Display packs pinned to the published truth head.
+ * @param {string} venueId
+ * @returns {Promise<Array<{ packId: string, skinId: string, basedOnRevisionId: string, body: object }>>}
+ */
+export async function listDisplayPacks(venueId) {
+  requirePostdb();
+  const pool = await getPool();
+  const { rows } = await pool.query(
+    `SELECT dp.pack_id, dp.skin_id, dp.based_on_revision_id, dp.body
+     FROM display_packs dp
+     JOIN venue_heads vh
+       ON vh.venue_id = dp.venue_id
+      AND vh.truth_revision_id = dp.based_on_revision_id
+     WHERE dp.venue_id = $1
+     ORDER BY dp.skin_id`,
+    [venueId],
+  );
+  return rows.map((row) => ({
+    packId: row.pack_id,
+    skinId: row.skin_id,
+    basedOnRevisionId: row.based_on_revision_id,
+    body: row.body,
+  }));
+}
+
+/**
+ * Register exported files in the blob table (same-origin URL as storage_uri for Slice 1).
+ * @param {string} venueId
+ * @param {Array<{ path: string, sha256: string, bytes: number, storageUri?: string }>} entries
+ */
+export async function registerArtifactBlobs(venueId, entries) {
+  requirePostdb();
+  if (!entries?.length) return [];
+  const pool = await getPool();
+  const ids = [];
+  for (const entry of entries) {
+    const { rows } = await pool.query(
+      `INSERT INTO artifact_blobs (venue_id, path, sha256, bytes, storage_uri)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (venue_id, path, sha256) DO UPDATE
+         SET bytes = EXCLUDED.bytes,
+             storage_uri = EXCLUDED.storage_uri
+       RETURNING blob_id`,
+      [venueId, entry.path, entry.sha256, entry.bytes, entry.storageUri ?? entry.path],
+    );
+    ids.push(rows[0].blob_id);
+  }
+  return ids;
+}
+
+/**
  * Repoint the venue head to an existing truth revision (rollback / promote).
  * @param {string} venueId
  * @param {string} revisionId

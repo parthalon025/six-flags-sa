@@ -38,6 +38,7 @@ assert.equal(displayRoute.entry.module, 'visual-factory/compile-display.mjs');
 
 const bundleRoute = getRoute('delivery.bundle');
 assert.equal(bundleRoute.entry.module, 'delivery/publish-bundle.mjs');
+assert.equal(bundleRoute.cli, 'export-bundle.mjs');
 
 const fresh = freshnessDecision({
   truth: [{ venue: 'a', generated: '2026-08-10' }],
@@ -62,6 +63,9 @@ if (!legArg || legArg === 'delivery') {
   const { checkVenueFreshness } = await import('@party-tracker/venue-builder/freshness.js');
   const gate = checkVenueFreshness(ROOT);
   assert.equal(typeof gate.ok, 'boolean');
+  const published = await publishBundle('kings-island', { skipReindex: true, filesOnly: true });
+  assert.ok(published.bundle?.files?.length, 'seed bundle readable through delivery export seam');
+  assert.equal(published.revisionId, null);
 }
 
 // dependency-cruiser boundary rules (visual → map-io only)

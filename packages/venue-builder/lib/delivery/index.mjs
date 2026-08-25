@@ -5,6 +5,7 @@
  */
 
 export { publishBundle } from './publish-bundle.mjs';
+export { assembleExportBundle, exportFromPostdb } from './export-from-postdb.mjs';
 export {
   freshnessDecision,
   bundleDriftDecision,

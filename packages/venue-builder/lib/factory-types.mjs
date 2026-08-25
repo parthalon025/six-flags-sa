@@ -282,6 +282,7 @@ export const ROUTES = Object.freeze([
     id: 'delivery.bundle',
     factory: 'delivery',
     entry: { kind: 'lib', module: 'delivery/publish-bundle.mjs', export: 'publishBundle' },
+    cli: 'export-bundle.mjs',
     inputs: [{ name: 'venueId', type: 'string', required: true }],
     outputs: [
       {
@@ -335,6 +336,7 @@ export const knownFactoryScripts = () => [
   'build-truth.mjs',
   'compile-display.mjs',
   'publish-bundle.mjs',
+  'export-bundle.mjs',
   'display-bake.mjs',
   'display-publish.mjs',
   'display-tiles.mjs', // lib module; bin is display-pack orchestration
