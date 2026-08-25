@@ -138,12 +138,12 @@ function overlayLayers(colour) {
       type: 'circle',
       source: source('places'),
       paint: {
-        'circle-radius': 5,
+        // Match the visible pin footprint (coaster r≈11 + stroke). The SVG
+        // overlay draws the glyph; this circle is the tap target only.
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 10, 14, 14, 18, 16],
         'circle-color': colour('place'),
         'circle-stroke-width': 1.5,
         'circle-stroke-color': '#ffffff',
-        // Invisible hit target. The SVG overlay is the visible pin; drawing
-        // both is the park-wide black mass.
         'circle-opacity': 0,
         'circle-stroke-opacity': 0,
       },

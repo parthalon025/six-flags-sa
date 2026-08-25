@@ -72,15 +72,16 @@ export default function WorldMarks({
     setPhrase(null);
   }, [spot?.lat, spot?.lng]);
 
-  function drop(type, signPhrase = null) {
+  async function drop(type, signPhrase = null) {
     if (!spot) return;
-    onDropMark?.({
+    const saved = await onDropMark?.({
       type,
       phrase: signPhrase,
       lat: spot.lat,
       lng: spot.lng,
       placeId: spot.placeId || null,
     });
+    if (saved === false) return;
     setPlaced((list) => (list.includes(type) ? list : [...list, type]));
     if (type === 'sign') setSignOpen(false);
   }

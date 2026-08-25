@@ -1394,6 +1394,11 @@ const read = (name) => JSON.parse(readFileSync(new URL(name, VENUES), 'utf8'));
     'aruba-tuba',
     'overlapping hits resolve to the nearer Place, not source order',
   );
+  assert.equal(
+    closestPlaceId(features, { x: 0, y: 0 }, project, 1),
+    null,
+    'a max distance rejects hits outside the slop budget',
+  );
 }
 
 {
