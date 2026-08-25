@@ -3,6 +3,67 @@
  * Spec: docs/superpowers/specs/2026-08-25-executive-resume-human-brief-design.md
  */
 
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { effortPhase, listEfforts, loadTickets } from './matt-workflow.mjs';
+import { listCommittedWayfinderSlugs } from './wayfinder-committed.mjs';
+
+/**
+ * @typedef {{
+ *   overview?: string;
+ *   now?: { task?: string; nextStep?: string; doneWhen?: string[] };
+ *   factoriesStanding?: string;
+ *   appStanding?: string;
+ *   wayfinder?: Array<{
+ *     slug: string;
+ *     phase: string;
+ *     destination?: string;
+ *     tickets: Array<{ id: string; title: string; status: string }>;
+ *   }>;
+ *   hanging?: Array<
+ *     | { kind: 'github'; title: string; number?: number; label?: string }
+ *     | { kind: 'blocked'; title: string }
+ *   >;
+ *   clerkHealth?: { ok?: boolean; declared?: string; locked?: string; detail?: string };
+ *   warnings?: string[];
+ * }} BriefFacts
+ */
+
+function readDestination(mapPath) {
+  if (!existsSync(mapPath)) return undefined;
+  const body = readFileSync(mapPath, 'utf8');
+  const part = body.split(/^##?\s+Destination\s*$/im)[1];
+  if (!part) return undefined;
+  const until = part.split(/^##\s+/m)[0] || part;
+  const line = until
+    .split('\n')
+    .map((l) => l.replace(/^[-*]\s+/, '').trim())
+    .find((l) => l && !l.startsWith('#'));
+  return line;
+}
+
+/** @param {string} root */
+export function gatherWayfinderFacts(root) {
+  const slugs = [...new Set([...listCommittedWayfinderSlugs(), ...listEfforts(root)])].sort();
+  const out = [];
+  for (const slug of slugs) {
+    const dir = join(root, '.scratch', slug);
+    const mapPath = join(dir, 'map.md');
+    if (!existsSync(mapPath)) continue;
+    const state = effortPhase(slug, root);
+    const tickets = loadTickets(dir)
+      .filter((t) => t.isWayfinder && ['open', 'claimed'].includes(t.status))
+      .map((t) => ({ id: t.id, title: t.title, status: t.status }));
+    out.push({
+      slug,
+      phase: state.phase,
+      destination: readDestination(mapPath),
+      tickets,
+    });
+  }
+  return out;
+}
+
 /** @param {import('./executive-resume-brief.mjs').BriefFacts | object} facts */
 export function fillHumanBrief(facts) {
   const lines = ['# Executive brief', ''];
