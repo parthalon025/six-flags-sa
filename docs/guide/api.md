@@ -45,7 +45,8 @@ is deliberately excluded — a 503 is `no-store`, so an outage cannot be cached 
 Vercel's routes deliberately implement no SSE — serverless cannot hold a stream open — so
 clients there fall back to polling. Upstash is optional and only makes a *cloud-hosted*
 party durable across instances; it is not needed for phone-hosted parties, which is the
-normal case.
+normal case. See [Upstash runbook](upstash.md) for production credential requirements,
+deploy guards, and the `durable: false` / `backend: "memory"` symptoms when Redis is missing.
 
 Polling is therefore the deployment's whole cost model, and the relay is written around
 that. A mailbox is a sorted set scored by message sequence, so a poll asks for what is
