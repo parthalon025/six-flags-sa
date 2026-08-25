@@ -42,6 +42,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/worktree.test.mjs',
   'test/scripts/matt-standards.test.mjs',
   'test/scripts/matt-review.test.mjs',
+  'test/scripts/neon-runbook.test.mjs',
   'test/scripts/orchestrator.test.mjs',
   'test/scripts/vertical-e2e.test.mjs',
   'test/scripts/factory-legs.test.mjs',
