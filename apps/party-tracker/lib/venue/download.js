@@ -21,7 +21,8 @@
  *
  * Delivery `?since=<revision_id>` (ticket 17) is a server query on the
  * origin manifest. This module still plans from the full bundle + hashes
- * (`planBundleSync`). Slice 1 stub: `packages/venue-builder/lib/delivery/delta-sync.mjs`.
+ * (`planBundleSync`); Slice 1 does not filter by `since`. The phone never
+ * talks to PostDB.
  */
 
 /* Must match BUNDLE_CACHE in public/sw.js — the worker cannot import this
