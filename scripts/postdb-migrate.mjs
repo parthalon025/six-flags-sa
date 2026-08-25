@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
  * Apply db/migrations/*.sql in lexical order (CI + local Docker Postgres).
+ * Skips files already recorded in schema_migrations (#443).
  *
  *   npm run postdb:migrate
  */
@@ -16,14 +17,39 @@ export function orderedMigrationFiles() {
 }
 
 /**
- * @param {{ query: (sql: string) => Promise<unknown> }} client pg Client or Pool
+ * @param {{ query: (sql: string, params?: unknown[]) => Promise<{ rows: Array<{ name: string }> }> }} client
+ */
+export async function readAppliedMigrationNames(client) {
+  try {
+    const result = await client.query('SELECT name FROM schema_migrations ORDER BY name');
+    return result.rows.map((row) => row.name);
+  } catch (err) {
+    if (err?.code === '42P01') return [];
+    throw err;
+  }
+}
+
+/**
+ * @param {{ query: (sql: string, params?: unknown[]) => Promise<unknown> }} client pg Client or Pool
  * @param {string[]} [files]
  */
 export async function applyMigrations(client, files = orderedMigrationFiles()) {
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      name TEXT PRIMARY KEY,
+      applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+  const applied = await readAppliedMigrationNames(client);
   for (const file of files) {
+    if (applied.includes(file)) {
+      console.log(`> skip ${file} (already applied)`);
+      continue;
+    }
     const sql = readFileSync(migrationPath(file), 'utf8');
     console.log(`> applying ${file}`);
     await client.query(sql);
+    await client.query('INSERT INTO schema_migrations (name) VALUES ($1) ON CONFLICT DO NOTHING', [file]);
   }
 }
 
