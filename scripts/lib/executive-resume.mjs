@@ -17,7 +17,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { listEfforts, effortPhase } from './matt-workflow.mjs';
-import { sessionBrief as mattWorkflowBrief } from './matt-workflow.mjs';
+import { fillHumanBrief, gatherBriefFacts } from './executive-resume-brief.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const REPO = join(here, '../..');
@@ -574,12 +574,10 @@ export function sessionStartBrief({ root = REPO, runner = execFileSync, situatio
   resume = saveLocal(refreshInventory(resume, { cwd: root, runner }), root);
   const drift = checkDrift(resume);
   const goal = createGoalObjective(resume);
+  const brief = fillHumanBrief(gatherBriefFacts({ resume, root, runner }));
   const lines = [
-    renderMarkdown(resume),
-    '',
+    brief,
     '---',
-    '',
-    mattWorkflowBrief({ cwd: root, situation }),
     '',
     '## Session start ritual',
     '1. **Platform** — inventory above was regenerated (worktrees + draft PRs + handoffs + train + workflow).',
@@ -597,10 +595,12 @@ export function sessionStartBrief({ root = REPO, runner = execFileSync, situatio
     '```',
     '5. Do not edit human.parkingLot or human.blockedOnMe.',
     '6. **End of every turn** with code changes: `npm run resume:end-turn -- --next "..." --doing "..."`',
+    'Matt skill gate: `npm run workflow:next` (not duplicated here).',
   );
   if (drift.warnings.length) {
     lines.push('', '⚠️ **Drift warnings:**', ...drift.warnings.map((w) => `- ${w}`), '', 'Still on NOW? Say yes or switch.');
   }
+  void situation;
   return lines.join('\n');
 }
 
