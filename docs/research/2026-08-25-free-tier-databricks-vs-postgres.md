@@ -147,6 +147,56 @@ That stack already exceeds four parks of JSON. The bottleneck is factory *softwa
 
 ---
 
+## 6. Cloudflare as an alternative
+
+Cloudflare is not one product. Split it the same way as Databricks vs Docker: **which job?**
+
+Official pricing: [Workers](https://developers.cloudflare.com/workers/platform/pricing/), [R2](https://developers.cloudflare.com/r2/pricing/), [D1](https://developers.cloudflare.com/d1/platform/pricing/), [Hyperdrive](https://developers.cloudflare.com/hyperdrive/platform/pricing/), [Workers AI](https://developers.cloudflare.com/workers-ai/platform/pricing/).
+
+### Vs Databricks (batch / lakehouse)
+
+**No.** Workers + R2 is not Spark. There is no Unity Catalog, no Delta jobs, no Foundation Models lakehouse.
+
+Closest CF analogue: **R2 Data Catalog (Iceberg) + R2 SQL** — query Parquet in R2. Included: 10 GB scanned/month, then $0.0025/GB; catalog ops 1M/month free. Fine for small gold tables. Not a substitute for Databricks when traces/OSM no longer fit DuckDB.
+
+**Workers AI:** 10,000 Neurons/day free ([pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/)). Already the ADR-0017 image-gen path. Batch research at fleet scale still belongs on a laptop or a paid LLM, not Databricks Model Serving.
+
+### Vs Docker/Neon (PostDB / E0 API)
+
+**Do not replace Postgres with D1.** D1 is SQLite: 5 GB account storage on Free, 5M row-reads / 100k row-writes per day. No `pg`, no JSONB the factory already uses, no `DATABASE_URL` for Node `venues:*`. Factory CI would break.
+
+**Hyperdrive** (Free: 100k queries/day; Paid: unlimited) is a **pool in front of existing Postgres** (Neon, Docker via Tunnel/VPC). It is how a Worker talks to PostDB — not a database.
+
+**Durable Objects SQLite:** 5 GB total on Free; 10 GB *per object* on Paid. Actor model, not a factory bus.
+
+### Vs Vercel origin / `public/venues` (Delivery)
+
+**This is where Cloudflare wins on a free/limited budget** — and the repo already said so ([factory industry comparison](./2026-08-24-factory-industry-comparison.md) Q20: API manifest + R2).
+
+| Piece | Free | Limited ($5 Workers Paid) |
+|-------|------|---------------------------|
+| **R2 blobs** (PMTiles, worlds, truth JSON) | 10 GB, 1M Class A, 10M Class B, **egress $0** | Same free allotment, then $0.015/GB-month; egress still $0 |
+| **Workers** (manifest API) | **100,000 req/day**, 10 ms CPU | $5/mo: 10M req + 30M CPU-ms |
+| **Static assets** on Workers | Free, unlimited | Same |
+| **Containers** (run factory image) | **Not on Free** | Included allotment on Paid; sleep when idle |
+
+Direct R2 / `r2.dev` / S3 API: **no egress fee**. Fronting R2 with a Worker burns the 100k/day Free cap — already flagged in the [API catalog](./2026-08-20-free-tier-api-catalog.md). Prefer public R2 or custom domain cache for guest GETs; Worker only for signed/head manifests.
+
+### Recommended split (does not change ADR-0010/0024)
+
+```
+Factory (author-time)  Docker Postgres + Node venues:*
+App API (E0)           Neon  ← Hyperdrive if a Worker ever queries it
+Delivery (wear-time)   R2 hash-addressed blobs + optional Worker head API
+Phone                  unchanged hash-verified bundle
+Batch analytics        DuckDB local; Databricks only at volume
+LLM / refs             Workers AI 10k Neurons/day (already in)
+```
+
+Cloudflare **complements** Docker/Neon. It does **not** replace Databricks until R2 SQL is enough (it is not, yet, for Spark-scale traces). It **does** beat Vercel Hobby bandwidth for large venue packs because R2 egress is free.
+
+---
+
 ## Sources
 
 - Databricks Free vs trial: https://docs.databricks.com/aws/en/getting-started/free-trial-vs-free-edition  
@@ -156,4 +206,8 @@ That stack already exceeds four parks of JSON. The bottleneck is factory *softwa
 - Lakebase Always-On: https://www.databricks.com/blog/introducing-always-pricing-automatic-savings-databricks-lakebase  
 - Neon plans: https://neon.com/docs/introduction/plans  
 - MotherDuck pricing: https://motherduck.com/docs/about-motherduck/billing/pricing/  
+- Cloudflare Workers pricing / limits: https://developers.cloudflare.com/workers/platform/pricing/ , https://developers.cloudflare.com/workers/platform/limits/  
+- Cloudflare R2 pricing (free egress): https://developers.cloudflare.com/r2/pricing/  
+- Cloudflare D1 pricing: https://developers.cloudflare.com/d1/platform/pricing/  
+- Cloudflare Hyperdrive pricing: https://developers.cloudflare.com/hyperdrive/platform/pricing/  
 - Repo cost lock: [ADR-0010](../adr/0010-databricks-ops-free-tier.md)
