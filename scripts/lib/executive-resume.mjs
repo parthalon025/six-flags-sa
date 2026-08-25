@@ -439,54 +439,39 @@ export function markTimerFired(resume) {
 }
 
 /**
- * Human-facing resume: one natural-language terminal message (ADHD keep-me-on-track).
- * Inventory stays summarized — no HTML, no dashboard wall.
+ * Human-facing resume: one short executive brief in the terminal.
+ * Goal, progress, next step — not PR titles, draft lists, or inventory walls.
  */
 export function renderProse(resume) {
-  const { now, human, lastStop, inventory, platform, updatedAt } = resume;
+  const { now, human, lastStop, platform, updatedAt } = resume;
   const paras = [];
 
   if (!now?.task?.trim()) {
     paras.push('No NOW task is set yet. Pick one thing before coding.');
   } else {
-    const ticket = now.ticket ? ` (${now.ticket})` : '';
-    paras.push(`Right now you're on ${now.task.trim()}${ticket}.`);
+    paras.push(`Goal: ${now.task.trim()}.`);
+  }
+
+  if (now?.doneWhen?.length) {
+    paras.push(`Done when: ${now.doneWhen.join('; ')}`);
+  }
+
+  if (lastStop?.iWasDoing?.trim()) {
+    paras.push(`Progress: ${lastStop.iWasDoing.trim()}`);
   }
 
   if (now?.nextStep?.trim()) {
-    paras.push(`Next up: ${now.nextStep.trim()}`);
+    paras.push(`Next: ${now.nextStep.trim()}`);
   } else if (now?.task?.trim()) {
     paras.push('Next step is unset — say what to do next.');
   }
 
-  if (lastStop?.iWasDoing?.trim()) {
-    const when = lastStop.at ? ` (${lastStop.at})` : '';
-    paras.push(`Last stop: ${lastStop.iWasDoing.trim()}${when}`);
+  if (human?.blockedOnMe?.length) {
+    paras.push(`Needs you: ${human.blockedOnMe.join('; ')}`);
   }
 
-  if (human?.blockedOnMe?.length) {
-    paras.push(`Waiting on you: ${human.blockedOnMe.join('; ')}`);
-  }
-  if (human?.parkingLot?.length) {
-    paras.push(`Parked for later: ${human.parkingLot.join('; ')}`);
-  }
   if (human?.notes?.trim()) {
     paras.push(human.notes.trim());
-  }
-
-  const prs = inventory?.draftPrs?.length || 0;
-  const trees = inventory?.worktrees?.length || 0;
-  const handoffs = inventory?.handoffIssues?.length || 0;
-  const claimed = inventory?.claimedTickets?.length || 0;
-  const bits = [];
-  if (prs) bits.push(`${prs} draft PR${prs === 1 ? '' : 's'}`);
-  if (trees) bits.push(`${trees} worktree${trees === 1 ? '' : 's'}`);
-  if (handoffs) bits.push(`${handoffs} handoff${handoffs === 1 ? '' : 's'}`);
-  if (claimed) bits.push(`${claimed} claimed ticket${claimed === 1 ? '' : 's'}`);
-  if (bits.length) {
-    paras.push(
-      `Background noise (not NOW): ${bits.join(', ')}. Ask for inventory if you need the list.`,
-    );
   }
 
   paras.push('Still on this, or switch?');
@@ -740,9 +725,10 @@ export function sessionStartBrief({ root = REPO, runner = execFileSync, situatio
     'Ritual: workflow:check before implement · end-turn with --next/--doing after code · do not edit parkingLot/blockedOnMe without asking.',
   );
   lines.push('');
-  lines.push(mattWorkflowBrief({ cwd: root, situation }).trim());
+  const workflowLine = mattWorkflowBrief({ cwd: root, situation }).split('\n').find((l) => l.startsWith('**Invoke:**') || l.startsWith('## Situation'));
+  if (workflowLine) lines.push(`Matt: ${workflowLine.replace(/\*\*/g, '').trim()}`);
   lines.push('');
-  lines.push('(Full markdown inventory: npm run resume:print -- --markdown)');
+  lines.push('(Full inventory only if you ask: npm run resume:print -- --markdown)');
   return `${lines.join('\n')}\n`;
 }
 

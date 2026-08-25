@@ -33,7 +33,7 @@ Works with the **Matt workflow gate** (`npm run workflow:next`, `workflow:check`
 
 - **`now` + `human.*`** → GitHub executive dashboard issue (pinned JSON comment)
 - **`inventory`** → regenerated locally (never trusted from GitHub)
-- **`.scratch/resume.md`** → rendered markdown archive; do not hand-edit. Terminal humans see `renderProse`, not this wall.
+- **`.scratch/resume.md`** → markdown archive for GitHub sync; do not hand-edit. Terminal humans see a short `renderProse` executive brief (goal / progress / next) — not PR titles or inventory.
 - **`docs/agents/executive-dashboard.json`** → committed durable pointer (issue number); survives ephemeral cloud `.scratch/`
 - **`.scratch/executive-dashboard.json`** → session cache only (`jsonCommentId`)
 

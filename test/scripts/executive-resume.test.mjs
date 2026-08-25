@@ -97,21 +97,26 @@ assert.equal(afterSwitch.previousPlatform, 'cursor-local');
 assert.match(createGoalObjective({ now: { task: 'Ship resume', nextStep: 'Run tests' } }), /Ship resume — next: Run tests/);
 assert.match(createGoalObjective({ now: { task: 'Ship resume', nextStep: '' } }), /Ship resume/);
 
-// Human prose — terminal message, not a dashboard wall
+// Human prose — short executive brief (goal / progress / next), not inventory
 const proseResume = emptyResume({ platform: 'cursor-cloud' });
 proseResume.now.task = 'Executive resume + ADHD keep-me-on-track';
 proseResume.now.ticket = '#643';
 proseResume.now.nextStep = 'Ship durable pointer';
-proseResume.lastStop.iWasDoing = 'Wrote resolvePointer';
-proseResume.human.blockedOnMe = ['Pick the view'];
-proseResume.inventory.draftPrs = [{ number: 1 }, { number: 2 }];
+proseResume.now.doneWhen = ['Cloud sessions restore NOW', 'Pointer survives .scratch'];
+proseResume.lastStop.iWasDoing = 'Wrote resolvePointer; unit tests green';
+proseResume.human.blockedOnMe = ['Confirm the brief feels right'];
+proseResume.inventory.draftPrs = [{ number: 1, title: 'Noise PR title' }, { number: 2, title: 'Another title' }];
 const prose = renderProse(proseResume);
-assert.match(prose, /Right now you're on Executive resume/);
-assert.match(prose, /Next up: Ship durable pointer/);
-assert.match(prose, /Waiting on you: Pick the view/);
-assert.match(prose, /2 draft PRs/);
+assert.match(prose, /Goal: Executive resume/);
+assert.match(prose, /Done when: Cloud sessions restore NOW/);
+assert.match(prose, /Progress: Wrote resolvePointer/);
+assert.match(prose, /Next: Ship durable pointer/);
+assert.match(prose, /Needs you: Confirm the brief feels right/);
 assert.match(prose, /Still on this, or switch\?/);
+assert.doesNotMatch(prose, /draft PR/i);
+assert.doesNotMatch(prose, /Noise PR title/);
 assert.doesNotMatch(prose, /## Open inventory/);
+assert.doesNotMatch(prose, /Background noise/);
 assert.doesNotMatch(prose, /<!DOCTYPE html>/i);
 
 // Draft PRs — all open drafts, not @me only
