@@ -62,6 +62,7 @@ export function emptyResume({ platform = detectPlatform() } = {}) {
       parkingLot: [],
       blockedOnMe: [],
       notes: '',
+      overview: '',
     },
     lastStop: {
       iWasDoing: '',

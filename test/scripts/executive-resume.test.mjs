@@ -58,9 +58,12 @@ assert.match(drift.warnings.join(' '), /branch/i);
 const remote = emptyResume();
 remote.now.task = 'From GitHub';
 remote.human.parkingLot = ['billing later'];
+remote.human.overview = 'Custom overview';
 const merged = mergeFromRemote(resume, remote);
 assert.equal(merged.now.task, 'From GitHub');
 assert.deepEqual(merged.human.parkingLot, ['billing later']);
+assert.equal(merged.human.overview, 'Custom overview');
+assert.equal(emptyResume().human.overview, '');
 
 const patched = agentPatch(merged, { nextStep: 'Run test', iWasDoing: 'Added case' });
 assert.equal(patched.now.nextStep, 'Run test');
