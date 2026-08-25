@@ -139,6 +139,7 @@ assert.match(start, /## Wayfinder/);
 assert.match(start, /## Hanging \/ waiting on you/);
 assert.match(start, /CreateGoal/);
 assert.match(start, /workflow:next/);
+assert.match(start, /executive brief above was regenerated from NOW, inventory, and wayfinder facts/);
 assert.doesNotMatch(start, /# Matt workflow session brief/);
 assert.doesNotMatch(start, /### Draft PRs/);
 

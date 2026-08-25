@@ -581,7 +581,7 @@ export function sessionStartBrief({ root = REPO, runner = execFileSync, situatio
     '---',
     '',
     '## Session start ritual',
-    '1. **Platform** — inventory above was regenerated (worktrees + draft PRs + handoffs + train + workflow).',
+    '1. **Platform** — executive brief above was regenerated from NOW, inventory, and wayfinder facts.',
   ];
   if (changed) {
     lines.push(`2. ⚠️ **Platform changed:** \`${previous}\` → \`${current}\` — confirm NOW or say **switch**.`);
