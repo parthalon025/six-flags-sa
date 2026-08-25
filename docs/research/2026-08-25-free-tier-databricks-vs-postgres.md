@@ -41,7 +41,7 @@ Cloudflare DNS only         existing domain                       $0
 
 ### Owner account inventory (2026-08-25)
 
-You already named: **Clerk Pro, Vercel, Cloudflare, Databricks, local Docker, Higgsfield, Meshy, Unreal/Unity/Godot, Claude Code Max, Cursor, Google AI subscription**.
+You already named: **Clerk Pro, Vercel, Cloudflare, Databricks, local Docker, Higgsfield, Meshy, Unreal/Unity/Godot, Claude Code Max, Cursor, Google AI, Apple Developer, Google Play**.
 
 | Already have | Job it covers | Operate? |
 |--------------|---------------|----------|
@@ -56,6 +56,8 @@ You already named: **Clerk Pro, Vercel, Cloudflare, Databricks, local Docker, Hi
 | Godot | Game engine | **No** on the phone. Only adjacent adopt: **Material Maker** (Godot-based) if a design request needs a PBR graph no CC0 library has |
 | Claude Code Max + Cursor | Code + factory briefs | **Yes — one Claude brain.** One session answers each brief. |
 | **Google AI subscription** | Gemini vision, concept/reference stills, Train I agent-vision claims | **Yes — Gemini half of ADR-0017**, not a new backend. Paid unlocks image models the free AI Studio tier dropped. Stay on the agent-brief seam (no Gemini API keys in CI). Do not also wire Workers AI / Higgsfield for the same job. **Not** Google Maps Platform — that is a separate key if Train I geocoding fires. |
+| **Apple Developer** | App Store, Sign in with Apple, `.well-known/apple-app-site-association` | **Yes — store, not backend.** Team `CDHJC4MH4G` / SBP in the pricing note. Set `IOS_TEAM_ID` on Vercel. |
+| **Google Play Console** | Play uploads, Play App Signing, `assetlinks.json` | **Yes — store, not backend.** Same Google login is not Maps Platform and not Gemini. Set `ANDROID_CERT_SHA256` on Vercel. |
 
 **3D that *is* on the Park Bound path:** local **Blender** (headless, pinned, E.1) + Node bake → PMTiles/MapLibre. Not an account. OSM2World → glTF is watch. Runtime three.js/KTX2 is deferred.
 
@@ -71,8 +73,6 @@ You already named: **Clerk Pro, Vercel, Cloudflare, Databricks, local Docker, Hi
 |---------|-----|-----------|
 | **Neon Free** (Vercel Marketplace) | Serverless E0 + hosted PostDB. Docker does not survive Vercel instances. | Same Vercel dashboard |
 | **Upstash Redis** (Marketplace, optional until Party must span functions) | Party store on Vercel. Skip only for a single Node process. | Same Vercel dashboard |
-| **Apple Developer** ($99/yr) | App Store. SBP enrollment already in the pricing note (team `CDHJC4MH4G`). | Store, not backend |
-| **Google Play Console** ($25 once) | Play. | Store, not backend |
 
 **Nice-to-have, do not sign up to “complete the set”**
 
