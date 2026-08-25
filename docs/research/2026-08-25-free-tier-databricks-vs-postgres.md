@@ -1,4 +1,4 @@
-# Free / limited-cost backends — Databricks vs Docker vs Postgres vs DuckDB
+# Free / limited-cost backends — Databricks vs Docker vs Postgres vs DuckDB vs Cloudflare vs Vercel
 
 **Date:** 2026-08-25  
 **Question:** Within a free or limited-cost constraint, what are the pros/cons and maximum capability of Databricks versus a Docker Postgres (or another hosted service) for Park Bound?
@@ -17,8 +17,12 @@ Related: [ADR-0008](../adr/0008-databricks-back-office.md), [ADR-0010](../adr/00
 | **App API (E0)** | Neon Free (0.5 GB, 100 CU-hours) | Neon Launch | **None.** ADR-0010 already forbids Lakebase while the API is on Vercel. |
 | **Batch analytics / traces / OSM joins** | **DuckDB files on the laptop** (unlimited within RAM/disk) | MotherDuck Lite overflow, or one Databricks serverless job run | Spark + Unity Catalog **only when data no longer fits DuckDB/Postgres**. |
 | **Steward lakehouse UI** | — | Databricks App is **not** limited-cost (~$100–400/mo idle per ADR-0010) | Real, and too expensive for this constraint. |
+| **App host (wear-time UI + E0 API)** | Vercel Hobby (non-commercial) | **Vercel Pro $20/mo** (required once the product is commercial) | None. |
+| **Delivery blobs (PMTiles / worlds)** | Seed in `public/` + jsDelivr, or Cloudflare R2 (egress $0) | R2 still cheaper than Vercel Blob / Fast Data Transfer | None. |
 
 **Databricks is not more capable than Docker for the factory.** It is more capable than Docker for *fleet-scale batch* — and that capability is almost entirely **off** on the free/limited budget.
+
+**Vercel is not an alternative to Databricks or PostDB.** It is already the wear-time origin. **Cloudflare R2** is the alternative to putting large packs on that origin.
 
 ---
 
@@ -182,18 +186,55 @@ Closest CF analogue: **R2 Data Catalog (Iceberg) + R2 SQL** — query Parquet in
 
 Direct R2 / `r2.dev` / S3 API: **no egress fee**. Fronting R2 with a Worker burns the 100k/day Free cap — already flagged in the [API catalog](./2026-08-20-free-tier-api-catalog.md). Prefer public R2 or custom domain cache for guest GETs; Worker only for signed/head manifests.
 
-### Recommended split (does not change ADR-0010/0024)
+Cloudflare **complements** Docker/Neon/Vercel. It does **not** replace Databricks until R2 SQL is enough (it is not, yet, for Spark-scale traces). It **does** beat Vercel Hobby/Pro bandwidth for large venue packs because R2 egress is free.
+
+---
+
+## 7. Vercel as an alternative
+
+Vercel is not one product either, and it is **already in the stack**: Next.js `apps/party-tracker` deploys here; E0 API routes run as Fluid Compute functions; seed bundles live under `public/venues/` and ride the same CDN ([ADR-0018](../adr/0018-factory-interaction-and-delivery.md), [ADR-0010](../adr/0010-databricks-ops-free-tier.md)).
+
+Official: [Hobby](https://vercel.com/docs/plans/hobby), [Pro](https://vercel.com/docs/plans/pro-plan), [pricing](https://vercel.com/pricing), [Fair Use](https://vercel.com/docs/limits/fair-use-guidelines), [Blob](https://vercel.com/docs/vercel-blob/usage-and-pricing). Repo cost sheet: [parkbound-account-pricing](./2026-08-14-parkbound-account-pricing.md).
+
+### Vs Databricks (batch / lakehouse)
+
+**No.** Functions are request/cron workers (Hobby **300s** max; Pro default 300s, configurable to 800s, beta 1800s). That is not Spark, Unity Catalog, or Delta. Vercel Sandbox/Workflows do not become a lakehouse. Keep Databricks parked at volume; keep DuckDB on the laptop until then.
+
+Do **not** run `venues:build` / OSM consolidates on Vercel Functions or as the production build. Builds are for the app; the factory stays Docker + CI Postgres (`scripts/vercel-ignore.sh` already skips factory-only commits).
+
+### Vs Docker/Neon (PostDB / E0 API)
+
+**Vercel Postgres and Vercel KV are gone.** Storage is Marketplace: Neon Postgres + optional Upstash — already the ADR-0010 E0 choice. PostDB for the factory remains Docker locally / CI `postgres:16`; hosted PostDB = the same Neon, not a Vercel-native engine.
+
+Cron or a Function can *call* `venues:export` against Neon. That is a trigger, not moving the factory onto Vercel.
+
+### Vs Cloudflare R2 (Delivery) — this is the real comparison
+
+ADR-0018 still ships seed packs with the app origin. Large PMTiles/worlds should **not** stay on that origin once guest traffic is real.
+
+| | **Vercel origin / Blob** | **Cloudflare R2** |
+|--|-------------------------|-------------------|
+| Hobby storage | Blob **1 GB**; `public/` counts as Fast Data Transfer | **10 GB** |
+| Transfer | Hobby FDT **100 GB/mo**; Blob transfer **10 GB/mo**. Pro FDT **1 TB** then ~**$0.15/GB**; Blob Data Transfer from **$0.05/GB** | **$0 egress** (all plans) |
+| Cache | Blob cache max **512 MB** per object — larger PMTiles are a cache MISS + Fast Origin Transfer on every GET | No 512 MB CDN-cache cliff |
+| Commercial | Hobby is **non-commercial only** ([Fair Use](https://vercel.com/docs/limits/fair-use-guidelines#commercial-usage)). Paid product → **Pro $20/mo** + $20 usage credit | R2 free tier is commercial-usable (account ToS) |
+| Deploys | Hobby **100/day** (this repo already reserves 25 for the owner) | N/A for blob PUT |
+
+**Keep Vercel** for the app UI, E0 API, and small seed JSON. **Move heavy bytes to R2** (or jsDelivr for git-pinned immutables) when Fast Data Transfer or Blob size becomes the tax. Do not put the factory bus or Spark on Vercel.
+
+### Recommended split (does not change ADR-0010/0018/0024)
 
 ```
-Factory (author-time)  Docker Postgres + Node venues:*
-App API (E0)           Neon  ← Hyperdrive if a Worker ever queries it
-Delivery (wear-time)   R2 hash-addressed blobs + optional Worker head API
+Factory (author-time)  Docker Postgres + Node venues:*     (not Vercel Functions)
+App host + E0 API      Vercel (Hobby now; Pro when commercial) + Neon
+Delivery seed          public/venues on the Vercel CDN
+Delivery heavy bytes   R2 (or jsDelivr) when FDT/Blob would bill
 Phone                  unchanged hash-verified bundle
 Batch analytics        DuckDB local; Databricks only at volume
 LLM / refs             Workers AI 10k Neurons/day (already in)
 ```
 
-Cloudflare **complements** Docker/Neon. It does **not** replace Databricks until R2 SQL is enough (it is not, yet, for Spark-scale traces). It **does** beat Vercel Hobby bandwidth for large venue packs because R2 egress is free.
+**Limited-cost ceiling if the product is commercial:** Vercel Pro **$20/mo** (seat + credit) is the first non-negotiable. Cloudflare Workers Paid **$5/mo** is optional and only if a Worker fronts manifests past 100k req/day. Neon Launch and R2 storage overages stay cheaper than Databricks App or Lakebase.
 
 ---
 
@@ -210,4 +251,7 @@ Cloudflare **complements** Docker/Neon. It does **not** replace Databricks until
 - Cloudflare R2 pricing (free egress): https://developers.cloudflare.com/r2/pricing/  
 - Cloudflare D1 pricing: https://developers.cloudflare.com/d1/platform/pricing/  
 - Cloudflare Hyperdrive pricing: https://developers.cloudflare.com/hyperdrive/platform/pricing/  
-- Repo cost lock: [ADR-0010](../adr/0010-databricks-ops-free-tier.md)
+- Vercel Hobby / Pro / pricing: https://vercel.com/docs/plans/hobby , https://vercel.com/docs/plans/pro-plan , https://vercel.com/pricing  
+- Vercel Fair Use (Hobby non-commercial): https://vercel.com/docs/limits/fair-use-guidelines  
+- Vercel Blob pricing (512 MB cache, BDT): https://vercel.com/docs/vercel-blob/usage-and-pricing  
+- Repo cost lock: [ADR-0010](../adr/0010-databricks-ops-free-tier.md) , [parkbound-account-pricing](./2026-08-14-parkbound-account-pricing.md)
