@@ -16,6 +16,10 @@ import path from 'node:path';
 import process from 'node:process';
 import { pointInRing } from '../lib/geometry.mjs';
 import { checklist, checklistTable, failures } from '../lib/venue-checklist.mjs';
+import {
+  checkAllVenueReports,
+  readExpectLock,
+} from '../lib/venue-report-gate.mjs';
 import { readRecipe } from '../lib/venue-recipe.mjs';
 import { requests } from '../lib/venue-requests.mjs';
 import { venueSidecar, readJson, VENUE_DIR } from '../lib/venue-io.mjs';
@@ -53,13 +57,19 @@ const load = (v) => {
    Point". Every location is the same data about a different place, so the only
    useful review is the one that lines them up. */
 if (!id) {
+  const gate = checkAllVenueReports({
+    venues: manifest.venues,
+    load: (v) => {
+      const loaded = load(v);
+      return { ...loaded, ...loaded.sizes };
+    },
+    readExpect: readExpectLock,
+  });
   const rows = [];
-  let short = 0;
   for (const v of manifest.venues) {
     const { map, pois, sizes } = load(v);
     const items = checklist(v, map, pois, sizes);
     const bad = items.filter((i) => i.status === 'missing');
-    short += failures(items).length;
     rows.push({ v, items, bad });
   }
   console.log('### What every location here is carrying\n');
@@ -76,10 +86,18 @@ if (!id) {
     for (const i of bad) console.log(`* ${i.required ? '**' : ''}${i.label}${i.required ? '**' : ''} — ${i.detail}. ${i.fix}`);
     console.log();
   }
-  if (short) {
+  if (!gate.ok) {
     console.log(`> [!WARNING]`);
-    console.log(`> ${short} required item(s) missing. \`npm run test:unit\` holds the same line.`);
+    console.log(
+      `> ${gate.failures.length} required item(s) missing or expect lock violated. `
+        + '`npm run test:ci-gate` holds the same line.',
+    );
     console.log('>');
+    for (const f of gate.failures) {
+      console.log(`> **${f.venueId}** [${f.kind}/${f.key}]: ${f.message}`);
+    }
+    console.log('>');
+    process.exit(1);
   }
   /* The gaps above split in two, and the split is the useful part: some of them
      are a tag rule to fix in this repo, and some of them are a fact no amount of
