@@ -156,7 +156,7 @@ await check('listContributions filters by venue and status', async () => {
 
   const acceptedOnly = await listContributions({ venueId: 'cedar-point', status: 'accepted' });
   assert.ok(acceptedOnly.some((r) => r.id === accepted.id));
-  assert.ok(!acceptedOnly.every((r) => r.status !== 'accepted'));
+  assert.ok(acceptedOnly.every((r) => r.status === 'accepted'));
   assert.ok(!acceptedOnly.some((r) => r.id === pending.id));
 });
 
@@ -210,6 +210,15 @@ await check('self-thanks never counts and never moves impact', async () => {
   assert.equal(r.counted, false);
   assert.equal(r.reason, 'self');
   assert.equal(await impactHelpedFor('usr_pg_finder'), before);
+});
+
+await check('unknown contribution and missing thanker are refused', async () => {
+  const gone = await thankContribution({ contributionId: 'c_missing', thankerId: 'usr_pg_fan' });
+  assert.equal(gone.ok, false);
+  assert.equal(gone.reason, 'not_found');
+  const anon = await thankContribution({ contributionId: finder.id, thankerId: '' });
+  assert.equal(anon.ok, false);
+  assert.equal(anon.reason, 'thanker_required');
 });
 
 for (const id of insertedIds) {
