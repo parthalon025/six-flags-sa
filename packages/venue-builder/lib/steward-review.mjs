@@ -118,6 +118,12 @@ export function renderStewardReviewMarkdown(packet) {
     lines.push('');
     lines.push(`- **Status:** ${flags.join('; ')}`);
     if (claim.conclusion) lines.push(`- **Pipeline:** ${claim.conclusion}`);
+    if (claim.dissent.length) {
+      lines.push('- **Dissent:**');
+      for (const d of claim.dissent) {
+        lines.push(`  - \`${d.source}\` — ${d.metres}m from fused position`);
+      }
+    }
     if (claim.at) lines.push(`- **Position:** ${claim.at.lat}, ${claim.at.lng}`);
     lines.push('- **Sources:**');
     for (const src of claim.sources) {

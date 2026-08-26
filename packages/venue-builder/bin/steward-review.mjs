@@ -58,8 +58,3 @@ if (args.markdown) {
 }
 
 console.log(renderStewardReviewMarkdown(packet));
-if (packet.summary.total) {
-  console.log('');
-  console.log('JSON packet (pass --json to emit only):');
-  console.log(JSON.stringify(packet, null, 2));
-}
