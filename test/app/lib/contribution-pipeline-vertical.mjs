@@ -4,13 +4,17 @@
  * Public seam exercised end to end:
  *   submit() — POST /api/contributions or the same validate+insert the route uses
  *   acceptContribution — steward promotion to accepted
- *   buildConsolidateExport + consolidate({ apply: false }) — dry-run plan output
+ *   venues:consolidate dry-run CLI — plan output without writing venue data
  */
 
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../../..');
 
 /** Fixture body: durable height_rule for kings-island / Orion (independent of code). */
 export const PIPELINE_CONTRIBUTION_BODY = Object.freeze({
@@ -32,9 +36,6 @@ export async function assertContributionConsolidatePipeline({ submit }) {
   const { buildConsolidateExport } = await import(
     '../../../packages/shared/consolidateExport.js'
   );
-  const { consolidate, loadContributionQueue } = await import(
-    '../../../packages/venue-builder/lib/consolidate.mjs'
-  );
 
   const pending = await submit();
   assert.equal(pending.status, 'pending', 'submit leaves contribution pending');
@@ -49,15 +50,23 @@ export async function assertContributionConsolidatePipeline({ submit }) {
   const queuePath = join(tmp, 'queue.json');
   try {
     writeFileSync(queuePath, JSON.stringify(buildConsolidateExport([accepted])));
-    const loaded = loadContributionQueue(queuePath);
-    const report = consolidate({
-      contributions: loaded,
-      venueIds: ['kings-island'],
-      force: true,
-      apply: false,
-    });
+    const stdout = execFileSync(
+      'node',
+      [
+        'packages/venue-builder/bin/consolidate.mjs',
+        '--dry-run',
+        '--json',
+        '--force',
+        '--venue',
+        'kings-island',
+        '--queue',
+        queuePath,
+      ],
+      { cwd: ROOT, encoding: 'utf8' },
+    );
+    const report = JSON.parse(stdout);
 
-    assert.equal(report.writes.length, 0, 'dry-run must not write venue data');
+    assert.equal(report.writes?.length || 0, 0, 'dry-run must not write venue data');
     assert.equal(report.applied.length, 1, 'one height plan expected');
 
     const plan = report.applied[0];
