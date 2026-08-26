@@ -108,8 +108,9 @@ export const SHEET_OPEN = { half: 0.52, full: 0.88 };
  *            22px line, over 2
  *   title    .placeDetailName — 21px type on a 26px line, over 5 to the meta
  *   meta     .placeDetailLine — one 18px line
- *   actions  .placeActions.labelled — one 44px row (12 margin) at ≥390px; below
+ *   actions  .placeActions.labelled — one 44px row (12 margin) at ≥430px; below
  *            that width the three labels wrap to two rows (12 + 44 + 6 + 44).
+ *            Breakpoint covers the widest label ("In your Plan", #574).
  *            {@link sheetPlacePx} picks the budget; re-measure both when padding
  *            or labels change.
  *
@@ -129,8 +130,8 @@ export const SHEET_PLACE_META_PX = 18;
 export const SHEET_PLACE_ACTIONS_PX = 56;
 /** Two wrapped rows at ≤389px: 12 margin + 44 + 6 gap + 44 (globals.css). */
 export const SHEET_PLACE_ACTIONS_WRAP_PX = 106;
-/** Viewport width below which labelled actions wrap (measured 390 fits, 375 wraps). */
-export const SHEET_PLACE_ACTIONS_WRAP_AT_PX = 390;
+/** Viewport width below which labelled actions wrap (375 wraps; ≤429 incl. In your Plan). */
+export const SHEET_PLACE_ACTIONS_WRAP_AT_PX = 430;
 
 export function sheetPlaceActionsPx(viewportWidth = SHEET_PLACE_ACTIONS_WRAP_AT_PX) {
   return viewportWidth < SHEET_PLACE_ACTIONS_WRAP_AT_PX

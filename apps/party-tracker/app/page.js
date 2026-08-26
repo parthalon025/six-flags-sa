@@ -1108,10 +1108,12 @@ function ParkApp({ isSignedIn }) {
     return () => window.removeEventListener('resize', measure);
   }, []);
 
+  /* Narrower viewport needs a taller place budget when labels wrap; only grow on
+     resize so a sheet the visitor pulled to full is not collapsed (#574). */
   useEffect(() => {
     if (view !== 'place') return;
-    fitPlaceSheet();
-  }, [viewportW, view, fitPlaceSheet]);
+    growSheet(sheetPlacePx(viewportW));
+  }, [viewportW, view, growSheet]);
 
   // Where the sheet was left last time, clamped to this screen. Read once, on
   // the client, so the server and the first paint agree on the default.

@@ -7260,9 +7260,9 @@ await check('a map-tapped place card stays leaner than peek and half', () => {
 });
 
 await check('a narrow phone budgets two labelled action rows for place detail', () => {
-  // 390px fits one row; 375px wraps (globals.css). Budget must cover both rows
-  // so the sheet stop does not clip "Rally here" (#574).
-  const wide = sheetPlacePx(400);
+  // 430px fits one row; 375px wraps (globals.css, incl. In your Plan). Budget
+  // must cover both rows so the sheet stop does not clip "Rally here" (#574).
+  const wide = sheetPlacePx(430);
   const narrow = sheetPlacePx(375);
   assert.equal(wide, SHEET_PLACE_PX);
   assert.equal(narrow - wide, SHEET_PLACE_ACTIONS_WRAP_PX - SHEET_PLACE_ACTIONS_PX);
