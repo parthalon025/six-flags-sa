@@ -138,6 +138,8 @@ const briefScratch = mkdtempSync(join(tmpdir(), 'brief-facts-'));
 const briefRoot = join(briefScratch, 'repo');
 const briefEffort = join(briefRoot, '.scratch', 'factories-to-app');
 mkdirSync(join(briefEffort, 'issues'), { recursive: true });
+mkdirSync(join(briefRoot, '.scratch', 'g1-village-green'), { recursive: true });
+writeFileSync(join(briefRoot, '.scratch', 'g1-village-green', 'map.md'), '# Map\n\n## Destination\n\nG1 stub for allowlist check\n');
 writeFileSync(
   join(briefEffort, 'map.md'),
   '# Map\n\n## Destination\n\nFactories feed the live app map\n\n## Decisions so far\n\n- none\n',
@@ -160,7 +162,10 @@ const facts = gatherBriefFacts({
 });
 assert.match(facts.overview, /Parkbound executive focus: Wire party-tracker clerk profile/);
 assert.match(facts.appStanding, /^In flight:/);
-assert.equal(facts.wayfinder.length, 1);
+assert.equal(facts.wayfinder.length, 2);
+const factoriesWf = facts.wayfinder.find((w) => w.slug === 'factories-to-app');
+assert.ok(factoriesWf);
+assert.equal(factoriesWf.tickets.length, 1);
 assert.deepEqual(
   facts.hanging.map((h) => h.title),
   ['Approve brief design', 'Revisit capacitor'],
