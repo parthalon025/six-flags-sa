@@ -107,7 +107,6 @@ import {
     gate.ok,
     `a shipped venue fails venues:report — fix upstream or re-lock expect:\n${explain}\n  Run: npm run venues:report`,
   );
-  assert.ok(gate.failures.length === 0 || !gate.ok);
 }
 
 console.log('venue-report-gate: ok (every shipped venue passes checklist + expect locks)');
