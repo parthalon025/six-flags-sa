@@ -1132,10 +1132,15 @@ function ParkApp({ isSignedIn }) {
   }, [geo.status]);
 
   useEffect(() => {
+    // First-run intake owns the gate until intro is marked seen. Phones that
+    // already granted GPS — common for a signed-in return — hit 'live' before
+    // the splash yields to the welcome step; closing here skipped the welcome
+    // gate entirely.
+    if (introSeen !== true) return;
     if (!askingPark && (geo.status === 'live' || parkAsked)) {
       setGateOpen(false);
     }
-  }, [geo.status, askingPark, parkAsked]);
+  }, [geo.status, askingPark, parkAsked, introSeen]);
 
   useEffect(() => {
     positionRef.current = position;
