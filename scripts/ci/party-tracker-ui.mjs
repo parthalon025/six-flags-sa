@@ -82,22 +82,27 @@ export async function waitForHealth({
 
 export function startProductionServer({
   root = join(dirname(fileURLToPath(import.meta.url)), '../..'),
+  port,
   spawnFn = spawn,
 } = {}) {
   // Detach + unref so `start` can wait for health and exit while Next keeps
   // running for the Playwright step (bash `npm start &` used to do this).
   const isWin = process.platform === 'win32';
+  const env = { ...process.env };
+  if (port != null) env.PORT = String(port);
   const child = isWin
     ? spawnFn(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', 'npm run start -w @party-tracker/app'], {
         cwd: root,
         stdio: 'ignore',
         detached: true,
         windowsHide: true,
+        env,
       })
     : spawnFn('npm', ['run', 'start', '-w', '@party-tracker/app'], {
         cwd: root,
         stdio: 'ignore',
         detached: true,
+        env,
       });
   child.unref?.();
   return child;

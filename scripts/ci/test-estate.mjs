@@ -224,6 +224,7 @@ export const TEST_ESTATE = {
   'test/scripts/vertical-e2e.test.mjs': ['ci-gate'],
   'test/scripts/factory-legs.test.mjs': ['ci-gate'],
   'test/scripts/pre-merge-vertical.test.mjs': ['ci-gate'],
+  'test/scripts/ui-test-origin.test.mjs': ['ci-gate'],
   'test/scripts/wire-watch-target.test.mjs': ['ci-gate'],
   'test/scripts/worktree.test.mjs': ['ci-gate', 'test:unit'],
 };

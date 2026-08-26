@@ -47,6 +47,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/vertical-e2e.test.mjs',
   'test/scripts/factory-legs.test.mjs',
   'test/scripts/pre-merge-vertical.test.mjs',
+  'test/scripts/ui-test-origin.test.mjs',
   'test/scripts/dependency-boundaries.test.mjs',
   'test/scripts/map-performance-contract.test.mjs',
   'test/scripts/venues-env-file.test.mjs',

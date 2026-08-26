@@ -9,7 +9,8 @@
  *   npm run test:validate-ui
  *
  * Environment:
- *   BASE_URL       app origin (default http://127.0.0.1:3000)
+ *   BASE_URL       app origin (default http://127.0.0.1:3000 — set explicitly or let
+ *                  pre-merge-vertical claim an ephemeral port and pass it through)
  *   CHROMIUM_PATH  system Chromium for Playwright
  *   TEST_MODULES   comma-separated module ids (see test/app/modules.json)
  *
@@ -37,6 +38,10 @@ import {
   partitionModules,
 } from './lib/module-select.mjs';
 import { buildQueue } from './lib/validate-ui-queue.mjs';
+import {
+  describeHealthFailure,
+  isOriginUnreachableError,
+} from '../../scripts/lib/ui-test-origin.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../..');
@@ -177,19 +182,29 @@ async function runPool(queue, limit) {
   const pending = [...queue];
   const failures = [];
   const passed = [];
+  let originDead = false;
   const worker = async () => {
     for (;;) {
+      if (originDead) return;
       const suite = pending.shift();
       if (!suite) return;
       try {
         await runSuite(suite.name, suite.script, suite.args, { buffered: limit > 1 });
         passed.push(suite.id);
       } catch (err) {
-        failures.push(`${suite.id}: ${err.message}`);
+        const msg = err.message || String(err);
+        failures.push(`${suite.id}: ${msg}`);
+        if (isOriginUnreachableError(msg)) {
+          originDead = true;
+          pending.length = 0;
+          failures.push(
+            `validate-ui: origin at ${BASE} stopped answering — remaining suites skipped to avoid bogus party-mesh failures`,
+          );
+        }
       }
     }
   };
-  await Promise.all(Array.from({ length: Math.min(limit, pending.length) }, worker));
+  await Promise.all(Array.from({ length: Math.min(limit, queue.length) }, worker));
   return { passed, failures };
 }
 
@@ -238,7 +253,7 @@ try {
   const sec = ((Date.now() - started) / 1000).toFixed(0);
   console.error(`\n${'='.repeat(60)}`);
   console.error(`  UI validation FAILED after ${sec}s`);
-  console.error(`  ${err.message}`);
+  console.error(`  ${describeHealthFailure(BASE, err)}`);
   console.error(`${'='.repeat(60)}\n`);
   process.exitCode = 1;
 }
