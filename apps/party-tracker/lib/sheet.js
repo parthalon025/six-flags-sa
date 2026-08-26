@@ -108,7 +108,8 @@ export const SHEET_OPEN = { half: 0.52, full: 0.88 };
  *            22px line, over 2
  *   title    .placeDetailName — 21px type on a 26px line, over 5 to the meta
  *   meta     .placeDetailLine — one 18px line
- *   actions  .placeActions.labelled — a 44px button under 12 of margin
+ *   actions  .placeActions.labelled — a 44px button under 12 of margin, or two
+ *            rows of 44 with 6 between them below 390px where the labels wrap
  *
  * The back chevron overlays the title rather than taking a row of its own, so
  * it costs nothing here — see .navHead.placeNav.
@@ -122,14 +123,34 @@ export const SHEET_OPEN = { half: 0.52, full: 0.88 };
 export const SHEET_PLACE_HEAD_PX = 24;
 export const SHEET_PLACE_TITLE_PX = 31;
 export const SHEET_PLACE_META_PX = 18;
+/** One labelled action row: 12 of margin and 44 of button (globals.css). */
 export const SHEET_PLACE_ACTIONS_PX = 56;
-export const SHEET_PLACE_PX =
-  SHEET_CHROME_PX +
-  SHEET_PLACE_HEAD_PX +
-  SHEET_PLACE_TITLE_PX +
-  SHEET_PLACE_META_PX +
-  SHEET_PLACE_ACTIONS_PX +
-  8;
+/** Two labelled action rows: margin, row, gap, row — measured at 375px. */
+export const SHEET_PLACE_ACTIONS_TWO_ROW_PX = 106;
+/** Viewport width at which the three worded labels still fit one row. */
+export const SHEET_PLACE_ACTIONS_WRAP_AT_PX = 390;
+
+/** Labelled action row height for this viewport width. */
+export function placeActionsPx(viewportW = SHEET_PLACE_ACTIONS_WRAP_AT_PX) {
+  return viewportW < SHEET_PLACE_ACTIONS_WRAP_AT_PX
+    ? SHEET_PLACE_ACTIONS_TWO_ROW_PX
+    : SHEET_PLACE_ACTIONS_PX;
+}
+
+/** Map-tapped place sheet height for this viewport width. */
+export function sheetPlacePx(viewportW = SHEET_PLACE_ACTIONS_WRAP_AT_PX) {
+  return (
+    SHEET_CHROME_PX +
+    SHEET_PLACE_HEAD_PX +
+    SHEET_PLACE_TITLE_PX +
+    SHEET_PLACE_META_PX +
+    placeActionsPx(viewportW) +
+    8
+  );
+}
+
+/** Wide-phone default; {@link sheetPlacePx} picks the narrow case at runtime. */
+export const SHEET_PLACE_PX = sheetPlacePx(SHEET_PLACE_ACTIONS_WRAP_AT_PX);
 
 /** How close to a stop a release has to land for the stop to take it. */
 export const SHEET_MAGNET_PX = 26;

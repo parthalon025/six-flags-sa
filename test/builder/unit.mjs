@@ -191,11 +191,15 @@ const {
   SHEET_MAGNET_PX,
   SHEET_PEEK_PX,
   SHEET_PLACE_ACTIONS_PX,
+  SHEET_PLACE_ACTIONS_TWO_ROW_PX,
+  SHEET_PLACE_ACTIONS_WRAP_AT_PX,
   SHEET_PLACE_HEAD_PX,
   SHEET_PLACE_META_PX,
   SHEET_PLACE_PX,
   SHEET_PLACE_TITLE_PX,
   SHEET_SEARCH_PX,
+  placeActionsPx,
+  sheetPlacePx,
   nextSheetStop,
   sheetCrowdsMap,
   settleSheet,
@@ -7254,6 +7258,16 @@ await check('a map-tapped place card stays leaner than peek and half', () => {
       8,
   );
   assert.equal(SHEET_PLACE_PX, 221);
+  return true;
+});
+
+await check('labelled place actions budget two rows below the wrap width', () => {
+  assert.equal(SHEET_PLACE_ACTIONS_WRAP_AT_PX, 390);
+  assert.equal(SHEET_PLACE_ACTIONS_TWO_ROW_PX, 106);
+  assert.equal(placeActionsPx(375), SHEET_PLACE_ACTIONS_TWO_ROW_PX);
+  assert.equal(placeActionsPx(SHEET_PLACE_ACTIONS_WRAP_AT_PX), SHEET_PLACE_ACTIONS_PX);
+  assert.equal(sheetPlacePx(375), 271);
+  assert.equal(sheetPlacePx(390), SHEET_PLACE_PX);
   return true;
 });
 
