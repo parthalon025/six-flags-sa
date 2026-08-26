@@ -26,6 +26,7 @@ import {
 } from './vercel-budget.mjs';
 import { isVersionStampOnlyChange } from './version-stamp.mjs';
 import { checkLiveAutomationGate } from './vercel-deploy-gate.mjs';
+import { checkProductionPostgresGuard } from './production-postgres-guard.mjs';
 
 /** Agent / worktree branches — never preview unless the user directed it. */
 const AGENT_PREVIEW_BRANCH = /^(worktree-|cursor\/)/;
@@ -138,6 +139,18 @@ export async function applyLiveAutomationGate(decision, liveGateOptions = {}) {
   };
 }
 
+export function applyProductionPostgresGuard(decision, env = process.env.VERCEL_ENV, runtimeEnv = process.env) {
+  if (!decision.build || env !== 'production') return decision;
+  const guard = checkProductionPostgresGuard(runtimeEnv);
+  if (guard.ok) return decision;
+  return {
+    ...decision,
+    build: false,
+    category: 'production-postgres-missing',
+    reason: guard.reason,
+  };
+}
+
 function git(args) {
   try {
     return execFileSync('git', args, { env: scrubGitEnv(), encoding: 'utf8' }).trim();
@@ -186,6 +199,7 @@ export async function runIgnoreCli({
       );
     }
   }
+  decision = applyProductionPostgresGuard(decision, env, process.env);
   log(decision.reason);
   return decision.build ? 1 : 0;
 }
