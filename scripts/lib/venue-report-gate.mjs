@@ -10,4 +10,5 @@ export {
   checkVenueReport,
   checkAllVenueReports,
   checkShippedVenueReports,
+  loadShippedVenue,
 } from '../../packages/venue-builder/lib/venue-report-gate.mjs';

@@ -5,12 +5,18 @@
  *   node test/scripts/venue-report-gate.test.mjs
  */
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   checkAllVenueReports,
   checkExpectLock,
   checkShippedVenueReports,
   checkVenueReport,
+  readExpectLock,
 } from '../../scripts/lib/venue-report-gate.mjs';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
 /* -------------------------------------------------------- checkExpectLock */
 
@@ -26,6 +32,20 @@ import {
   const missing = checkExpectLock('x', { meta: {} }, { walkable_km_min: 10 });
   assert.equal(missing.length, 1);
   assert.match(missing[0].message, /missing km/);
+
+  const unknown = checkExpectLock('x', map, { mystery_floor: 1 });
+  assert.equal(unknown.length, 1);
+  assert.match(unknown[0].message, /unknown expect key/);
+}
+
+/* ------------------------------------------------------- readExpectLock */
+
+{
+  assert.deepEqual(
+    readExpectLock('park', { expect: { walkable_km_min: 42 } }),
+    { walkable_km_min: 42 },
+    'shipped map meta.expect is the last fallback, matching build-venue',
+  );
 }
 
 /* ------------------------------------------------------ checkVenueReport */
@@ -73,7 +93,7 @@ import {
   const clean = checkAllVenueReports({
     venues,
     load,
-    readExpect: (id) => (id === 'b' ? { walkable_km_min: 60 } : null),
+    readExpect: (id, { map }) => (id === 'b' ? { walkable_km_min: 60 } : map?.meta?.expect ?? null),
   });
   assert.equal(clean.ok, false);
   assert.equal(clean.failures.length, 1);
@@ -93,6 +113,22 @@ import {
     `a shipped venue fails venues:report — fix upstream or re-lock expect:\n${explain}\n  Run: npm run venues:report`,
   );
   assert.ok(gate.failures.length === 0 || !gate.ok);
+}
+
+/* ---------------------------------------------------- venues:report CLI */
+
+{
+  const res = spawnSync('npm', ['run', 'venues:report'], {
+    cwd: root,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  assert.equal(
+    res.status,
+    0,
+    `venues:report exited ${res.status}\nstdout:\n${res.stdout}\nstderr:\n${res.stderr}`,
+  );
+  assert.match(res.stdout, /What every location here is carrying/);
 }
 
 console.log('venue-report-gate: ok (every shipped venue passes checklist + expect locks)');

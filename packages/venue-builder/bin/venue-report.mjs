@@ -18,6 +18,7 @@ import { pointInRing } from '../lib/geometry.mjs';
 import { checklist, checklistTable, failures } from '../lib/venue-checklist.mjs';
 import {
   checkAllVenueReports,
+  loadShippedVenue,
   readExpectLock,
 } from '../lib/venue-report-gate.mjs';
 import { readRecipe } from '../lib/venue-recipe.mjs';
@@ -41,15 +42,8 @@ const readOverridesFor = (venueId) => {
 };
 
 const load = (v) => {
-  const mapFile = path.join(VENUE_DIR, `${v.id}.map.json`);
-  const poisFile = path.join(VENUE_DIR, `${v.id}.pois.json`);
-  return {
-    map: JSON.parse(fs.readFileSync(mapFile, 'utf8')),
-    pois: JSON.parse(fs.readFileSync(poisFile, 'utf8')),
-    mapFile,
-    poisFile,
-    sizes: { mapKb: kb(mapFile), poisKb: kb(poisFile) },
-  };
+  const shipped = loadShippedVenue(v);
+  return { ...shipped, sizes: { mapKb: shipped.mapKb, poisKb: shipped.poisKb } };
 };
 
 /* No id: the checklist for every venue at once, which is what you want when the
@@ -57,21 +51,19 @@ const load = (v) => {
    Point". Every location is the same data about a different place, so the only
    useful review is the one that lines them up. */
 if (!id) {
+  const loaded = manifest.venues.map((v) => ({ v, ...load(v) }));
   const gate = checkAllVenueReports({
     venues: manifest.venues,
-    load: (v) => {
-      const loaded = load(v);
-      return { ...loaded, ...loaded.sizes };
+    load: (venue) => {
+      const row = loaded.find((r) => r.v.id === venue.id);
+      return { map: row.map, pois: row.pois, mapKb: row.sizes.mapKb, poisKb: row.sizes.poisKb };
     },
-    readExpect: readExpectLock,
+    readExpect: (venueId, { map }) => readExpectLock(venueId, map?.meta),
   });
-  const rows = [];
-  for (const v of manifest.venues) {
-    const { map, pois, sizes } = load(v);
+  const rows = loaded.map(({ v, map, pois, sizes }) => {
     const items = checklist(v, map, pois, sizes);
-    const bad = items.filter((i) => i.status === 'missing');
-    rows.push({ v, items, bad });
-  }
+    return { v, items, bad: items.filter((i) => i.status === 'missing') };
+  });
   console.log('### What every location here is carrying\n');
   console.log(`| Venue | ${manifest.venues.length ? rows[0].items.map((i) => i.label).join(' | ') : ''} |`);
   console.log(`| --- | ${rows[0]?.items.map(() => ':-:').join(' | ') || ''} |`);
@@ -103,10 +95,9 @@ if (!id) {
      are a tag rule to fix in this repo, and some of them are a fact no amount of
      OpenStreetMap will ever supply. Only the second kind needs somebody to go
      and read a park's website, so only the second kind gets pointed at. */
-  const outside = manifest.venues.filter((v) => {
-    const { map, pois } = load(v);
-    return requests({ venue: v, map, pois, overrides: readOverridesFor(v.id) }).length;
-  });
+  const outside = loaded.filter(({ v, map, pois }) =>
+    requests({ venue: v, map, pois, overrides: readOverridesFor(v.id) }).length,
+  );
   if (outside.length) {
     console.log(`> [!NOTE]`);
     console.log(
