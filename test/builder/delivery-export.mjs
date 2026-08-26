@@ -16,12 +16,7 @@ import { exportFromPostdb } from '../../packages/venue-builder/lib/delivery/expo
 import { publishBundle } from '../../packages/venue-builder/lib/delivery/publish-bundle.mjs';
 import { writeDisplayPack, writeTruth } from '../../packages/venue-builder/lib/postdb-io.mjs';
 import { planBundleSync, bundleIndexOf } from '../../apps/party-tracker/lib/venue/download.js';
-import {
-  DELTA_STATUS,
-  filesForSync,
-  parseSinceParam,
-  SINCE_QUERY,
-} from '../../packages/venue-builder/lib/delivery/delta-sync.mjs';
+import { parseSinceParam, SINCE_QUERY } from '../../packages/venue-builder/lib/delivery/delta-sync.mjs';
 
 const VENUE = 'fixture-park-export';
 const SKIN = 'layered-atlas';
@@ -74,20 +69,7 @@ assert.ok(filePublish.bundle?.files?.length, 'file fallback still reads the seed
 assert.equal(filePublish.bundle.basedOn.revisionId, undefined);
 
 assert.equal(SINCE_QUERY, 'since');
-assert.equal(DELTA_STATUS, 'stub');
 assert.deepEqual(parseSinceParam(new URLSearchParams('')), { since: null, mode: 'full' });
-assert.deepEqual(parseSinceParam(new URLSearchParams('since=rev-1')), {
-  since: 'rev-1',
-  mode: 'full',
-  stub: true,
-});
-const stubbed = filesForSync(assembled.bundle, 'rev-1');
-assert.equal(stubbed.mode, 'full');
-assert.equal(stubbed.stub, true);
-assert.equal(stubbed.files.length, assembled.bundle.files.length);
-const full = filesForSync(assembled.bundle, null);
-assert.equal(full.stub, false);
-assert.equal(full.files.length, assembled.bundle.files.length);
 
 if (!process.env.DATABASE_URL) {
   console.log('delivery-export: ok (pure + file fallback; integration skipped)');

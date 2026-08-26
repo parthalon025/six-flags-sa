@@ -19,10 +19,9 @@
  * network fetch. Nothing here throws: offline is an ordinary state, and the
  * map a phone already holds is never worse off for a failed sync.
  *
- * Delivery `?since=<revision_id>` (ticket 17) is a server query on the
- * origin manifest. This module still plans from the full bundle + hashes
- * (`planBundleSync`); Slice 1 does not filter by `since`. The phone never
- * talks to PostDB.
+ * Delivery `?since=<revision_id>` (ticket 17) asks the origin for a delta
+ * manifest when the cached bundle carries a revision cursor. Hash planning
+ * (`planBundleSync`) still dedupes unchanged blobs client-side.
  */
 
 /* Must match BUNDLE_CACHE in public/sw.js — the worker cannot import this
@@ -30,10 +29,26 @@
    copies together. */
 export const VENUE_BUNDLE_CACHE = 'tracker-venue-bundles-v1';
 
+/** Query param for revision-cursor sync (ticket 17). */
+export const BUNDLE_SINCE_QUERY = 'since';
+
 /** The one URL the app trusts for a venue's bundle. */
 export function bundleUrlFor(venue) {
   if (venue?.bundle) return venue.bundle;
   return venue?.id ? `/venues/${venue.id}.bundle.json` : null;
+}
+
+/**
+ * Manifest fetch URL — static bundle path or delta API when a revision cursor exists.
+ *
+ * @param {{ id?: string, bundle?: string } | null} venue
+ * @param {string|null} sinceRevisionId
+ */
+export function bundleSyncUrl(venue, sinceRevisionId = null) {
+  const staticUrl = bundleUrlFor(venue);
+  if (!staticUrl || !sinceRevisionId || !venue?.id) return staticUrl;
+  const params = new URLSearchParams({ [BUNDLE_SINCE_QUERY]: sinceRevisionId });
+  return `/api/venues/${encodeURIComponent(venue.id)}/bundle?${params}`;
 }
 
 /**
@@ -53,6 +68,23 @@ export function bundleIndexOf(manifest) {
     if (f?.path && f?.sha256) index.set(f.path, f.sha256);
   }
   return index;
+}
+
+/**
+ * Merge a delta manifest (changed files only) into the cached full manifest.
+ *
+ * @param {object|null} cached
+ * @param {object|null} incoming
+ */
+export function mergeManifestDelta(cached, incoming) {
+  if (!incoming) return incoming;
+  if (!cached?.files?.length) return incoming;
+  if (!incoming.files?.length) return { ...incoming, files: cached.files };
+  if (incoming.files.length >= cached.files.length) return incoming;
+  const byPath = new Map(cached.files.map((f) => [f.path, f]));
+  for (const f of incoming.files) byPath.set(f.path, f);
+  const files = [...byPath.values()].sort((a, b) => a.path.localeCompare(b.path));
+  return { ...incoming, files };
 }
 
 /**
@@ -147,9 +179,16 @@ export async function syncVenueBundle(venue, deps = {}) {
 
   let manifest = null;
   try {
-    const res = await fetchImpl(url, { cache: 'no-store' });
+    const cache = await cacheStorage.open(VENUE_BUNDLE_CACHE);
+    const previous = await readCachedManifest(cache, url);
+    const sinceRevision = previous?.basedOn?.revisionId ?? null;
+    const fetchUrl = bundleSyncUrl(venue, sinceRevision) ?? url;
+    const res = await fetchImpl(fetchUrl, { cache: 'no-store' });
     if (!res?.ok) return { ok: false, reason: 'no-manifest' };
     manifest = await res.json();
+    if (sinceRevision && previous) {
+      manifest = mergeManifestDelta(previous, manifest);
+    }
   } catch {
     return { ok: false, reason: 'offline' };
   }

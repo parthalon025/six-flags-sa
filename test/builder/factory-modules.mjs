@@ -69,8 +69,15 @@ if (!legArg || legArg === 'delivery') {
   assert.equal(SINCE_QUERY, 'since');
   const since = parseSinceParam(new URLSearchParams('since=rev-ki'));
   assert.equal(since.since, 'rev-ki');
-  assert.equal(since.mode, 'full');
-  assert.equal(since.stub, true);
+  assert.equal(since.mode, 'delta');
+  const { manifestForSync } = await import('../../packages/venue-builder/lib/delivery/delta-sync.mjs');
+  const ki = published.bundle;
+  const delta = manifestForSync(ki, {
+    since: '00000000-0000-0000-0000-000000000000',
+    prior: null,
+    priorKnown: false,
+  });
+  assert.equal(delta.mode, 'full', 'unknown since → full KI manifest');
 }
 
 // dependency-cruiser boundary rules (visual → map-io only)

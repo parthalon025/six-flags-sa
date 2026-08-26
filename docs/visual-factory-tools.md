@@ -29,6 +29,7 @@ the reason — do not relitigate casually).
 | maplibre-gl (app renderer) | the one map view: banded raster worlds, vector tier, pitch-eases-with-zoom camera, GL overlay layers | adopt: Train H (decided, ADR-0019) |
 | raster tiler (sharp-based, in-repo) | banded bake PNG → deterministic raster tile pyramid → PMTiles | adopt: Train H (ADR-0019) — deterministic and seeded like every certified stage |
 | @maplibre/maplibre-gl-style-spec | style.json validation in CI (gl-style-validate) | adopt: first style regression that certification misses |
+| display-schema.json fixture | visual.json top-level shape gate in builder CI (ticket 18) | **in** — `display-schema-gate.mjs` |
 | spreet (rust) | MapLibre sprite atlases from SVGs | watch — display-atlas.mjs already covers this |
 | geojson-vt / vt-pbf | runtime tile slicing without tippecanoe | rejected — tippecanoe is installed and deterministic |
 | Planetiler / Tilemaker / PostGIS | planet-scale tiling | rejected (ADR-0016) — venues are park-bbox scale; ADR-0019's band pyramids use the in-repo tiler, not planet tooling |

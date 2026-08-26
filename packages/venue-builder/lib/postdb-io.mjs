@@ -235,6 +235,72 @@ export async function registerArtifactBlobs(venueId, entries) {
 }
 
 /**
+ * @param {string} venueId
+ * @param {string} revisionId
+ * @returns {Promise<boolean>}
+ */
+export async function revisionExists(venueId, revisionId) {
+  requirePostdb();
+  const pool = await getPool();
+  const { rows } = await pool.query(
+    'SELECT 1 FROM truth_revisions WHERE venue_id = $1 AND revision_id = $2',
+    [venueId, revisionId],
+  );
+  return rows.length > 0;
+}
+
+/**
+ * @param {string} venueId
+ * @param {string} revisionId
+ * @returns {Promise<{ map: object, pois: object[], gaps: object|null, revisionId: string, generated: string|null }|null>}
+ */
+export async function readTruthAtRevision(venueId, revisionId) {
+  requirePostdb();
+  const pool = await getPool();
+  const { rows } = await pool.query(
+    `SELECT revision_id, generated_at, map_body, pois_body, gaps_body
+     FROM truth_revisions
+     WHERE venue_id = $1 AND revision_id = $2`,
+    [venueId, revisionId],
+  );
+  if (!rows.length) return null;
+  const row = rows[0];
+  const map = row.map_body;
+  const gaps = row.gaps_body;
+  const emptyGaps = Array.isArray(gaps) && gaps.length === 0;
+  return {
+    map,
+    pois: row.pois_body,
+    gaps: emptyGaps ? null : gaps,
+    revisionId: row.revision_id,
+    generated: map?.meta?.generated ?? row.generated_at?.toISOString?.() ?? null,
+  };
+}
+
+/**
+ * Display packs pinned to a specific truth revision (not necessarily the head).
+ * @param {string} venueId
+ * @param {string} revisionId
+ */
+export async function listDisplayPacksAtRevision(venueId, revisionId) {
+  requirePostdb();
+  const pool = await getPool();
+  const { rows } = await pool.query(
+    `SELECT pack_id, skin_id, based_on_revision_id, body
+     FROM display_packs
+     WHERE venue_id = $1 AND based_on_revision_id = $2
+     ORDER BY skin_id`,
+    [venueId, revisionId],
+  );
+  return rows.map((row) => ({
+    packId: row.pack_id,
+    skinId: row.skin_id,
+    basedOnRevisionId: row.based_on_revision_id,
+    body: row.body,
+  }));
+}
+
+/**
  * Repoint the venue head to an existing truth revision (rollback / promote).
  * @param {string} venueId
  * @param {string} revisionId

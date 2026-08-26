@@ -14,6 +14,9 @@ import {
   readTruth,
   registerArtifactBlobs,
   usingPostdb,
+  readTruthAtRevision,
+  listDisplayPacksAtRevision,
+  revisionExists,
 } from '../postdb-io.mjs';
 import { buildBundleManifest, shippedDisplayFiles } from '../venue-bundle.mjs';
 import { bundlePath, VENUE_DIR } from './delivery-io.mjs';
@@ -87,6 +90,34 @@ function extraDisplayFiles(venueId, displayDir) {
   }
   return extra;
 }
+
+/**
+ * Assemble the phone bundle for a truth revision without writing to disk.
+ *
+ * @param {string} venueId
+ * @param {string} revisionId
+ * @param {{ displayDir?: string, extraFiles?: Map<string, Buffer> }} [opts]
+ */
+export async function assembleBundleAtRevision(venueId, revisionId, opts = {}) {
+  const truth = await readTruthAtRevision(venueId, revisionId);
+  if (!truth) return null;
+  const packs = await listDisplayPacksAtRevision(venueId, revisionId);
+  const displaySpecs = Object.fromEntries(packs.map((p) => [p.skinId, p.body]));
+  const displayDir = opts.displayDir || path.join(VENUE_DIR, venueId, 'display');
+  const extraFiles = opts.extraFiles ?? (existsSync(displayDir) ? extraDisplayFiles(venueId, displayDir) : new Map());
+  return assembleExportBundle({
+    venueId,
+    revisionId: truth.revisionId,
+    generated: truth.generated ?? truth.map?.meta?.generated ?? null,
+    map: truth.map,
+    pois: truth.pois,
+    gaps: truth.gaps,
+    displaySpecs,
+    extraFiles,
+  });
+}
+
+export { revisionExists, readTruthAtRevision, listDisplayPacksAtRevision };
 
 /**
  * Export the published PostDB head to the wear-time origin directory.
