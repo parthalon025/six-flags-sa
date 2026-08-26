@@ -2,7 +2,7 @@
 
 **Type:** grilling
 **Blocked by:** None
-**Status:** open
+**Status:** resolved
 
 ## Question
 
@@ -12,3 +12,7 @@ Where does G1 land first, and under which kit id?
 2. **Kit** — New `village-green` kit (clean G1 pillar) vs extend `rpg-overworld` (purple outside wasteland, overworld prompt — not village diorama)?
 
 Facts: Cedar Point already has an `rpg-overworld` bake in display manifest; KI is the named G1 validation home; `skin-distinct` must separate this look from every shipped Skin on structural axes, not hue.
+
+## Answer
+
+Kings Island first. New `village-green` kit — do not extend `rpg-overworld`. Cedar Point after KI passes eye pass and beyond-palette distinctness.

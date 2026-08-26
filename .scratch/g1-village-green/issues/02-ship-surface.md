@@ -2,7 +2,7 @@
 
 **Type:** grilling
 **Blocked by:** None
-**Status:** open
+**Status:** resolved
 
 ## Question
 
@@ -13,3 +13,7 @@ What is the minimum shippable artifact for G1?
 3. **Phone Wear** — guest equips the Skin in the app and sees the baked world under live overlay.
 
 Facts: ADR-0016 symptom was “color swap” because expressive bake never reached guests; palette Skins (`trail`, `watercolor-quest`, …) ship today; world tier is Train E arc.
+
+## Answer
+
+Phone Wear is the real bar: mid-band in pack plus guest-visible baked world under overlay. Bake-only proof is a milestone, not ship.

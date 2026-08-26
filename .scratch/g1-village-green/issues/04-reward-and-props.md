@@ -2,7 +2,7 @@
 
 **Type:** grilling
 **Blocked by:** None
-**Status:** open
+**Status:** resolved
 
 ## Question
 
@@ -13,3 +13,7 @@ ADR-0017 requires reward wiring in the design request. G1 B6/C1 name dense prop 
 3. **Signage** — In-world signage sprites (INN, shop icons) per G1 C3 negation, or overlay carries all names?
 
 Facts: G1 matrix lists bridge/prop families as “missing for goal quality”; `rpg-overworld` uses `kenney-roguelike-sheet` without bespoke prop clutter.
+
+## Answer
+
+Earnable Skin (unlock rung). Block first ship until minimum prop set: bridges at path×water, fence/barrel scatter near buildings — not full G1 B6 day one, but obviously not a recolor. Overlay category glyphs for names; optional in-world shop/INN sprites at landmark POIs only.

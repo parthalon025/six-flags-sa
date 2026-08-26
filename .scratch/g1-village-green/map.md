@@ -5,30 +5,33 @@
 Ship a **certified world-tier Skin** that reads as cozy 16-bit RPG village warmth — detail and
 theme, not a palette recolor — using the Visual factory tile-and-sprite bake lane. Proof against
 the G1 rubric ([kings-island-goal-rubrics.md](../../docs/goals/kings-island-goal-rubrics.md)) and
-the owner's village reference (genre exemplar, not pixel matching). Geo-true Cedar Point / Kings
-Island truth; Visual factory restyles, never repositions.
+the owner's village reference (genre exemplar, not pixel matching). Geo-true Kings Island truth
+first; Cedar Point after KI certifies. Visual factory restyles, never repositions.
 
 ## Notes
 
-- G1 is goal **#1** in the Kings Island validation suite ([kings-island-goal-matrix.md](../../docs/goals/kings-island-goal-matrix.md)) — nearest existing lane is `rpg-overworld` kit + bake.
+- G1 is goal **#1** in the Kings Island validation suite ([kings-island-goal-matrix.md](../../docs/goals/kings-island-goal-matrix.md)) — nearest existing lane is `rpg-overworld` kit + bake; **new kit `village-green`** supersedes that lineage for G1.
 - ADR-0017: palette-only looks are invalid; beyond-palette distinctness required.
 - ADR-0017: design request must declare reward wiring and pass owner eye pass on first ship.
-- Missing for reference quality (matrix): richer CC0 tilesheets, building facade variety, prop
-  families (fences/barrels/planters), bridge sprites at path×water crossings.
+- Minimum prop set (bridges, fence/barrel scatter, optional landmark signage) is a **ship gate**, not post-ship polish.
 
 ## Decisions so far
 
 - Owner rejects color-swap Skins — structural detail + thematic coherence are the bar (session 2026-08-26).
+- **Venue:** Kings Island first proof venue; Cedar Point bakes once KI passes eye pass and distinctness vs shipped Skins (grill Round 1, owner agreed 2026-08-26).
+- **Kit:** New `village-green` kit — clean G1 pillar; do not extend `rpg-overworld` (overworld wasteland DNA).
+- **Ship surface:** Phone Wear is the bar — mid-band world in venue display pack **plus** guest sees baked world under live overlay. Certified bake + eye pass alone is a milestone, not ship.
+- **A7 diorama frame:** Declared **negation** for real venues — no synthetic tree-wall border; open park readability / G-1 figure-ground win over enclosed diorama.
+- **A5 elevation:** Subtle DEM terraces allowed; **no cast shadows**; sprite base ellipses only. Not fully flat-by-declaration on real venues.
+- **Reward wiring:** Earnable Skin with unlock rung on the world ladder (ADR-0017).
+- **Props:** Block first ship until minimum prop vocabulary exists — bridges at path×water crossings, fence/barrel scatter near buildings; not full G1 B6 on day one, but enough to prove it is not a recolor.
+- **Signage:** Category glyphs on live overlay carry names; optional in-world shop/INN sprites at landmark POIs only (G1 C3 partial negation).
 
 ## Not yet specified
 
-- **First proof venue** — Kings Island (validation suite home) vs Cedar Point (owner session context) vs fleet kit first.
-- **Kit identity** — new `village-green` kit vs evolve `rpg-overworld`.
-- **Ship surface** — certified bake + eye pass only vs world tier in venue pack on phones (Wear).
-- **Diorama frame (A7)** — enclosed tree-wall border required for real parks or optional / negated.
-- **Elevation (A5)** — flat-by-declaration vs subtle DEM terraces on real venues.
-- **Reward wiring** — earnable Skin ladder vs venue-bound art vs seasonal.
-- **Prop / landmark scope** — minimum prop set for ship vs full G1 B6/C1 (barrels, bridges, statues, signage).
+- Design request doc beside ledgers (pillar line, exemplar pin, per-axis targets for `village-green`).
+- Ledger rows + `assets.json` GUIDs for minimum prop set (bridges, fences, barrels, optional signage).
+- `skins.json` / unlock ladder row for `village-green`.
 
 ## Out of scope
 
@@ -36,3 +39,5 @@ Island truth; Visual factory restyles, never repositions.
 - Pixel-matching the reference image.
 - Runtime world generation on the phone.
 - Palette-tier-only delivery (SVG token recolor without world bake).
+- Synthetic tree-wall border (A7) on real venue bakes.
+- Extending `rpg-overworld` kit for G1.
