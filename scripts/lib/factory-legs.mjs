@@ -32,11 +32,13 @@ export const FACTORY_LEG_PATHS = {
   delivery: [
     'packages/venue-builder/lib/delivery/**',
     'packages/venue-builder/lib/venue-bundle.mjs',
+    'packages/venue-builder/bin/export-bundle.mjs',
     'scripts/lib/venue-freshness.mjs',
     '**/postdb-io.mjs',
     'db/migrations/004*',
     'test/scripts/venue-freshness.test.mjs',
     'test/builder/venue-bundle.mjs',
+    'test/builder/delivery-export.mjs',
     'test/builder/factory-modules.mjs',
   ],
 };

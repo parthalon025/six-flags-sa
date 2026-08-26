@@ -98,6 +98,8 @@ rebuilds `apps/party-tracker/public/venues/manifest.json` and the generated `app
 manifest reaches a phone that already has the app installed, and the service worker caches
 whichever one gets opened. A missing Gaps file is an empty list — it must not fail the park load.
 
+`npm run venues:export` writes the hash-addressed phone bundle `public/venues/<id>.bundle.json` from the PostDB truth head (file seed fallback without `DATABASE_URL`). The bundle's `basedOn.map` is the truth `generated` stamp; `basedOn.revisionId` is the PostDB revision when export ran against the bus. The phone still plans from file hashes (`planBundleSync`); `?since=<revision_id>` is reserved for a later delta sync and does not filter Slice 1.
+
 Which one loads, in priority order: a venue picked by hand, then the venue the party's
 host phone is standing in, then the venue you said yes to at intake, then the venue this
 phone's own first fix is inside, then the manifest's default. The host outranks your own
