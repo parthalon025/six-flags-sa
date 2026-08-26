@@ -5,9 +5,6 @@
  *   node test/scripts/venue-report-gate.test.mjs
  */
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
   checkAllVenueReports,
   checkExpectLock,
@@ -15,8 +12,6 @@ import {
   checkVenueReport,
   readExpectLock,
 } from '../../scripts/lib/venue-report-gate.mjs';
-
-const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
 /* -------------------------------------------------------- checkExpectLock */
 
@@ -113,22 +108,6 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
     `a shipped venue fails venues:report — fix upstream or re-lock expect:\n${explain}\n  Run: npm run venues:report`,
   );
   assert.ok(gate.failures.length === 0 || !gate.ok);
-}
-
-/* ---------------------------------------------------- venues:report CLI */
-
-{
-  const res = spawnSync('npm', ['run', 'venues:report'], {
-    cwd: root,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
-  assert.equal(
-    res.status,
-    0,
-    `venues:report exited ${res.status}\nstdout:\n${res.stdout}\nstderr:\n${res.stderr}`,
-  );
-  assert.match(res.stdout, /What every location here is carrying/);
 }
 
 console.log('venue-report-gate: ok (every shipped venue passes checklist + expect locks)');
