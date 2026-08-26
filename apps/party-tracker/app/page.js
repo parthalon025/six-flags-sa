@@ -25,7 +25,7 @@ import useWeather from '@/components/useWeather';
 import useAppUpdate from '@/components/useAppUpdate';
 import useMovementLog from '@/components/useMovementLog';
 import { BRAND, GLYPHS, WORDS } from '@/lib/brand';
-import { INTRO_KEY, firstRunOverlay } from '@/lib/introGate';
+import { INTRO_KEY, firstRunOverlay, profileWelcomeName } from '@/lib/introGate';
 import { haptic, listenInviteUrls, pushWatchCompass, registerPush, shouldRegisterPush } from '@/lib/native';
 import { loadWatchSettings, mapRotationDegrees, watchCompassPushState } from '@/lib/compass';
 import {
@@ -69,7 +69,7 @@ import { newMemberId } from '@/lib/core/ids';
 import { clearPendingInvite } from '@/lib/party/inviteStash';
 import { mapDisplayPosition } from '@/lib/gps/display';
 import { FOLLOW_RESUME_MS, followShouldResume } from '@/lib/parkMapView';
-import { resolveSession } from '@/lib/auth/session';
+import { resolveSession, readLocalSession } from '@/lib/auth/session';
 import { listManagedGuests, upsertManagedGuest } from '@/lib/auth/profileCache';
 import { useAuth } from '@clerk/nextjs';
 import AuthBridge from '@/components/AuthBridge';
@@ -330,7 +330,9 @@ function ParkApp({ isSignedIn }) {
 
   const [identity, setIdentity] = useState(null); // {id, name}
   /** Soft-gate profile (EP.3–EP.4) — null while anonymous; map still works. */
-  const [authSession, setAuthSession] = useState(null);
+  const [authSession, setAuthSession] = useState(() =>
+    typeof window !== 'undefined' ? readLocalSession() : null,
+  );
   const [managedGuests, setManagedGuests] = useState([]);
 
   const handleBindProfile = useCallback((userId) => {
@@ -934,6 +936,7 @@ function ParkApp({ isSignedIn }) {
   const showIntroSplash = introSeen === false && !logoSplashDismissed;
   /** Brand welcome on the gate after the logo splash, before GPS/park intake. */
   const showWelcomeGate = introSeen === false && logoSplashDismissed && !nearestIntent;
+  const visitorName = useMemo(() => profileWelcomeName(authSession), [authSession]);
 
   const askingPark = Boolean(parkChoice);
   /** Inline park question on the gate (GPS path), including after "nearest park". */
@@ -4004,6 +4007,7 @@ function ParkApp({ isSignedIn }) {
       {showIntroSplash && (
         <IntroSplash
           version={appUpdate.version}
+          visitorName={visitorName}
           onContinue={() => setLogoSplashDismissed(true)}
         />
       )}
@@ -4046,6 +4050,7 @@ function ParkApp({ isSignedIn }) {
           venueName={venue?.name}
           status={geo.status}
           error={geo.error}
+          visitorName={visitorName}
           welcome={
             nearestIntent ||
             showWelcomeGate ||
