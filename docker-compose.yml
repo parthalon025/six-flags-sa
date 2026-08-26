@@ -38,7 +38,7 @@ services:
       start_period: 15s
 
   db:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: parkbound-db
     restart: unless-stopped
     environment:
@@ -48,7 +48,8 @@ services:
     ports:
       - '${DB_PORT:-5432}:5432'
     volumes:
-      - parkbound-db:/var/lib/postgresql/data
+      # PG18+ stores data under /var/lib/postgresql/<major>/docker — mount the parent.
+      - parkbound-db:/var/lib/postgresql
       - ./db/migrations:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U parkbound -d parkbound']
