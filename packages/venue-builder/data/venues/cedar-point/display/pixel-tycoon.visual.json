@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "venue": "kings-island",
-  "skin": "layered-atlas",
+  "venue": "cedar-point",
+  "skin": "pixel-tycoon",
   "basedOn": {
     "map": "2026-08-26"
   },
@@ -10,15 +10,12 @@
     "labelHalo": true,
     "mode": "day",
     "colors": {
-      "path": "#3F6570",
-      "ground": "#C9D6C0",
-      "water": "#5CA8B3",
-      "grass": "#A7C58E",
-      "building": "#C9B58D",
-      "label": "#243B45",
-      "structureEdge": "#7A6655",
-      "groundEdge": "#6E8975",
-      "pathCasing": "#C9D6C0"
+      "path": "#E8D49C",
+      "ground": "#C4A46C",
+      "water": "#3C7CBC",
+      "grass": "#5C9C4C",
+      "building": "#B45C4C",
+      "label": "#1C140C"
     }
   },
   "surfaces": {
@@ -27,14 +24,14 @@
       "layers": [
         "path"
       ],
-      "color": "#596F72"
+      "color": "#BFB28D"
     },
     "service-road": {
       "material": "asphalt--worn",
       "layers": [
         "service"
       ],
-      "color": "#3C5358"
+      "color": "#A29672"
     },
     "vegetation": {
       "material": "grass--meadow",
@@ -43,91 +40,100 @@
         "wood",
         "park"
       ],
-      "color": "#859A68"
+      "color": "#588240"
     },
     "water": {
       "material": "water--calm",
       "layers": [
-        "water"
+        "water",
+        "sea"
       ],
-      "color": "#5AAAC3"
+      "color": "#4790C9"
     },
     "pool": {
       "material": "water--pool",
       "layers": [
         "pool"
       ],
-      "color": "#57B3C8"
+      "color": "#4498CE"
     },
     "coaster-track": {
       "material": "steel--track",
       "layers": [
         "coaster"
       ],
-      "color": "#3E5059"
+      "color": "#393937"
     },
     "slide": {
       "material": "fiberglass--flume",
       "layers": [
         "slide"
       ],
-      "color": "#837161"
+      "color": "#E8B47B"
     },
     "structure": {
       "material": "roofing--shingle",
       "layers": [
         "building"
       ],
-      "color": "#998D72"
+      "color": "#8D584B"
     },
     "lot": {
       "material": "concrete--lot",
       "layers": [
         "parking"
       ],
-      "color": "#BBAE95"
+      "color": "#AE796E"
     }
   },
   "landTones": {
-    "Soak City": {
-      "day": "#E4EEF1",
-      "night": "#1D272A"
-    },
-    "Coney Mall": {
-      "day": "#F1EAE4",
-      "night": "#2A231D"
-    },
-    "International Street": {
-      "day": "#F1EEE4",
-      "night": "#2A271D"
-    },
-    "Rivertown": {
-      "day": "#E4F1E4",
-      "night": "#1D2A1D"
-    },
-    "Planet Snoopy": {
-      "day": "#F1EFE4",
-      "night": "#2A281D"
-    },
-    "Action Zone": {
-      "day": "#E4ECF1",
-      "night": "#1D252A"
-    },
-    "Camp Snoopy": {
-      "day": "#ECF1E4",
-      "night": "#252A1D"
-    },
-    "Oktoberfest": {
+    "Lighthouse Point": {
       "day": "#C9B79E",
       "night": "#39323F"
     },
-    "Adventure Port": {
-      "day": "#E4F1EF",
-      "night": "#1D2A28"
+    "Frontier Town": {
+      "day": "#C9B79E",
+      "night": "#39323F"
     },
-    "Area 72": {
-      "day": "#EAE4F1",
-      "night": "#231D2A"
+    "Main Midway": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Frontier Trail": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Millennium Midway": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Gemini Midway": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Cedar Point Shores": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Lakeside Midway": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Camp Snoopy": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Kiddy Kingdom": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Planet Snoopy": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Professor Delbert's Frontier Fling": {
+      "day": "#C9B79E",
+      "night": "#39323F"
     }
   },
   "fallback": {
@@ -135,18 +141,18 @@
   },
   "terrain": {
     "source": "usgs-3dep",
-    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n40w085/USGS_13_n40w085.tif",
+    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n42w083/USGS_13_n42w083.tif",
     "resolution": 10,
     "surfaceModel": false,
-    "cellMetres": 6.45,
+    "cellMetres": 7.44,
     "fitness": "marginal",
     "relief": {
-      "min": 190.5,
-      "max": 238.9
+      "min": 173.3,
+      "max": 179.4
     },
     "grid": {
       "cols": 240,
-      "rows": 197
+      "rows": 257
     },
     "hillshade": {
       "file": "hillshade.png",
@@ -154,17 +160,17 @@
       "altitude": 45
     },
     "bounds": {
-      "north": 39.348,
-      "south": 39.3365,
-      "east": -84.2595,
-      "west": -84.2775
+      "north": 41.4926,
+      "south": 41.4753,
+      "east": -82.67521,
+      "west": -82.69661
     },
     "steepDegrees": 18,
     "constrained": {
-      "paths": 758,
-      "water": 24,
-      "pads": 206,
-      "nodes": 139714
+      "paths": 1035,
+      "water": 51,
+      "pads": 225,
+      "nodes": 110691
     }
   }
 }

@@ -3,7 +3,7 @@
   "venue": "kings-island",
   "skin": "park-midnight",
   "basedOn": {
-    "map": "2026-08-09"
+    "map": "2026-08-26"
   },
   "tokens": {
     "contrastFloor": 4.5,
@@ -158,10 +158,10 @@
     },
     "steepDegrees": 18,
     "constrained": {
-      "paths": 757,
+      "paths": 758,
       "water": 24,
       "pads": 206,
-      "nodes": 139445
+      "nodes": 139714
     }
   }
 }

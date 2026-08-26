@@ -37,6 +37,14 @@
     "a": "Rivertown"
   },
   {
+    "i": "arcade-games-2",
+    "n": "Arcade Games",
+    "lat": 39.342906,
+    "lng": -84.264725,
+    "c": "service",
+    "a": "Coney Mall"
+  },
+  {
     "i": "aruba-tuba",
     "n": "Aruba Tuba",
     "lat": 39.338326,
@@ -103,8 +111,8 @@
   {
     "i": "beagle-scout-acres",
     "n": "Beagle Scout Acres",
-    "lat": 39.341811,
-    "lng": -84.269915,
+    "lat": 39.341784,
+    "lng": -84.2699,
     "c": "ride",
     "a": "Camp Snoopy"
   },
@@ -472,8 +480,8 @@
   {
     "i": "handicapped-parking",
     "n": "Handicapped Parking",
-    "lat": 39.345256,
-    "lng": -84.270664,
+    "lat": 39.345257,
+    "lng": -84.270665,
     "c": "parking",
     "a": "Kings Island"
   },
@@ -595,7 +603,7 @@
   {
     "i": "kings-island-2",
     "n": "Kings Island",
-    "lat": 39.348194,
+    "lat": 39.34819,
     "lng": -84.267908,
     "c": "parking",
     "a": "Kings Island"
@@ -604,38 +612,38 @@
     "i": "kings-island-3",
     "n": "Kings Island",
     "lat": 39.347563,
-    "lng": -84.270596,
+    "lng": -84.270599,
     "c": "parking",
     "a": "Kings Island"
   },
   {
     "i": "kings-island-4",
     "n": "Kings Island",
-    "lat": 39.345493,
-    "lng": -84.272689,
+    "lat": 39.345494,
+    "lng": -84.272683,
     "c": "parking",
     "a": "Kings Island"
   },
   {
     "i": "kings-island-5",
     "n": "Kings Island",
-    "lat": 39.345603,
-    "lng": -84.274,
+    "lat": 39.34561,
+    "lng": -84.273986,
     "c": "parking",
     "a": "Kings Island"
   },
   {
     "i": "kings-island-6",
     "n": "Kings Island",
-    "lat": 39.340836,
-    "lng": -84.275401,
+    "lat": 39.340832,
+    "lng": -84.2754,
     "c": "parking",
     "a": "Kings Island"
   },
   {
     "i": "kings-island-7",
     "n": "Kings Island",
-    "lat": 39.342434,
+    "lat": 39.342431,
     "lng": -84.275556,
     "c": "parking",
     "a": "Kings Island"
@@ -651,24 +659,24 @@
   {
     "i": "kings-island-9",
     "n": "Kings Island",
-    "lat": 39.342261,
-    "lng": -84.271104,
+    "lat": 39.342259,
+    "lng": -84.271106,
     "c": "parking",
     "a": "Kings Island"
   },
   {
     "i": "kings-island-drop-off-lot",
     "n": "Kings Island Drop Off Lot",
-    "lat": 39.347347,
-    "lng": -84.272339,
+    "lat": 39.347354,
+    "lng": -84.272338,
     "c": "parking",
     "a": "Kings Island"
   },
   {
     "i": "kings-island-park-ride",
     "n": "Kings Island Park & Ride",
-    "lat": 39.339829,
-    "lng": -84.277785,
+    "lat": 39.339827,
+    "lng": -84.277777,
     "c": "parking",
     "a": "Kings Island"
   },
@@ -934,8 +942,8 @@
   {
     "i": "pigpen-s-mess-hall",
     "n": "Pigpen's Mess Hall",
-    "lat": 39.34199,
-    "lng": -84.270145,
+    "lat": 39.342005,
+    "lng": -84.269983,
     "c": "food",
     "a": "Camp Snoopy"
   },
@@ -977,7 +985,7 @@
   {
     "i": "preferred-parking",
     "n": "Preferred Parking",
-    "lat": 39.346469,
+    "lat": 39.346468,
     "lng": -84.269674,
     "c": "parking",
     "a": "Kings Island"
@@ -1136,7 +1144,7 @@
     "i": "rv-parking",
     "n": "RV Parking",
     "lat": 39.347487,
-    "lng": -84.268827,
+    "lng": -84.268828,
     "c": "parking",
     "a": "Kings Island"
   },
@@ -1194,7 +1202,7 @@
     "i": "snoopy-s-junction",
     "n": "Snoopy's Junction",
     "lat": 39.342299,
-    "lng": -84.270058,
+    "lng": -84.270061,
     "c": "ride",
     "a": "Planet Snoopy",
     "h": {
@@ -1241,8 +1249,8 @@
   {
     "i": "soap-box-racers",
     "n": "Soap Box Racers",
-    "lat": 39.341562,
-    "lng": -84.269372,
+    "lat": 39.341646,
+    "lng": -84.269391,
     "c": "coaster",
     "a": "Camp Snoopy",
     "h": {
@@ -1296,7 +1304,7 @@
   {
     "i": "staff-parking",
     "n": "Staff Parking",
-    "lat": 39.343418,
+    "lat": 39.343414,
     "lng": -84.272722,
     "c": "parking",
     "a": "Kings Island"

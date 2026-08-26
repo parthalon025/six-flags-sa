@@ -30,11 +30,11 @@
         "denominator": 1,
         "detail": "manifest and disk agree",
         "counts": {
-          "pois": 164,
+          "pois": 165,
           "rides": 68,
           "heights": 65,
           "campsites": 0,
-          "paths": 764,
+          "paths": 765,
           "hasHeightsTab": true
         }
       },
@@ -91,9 +91,9 @@
       "pass": true,
       "evidence": {
         "numerator": 0,
-        "denominator": 69,
-        "known": 69,
-        "detail": "0 published / 69 known / 69 rides inventoried"
+        "denominator": 68,
+        "known": 68,
+        "detail": "0 published / 68 known / 68 rides inventoried"
       },
       "confidence": "low",
       "falsifier": "No entrance evidence was inventoried for rideable attractions",

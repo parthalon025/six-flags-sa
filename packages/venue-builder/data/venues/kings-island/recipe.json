@@ -15,24 +15,20 @@
     "locality": "Mason, Ohio",
     "kind": "theme-park",
     "pad": 0,
-    "default": true,
-    "decorativeTolerance": 3
+    "decorativeTolerance": 3,
+    "sources": "data/venues/kings-island/sources.json",
+    "default": true
   },
   "built": {
-    "at": "2026-08-09",
+    "at": "2026-08-26",
     "counts": {
       "pois": 165,
-      "rides": 69,
+      "rides": 68,
       "heights": 56,
-      "shapes": 1612
+      "shapes": 1629
     }
   },
   "expect": {
     "walkable_km_min": 95
-  },
-  "consolidate": {
-    "cadence": "daily",
-    "lastAt": null,
-    "_comment": "E0.6 cadence — consolidate graduates accepted edits into this package; never public/venues"
   }
 }

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "venue": "kings-island",
-  "skin": "layered-atlas",
+  "skin": "pixel-tycoon",
   "basedOn": {
     "map": "2026-08-26"
   },
@@ -10,15 +10,12 @@
     "labelHalo": true,
     "mode": "day",
     "colors": {
-      "path": "#3F6570",
-      "ground": "#C9D6C0",
-      "water": "#5CA8B3",
-      "grass": "#A7C58E",
-      "building": "#C9B58D",
-      "label": "#243B45",
-      "structureEdge": "#7A6655",
-      "groundEdge": "#6E8975",
-      "pathCasing": "#C9D6C0"
+      "path": "#E8D49C",
+      "ground": "#C4A46C",
+      "water": "#3C7CBC",
+      "grass": "#5C9C4C",
+      "building": "#B45C4C",
+      "label": "#1C140C"
     }
   },
   "surfaces": {
@@ -27,14 +24,14 @@
       "layers": [
         "path"
       ],
-      "color": "#596F72"
+      "color": "#BFB28D"
     },
     "service-road": {
       "material": "asphalt--worn",
       "layers": [
         "service"
       ],
-      "color": "#3C5358"
+      "color": "#A29672"
     },
     "vegetation": {
       "material": "grass--meadow",
@@ -43,49 +40,49 @@
         "wood",
         "park"
       ],
-      "color": "#859A68"
+      "color": "#588240"
     },
     "water": {
       "material": "water--calm",
       "layers": [
         "water"
       ],
-      "color": "#5AAAC3"
+      "color": "#4790C9"
     },
     "pool": {
       "material": "water--pool",
       "layers": [
         "pool"
       ],
-      "color": "#57B3C8"
+      "color": "#4498CE"
     },
     "coaster-track": {
       "material": "steel--track",
       "layers": [
         "coaster"
       ],
-      "color": "#3E5059"
+      "color": "#393937"
     },
     "slide": {
       "material": "fiberglass--flume",
       "layers": [
         "slide"
       ],
-      "color": "#837161"
+      "color": "#E8B47B"
     },
     "structure": {
       "material": "roofing--shingle",
       "layers": [
         "building"
       ],
-      "color": "#998D72"
+      "color": "#8D584B"
     },
     "lot": {
       "material": "concrete--lot",
       "layers": [
         "parking"
       ],
-      "color": "#BBAE95"
+      "color": "#AE796E"
     }
   },
   "landTones": {

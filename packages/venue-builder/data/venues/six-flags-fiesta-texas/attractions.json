@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it: the bundle is overwritten by every rebuild and this is the accumulated evidence, which is the expensive part. Only features that clear \"moderate\" confidence are copied into the bundle the app reads. Refresh with: npm run venues:attractions -- six-flags-fiesta-texas",
+  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it.",
   "venue": "six-flags-fiesta-texas",
-  "generated": "2026-08-11",
+  "generated": "2026-08-26",
   "publish_at": "moderate",
   "attractions": [
     {
@@ -2214,48 +2214,6 @@
       },
       "last_verified": null,
       "place": "road-runner-express"
-    },
-    {
-      "id": "schi-kugel-arcade",
-      "name": "Schi-Kugel Arcade",
-      "venue": "six-flags-fiesta-texas",
-      "type": "attraction",
-      "at": {
-        "lat": 29.597317,
-        "lng": -98.609934
-      },
-      "features": {
-        "queue_entrance": {
-          "at": {
-            "lat": 29.5974,
-            "lng": -98.60992
-          },
-          "confidence": "unknown",
-          "score": 1,
-          "sources": [
-            "geometry"
-          ],
-          "evidence": [
-            {
-              "source": "geometry",
-              "at": {
-                "lat": 29.5974,
-                "lng": -98.60992
-              },
-              "date": "2026-08-09",
-              "note": "the walkable network at its closest, 9 m from the ride"
-            }
-          ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
-          "conflict": false,
-          "newest_evidence": "2026-08-09",
-          "stale": false
-        }
-      },
-      "last_verified": null,
-      "place": "schi-kugel-arcade"
     },
     {
       "id": "scream",

@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it: the bundle is overwritten by every rebuild and this is the accumulated evidence, which is the expensive part. Only features that clear \"moderate\" confidence are copied into the bundle the app reads. Refresh with: npm run venues:attractions -- cedar-point",
+  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it.",
   "venue": "cedar-point",
-  "generated": "2026-08-11",
+  "generated": "2026-08-26",
   "publish_at": "moderate",
   "attractions": [
     {
@@ -41,7 +41,7 @@
                 "lat": 41.48066,
                 "lng": -82.68099
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"4x4's\""
             }
           ],
@@ -54,7 +54,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -97,7 +97,7 @@
                 "lat": 41.482149,
                 "lng": -82.680777
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Atomic Scrambler\""
             }
           ],
@@ -110,7 +110,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -153,7 +153,7 @@
                 "lat": 41.482151,
                 "lng": -82.681236
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Flying Ace Balloon Race\""
             }
           ],
@@ -166,7 +166,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -209,7 +209,7 @@
                 "lat": 41.47951,
                 "lng": -82.68225
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Blue Streak\""
             }
           ],
@@ -222,7 +222,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -308,7 +308,7 @@
                 "lat": 41.48112,
                 "lng": -82.68253
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Cadillac Cars\""
             }
           ],
@@ -316,7 +316,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -359,7 +359,7 @@
                 "lat": 41.48523,
                 "lng": -82.69084
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Cedar Creek Mine Ride\""
             }
           ],
@@ -372,7 +372,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -415,7 +415,7 @@
                 "lat": 41.480653,
                 "lng": -82.682066
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Cedar Downs Racing Derby\""
             }
           ],
@@ -428,7 +428,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -514,7 +514,7 @@
                 "lat": 41.485196,
                 "lng": -82.687894
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Charlie Brown's Wind-Up\""
             }
           ],
@@ -522,7 +522,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -566,7 +566,7 @@
                 "lat": 41.48349,
                 "lng": -82.68541
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Corkscrew\""
             }
           ],
@@ -574,7 +574,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -617,7 +617,7 @@
                 "lat": 41.482003,
                 "lng": -82.680998
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Joe Cool's Dodgem School\""
             }
           ],
@@ -630,7 +630,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -673,7 +673,7 @@
                 "lat": 41.48111,
                 "lng": -82.68069
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Dune Buggies\""
             }
           ],
@@ -686,7 +686,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -729,7 +729,7 @@
                 "lat": 41.480646,
                 "lng": -82.67952
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Coca-Cola® Freestyle - GateKeeper\""
             }
           ],
@@ -742,7 +742,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -787,7 +787,7 @@
                 "lat": 41.486212,
                 "lng": -82.689509
               },
-              "date": "2026-08-11",
+              "date": "2026-08-26",
               "note": "where \"Gemini Standby Queue\" begins — a named queue tagged one-way towards the ride"
             },
             {
@@ -805,7 +805,7 @@
                 "lat": 41.485589,
                 "lng": -82.688021
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Coca-Cola® Freestyle - Gemini\""
             }
           ],
@@ -818,7 +818,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-26",
           "stale": false
         },
         "station": {
@@ -890,7 +890,7 @@
                 "lat": 41.481658,
                 "lng": -82.67981
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Giant Wheel\""
             }
           ],
@@ -898,7 +898,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -984,7 +984,7 @@
                 "lat": 41.48071,
                 "lng": -82.68087
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Helicopters\""
             }
           ],
@@ -992,7 +992,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -1035,7 +1035,7 @@
                 "lat": 41.48203,
                 "lng": -82.68462
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Iron Dragon\""
             }
           ],
@@ -1048,7 +1048,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -1134,7 +1134,7 @@
                 "lat": 41.481589,
                 "lng": -82.681523
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Kite Eating Tree\""
             }
           ],
@@ -1142,12 +1142,54 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
       "last_verified": null,
       "place": "kite-eating-tree"
+    },
+    {
+      "id": "lake-eerie-nor-easter-2",
+      "place": "lake-eerie-nor-easter-2",
+      "name": "Lake Eerie Nor'easter",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.488522,
+        "lng": -82.687185
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48847,
+            "lng": -82.68715
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48847,
+                "lng": -82.68715
+              },
+              "date": "2026-08-26",
+              "note": "the walkable network at its closest, 6 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-26",
+          "stale": false
+        }
+      },
+      "last_verified": null
     },
     {
       "id": "lake-erie-eagles",
@@ -1186,7 +1228,7 @@
                 "lat": 41.485849,
                 "lng": -82.687979
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Lake Erie Eagles\""
             }
           ],
@@ -1194,54 +1236,12 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
       "last_verified": null,
       "place": "lake-erie-eagles"
-    },
-    {
-      "id": "lake-eerie-nor-easter",
-      "place": "lake-eerie-nor-easter",
-      "name": "Lake Erie Nor'easter",
-      "venue": "cedar-point",
-      "type": "attraction",
-      "at": {
-        "lat": 41.488522,
-        "lng": -82.687185
-      },
-      "features": {
-        "queue_entrance": {
-          "at": {
-            "lat": 41.48847,
-            "lng": -82.68715
-          },
-          "confidence": "unknown",
-          "score": 1,
-          "sources": [
-            "geometry"
-          ],
-          "evidence": [
-            {
-              "source": "geometry",
-              "at": {
-                "lat": 41.48847,
-                "lng": -82.68715
-              },
-              "date": "2026-08-09",
-              "note": "the walkable network at its closest, 6 m from the ride"
-            }
-          ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
-          "conflict": false,
-          "newest_evidence": "2026-08-09",
-          "stale": false
-        }
-      },
-      "last_verified": null
     },
     {
       "id": "lakeslide-landing",
@@ -1405,7 +1405,7 @@
                 "lat": 41.48488,
                 "lng": -82.68626
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Magnum XL-200\""
             }
           ],
@@ -1418,54 +1418,12 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
       "last_verified": null,
       "place": "magnum-xl-200"
-    },
-    {
-      "id": "main-arcade",
-      "name": "Main Arcade",
-      "venue": "cedar-point",
-      "type": "attraction",
-      "at": {
-        "lat": 41.481178,
-        "lng": -82.68136
-      },
-      "features": {
-        "queue_entrance": {
-          "at": {
-            "lat": 41.48132,
-            "lng": -82.68166
-          },
-          "confidence": "unknown",
-          "score": 1,
-          "sources": [
-            "geometry"
-          ],
-          "evidence": [
-            {
-              "source": "geometry",
-              "at": {
-                "lat": 41.48132,
-                "lng": -82.68166
-              },
-              "date": "2026-08-09",
-              "note": "the walkable network at its closest, 30 m from the ride"
-            }
-          ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
-          "conflict": false,
-          "newest_evidence": "2026-08-09",
-          "stale": false
-        }
-      },
-      "last_verified": null,
-      "place": "main-arcade"
     },
     {
       "id": "matterhorn",
@@ -1503,7 +1461,7 @@
                 "lat": 41.481969,
                 "lng": -82.680546
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Matterhorn\""
             }
           ],
@@ -1516,7 +1474,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -1569,7 +1527,7 @@
                 "lat": 41.48554,
                 "lng": -82.69236
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Maverick\""
             }
           ],
@@ -1582,7 +1540,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         },
         "station": {
@@ -1653,7 +1611,7 @@
                 "lat": 41.48103,
                 "lng": -82.68008
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"maXair\""
             }
           ],
@@ -1666,7 +1624,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -1710,7 +1668,7 @@
                 "lat": 41.478763,
                 "lng": -82.679654
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Midway Carousel\""
             }
           ],
@@ -1718,7 +1676,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -1763,7 +1721,7 @@
                 "lat": 41.48195,
                 "lng": -82.686529
               },
-              "date": "2026-08-11",
+              "date": "2026-08-26",
               "note": "where \"Millennium Force Standby Queue\" begins — a named queue tagged one-way towards the ride"
             },
             {
@@ -1781,7 +1739,7 @@
                 "lat": 41.48194,
                 "lng": -82.68651
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Millennium Force\""
             }
           ],
@@ -1794,7 +1752,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-26",
           "stale": false
         },
         "station": {
@@ -1907,7 +1865,7 @@
                 "lat": 41.48058,
                 "lng": -82.68096
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Motorcycles\""
             }
           ],
@@ -1920,7 +1878,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -1963,7 +1921,7 @@
                 "lat": 41.48076,
                 "lng": -82.68138
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Mustangs\""
             }
           ],
@@ -1976,7 +1934,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -2019,7 +1977,7 @@
                 "lat": 41.47921,
                 "lng": -82.67938
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Ocean Motion\""
             }
           ],
@@ -2032,7 +1990,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -2076,7 +2034,7 @@
                 "lat": 41.485644,
                 "lng": -82.689055
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Peanuts 500\""
             }
           ],
@@ -2084,7 +2042,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -2169,7 +2127,7 @@
                 "lat": 41.48578,
                 "lng": -82.688576
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Pipe Scream\""
             }
           ],
@@ -2182,7 +2140,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -2268,7 +2226,7 @@
                 "lat": 41.48082,
                 "lng": -82.68119
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Police Cars\""
             }
           ],
@@ -2276,7 +2234,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -2361,7 +2319,7 @@
                 "lat": 41.483064,
                 "lng": -82.685063
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Power Tower\""
             }
           ],
@@ -2374,7 +2332,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -2417,7 +2375,7 @@
                 "lat": 41.479552,
                 "lng": -82.68093
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Raptor\""
             }
           ],
@@ -2430,7 +2388,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -2474,7 +2432,7 @@
                 "lat": 41.48516,
                 "lng": -82.688586
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Red Baron\""
             }
           ],
@@ -2482,7 +2440,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -2568,7 +2526,7 @@
                 "lat": 41.48091,
                 "lng": -82.6811
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Rock, Spin & Turn\""
             }
           ],
@@ -2576,7 +2534,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -2620,7 +2578,7 @@
                 "lat": 41.48107,
                 "lng": -82.68083
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Roto Whip\""
             }
           ],
@@ -2628,7 +2586,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -2671,7 +2629,7 @@
                 "lat": 41.482338,
                 "lng": -82.686767
               },
-              "date": "2026-08-11",
+              "date": "2026-08-26",
               "note": "where \"Rougarou Standby Queue\" begins — a named queue tagged one-way towards the ride"
             },
             {
@@ -2689,7 +2647,7 @@
                 "lat": 41.48238,
                 "lng": -82.68651
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Rougarou\""
             }
           ],
@@ -2710,7 +2668,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-26",
           "stale": false
         },
         "station": {
@@ -2823,7 +2781,7 @@
                 "lat": 41.48166,
                 "lng": -82.68513
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Siren's Curse\""
             }
           ],
@@ -2836,7 +2794,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -2880,7 +2838,7 @@
                 "lat": 41.481,
                 "lng": -82.68062
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Sky Fighters\""
             }
           ],
@@ -2888,7 +2846,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -2931,7 +2889,7 @@
                 "lat": 41.48435,
                 "lng": -82.69099
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Skyhawk\""
             }
           ],
@@ -2944,7 +2902,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -2987,7 +2945,7 @@
                 "lat": 41.48611,
                 "lng": -82.68985
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"SlingShot\""
             }
           ],
@@ -3000,106 +2958,12 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
       "last_verified": null,
       "place": "slingshot"
-    },
-    {
-      "id": "snake-river-falls",
-      "name": "Snake River Falls",
-      "venue": "cedar-point",
-      "type": "attraction",
-      "at": {
-        "lat": 41.484121,
-        "lng": -82.691042
-      },
-      "features": {
-        "queue_entrance": {
-          "at": {
-            "lat": 41.484261,
-            "lng": -82.691029
-          },
-          "confidence": "low",
-          "score": 6,
-          "sources": [
-            "osm_named_queue",
-            "osm_queue_name"
-          ],
-          "evidence": [
-            {
-              "source": "geometry",
-              "at": {
-                "lat": 41.48408,
-                "lng": -82.69107
-              },
-              "date": "2026-08-09",
-              "note": "the walkable network at its closest, 5 m from the ride"
-            },
-            {
-              "source": "osm_named_queue",
-              "at": {
-                "lat": 41.484261,
-                "lng": -82.691029
-              },
-              "date": "2026-08-11",
-              "note": "where \"Snake River Falls Fastlane Queue / Snake River Falls Standby Queue\" begins — a named queue tagged one-way towards the ride"
-            },
-            {
-              "source": "osm_queue_name",
-              "at": {
-                "lat": 41.48416,
-                "lng": -82.69097
-              },
-              "date": "2026-08-09",
-              "note": "the park end of \"Snake River Falls Fastlane Queue\", named for this ride but with no one-way to say which end you join, the outermost of 2 lanes mapped for this ride"
-            }
-          ],
-          "from": "osm_named_queue",
-          "spread_m": 20.3,
-          "dissent": [
-            {
-              "source": "geometry",
-              "metres": 20.3
-            }
-          ],
-          "conflict": false,
-          "newest_evidence": "2026-08-11",
-          "stale": false
-        },
-        "station": {
-          "at": {
-            "lat": 41.48426,
-            "lng": -82.69103
-          },
-          "confidence": "unknown",
-          "score": 2,
-          "sources": [
-            "osm_queue_name"
-          ],
-          "evidence": [
-            {
-              "source": "osm_queue_name",
-              "at": {
-                "lat": 41.48426,
-                "lng": -82.69103
-              },
-              "date": "2026-08-09",
-              "note": "the far end of \"Snake River Falls Fastlane Queue\", where the queue reaches the ride"
-            }
-          ],
-          "from": "osm_queue_name",
-          "spread_m": null,
-          "dissent": [],
-          "conflict": false,
-          "newest_evidence": "2026-08-09",
-          "stale": false
-        }
-      },
-      "last_verified": null,
-      "place": "snake-river-falls"
     },
     {
       "id": "snoopy-bounce",
@@ -3179,7 +3043,7 @@
                 "lat": 41.48187,
                 "lng": -82.68138
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Snoopy's Deep Sea Divers\""
             }
           ],
@@ -3192,7 +3056,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -3236,7 +3100,7 @@
                 "lat": 41.481724,
                 "lng": -82.681249
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Snoopy's Express Railroad\""
             }
           ],
@@ -3244,7 +3108,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -3287,7 +3151,7 @@
                 "lat": 41.481926,
                 "lng": -82.681167
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Snoopy's Space Race\""
             }
           ],
@@ -3300,7 +3164,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -3343,7 +3207,7 @@
                 "lat": 41.48049,
                 "lng": -82.68109
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Space Age\""
             }
           ],
@@ -3356,7 +3220,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -3441,7 +3305,7 @@
                 "lat": 41.486555,
                 "lng": -82.691916
               },
-              "date": "2026-08-11",
+              "date": "2026-08-26",
               "note": "where \"Steel Vengeance Extended Queue\" begins — a named queue tagged one-way towards the ride"
             },
             {
@@ -3459,7 +3323,7 @@
                 "lat": 41.48659,
                 "lng": -82.69222
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Steel Vengeance\""
             }
           ],
@@ -3480,7 +3344,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-26",
           "stale": false
         },
         "station": {
@@ -3593,7 +3457,7 @@
                 "lat": 41.4833,
                 "lng": -82.69121
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Thunder Canyon\""
             }
           ],
@@ -3606,7 +3470,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -3651,7 +3515,7 @@
                 "lat": 41.484023,
                 "lng": -82.686051
               },
-              "date": "2026-08-11",
+              "date": "2026-08-26",
               "note": "where \"Top Thrill 2 Fastlane Queue / Top Thrill 2 Standby Queue\" begins — a named queue tagged one-way towards the ride"
             },
             {
@@ -3669,7 +3533,7 @@
                 "lat": 41.4841,
                 "lng": -82.68615
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Top Thrill 2\""
             }
           ],
@@ -3682,7 +3546,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-26",
           "stale": false
         },
         "station": {
@@ -3753,7 +3617,7 @@
                 "lat": 41.48041,
                 "lng": -82.68301
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Valravn\""
             }
           ],
@@ -3766,7 +3630,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -3774,9 +3638,9 @@
       "place": "valravn"
     },
     {
-      "id": "watterin-hole",
-      "place": "watterin-hole",
-      "name": "Waterin' Hole",
+      "id": "watterin-hole-2",
+      "place": "watterin-hole-2",
+      "name": "Watterin' Hole",
       "venue": "cedar-point",
       "type": "attraction",
       "at": {
@@ -3801,7 +3665,7 @@
                 "lat": 41.48694,
                 "lng": -82.6844
               },
-              "date": "2026-08-09",
+              "date": "2026-08-26",
               "note": "the walkable network at its closest, 18 m from the ride"
             }
           ],
@@ -3809,7 +3673,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-26",
           "stale": false
         }
       },
@@ -3852,7 +3716,7 @@
                 "lat": 41.4844,
                 "lng": -82.69218
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Wave Swinger\""
             }
           ],
@@ -3860,7 +3724,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -3903,7 +3767,7 @@
                 "lat": 41.482387,
                 "lng": -82.680515
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Wild Mouse\""
             }
           ],
@@ -3916,7 +3780,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -4001,7 +3865,7 @@
                 "lat": 41.485335,
                 "lng": -82.68847
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Wilderness Run\""
             }
           ],
@@ -4014,7 +3878,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -4058,7 +3922,7 @@
                 "lat": 41.482783,
                 "lng": -82.68069
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"WindSeeker\""
             }
           ],
@@ -4066,7 +3930,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -4110,7 +3974,7 @@
                 "lat": 41.48539,
                 "lng": -82.689084
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Woodstock Express\""
             }
           ],
@@ -4118,7 +3982,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -4162,7 +4026,7 @@
                 "lat": 41.485329,
                 "lng": -82.688127
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Woodstock's Airmail\""
             }
           ],
@@ -4170,7 +4034,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
@@ -4213,7 +4077,7 @@
                 "lat": 41.48177,
                 "lng": -82.681807
               },
-              "date": "2026-08-11",
+              "date": "2026-08-18",
               "note": "ParksAPI location for \"Woodstock's Whirlybirds\""
             }
           ],
@@ -4226,7 +4090,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-18",
           "stale": false
         }
       },
