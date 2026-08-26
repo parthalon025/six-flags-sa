@@ -115,7 +115,11 @@ export function compareAll() {
   return manifest.venues.map((v) => compareVenue(v));
 }
 
-/** Stable sha256 over the shipped map + pois bundle bytes. */
+/**
+ * Stable sha256 over the shipped map + pois bundle bytes.
+ * Certification checks also read attractions, recipes, and adapter caches — those
+ * inputs are not part of this fingerprint; re-run venues:certify when they drift.
+ */
 export function bundleFingerprint(id) {
   const mapFile = path.join(VENUE_DIR, `${id}.map.json`);
   const poisFile = path.join(VENUE_DIR, `${id}.pois.json`);
