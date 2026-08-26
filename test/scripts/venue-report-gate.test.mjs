@@ -10,7 +10,7 @@ import {
   checkExpectLock,
   checkShippedVenueReports,
   checkVenueReport,
-} from '../../packages/venue-builder/lib/venue-report-gate.mjs';
+} from '../../scripts/lib/venue-report-gate.mjs';
 
 /* -------------------------------------------------------- checkExpectLock */
 

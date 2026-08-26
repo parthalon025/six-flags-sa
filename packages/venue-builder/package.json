@@ -11,6 +11,7 @@
     "./bake-drift.js": "./src/bake-drift.mjs",
     "./compare.js": "./src/compare.mjs",
     "./freshness.js": "./lib/delivery/freshness.mjs",
+    "./venue-report-gate.js": "./lib/venue-report-gate.mjs",
     "./map-factory.js": "./lib/map-factory/index.mjs",
     "./visual-factory.js": "./lib/visual-factory/index.mjs",
     "./delivery.js": "./lib/delivery/index.mjs",
