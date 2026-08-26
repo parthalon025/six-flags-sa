@@ -167,10 +167,10 @@
     },
     "steepDegrees": 18,
     "constrained": {
-      "paths": 1035,
+      "paths": 1032,
       "water": 51,
-      "pads": 225,
-      "nodes": 110691
+      "pads": 226,
+      "nodes": 110376
     }
   }
 }
