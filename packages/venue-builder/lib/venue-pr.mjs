@@ -6,7 +6,23 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { certifyVenue, renderCertificationMarkdown } from './venue-certify.mjs';
+import { loadStewardReviewForVenue, renderStewardReviewMarkdown } from './steward-review.mjs';
 import { MONO_ROOT } from '../src/paths.mjs';
+
+export function buildVenuePrBody(venueId, cert, { stewardReview } = {}) {
+  const review = stewardReview ?? loadStewardReviewForVenue(venueId);
+  const bodyParts = [
+    `Built by the unified venue pipeline.`,
+    '',
+    renderCertificationMarkdown(cert),
+    '',
+    renderStewardReviewMarkdown(review),
+  ];
+  if (cert.ask) {
+    bodyParts.push('', '## Ask brief', '', '```json', JSON.stringify(cert.ask, null, 2), '```');
+  }
+  return bodyParts.join('\n');
+}
 
 export function openVenueDraftPr(venueId, { runId = Date.now(), baseBranch = 'main' } = {}) {
   const cert = certifyVenue(venueId, { write: true });
@@ -15,16 +31,8 @@ export function openVenueDraftPr(venueId, { runId = Date.now(), baseBranch = 'ma
     ? `Add ${venueId} — certified offline twin`
     : `Add ${venueId} — needs certification review`;
 
-  const bodyParts = [
-    `Built by the unified venue pipeline.`,
-    '',
-    renderCertificationMarkdown(cert),
-  ];
-  if (cert.ask) {
-    bodyParts.push('', '## Ask brief', '', '```json', JSON.stringify(cert.ask, null, 2), '```');
-  }
   const bodyFile = path.join(MONO_ROOT, '.venue-pr-body.md');
-  writeFileSync(bodyFile, bodyParts.join('\n'));
+  writeFileSync(bodyFile, buildVenuePrBody(venueId, cert));
 
   const git = (args, opts = {}) => spawnSync('git', args, { cwd: MONO_ROOT, encoding: 'utf8', ...opts });
   git(['config', 'user.name', 'github-actions[bot]']);
