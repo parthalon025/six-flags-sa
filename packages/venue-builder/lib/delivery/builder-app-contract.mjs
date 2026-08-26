@@ -8,6 +8,7 @@
  *   buildGeneratedBinding(root)
  *   bindingDecision({ binding, files })
  *   checkBuilderAppContract(root)
+ *   builderAppContractFailureHint()
  */
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -18,6 +19,13 @@ const ALGORITHM = 'sha256-aggregate-v1';
 const VENUES_PUBLIC = join('apps', 'party-tracker', 'public', 'venues');
 const INDEX_REL = join('apps', 'party-tracker', 'lib', 'venueIndex.js');
 const MANIFEST_REL = join(VENUES_PUBLIC, 'manifest.json');
+
+export const BUILDER_APP_CONTRACT_POLICY = 'docs/agents/policies/builder-app-contract.md';
+
+/** Gate failure text — names the policy and legitimate regeneration commands. */
+export function builderAppContractFailureHint() {
+  return `generated venue output no longer matches its builder binding — run npm run venues:reindex, venues:build, or venues:rebuild (see ${BUILDER_APP_CONTRACT_POLICY})`;
+}
 
 const repoRoot = () => MONO_ROOT;
 

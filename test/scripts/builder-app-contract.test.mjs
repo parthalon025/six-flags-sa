@@ -14,6 +14,7 @@ import {
   collectGeneratedFileHashes,
   checkBuilderAppContract,
   aggregateBindingSha256,
+  builderAppContractFailureHint,
 } from '../../scripts/lib/builder-app-contract.mjs';
 
 /* -------------------------------------------------------- bindingDecision */
@@ -132,6 +133,39 @@ import {
   rmSync(root, { recursive: true, force: true });
 }
 
+{
+  const root = mkdtempSync(join(tmpdir(), 'builder-contract-index-edit-'));
+  const venues = join(root, 'apps/party-tracker/public/venues');
+  const lib = join(root, 'apps/party-tracker/lib');
+  mkdirSync(venues, { recursive: true });
+  mkdirSync(lib, { recursive: true });
+  writeFileSync(join(venues, 'park.map.json'), '{"meta":{"id":"park"}}');
+  writeFileSync(join(venues, 'park.pois.json'), '[]');
+  writeFileSync(join(venues, 'park.gaps.json'), '{"gaps":[]}');
+  writeFileSync(join(lib, 'venueIndex.js'), 'export const VENUES = [];');
+  const files = collectGeneratedFileHashes(root);
+  const binding = {
+    algorithm: 'sha256-aggregate-v1',
+    sha256: aggregateBindingSha256(files),
+    files,
+  };
+  writeFileSync(
+    join(venues, 'manifest.json'),
+    JSON.stringify({
+      version: 1,
+      default: 'park',
+      venues: [{ id: 'park' }],
+      generatedBinding: binding,
+    }),
+  );
+  writeFileSync(join(lib, 'venueIndex.js'), 'export const VENUES = [{ id: "hand" }];');
+  const gate = checkBuilderAppContract(root);
+  assert.equal(gate.ok, false);
+  assert.ok(gate.drifted.includes('apps/party-tracker/lib/venueIndex.js'));
+  assert.match(builderAppContractFailureHint(), /builder-app-contract\.md/);
+  rmSync(root, { recursive: true, force: true });
+}
+
 /* --------------------------------------------------------- the repo gate */
 
 {
@@ -143,7 +177,7 @@ import {
   );
   assert.ok(
     gate.ok,
-    `generated venue output no longer matches its builder binding — run npm run venues:reindex (see docs/agents/policies/builder-app-contract.md):\n${explain}`,
+    `${builderAppContractFailureHint()}:\n${explain}`,
   );
 }
 

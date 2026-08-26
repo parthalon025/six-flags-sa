@@ -10,4 +10,6 @@ export {
   bindingDecision,
   aggregateBindingSha256,
   checkBuilderAppContract,
+  BUILDER_APP_CONTRACT_POLICY,
+  builderAppContractFailureHint,
 } from '../../packages/venue-builder/lib/delivery/builder-app-contract.mjs';

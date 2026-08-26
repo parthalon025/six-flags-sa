@@ -93,7 +93,11 @@ available as the escape hatch for the entries a name cannot address on its own, 
 of twenty-six places called "Restrooms".
 
 Each build writes `apps/party-tracker/public/venues/<id>.map.json`, `apps/party-tracker/public/venues/<id>.pois.json`, and `apps/party-tracker/public/venues/<id>.gaps.json`, then
-rebuilds `apps/party-tracker/public/venues/manifest.json` and the generated `apps/party-tracker/lib/venueIndex.js`. Gaps are facts the builder cannot settle (height, queue, path, restroom, food, gate, camping); the phone ranks them by Location and does not invent them from POI fields. The client
+rebuilds `apps/party-tracker/public/venues/manifest.json` and the generated `apps/party-tracker/lib/venueIndex.js`. Gaps are facts the builder cannot settle (height, queue, path, restroom, food, gate, camping); the phone ranks them by Location and does not invent them from POI fields.
+
+`venues:reindex` stamps `generatedBinding` on `manifest.json` — a sha256 aggregate of every generated file the app reads (truth trio, `venueIndex.js`, and the manifest body sans the binding itself). CI re-verifies that stamp offline; hand-editing any of those files without regenerating through the builder fails the gate. See `docs/agents/policies/builder-app-contract.md`.
+
+The client
 *fetches* those files rather than importing them, which is the point: a venue added to the
 manifest reaches a phone that already has the app installed, and the service worker caches
 whichever one gets opened. A missing Gaps file is an empty list — it must not fail the park load.
