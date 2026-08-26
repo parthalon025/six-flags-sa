@@ -29,8 +29,8 @@ assert.match(
 );
 assert.match(
   bakeStep,
-  /--kit rpg-overworld[\s\S]*--target iso/,
-  'iso bake uses the primary game kit (rpg-overworld)',
+  /--kit rpg-overworld[\s\S]*--target iso[\s\S]*display-pack\.mjs/,
+  'iso bake runs after flat kits and before display-pack',
 );
 
 console.log('ok build-venue-workflow iso bake gate');
