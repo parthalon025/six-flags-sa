@@ -2,6 +2,7 @@
  * Compare built venue bundles against manifest expectations and on-disk recipes.
  * Used by builder tests, the inspection UI, and the app's admin page.
  */
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { MANIFEST_FILE, OVERRIDE_DIR, ROUTING_COVERAGE_FILE, VENUE_DIR } from './paths.mjs';
@@ -112,6 +113,48 @@ export function compareVenue(venue) {
 export function compareAll() {
   const manifest = readManifest();
   return manifest.venues.map((v) => compareVenue(v));
+}
+
+/** Stable sha256 over the shipped map + pois bundle bytes. */
+export function bundleFingerprint(id) {
+  const mapFile = path.join(VENUE_DIR, `${id}.map.json`);
+  const poisFile = path.join(VENUE_DIR, `${id}.pois.json`);
+  if (!existsSync(mapFile) || !existsSync(poisFile)) return null;
+  const hash = createHash('sha256');
+  hash.update(readFileSync(mapFile));
+  hash.update(readFileSync(poisFile));
+  return hash.digest('hex');
+}
+
+/**
+ * Pure. Does a certification artifact still describe the bundle on disk?
+ */
+export function certificationFreshnessDecision({ certification, currentFingerprint }) {
+  if (!certification) return { fresh: true, reason: 'no-cert' };
+  const pinned = certification.bundleFingerprint ?? null;
+  if (!pinned) return { fresh: false, reason: 'unpinned' };
+  if (!currentFingerprint) return { fresh: false, reason: 'missing-bundle' };
+  if (pinned !== currentFingerprint) {
+    return { fresh: false, reason: 'stale', pinned, current: currentFingerprint };
+  }
+  return { fresh: true };
+}
+
+/** Every committed certification.json must pin the bundle it certified. */
+export function compareCertificationFreshness() {
+  const manifest = readManifest();
+  const issues = [];
+  for (const venue of manifest.venues) {
+    const certFile = venueSidecar(venue.id, 'certification.json');
+    if (!existsSync(certFile)) continue;
+    const certification = JSON.parse(readFileSync(certFile, 'utf8'));
+    const current = bundleFingerprint(venue.id);
+    const decision = certificationFreshnessDecision({ certification, currentFingerprint: current });
+    if (!decision.fresh) {
+      issues.push(`${venue.id}: certification ${decision.reason}`);
+    }
+  }
+  return { ok: issues.length === 0, issues };
 }
 
 /**
