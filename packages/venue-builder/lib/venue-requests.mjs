@@ -94,7 +94,7 @@ export function requests({ venue, map = {}, pois = [], overrides = null } = {}) 
         'Some of the list will not be rides. A midway game, an arcade, a lounge and a splash pool '
           + 'all arrive tagged as attractions and none of them has a height on a sign. Say which '
           + 'ones those are rather than inventing a rule for them — that answer is a fix to the '
-          + 'category rules in scripts/lib/osm-tags.mjs, which helps every venue, not just this one.',
+          + 'category rules in lib/osm-tags.mjs, which helps every venue, not just this one.',
       ],
       schema: heightSchema(noHeight),
       rules: [
@@ -215,7 +215,7 @@ export function requests({ venue, map = {}, pois = [], overrides = null } = {}) 
       targets: absent.map(([, label, tags]) => `${label} — OSM tags the rules look for: ${tags}`),
       ask: [
         'First check how this place is actually tagged in OpenStreetMap, against the rules in '
-          + 'scripts/lib/osm-tags.mjs. A rule that does not match is a fix that helps every venue.',
+          + 'lib/osm-tags.mjs. A rule that does not match is a fix that helps every venue.',
         'If OpenStreetMap genuinely does not have them, the park almost certainly does — on the '
           + 'map it hands out at the gate. Trace it: `node scripts/trace-venue.mjs`, which ties '
           + 'the picture to the ground against control points you can find in both, and reports '

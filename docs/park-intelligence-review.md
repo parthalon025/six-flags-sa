@@ -136,7 +136,7 @@ class of "why did my correction come back" bugs.
 
 One place this repo is ahead of Foundry: Foundry refuses to arbitrate conflicting
 sources at the ontology layer — one property, one source, reconcile upstream.
-`scripts/lib/evidence.mjs` does arbitrate, retains dissent, and blocks conflicts from
+`packages/venue-builder/lib/evidence.mjs` does arbitrate, retains dissent, and blocks conflicts from
 publishing. For OpenStreetMap plus park sources that is the better call, and Foundry
 has no equivalent.
 
@@ -300,7 +300,7 @@ the fields the pipeline joins on.
 ### Workstream: path attributes and routing profiles
 
 *Partially implemented. Tags ship as `f`/`l` on path and service ways via
-`scripts/lib/osm-tags.mjs` and `lib/wayFlags.js`; coverage is measured across all
+`packages/venue-builder/lib/osm-tags.mjs` and `lib/wayFlags.js`; coverage is measured across all
 four venues (see below). Routing profiles, the `meta` coverage counter, layer-aware
 crossing splits, and the snap exclusion predicate are not.*
 
@@ -368,7 +368,7 @@ same geometry, so you would ship it twice. Caching the built graph in IndexedDB 
 on a hash of the map file gets the same result for zero bytes, and only if a real
 phone measurement shows the idle-time build actually hurts.
 
-**Coverage is now measured across all four venues.** `scripts/lib/osm-tags.mjs` carries
+**Coverage is now measured across all four venues.** `packages/venue-builder/lib/osm-tags.mjs` carries
 the counts from 3,037 path and service ways between them — not from the Kings Island
 probe alone. The headline numbers settle the profile question:
 
@@ -515,7 +515,7 @@ files — `build-venue.mjs`, both attractions modules, `candidates.mjs`,
 `ParkMap.jsx`, `app/page.js`, and `test/unit.mjs`. `lib/weather.js` already has
 three partial sets (`RIDE_CATEGORIES`, `SHELTERED_CATEGORIES`, `INERT_CATEGORIES`)
 that disagree in edge cases with the ride test — a `show` is inert to heights but
-not to weather. `scripts/lib/osm-tags.mjs` ends its header with *"The vocabulary
+not to weather. `packages/venue-builder/lib/osm-tags.mjs` ends its header with *"The vocabulary
 matches lib/theme.js"* while `POI_RULES` and `CATEGORY_LABELS` are separate tables
 that a new category must be edited in twice. The proposal's §11 verdict — *adding one
 category touches five files* — was an undercount.
@@ -799,7 +799,7 @@ adding server dependencies to the phone runtime.
 
 - [universal-venue-builder-dependency-matrix.md](./universal-venue-builder-dependency-matrix.md)
 - [universal-venue-builder-architecture.md](./universal-venue-builder-architecture.md)
-- Code registry: `scripts/lib/adapters/registry.mjs`
+- Code registry: `packages/venue-builder/lib/adapters/registry.mjs`
 - CLI: `npm run venues:adapters`
 
 Verdict unchanged for phone runtime: PostGIS, Valhalla-on-phone, and live ops feeds

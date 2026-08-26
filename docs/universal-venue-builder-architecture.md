@@ -199,14 +199,14 @@ Published output: coordinates + confidence band in `pois.json` only when
 
 ## Capability matrix linkage
 
-`scripts/lib/park-capabilities.mjs` maps audit **weaknesses** to tools. New rows point
+`packages/venue-builder/lib/park-capabilities.mjs` maps audit **weaknesses** to tools. New rows point
 maintainers at adapters and docs when audits flag gaps.
 
 ## Directory layout
 
 ```
-scripts/
-  venue-adapters.mjs          CLI
+packages/venue-builder/
+  bin/                        CLI entrypoints (venues:* npm scripts)
   lib/
     adapters/
       types.mjs               contract
@@ -214,6 +214,7 @@ scripts/
       index.mjs
     evidence.mjs              fusion weights
     evidence-graph.mjs        graph + convergence
+    park-capabilities.mjs     weakness → tool map
 docs/
   universal-venue-builder-dependency-matrix.md
   universal-venue-builder-architecture.md   (this file)

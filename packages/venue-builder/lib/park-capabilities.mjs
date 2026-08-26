@@ -102,14 +102,14 @@ export const CAPABILITIES = [
     id: 'evidence-graph',
     weakness: 'low-entrance-confidence',
     tool: 'npm run venues:attractions -- <id> --report',
-    file: 'data/venues/<id>/attractions.json + scripts/lib/evidence-graph.mjs',
+    file: 'data/venues/<id>/attractions.json + packages/venue-builder/lib/evidence-graph.mjs',
     note: 'Converging claims per feature; fusion publishes only validated coordinates.',
   },
   {
     id: 'playwright-research',
     weakness: 'no-official-cache',
     tool: 'adapter: playwright (wrap) — future venues:research --browser',
-    file: 'scripts/lib/adapters/registry.mjs',
+    file: 'packages/venue-builder/lib/adapters/registry.mjs',
     note: 'Browser agent for park maps and accessibility pages beyond regex fetch.',
   },
   {
