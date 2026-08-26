@@ -35,12 +35,13 @@ The run prints the verticals the diff owes (`scripts/lib/vertical-e2e.mjs`), run
 | Phase | What runs |
 |-------|-----------|
 | Docs-only | Stamp only — no static floor or verticals (matches GitHub touch-only skip) |
+| Agent policy / wayfinder | Thin policy tests only (`scripts/lib/agent-policy-diff.mjs`) — no static floor, verticals, or matt-review |
 | Static (floor) | `test:ci-gate` → `test:unit` → `lint` → `test:module-select` → `build -w @party-tracker/app` |
-| `automation` vertical | `test:ci-gate` — CI/deploy/stamp decisions through their exported functions |
+| `backside` vertical | `test:ci-gate` — scripts, API routes, server libs, non-UI packages |
 | `builder` vertical | `test:builder` — assertions over generated venue output |
-| `app` vertical | start app + `test:validate-ui:changed` — behaviour in a real browser |
+| `app` vertical | guest module-select only — start app + `test:validate-ui:changed` + zoom sweep in a real browser |
 
-Docs-only branches owe nothing and skip straight through. `--skip-browser` is **refused** for diffs that touch app behaviour — static steps prove the build compiles, not that a guest can still use it. Code paths no vertical claims fail closed: the diff owes every vertical until a `VERTICALS` row claims the path. See [vertical-e2e policy](./policies/vertical-e2e.md).
+Docs-only and agent-policy branches owe nothing and skip straight through. `--skip-browser` is **refused** when module-select says the diff is guest-visible — static steps prove the build compiles, not that a guest can still use it. Code paths no vertical claims fail closed: the diff owes every vertical until a lane claims the path. Policy: `scripts/lib/vertical-e2e.mjs` and `scripts/lib/agent-policy-diff.mjs`. See [vertical-e2e policy](./policies/vertical-e2e.md).
 
 After a successful run, `scripts/ci/local-ci-pass.json` records the diff, the module selection, the static steps and the `verticals` that ran, tagged `local-ci-verified` (schema 3 — a stamp without the tag or without the verticals never covers a code diff). Commit that file with your branch. Use `--no-stamp` to validate without writing the file.
 

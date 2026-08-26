@@ -20,7 +20,6 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   loadModulesManifest,
-  selectModulesFromFiles,
 } from '../../test/app/lib/module-select.mjs';
 import {
   healthAlreadyServing,
@@ -37,6 +36,11 @@ import {
 import { clerkE2eBlockReason } from '../lib/clerk-e2e.mjs';
 import { ensureClerkEnvForCi } from '../lib/cloud-agent-clerk-env.mjs';
 import {
+  isAgentPolicyOnlyDiff,
+  runPolicyTestsForFiles,
+} from '../lib/agent-policy-diff.mjs';
+import {
+  guestBrowserRequired,
   noCodeWorkRequired,
   requiredVerticals,
   verticalById,
@@ -81,11 +85,9 @@ export function gitChangedFiles(baseRef = 'origin/main', cwd = root) {
   }
 }
 
+/** @deprecated use guestBrowserRequired from vertical-e2e.mjs */
 export function needsBrowserVertical(files, manifest = loadModulesManifest()) {
-  if (files == null) return true;
-  if (!files.length) return false;
-  const sel = selectModulesFromFiles(files, manifest);
-  return sel.modules.length > 0;
+  return guestBrowserRequired(files, manifest);
 }
 
 export function runNpmStep(args, cwd = root) {
@@ -141,9 +143,15 @@ export async function runPreMergeVertical({
   }
 
   if (noCodeWorkRequired(files)) {
-    console.log(
-      'pre-merge-vertical: no code work in this diff — skipping static floor and verticals',
-    );
+    if (isAgentPolicyOnlyDiff(files)) {
+      console.log('pre-merge-vertical: agent-policy diff — thin policy tests only');
+      const policyCode = runPolicyTestsForFiles(files, cwd);
+      if (policyCode !== 0) return policyCode;
+    } else {
+      console.log(
+        'pre-merge-vertical: no code work in this diff — skipping static floor and verticals',
+      );
+    }
     if (!noStamp) {
       writeLocalCiPass({ context, browserVertical: false, verticals: [] }, cwd);
     }
@@ -169,8 +177,7 @@ export async function runPreMergeVertical({
   }
 
   const ran = [];
-  // test:ci-gate is a static step and is exactly the automation vertical.
-  if (required.includes('automation')) ran.push('automation');
+  if (required.includes('backside')) ran.push('backside');
 
   const clerkBlock = clerkE2eBlockReason({ files: files || [], skipBrowser });
   if (clerkBlock) {
@@ -204,7 +211,7 @@ export async function runPreMergeVertical({
     ran.push('builder');
   }
 
-  const browserWanted = required.includes('app') || needsBrowserVertical(files);
+  const browserWanted = guestBrowserRequired(files);
   if (skipBrowser) {
     console.log('pre-merge-vertical: browser vertical skipped (--skip-browser)');
   } else if (!browserWanted) {
@@ -233,7 +240,7 @@ export async function runPreMergeVertical({
       );
       return 1;
     }
-    if (required.includes('app')) ran.push('app');
+    ran.push('app');
   }
 
   const block = verticalE2eBlockReason({ files, ran, skipBrowser });

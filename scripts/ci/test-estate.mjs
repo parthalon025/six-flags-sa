@@ -219,6 +219,7 @@ export const TEST_ESTATE = {
   'test/scripts/train-plan.test.mjs': ['ci-gate'],
   'test/scripts/matt-workflow.test.mjs': ['ci-gate'],
   'test/scripts/operating-stack.test.mjs': ['ci-gate'],
+  'test/scripts/agent-policy-diff.test.mjs': ['ci-gate'],
   'test/scripts/executive-resume.test.mjs': ['ci-gate'],
   'test/scripts/executive-resume-brief.test.mjs': ['ci-gate'],
   'test/scripts/wayfinder-committed.test.mjs': ['ci-gate'],
