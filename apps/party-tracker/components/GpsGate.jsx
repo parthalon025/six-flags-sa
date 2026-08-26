@@ -5,6 +5,7 @@ import Icon from '@/components/Icon';
 import InstallCard from '@/components/InstallCard';
 import WorldPicker from '@/components/WorldPicker';
 import { BRAND } from '@/lib/brand';
+import { planYourDayTitle, welcomeEyebrow } from '@/lib/introGate';
 
 const PARTY_LOCK = {
   title: 'Turn Location back on',
@@ -74,6 +75,7 @@ export default function GpsGate({
   partyLock = false,
   firstRun = false,
   locationOn = false,
+  visitorName = null,
 }) {
   const copy = partyLock
     ? {
@@ -151,7 +153,7 @@ export default function GpsGate({
                 <span className="gateStepIcon" aria-hidden="true">
                   <Icon name="location.north.fill" size={24} />
                 </span>
-                <h2 className="gateStepTitle">Plan your day</h2>
+                <h2 className="gateStepTitle">{planYourDayTitle(visitorName)}</h2>
                 <p className="gateStepBody">{BRAND.gatePitch}</p>
                 {welcomeIdle && <p className="gateFine">{NEAREST_PARK_HINT}</p>}
                 {welcomeSearching && (
@@ -163,7 +165,7 @@ export default function GpsGate({
               </div>
             ) : welcome && !partyLock ? (
               <>
-                <div className="gateEyebrow">Welcome</div>
+                <div className="gateEyebrow">{welcomeEyebrow(visitorName)}</div>
                 <BrandLockup size="lg" stacked showTagline className="gateBrandLockup" />
                 <p>{BRAND.shortDescription}</p>
               </>
@@ -171,7 +173,7 @@ export default function GpsGate({
               <>
                 <div className="gateEyebrow">
                   {welcome
-                    ? 'Welcome'
+                    ? welcomeEyebrow(visitorName)
                     : `${venueName ? `${venueName} · ` : ''}${BRAND.nameUpper}`}
                 </div>
                 <h2>{copy.title}</h2>
