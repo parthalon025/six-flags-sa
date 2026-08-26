@@ -63,7 +63,7 @@ assert.deepEqual(plan.drop, []);
 
 if (!process.env.DATABASE_URL) {
   assert.equal(await exportFromPostdb(VENUE), null, 'no DATABASE_URL → no export');
-  const filePublish = await publishBundle('kings-island', { skipReindex: true });
+  const filePublish = await publishBundle('kings-island', { skipReindex: true, filesOnly: true });
   assert.equal(filePublish.revisionId, null);
   assert.ok(filePublish.bundle?.files?.length, 'file fallback still reads the seed bundle');
   assert.equal(filePublish.bundle.basedOn.revisionId, undefined);
@@ -73,7 +73,7 @@ if (!process.env.DATABASE_URL) {
   process.exit(0);
 }
 
-const filePublish = await publishBundle('kings-island', { skipReindex: true });
+const filePublish = await publishBundle('kings-island', { skipReindex: true, filesOnly: true });
 assert.equal(filePublish.revisionId, null);
 assert.ok(filePublish.bundle?.files?.length, 'file fallback still reads the seed bundle');
 assert.equal(filePublish.bundle.basedOn.revisionId, undefined);
