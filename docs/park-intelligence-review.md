@@ -157,7 +157,7 @@ that `npm run venues:overrides` **preserves** published entrances while
 whether a field exists. Only the builder runs in `.github/workflows/build-venue.yml`,
 so the sidecar is the one artifact on the graph with no schedule at all.
 
-**2. Provenance laundering, on two fields.** `scripts/lib/candidates.mjs:114-126`
+**2. Provenance laundering, on two fields.** `packages/venue-builder/lib/candidates.mjs:114-126`
 reads any `poi.e` entry and emits it as `source: 'osm_named_queue'` at weight 4 with
 the note *"a named queue tagged one-way towards the ride"*, without checking
 `e[i].src`. A traced pin, weight 3, re-enters as a weight-4 mapper-surveyed claim

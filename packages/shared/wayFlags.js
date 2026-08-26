@@ -7,7 +7,7 @@
  * both the same and would send a pushchair down the steps.
  *
  * So a small closed set of facts travels with each way. They are written by
- * scripts/lib/osm-tags.mjs and read by lib/routing.js, and this module is
+ * packages/venue-builder/lib/osm-tags.mjs and read by lib/routing.js, and this module is
  * deliberately the only place either of them learns what a bit means: a builder
  * and a router that disagree about bit 2 is a bug nothing would catch.
  *

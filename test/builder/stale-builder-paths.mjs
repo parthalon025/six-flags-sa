@@ -22,6 +22,7 @@ const MOVED_UNDER_BUILDER = [
   'adapters/registry.mjs',
   'adapters/types.mjs',
   'adapters/index.mjs',
+  'candidates.mjs',
 ];
 
 const STALE_RE = new RegExp(
@@ -30,10 +31,13 @@ const STALE_RE = new RegExp(
 
 const SCAN_PATHS = [
   'packages/venue-builder',
+  'packages/shared',
+  'apps/party-tracker/lib',
   'docs/universal-venue-builder-architecture.md',
   'docs/universal-venue-builder-dependency-matrix.md',
   'docs/park-intelligence-review.md',
   'docs/THIRD_PARTY_LICENSES.md',
+  'docs/research/2026-08-18-visual-ground-truth-tools.md',
 ];
 
 const PASS = [];
