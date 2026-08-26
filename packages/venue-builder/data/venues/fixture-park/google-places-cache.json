@@ -1,0 +1,14 @@
+{
+  "fetched": "2026-08-26T01:51:13.743Z",
+  "placeIds": [
+    "ChIJtest"
+  ],
+  "claims": [
+    {
+      "kind": "metadata",
+      "source": "google-places",
+      "placeId": "ChIJtest",
+      "displayName": "Front Gate"
+    }
+  ]
+}

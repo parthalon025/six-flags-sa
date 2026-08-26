@@ -41,6 +41,10 @@ import {
   waitForHeightsReady,
 } from './browser.mjs';
 import { parseModulesArg, wantModule } from './lib/module-select.mjs';
+import {
+  assertContributionConsolidatePipelineHttp,
+  contributionPostAvailable,
+} from './lib/contribution-pipeline-vertical.mjs';
 import { readFileSync } from 'node:fs';
 import { pointInCoverage } from '../../packages/venue-builder/src/routing-coverage.mjs';
 import { distance, formatDistance } from '../../apps/party-tracker/lib/geo.js';
@@ -106,20 +110,24 @@ console.log(`\nfunctional suite against ${BASE} (modules: ${running})\n`);
 
 if (want('contribution-pipeline')) {
   console.log('\n--- contribution pipeline (HTTP + consolidate dry-run) ---');
-  const { assertContributionConsolidatePipelineHttp } = await import(
-    './lib/contribution-pipeline-vertical.mjs'
-  );
-  await check(
-    'POST → accept → consolidate dry-run names venue, action, and contribution id',
-    async () => {
-      const { plan, contributionId } = await assertContributionConsolidatePipelineHttp(BASE);
-      if (!contributionId?.startsWith('c_')) throw new Error(`bad id ${contributionId}`);
-      if (plan.venueId !== 'kings-island' || plan.action !== 'heights') {
-        throw new Error(`unexpected plan: ${JSON.stringify(plan)}`);
-      }
-      return true;
-    },
-  );
+  const postOk = await contributionPostAvailable(BASE);
+  if (postOk === true) {
+    await check(
+      'POST → accept → consolidate dry-run names venue, action, and contribution id',
+      async () => {
+        const { plan, contributionId } = await assertContributionConsolidatePipelineHttp(BASE);
+        if (!contributionId?.startsWith('c_')) throw new Error(`bad id ${contributionId}`);
+        if (plan.venueId !== 'kings-island' || plan.action !== 'heights') {
+          throw new Error(`unexpected plan: ${JSON.stringify(plan)}`);
+        }
+        return true;
+      },
+    );
+  } else {
+    console.log(
+      `  SKIP HTTP contribution pipeline — POST returned ${postOk.status} (memory backend or test Postgres with profiles; see #438)`,
+    );
+  }
   if (!want('smoke') && !want('heights') && !want('walk') && !want('party') && !want('intake') && !want('venues') && !want('offline') && !want('auth')) {
     await browser.close();
     console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);

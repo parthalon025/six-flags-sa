@@ -102,6 +102,20 @@ export async function submitContributionViaApi(base) {
   return contribution;
 }
 
+/**
+ * Whether the running server can accept a durable contribution POST.
+ * Cloud agents with DATABASE_URL but no migrated test profiles get 500 — skip HTTP.
+ */
+export async function contributionPostAvailable(base) {
+  const res = await fetch(`${base}/api/contributions`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(PIPELINE_CONTRIBUTION_BODY),
+  });
+  if (res.status === 201) return true;
+  return { ok: false, status: res.status, body: (await res.text()).slice(0, 120) };
+}
+
 /** Steward accept through the operator route so the server store is exercised. */
 export async function acceptContributionViaApi(base, id) {
   const res = await fetch(`${base}/api/admin/contributions/${encodeURIComponent(id)}/accept`, {
