@@ -1254,6 +1254,60 @@ await check('precise sharing expires back to approximate', async () => {
 if (want('walk')) {
 console.log('\n--- walking directions ---');
 
+await check('a narrow phone opens place detail tall enough for two action rows', async () => {
+  const { sheetPlacePx } = await import('../../apps/party-tracker/lib/sheet.js');
+  const beast = { latitude: 39.340154, longitude: -84.266027 };
+  const phone = await openPhone(browser, {
+    lat: beast.latitude,
+    lng: beast.longitude,
+    label: 'NARROW',
+    venue: 'kings-island',
+    viewport: { width: 375, height: 844 },
+  });
+  const p = phone.page;
+  try {
+    for (let i = 0; i < 4; i += 1) {
+      const form = await p.locator('.sheet').evaluate((e) =>
+        ['peek', 'half', 'full', 'shut'].find((s) => e.classList.contains(s)) || null,
+      );
+      if (form === 'peek') break;
+      await p.getByRole('slider', { name: /Resize panel/ }).click();
+      await p.waitForTimeout(350);
+    }
+    await until(() => p.locator('[data-testid="park-map-gl"] canvas').count().then((n) => n >= 1), {
+      timeout: 20000,
+      label: 'park geometry',
+    });
+    try {
+      await tapMapPoi(p, 'The Beast', { timeout: 8000 });
+    } catch {
+      await tapMapPoi(p, null, { timeout: 12000 });
+    }
+    await until(async () => (await p.locator('[data-place-detail]').count()) > 0, {
+      timeout: 12000,
+      label: 'place detail sheet',
+    });
+    const budget = sheetPlacePx(375);
+    const sheetH = Number(
+      await p.locator('.app').evaluate((el) =>
+        parseFloat(getComputedStyle(el).getPropertyValue('--sheetH')),
+      ),
+    );
+    if (sheetH < budget) throw new Error(`sheet ${sheetH}px < narrow budget ${budget}px`);
+    const rally = p.locator('[data-place-detail]').getByRole('button', { name: 'Rally here', exact: true });
+    if (!(await rally.isVisible())) throw new Error('Rally here not visible without scroll');
+    const rallyBox = await rally.boundingBox();
+    const sheetBox = await p.locator('.sheet').boundingBox();
+    if (!rallyBox || !sheetBox) throw new Error('missing layout boxes');
+    if (rallyBox.y + rallyBox.height > sheetBox.y + sheetBox.height + 2) {
+      throw new Error('Rally here sits below the sheet stop');
+    }
+    return true;
+  } finally {
+    await phone.context.close();
+  }
+});
+
 await check('tapping a map icon opens place details and navigation', async () => {
   // After smoke/heights, phone A is mid-filter and mid-sheet. A tap on its
   // overlay pin misses MapLibre's hit-test. A fresh phone at the station
