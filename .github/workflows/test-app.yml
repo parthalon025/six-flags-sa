@@ -202,7 +202,7 @@ jobs:
     timeout-minutes: 15
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_USER: parkbound
           POSTGRES_PASSWORD: parkbound
@@ -240,7 +240,7 @@ jobs:
     timeout-minutes: 10
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_USER: parkbound
           POSTGRES_PASSWORD: parkbound
@@ -289,7 +289,7 @@ jobs:
     timeout-minutes: 10
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_USER: parkbound
           POSTGRES_PASSWORD: parkbound
@@ -338,7 +338,7 @@ jobs:
     timeout-minutes: 10
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_USER: parkbound
           POSTGRES_PASSWORD: parkbound
