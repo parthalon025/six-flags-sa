@@ -25,17 +25,19 @@ Owner Round 1 (factories-to-app Wayfinder) confirmed **PostDB** as that canonica
    - Either factory can run alone against PostDB; no runtime link between them.
    - **Git** still holds builder inputs, factory code, certification scripts, and seed bundles — not the authoritative head of factory outputs at scale.
 
-2. **ADR-0018 clauses 2–4 and 6 stand.** CI freshness gates, Databricks as back-office only, CDN + download manager delivery, and Train F sequencing are unchanged in intent.
+2. **ADR-0018 clauses 2–4 and 6 stand, with the 2026-08-25 operating-stack pause.** CI freshness gates, CDN + download manager delivery, and Train F sequencing stay. Databricks remains back-office only (ADR-0008 / ADR-0010) but jobs stay **PAUSED** — not Lakebase, not a Databricks App. Spark is the add-vendor trigger when DuckDB/Postgres cannot finish the join. Machine-readable list: [`scripts/lib/operating-stack.json`](../../scripts/lib/operating-stack.json).
 
 3. **Supersedes ADR-0018 clause 5 (publication).** Publication is **export from PostDB to Delivery**, not "merge into `public/` as source of truth."
-   - **Slice 1:** API manifest + same-origin blobs; seed bundles remain in the app for flagship venues.
-   - **Later:** object storage (`storage_uri` + sha256) behind the same manifest contract.
+   - **Slice 1:** API manifest + same-origin blobs; seed bundles remain in the app for flagship venues. Query `?since=<revision_id>` is reserved (stub in `packages/venue-builder/lib/delivery/delta-sync.mjs`); delta filtering is ticket 17.
+   - **Later:** object storage (`storage_uri` + sha256) behind the same manifest contract — **Cloudflare R2** only when Vercel Fast Data Transfer would bill.
    - Reviewed deploys still gate what reaches production origins; the diff may be an export job output rather than hand-edited `public/venues/` JSON.
    - ADR-0019 / ADR-0021 amendments to clause 5 (PMTiles streaming, on-wear sync withdrawn) apply to **exported** packs, not to where those packs are authored.
 
 4. **Phone contract unchanged.** Hash-verified manifest, offline cache, truth/display split — only the upstream bus moves from git HEAD to PostDB head + export.
 
 5. **Factory verbs require `DATABASE_URL`.** File fixtures are for unit tests only; CI and dev factory commands fail closed without PostDB.
+
+6. **Operating stack (owner 2026-08-25).** Author-time PostDB is laptop **Docker Postgres** + CI `postgres:16`. Hosted app/API is **Vercel + Neon Marketplace** (Upstash if Party runs on Vercel). Cloudflare is **DNS only**. Clerk Pro, Cursor + Claude Code Max, Google AI, Apple Developer, and Google Play stay. Do not add vendors from the parked / do-not-add lists. Epic NOW (ticket 16 closeout, then 17; Trains H/I already built) lives in the same JSON so `npm run workflow:next` does not remember it. Narrative: [2026-08-25 research note](../research/2026-08-25-free-tier-databricks-vs-postgres.md).
 
 ## Consequences
 
@@ -48,3 +50,5 @@ Owner Round 1 (factories-to-app Wayfinder) confirmed **PostDB** as that canonica
 - Dual-write git JSON and PostDB as co-equal sources of truth.
 - PostDB as a phone-facing query API (PostDB is author-time; Delivery is wear-time).
 - Keeping `public/venues/` as the canonical store after PostDB Slice 1 lands.
+- Databricks Lakebase as PostDB; Databricks App; Cloudflare Workers/D1 as the factory bus.
+- Relitigating Docker vs Neon vs R2 vs Databricks as the author-time store.

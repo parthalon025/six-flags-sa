@@ -34,5 +34,6 @@ Examples already handled by scripts (read the file, do not re-document the inter
 | GitHub issue forms | `docs/agents/templates/github/*.yml` → `.github/ISSUE_TEMPLATE/` via `agent-docs:build` |
 | Package entry points | [packages/README.md](../../packages/README.md) |
 | Apple Identifiers vs Xcode vs Keys | `scripts/lib/apple-developer.json` + `scripts/lib/apple-developer.mjs` (human steps: [docs/guide/apple-developer.md](../../guide/apple-developer.md)) |
+| Factory operating stack + epic NOW | `scripts/lib/operating-stack.json` + `scripts/lib/operating-stack.mjs` (`npm run workflow:next` prints it for `factories-to-app`) |
 
 When adding new policy, ask: *can a script or workflow own this?* If yes, write that first and keep agent instructions to when and why to invoke it.

@@ -15,10 +15,9 @@ import { readDisplayPack } from '../../packages/venue-builder/lib/postdb-io.mjs'
 const VENUE = 'fixture-park-sync';
 const SKIN = 'layered-atlas';
 
-assert.equal(await mirrorTruthToPostdb(VENUE, { map: {}, pois: [] }), null);
-assert.deepEqual(await mirrorDisplayPacksToPostdb(VENUE, {}), []);
-
 if (!process.env.DATABASE_URL) {
+  assert.equal(await mirrorTruthToPostdb(VENUE, { map: {}, pois: [] }), null);
+  assert.deepEqual(await mirrorDisplayPacksToPostdb(VENUE, {}), []);
   const truth = await readTruthAsync('kings-island');
   assert.ok(truth.map && truth.pois?.length, 'readTruthAsync falls back to files');
   console.log('postdb-sync: skipped integration (no DATABASE_URL)');

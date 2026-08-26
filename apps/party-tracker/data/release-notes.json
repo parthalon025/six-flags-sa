@@ -570,5 +570,11 @@
     "items": [
       "PostDB Slice 1 + Databricks Lakebase setup"
     ]
+  },
+  "1.34.0": {
+    "title": "What's new",
+    "items": [
+      "feat(delivery): PostDB export + delta sync + display-schema gate (tickets 16–18) (#667)"
+    ]
   }
 }

@@ -9285,6 +9285,7 @@ await check('soft-gate helper lives on the local session module', async () => {
   const { insertContribution, listConsolidateCandidates } = await import(
     '../../apps/party-tracker/lib/contributions/store.js'
   );
+  const { usingPostgres, getPool } = await import('../../apps/party-tracker/lib/db/postgres.js');
   const { slimAgentContext, llmConfig } = await import('../../packages/venue-builder/lib/venue-llm.mjs');
   const { planContribution } = await import('../../packages/venue-builder/lib/consolidate.mjs');
 
@@ -9320,6 +9321,15 @@ await check('soft-gate helper lives on the local session module', async () => {
   });
 
   await check('contribution store accepts durable rows in memory', async () => {
+    // When CI sets DATABASE_URL the store uses Postgres; seed the author so the
+    // contributions_author_id_fkey holds (memory path needs no seed).
+    if (usingPostgres()) {
+      const pool = await getPool();
+      await pool.query(
+        `INSERT INTO users (id, email) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`,
+        ['usr_test', 'usr_test@example.com'],
+      );
+    }
     const row = await insertContribution({
       authorId: 'usr_test',
       venueId: 'kings-island',
