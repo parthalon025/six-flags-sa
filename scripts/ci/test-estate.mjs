@@ -220,6 +220,8 @@ export const TEST_ESTATE = {
   'test/scripts/matt-workflow.test.mjs': ['ci-gate'],
   'test/scripts/operating-stack.test.mjs': ['ci-gate'],
   'test/scripts/executive-resume.test.mjs': ['ci-gate'],
+  'test/scripts/executive-resume-brief.test.mjs': ['ci-gate'],
+  'test/scripts/wayfinder-committed.test.mjs': ['ci-gate'],
   'test/scripts/venue-freshness.test.mjs': ['ci-gate'],
   'test/scripts/venues-env-file.test.mjs': ['ci-gate'],
   'test/scripts/vercel-deploy-gate.test.mjs': ['ci-gate'],

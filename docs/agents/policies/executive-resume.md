@@ -49,6 +49,10 @@ Works with the **Matt workflow gate** (`npm run workflow:next`, `workflow:check`
 4. Run `npm run workflow:check` before `/implement`
 5. Do not code until NOW is one task
 
+### Human brief (session start)
+
+`npm run resume:start` prints one **executive brief** (Overview, NOW, Factories, App, Wayfinder, Hanging). Spec: [2026-08-25-executive-resume-human-brief-design.md](../../superpowers/specs/2026-08-25-executive-resume-human-brief-design.md). Optional `human.overview` on the dashboard JSON overrides composed Overview. Ops inventory remains `npm run resume:print`.
+
 ### End of turn (agents)
 
 After code changes each turn:
