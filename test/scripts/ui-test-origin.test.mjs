@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import {
   bindEphemeralPort,
   describeHealthFailure,
+  failureMessageForSuiteClose,
   healthUrlForPort,
   isOriginUnreachableError,
   originForPort,
@@ -31,5 +32,26 @@ assert.match(describeHealthFailure('http://127.0.0.1:3118', new Error('fetch fai
 assert.equal(isOriginUnreachableError('ERR_CONNECTION_REFUSED'), true);
 assert.equal(isOriginUnreachableError('connect ECONNREFUSED 127.0.0.1:3000'), true);
 assert.equal(isOriginUnreachableError('functional.mjs exited with code 1'), false);
+
+assert.equal(
+  failureMessageForSuiteClose({
+    output: 'Error: connect ECONNREFUSED 127.0.0.1:3000\n',
+    script: 'functional.mjs',
+    name: 'functional:smoke',
+    base: 'http://127.0.0.1:3000',
+    code: 1,
+  }),
+  'origin at http://127.0.0.1:3000 stopped answering during functional:smoke',
+);
+assert.equal(
+  failureMessageForSuiteClose({
+    output: 'FAIL assertion\n',
+    script: 'functional.mjs',
+    name: 'functional:smoke',
+    base: 'http://127.0.0.1:3000',
+    code: 1,
+  }),
+  'functional.mjs exited with code 1',
+);
 
 console.log('ui-test-origin: ok');

@@ -7,6 +7,7 @@
  *   healthUrlForPort(port, host)
  *   describeHealthFailure(base, err)
  *   isOriginUnreachableError(message)
+ *   failureMessageForSuiteClose({ output, script, name, base, code })
  */
 import { createServer } from 'node:net';
 
@@ -44,6 +45,15 @@ export function describeHealthFailure(base, err) {
     'or set BASE_URL to an already-running instance',
     `(${detail})`,
   ].join(' — ');
+}
+
+/** Map a child suite exit to the error runPool should record. */
+export function failureMessageForSuiteClose({ output, script, name, base, code }) {
+  if (!code) return null;
+  if (isOriginUnreachableError(output)) {
+    return `origin at ${base} stopped answering during ${name}`;
+  }
+  return `${script} exited with code ${code}`;
 }
 
 /** Did a suite failure look like the origin died mid-run rather than a real assertion? */

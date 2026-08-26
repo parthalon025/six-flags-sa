@@ -40,6 +40,7 @@ import {
 import { buildQueue } from './lib/validate-ui-queue.mjs';
 import {
   describeHealthFailure,
+  failureMessageForSuiteClose,
   isOriginUnreachableError,
 } from '../../scripts/lib/ui-test-origin.mjs';
 
@@ -149,26 +150,28 @@ function runSuite(name, script, scriptArgs = [], { buffered = false } = {}) {
   return new Promise((resolve, reject) => {
     if (!buffered) console.log(banner(name));
     const child = spawn(process.execPath, [path.join(HERE, script), ...scriptArgs], {
-      stdio: buffered ? ['ignore', 'pipe', 'pipe'] : 'inherit',
+      stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env, BASE_URL: BASE },
     });
     let output = '';
-    if (buffered) {
-      child.stdout.on('data', (d) => {
-        output += d;
-      });
-      child.stderr.on('data', (d) => {
-        output += d;
-      });
-    }
+    child.stdout.on('data', (d) => {
+      output += d;
+      if (!buffered) process.stdout.write(d);
+    });
+    child.stderr.on('data', (d) => {
+      output += d;
+      if (!buffered) process.stderr.write(d);
+    });
     child.on('error', reject);
     child.on('close', (code) => {
       if (buffered) {
         process.stdout.write(banner(`${name} — ${code ? 'FAILED' : 'ok'}`));
         process.stdout.write(output.endsWith('\n') ? output : `${output}\n`);
       }
-      if (code) reject(new Error(`${script} exited with code ${code}`));
-      else resolve();
+      if (code) {
+        const msg = failureMessageForSuiteClose({ output, script, name, base: BASE, code });
+        reject(new Error(msg));
+      } else resolve();
     });
   });
 }
