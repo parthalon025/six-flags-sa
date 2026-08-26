@@ -61,7 +61,17 @@ const plan = planBundleSync(assembled.bundle, bundleIndexOf(null));
 assert.equal(plan.fetch.length, assembled.bundle.files.length);
 assert.deepEqual(plan.drop, []);
 
-assert.equal(await exportFromPostdb(VENUE), null, 'no DATABASE_URL → no export');
+if (!process.env.DATABASE_URL) {
+  assert.equal(await exportFromPostdb(VENUE), null, 'no DATABASE_URL → no export');
+  const filePublish = await publishBundle('kings-island', { skipReindex: true });
+  assert.equal(filePublish.revisionId, null);
+  assert.ok(filePublish.bundle?.files?.length, 'file fallback still reads the seed bundle');
+  assert.equal(filePublish.bundle.basedOn.revisionId, undefined);
+  assert.equal(SINCE_QUERY, 'since');
+  assert.deepEqual(parseSinceParam(new URLSearchParams('')), { since: null, mode: 'full' });
+  console.log('delivery-export: ok (pure + file fallback; integration skipped)');
+  process.exit(0);
+}
 
 const filePublish = await publishBundle('kings-island', { skipReindex: true });
 assert.equal(filePublish.revisionId, null);
@@ -70,11 +80,6 @@ assert.equal(filePublish.bundle.basedOn.revisionId, undefined);
 
 assert.equal(SINCE_QUERY, 'since');
 assert.deepEqual(parseSinceParam(new URLSearchParams('')), { since: null, mode: 'full' });
-
-if (!process.env.DATABASE_URL) {
-  console.log('delivery-export: ok (pure + file fallback; integration skipped)');
-  process.exit(0);
-}
 
 const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
 await client.connect();
