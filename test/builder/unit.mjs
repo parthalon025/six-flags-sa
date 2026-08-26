@@ -9264,6 +9264,9 @@ await check('soft-gate helper lives on the local session module', async () => {
 /* --------------------------- databricks / E0 contributions ------------- */
 
 {
+  const savedDbUrl = process.env.DATABASE_URL;
+  delete process.env.DATABASE_URL;
+
   const { filterConsolidateExport, buildConsolidateExport } = await import(
     '../../packages/shared/consolidateExport.js'
   );
@@ -9369,6 +9372,9 @@ await check('soft-gate helper lives on the local session module', async () => {
     assert.equal(plan.action, 'heights');
     return true;
   });
+
+  if (savedDbUrl === undefined) delete process.env.DATABASE_URL;
+  else process.env.DATABASE_URL = savedDbUrl;
 }
 
 /* ---------------------------------------------------------------- tally -- */
