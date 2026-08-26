@@ -106,15 +106,13 @@ console.log(`\nfunctional suite against ${BASE} (modules: ${running})\n`);
 
 if (want('contribution-pipeline')) {
   console.log('\n--- contribution pipeline (HTTP + consolidate dry-run) ---');
-  const { assertContributionConsolidatePipeline, submitContributionViaApi } = await import(
+  const { assertContributionConsolidatePipelineHttp } = await import(
     './lib/contribution-pipeline-vertical.mjs'
   );
   await check(
     'POST → accept → consolidate dry-run names venue, action, and contribution id',
     async () => {
-      const { plan, contributionId } = await assertContributionConsolidatePipeline({
-        submit: () => submitContributionViaApi(BASE),
-      });
+      const { plan, contributionId } = await assertContributionConsolidatePipelineHttp(BASE);
       if (!contributionId?.startsWith('c_')) throw new Error(`bad id ${contributionId}`);
       if (plan.venueId !== 'kings-island' || plan.action !== 'heights') {
         throw new Error(`unexpected plan: ${JSON.stringify(plan)}`);

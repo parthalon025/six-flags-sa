@@ -10,7 +10,7 @@
 
 import {
   assertContributionConsolidatePipeline,
-  submitContributionViaApi,
+  assertContributionConsolidatePipelineHttp,
   submitContributionViaStoreSeam,
 } from './lib/contribution-pipeline-vertical.mjs';
 
@@ -55,9 +55,7 @@ await check('validate+insert → accept → consolidate dry-run (store seam)', a
 
 if (await serverHealthy()) {
   await check('POST /api/contributions → accept → consolidate dry-run (HTTP seam)', async () => {
-    await assertContributionConsolidatePipeline({
-      submit: () => submitContributionViaApi(BASE),
-    });
+    await assertContributionConsolidatePipelineHttp(BASE);
   });
 } else {
   console.log('  SKIP POST /api/contributions seam — no server at', BASE);

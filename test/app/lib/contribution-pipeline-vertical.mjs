@@ -26,10 +26,10 @@ export const PIPELINE_CONTRIBUTION_BODY = Object.freeze({
 });
 
 /**
- * @param {{ submit: () => Promise<{ id: string, status: string, venueId: string }> }} opts
+ * @param {{ submit: () => Promise<{ id: string, status: string, venueId: string }>, accept?: (id: string) => Promise<object> }} opts
  * @returns {Promise<{ contributionId: string, plan: object }>}
  */
-export async function assertContributionConsolidatePipeline({ submit }) {
+export async function assertContributionConsolidatePipeline({ submit, accept }) {
   const { acceptContribution, getContribution } = await import(
     '../../../apps/party-tracker/lib/contributions/store.js'
   );
@@ -41,10 +41,14 @@ export async function assertContributionConsolidatePipeline({ submit }) {
   assert.equal(pending.status, 'pending', 'submit leaves contribution pending');
   assert.ok(pending.id?.startsWith('c_'), 'contribution id is minted');
 
-  const accepted = await acceptContribution(pending.id);
+  const accepted = accept
+    ? await accept(pending.id)
+    : await acceptContribution(pending.id);
   assert.ok(accepted, 'steward accept returns the row');
   assert.equal(accepted.status, 'accepted');
-  assert.equal((await getContribution(pending.id)).status, 'accepted');
+  if (!accept) {
+    assert.equal((await getContribution(pending.id))?.status, accepted.status);
+  }
 
   const tmp = mkdtempSync(join(tmpdir(), 'pb-consolidate-'));
   const queuePath = join(tmp, 'queue.json');
@@ -96,6 +100,29 @@ export async function submitContributionViaApi(base) {
   }
   const { contribution } = await res.json();
   return contribution;
+}
+
+/** Steward accept through the operator route so the server store is exercised. */
+export async function acceptContributionViaApi(base, id) {
+  const res = await fetch(`${base}/api/admin/contributions/${encodeURIComponent(id)}/accept`, {
+    method: 'POST',
+  });
+  if (res.status !== 200) {
+    throw new Error(`contribution accept ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  }
+  const { contribution } = await res.json();
+  return contribution;
+}
+
+/**
+ * Full HTTP pipeline against a running production server.
+ * @param {string} base origin without trailing slash
+ */
+export async function assertContributionConsolidatePipelineHttp(base) {
+  return assertContributionConsolidatePipeline({
+    submit: () => submitContributionViaApi(base),
+    accept: (id) => acceptContributionViaApi(base, id),
+  });
 }
 
 /** Same contract as POST /api/contributions without HTTP — store + validate seam. */

@@ -150,6 +150,7 @@
         "apps/party-tracker/lib/contributions/**",
         "apps/party-tracker/app/api/contributions/**",
         "apps/party-tracker/app/api/admin/consolidate/**",
+        "apps/party-tracker/app/api/admin/contributions/**",
         "packages/shared/consolidateExport.js",
         "packages/venue-builder/lib/consolidate.mjs",
         "packages/venue-builder/bin/consolidate.mjs",
