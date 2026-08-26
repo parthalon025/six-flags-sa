@@ -156,6 +156,10 @@ await check('kings-island passes buildable factory stages (warn on incomplete ce
 
   const truth = doc.routes.find((r) => r.id === 'map.truth');
   assert.equal(truth.status, 'pass');
+
+  const delivery = doc.routes.find((r) => r.id === 'delivery.bundle');
+  assert.equal(delivery.status, 'pass', 'delivery.bundle must pass on KI');
+  assert.match(delivery.detail, /pins current truth/);
   return true;
 });
 

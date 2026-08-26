@@ -12,6 +12,11 @@
  *
  * Scripts-over-instructions: this module is the policy. AGENTS.md/CLAUDE.md
  * hold none of this logic — see docs/agents/policies/scripts-over-instructions.md.
+ *
+ * Owner (2026-08-25): attribution-required licenses are allowed when a registry
+ * row uses the right distro — `on-map`, `credits-screen`, or `placed-link:<where>`.
+ * Still rejected for shipped bytes: AGPL, GPL, NC, CC-BY-SA, no-redistribution.
+ * See ADR-0023. Ledger token for those rows is `licensed` (ALLOWED_LICENSES).
  */
 
 export const ROLE_ORDER = ['map data', 'imagery & terrain', 'art & materials', 'software'];

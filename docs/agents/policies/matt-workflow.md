@@ -23,6 +23,7 @@ Matt Pocock skills form **flows** (main, on-ramps, standalones). Phase is **deri
 | Foggy multi-session effort | `/wayfinder` → `.scratch/<effort>/map.md` |
 | Idea → ship (main flow) | `/grill-with-docs` → `/to-spec` → `/to-tickets` → `/implement` → `npm run test:pre-merge-vertical` |
 | Trains H/I (orthogonal) | `npm run train:next` |
+| Factory epic NOW + vendors | `scripts/lib/operating-stack.json` — printed by `workflow:next` for `factories-to-app` |
 
 ### Main flow (idea → ship)
 

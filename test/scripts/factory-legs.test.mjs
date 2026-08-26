@@ -52,6 +52,18 @@ import {
   });
 }
 
+{
+  const legs = factoryLegsForFiles(['packages/venue-builder/bin/export-bundle.mjs']);
+  assert.equal(legs.delivery, true);
+  assert.equal(legs.map, false);
+  assert.equal(legs.visual, false);
+}
+
+{
+  const legs = factoryLegsForFiles(['test/builder/delivery-export.mjs']);
+  assert.equal(legs.delivery, true);
+}
+
 assert.ok(FACTORY_LEG_PATHS.map.length >= 3);
 assert.ok(FACTORY_LEG_PATHS.visual.length >= 3);
 assert.ok(FACTORY_LEG_PATHS.delivery.length >= 3);

@@ -150,9 +150,12 @@ export function collectVenueBundle(id, { venueDir, displayDir }) {
  * @param {{ venueDir: string, displayDir?: string, outFile: string, generated?: string|null }} opts
  * @returns {object} the manifest written
  */
-export function writeBundleManifest(id, { venueDir, displayDir, outFile, generated = null }) {
+export function writeBundleManifest(id, { venueDir, displayDir, outFile, generated = null, revisionId = null }) {
   const files = collectVenueBundle(id, { venueDir, displayDir });
-  const basedOn = { map: generated ?? readJson(path.join(venueDir, `${id}.map.json`))?.meta?.generated ?? null };
+  const basedOn = {
+    map: generated ?? readJson(path.join(venueDir, `${id}.map.json`))?.meta?.generated ?? null,
+    ...(revisionId ? { revisionId } : {}),
+  };
   const manifest = buildBundleManifest({ id, basedOn, files });
   mkdirSync(path.dirname(outFile), { recursive: true });
   writeFileSync(outFile, `${JSON.stringify(manifest, null, 2)}\n`);
