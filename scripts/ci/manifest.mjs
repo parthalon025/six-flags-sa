@@ -37,6 +37,7 @@ export const GATE_SCRIPT_TESTS = [
   // where the workspace exists.
   'test/scripts/clerk-e2e.test.mjs',
   'test/scripts/cloud-agent-clerk-env.test.mjs',
+  'test/scripts/cloud-agent-neon-env.test.mjs',
   'test/scripts/wire-watch-target.test.mjs',
   'test/scripts/clerk-apple-prod.test.mjs',
   'test/scripts/install-global-skills.test.mjs',
