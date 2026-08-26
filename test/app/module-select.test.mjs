@@ -67,6 +67,7 @@ const manifest = loadModulesManifest();
   const sel = selectModulesFromFiles(['apps/party-tracker/lib/party/client.js'], manifest);
   assert(sel.modules.includes('party'), 'party path → party');
   assert(sel.modules.includes('grandma'), 'party path → grandma via pulls');
+  assert(sel.modules.includes('contribution-pipeline'), 'party path → contribution-pipeline via pulls');
   assert(sel.modules.includes('lint'), 'party JS runs lint');
   assert(!sel.modules.includes('walk'), 'party path skips walk');
 }

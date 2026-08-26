@@ -140,7 +140,22 @@
         "apps/party-tracker/app/api/_lib/party.js",
         "apps/party-tracker/app/api/contributions/**"
       ],
-      "pulls": ["grandma"]
+      "pulls": ["grandma", "contribution-pipeline"]
+    },
+    {
+      "id": "contribution-pipeline",
+      "title": "Functional — submit → accept → consolidate dry-run",
+      "kind": "functional",
+      "paths": [
+        "apps/party-tracker/lib/contributions/**",
+        "apps/party-tracker/app/api/contributions/**",
+        "apps/party-tracker/app/api/admin/consolidate/**",
+        "packages/shared/consolidateExport.js",
+        "packages/venue-builder/lib/consolidate.mjs",
+        "packages/venue-builder/bin/consolidate.mjs",
+        "test/app/contribution-consolidate-vertical.test.mjs",
+        "test/app/lib/contribution-pipeline-vertical.mjs"
+      ]
     },
     {
       "id": "intake",

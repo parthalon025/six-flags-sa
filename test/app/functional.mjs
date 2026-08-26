@@ -82,7 +82,17 @@ const MIGRATION_TIMEOUT = 75000;
 
 const selected = parseModulesArg();
 const want = (id) => wantModule(selected, id);
-const FUNCTIONAL_IDS = ['smoke', 'heights', 'walk', 'party', 'intake', 'venues', 'offline', 'auth'];
+const FUNCTIONAL_IDS = [
+  'smoke',
+  'heights',
+  'walk',
+  'party',
+  'intake',
+  'venues',
+  'offline',
+  'auth',
+  'contribution-pipeline',
+];
 const anyFunctional = !selected || FUNCTIONAL_IDS.some((id) => want(id));
 if (!anyFunctional) {
   console.log('functional: no functional modules selected — skipping');
@@ -93,6 +103,31 @@ const browser = await launch();
 
 const running = selected ? [...selected].join(',') : 'all';
 console.log(`\nfunctional suite against ${BASE} (modules: ${running})\n`);
+
+if (want('contribution-pipeline')) {
+  console.log('\n--- contribution pipeline (HTTP + consolidate dry-run) ---');
+  const { assertContributionConsolidatePipeline, submitContributionViaApi } = await import(
+    './lib/contribution-pipeline-vertical.mjs'
+  );
+  await check(
+    'POST → accept → consolidate dry-run names venue, action, and contribution id',
+    async () => {
+      const { plan, contributionId } = await assertContributionConsolidatePipeline({
+        submit: () => submitContributionViaApi(BASE),
+      });
+      if (!contributionId?.startsWith('c_')) throw new Error(`bad id ${contributionId}`);
+      if (plan.venueId !== 'kings-island' || plan.action !== 'heights') {
+        throw new Error(`unexpected plan: ${JSON.stringify(plan)}`);
+      }
+      return true;
+    },
+  );
+  if (!want('smoke') && !want('heights') && !want('walk') && !want('party') && !want('intake') && !want('venues') && !want('offline') && !want('auth')) {
+    await browser.close();
+    console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);
+    process.exit(FAIL.length ? 1 : 0);
+  }
+}
 
 let A = null;
 let a = null;

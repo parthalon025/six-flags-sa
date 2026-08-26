@@ -1,0 +1,103 @@
+/**
+ * Contribution pipeline vertical — submit → steward accept → consolidate dry-run.
+ *
+ * Public seam exercised end to end:
+ *   submit() — POST /api/contributions or the same validate+insert the route uses
+ *   acceptContribution — steward promotion to accepted
+ *   buildConsolidateExport + consolidate({ apply: false }) — dry-run plan output
+ */
+
+import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+/** Fixture body: durable height_rule for kings-island / Orion (independent of code). */
+export const PIPELINE_CONTRIBUTION_BODY = Object.freeze({
+  authorId: 'usr_pipeline_finder',
+  venueId: 'kings-island',
+  placeId: 'orion',
+  kind: 'height_rule',
+  payload: { placeName: 'Orion', min: 54, note: 'Contribution pipeline vertical fixture' },
+});
+
+/**
+ * @param {{ submit: () => Promise<{ id: string, status: string, venueId: string }> }} opts
+ * @returns {Promise<{ contributionId: string, plan: object }>}
+ */
+export async function assertContributionConsolidatePipeline({ submit }) {
+  const { acceptContribution, getContribution } = await import(
+    '../../../apps/party-tracker/lib/contributions/store.js'
+  );
+  const { buildConsolidateExport } = await import(
+    '../../../packages/shared/consolidateExport.js'
+  );
+  const { consolidate, loadContributionQueue } = await import(
+    '../../../packages/venue-builder/lib/consolidate.mjs'
+  );
+
+  const pending = await submit();
+  assert.equal(pending.status, 'pending', 'submit leaves contribution pending');
+  assert.ok(pending.id?.startsWith('c_'), 'contribution id is minted');
+
+  const accepted = await acceptContribution(pending.id);
+  assert.ok(accepted, 'steward accept returns the row');
+  assert.equal(accepted.status, 'accepted');
+  assert.equal((await getContribution(pending.id)).status, 'accepted');
+
+  const tmp = mkdtempSync(join(tmpdir(), 'pb-consolidate-'));
+  const queuePath = join(tmp, 'queue.json');
+  try {
+    writeFileSync(queuePath, JSON.stringify(buildConsolidateExport([accepted])));
+    const loaded = loadContributionQueue(queuePath);
+    const report = consolidate({
+      contributions: loaded,
+      venueIds: ['kings-island'],
+      force: true,
+      apply: false,
+    });
+
+    assert.equal(report.writes.length, 0, 'dry-run must not write venue data');
+    assert.equal(report.applied.length, 1, 'one height plan expected');
+
+    const plan = report.applied[0];
+    assert.equal(plan.action, 'heights');
+    assert.equal(plan.venueId, 'kings-island');
+    assert.equal(plan.contributionId, pending.id);
+    assert.equal(plan.placeName, 'Orion');
+
+    return { contributionId: pending.id, plan };
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+/**
+ * POST body the production route would accept.
+ * @param {string} base origin without trailing slash
+ */
+export async function submitContributionViaApi(base) {
+  const res = await fetch(`${base}/api/contributions`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(PIPELINE_CONTRIBUTION_BODY),
+  });
+  if (res.status !== 201) {
+    throw new Error(`contribution POST ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  }
+  const { contribution } = await res.json();
+  return contribution;
+}
+
+/** Same contract as POST /api/contributions without HTTP — store + validate seam. */
+export async function submitContributionViaStoreSeam() {
+  const { validateContributionPost } = await import(
+    '../../../apps/party-tracker/lib/contributions/validate.js'
+  );
+  const { insertContribution } = await import(
+    '../../../apps/party-tracker/lib/contributions/store.js'
+  );
+  const parsed = validateContributionPost(PIPELINE_CONTRIBUTION_BODY);
+  if (!parsed.ok) throw new Error(parsed.error);
+  return insertContribution(parsed.contribution);
+}

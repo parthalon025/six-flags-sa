@@ -97,6 +97,7 @@ export const TEST_ESTATE = {
   'test/app/appUpdate.test.mjs': ['test:unit'],
   'test/app/band-plan.test.mjs': ['test:unit'],
   'test/app/contributions-thanks.test.mjs': ['test:unit'],
+  'test/app/contribution-consolidate-vertical.test.mjs': ['test:unit'],
   'test/app/custom-map.test.mjs': ['test:unit'],
   'test/app/displaySpike.test.mjs': ['test:unit'],
   'test/app/eligibility.test.mjs': ['test:unit'],
@@ -258,6 +259,8 @@ export const TEST_ESTATE_EXCLUDED = {
     'library, not a suite: the shared README-gallery manifest (CAPTURE_SCRIPT, recordCapture, shotsNeedingRefresh) imported by readme-shots.mjs and readme-shots-check.mjs. Asserted through readme-shots-check.mjs.',
   'test/app/lib/validate-ui-queue.mjs':
     'library, not a suite: the suite plan for validate-ui.mjs, split out precisely because validate-ui.mjs runs suites on import. Asserted by test/app/validate-ui-queue.test.mjs.',
+  'test/app/lib/contribution-pipeline-vertical.mjs':
+    'library, not a suite: submit → accept → consolidate dry-run helper shared by contribution-consolidate-vertical.test.mjs and functional.mjs. Asserted through those suites.',
   'test/app/map-skin-visual-points.mjs':
     'visual Skin drift matrix run by hand (`npm run test:map-skin-points`). Takes a fixed 20-point comparison across map Skins; needs a running app, and the output is a set of screenshots a person compares Skin to Skin.',
   'test/app/readme-shots.mjs':
