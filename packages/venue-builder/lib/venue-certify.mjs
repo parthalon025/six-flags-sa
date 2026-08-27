@@ -24,6 +24,9 @@ import { collectExternalClaims } from './external-claims.mjs';
 import { venueImageryCoverage } from './imagery-ledger.mjs';
 import { isRideable } from '@party-tracker/shared/ontology.js';
 import { looksLikeFalseRide } from './non-ride-names.mjs';
+import { renderCertificationMarkdown } from './certification-markdown.mjs';
+
+export { renderCertificationMarkdown };
 
 export const CERT_VERSION = 1;
 
@@ -476,25 +479,4 @@ export function certifyFleetRegression(opts = {}) {
 
 export function certificationFile(id) {
   return venueSidecar(id, 'certification.json');
-}
-
-export function renderCertificationMarkdown(doc) {
-  const lines = [
-    `# Certification — ${doc.venue.name}`,
-    '',
-    doc.certified ? '**Certified**' : '**Not certified**',
-    '',
-    '| Check | Pass | Evidence | Confidence |',
-    '| --- | :-: | --- | --- |',
-  ];
-  for (const c of doc.checks) {
-    lines.push(`| ${c.key} | ${c.pass ? '✅' : '❌'} | ${c.evidence.detail} | ${c.confidence} |`);
-  }
-  if (doc.ask?.blocking) {
-    lines.push('', '## Blocking requests', '');
-    for (const r of doc.ask.requests.filter((x) => x.blocking)) {
-      lines.push(`- **${r.need}**: ${r.why}`);
-    }
-  }
-  return lines.join('\n');
 }

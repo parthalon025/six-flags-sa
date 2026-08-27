@@ -169,6 +169,7 @@ export const TEST_ESTATE = {
   'test/builder/imagery-ledger.mjs': ['test:builder'],
   'test/builder/inspect-evidence.mjs': ['test:builder'],
   'test/builder/inspect-review.mjs': ['test:builder'],
+  'test/builder/inspect-certification.mjs': ['test:builder'],
   'test/builder/inventory-gaps.mjs': ['test:builder'],
   'test/builder/certify-regression.mjs': ['test:builder'],
   'test/builder/iso-track.mjs': ['test:builder'],

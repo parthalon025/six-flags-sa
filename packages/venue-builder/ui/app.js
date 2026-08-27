@@ -5,9 +5,23 @@ function saveApprovals() {
   localStorage.setItem('venue-builder-approvals', JSON.stringify(approvals));
 }
 
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 async function load() {
-  const res = await fetch('/api/compare');
-  const data = await res.json();
+  const [compareRes, certRes] = await Promise.all([
+    fetch('/api/compare'),
+    fetch('/api/certifications'),
+  ]);
+  const data = await compareRes.json();
+  const certifications = certRes.ok ? await certRes.json() : null;
+  const certByVenue = new Map((certifications?.venues || []).map((v) => [v.venueId, v]));
+
   root.innerHTML = '';
 
   const sum = document.createElement('p');
@@ -15,17 +29,42 @@ async function load() {
   sum.textContent = `${data.passed} of ${data.total} venues match manifest`;
   root.appendChild(sum);
 
+  if (certifications) {
+    const certSum = document.createElement('p');
+    certSum.className = 'summary cert-summary';
+    const parts = [`${certifications.certified} of ${certifications.total} venues certified`];
+    if (certifications.uncertified) parts.push(`${certifications.uncertified} uncertified`);
+    if (certifications.missing) parts.push(`${certifications.missing} missing certification.json`);
+    certSum.textContent = parts.join(' · ');
+    root.appendChild(certSum);
+  }
+
   const grid = document.createElement('div');
   grid.className = 'grid';
 
   for (const { stats, issues } of data.reports) {
+    const cert = certByVenue.get(stats.id);
     const card = document.createElement('article');
-    card.className = `card ${stats.ok ? 'ok' : 'fail'}`;
+    const driftClass = stats.ok ? 'ok' : 'fail';
+    const certClass = cert?.available ? (cert.certified ? 'cert-ok' : 'cert-fail') : 'cert-missing';
+    card.className = `card ${driftClass} ${certClass}`;
 
     const badge = document.createElement('span');
     badge.className = `badge ${stats.ok ? 'ok' : 'fail'}`;
     badge.textContent = stats.ok ? 'Matches manifest' : 'Drift detected';
     card.appendChild(badge);
+
+    if (cert?.available) {
+      const certBadge = document.createElement('span');
+      certBadge.className = `badge cert ${cert.certified ? 'ok' : 'fail'}`;
+      certBadge.textContent = cert.certified ? 'Certified' : 'Not certified';
+      card.appendChild(certBadge);
+    } else if (certifications) {
+      const certBadge = document.createElement('span');
+      certBadge.className = 'badge cert missing';
+      certBadge.textContent = 'No certification.json';
+      card.appendChild(certBadge);
+    }
 
     const h2 = document.createElement('h2');
     h2.textContent = stats.name;
@@ -41,6 +80,9 @@ async function load() {
       ['Rides tab', stats.actual.hasHeightsTab ? 'yes' : 'no'],
     ];
     if (stats.actual.campsites) rows.push(['Campsites', stats.actual.campsites]);
+    if (cert?.available) {
+      rows.push(['Cert checks', `${cert.checksPassed} / ${cert.checksTotal} pass`]);
+    }
     for (const [k, v] of rows) {
       dl.innerHTML += `<dt>${k}:</dt><dd>${v}</dd>`;
     }
@@ -55,6 +97,28 @@ async function load() {
         ul.appendChild(li);
       }
       card.appendChild(ul);
+    }
+
+    if (cert?.available && !cert.certified && cert.blockingChecks.length) {
+      const blockers = document.createElement('ul');
+      blockers.className = 'blockers';
+      for (const key of cert.blockingChecks) {
+        const li = document.createElement('li');
+        li.textContent = `Blocking check: ${key}`;
+        blockers.appendChild(li);
+      }
+      card.appendChild(blockers);
+    }
+
+    if (cert?.available && cert.blockingAsks?.length) {
+      const asks = document.createElement('ul');
+      asks.className = 'asks';
+      for (const ask of cert.blockingAsks) {
+        const li = document.createElement('li');
+        li.textContent = `${ask.need}: ${ask.why}`;
+        asks.appendChild(li);
+      }
+      card.appendChild(asks);
     }
 
     const actions = document.createElement('div');
@@ -80,6 +144,15 @@ async function load() {
     evidence.className = 'evidence-link';
     actions.appendChild(evidence);
 
+    if (cert?.available) {
+      const certBtn = document.createElement('button');
+      certBtn.type = 'button';
+      certBtn.className = 'cert-detail-btn';
+      certBtn.textContent = 'Certification report';
+      certBtn.addEventListener('click', () => toggleCertDetail(card, stats.id));
+      actions.appendChild(certBtn);
+    }
+
     const approve = document.createElement('button');
     approve.type = 'button';
     approve.className = `approve ${approvals[stats.id] ? 'on' : ''}`;
@@ -98,6 +171,26 @@ async function load() {
 
   root.appendChild(grid);
   await markEvidenceLinks(grid);
+}
+
+async function toggleCertDetail(card, venueId) {
+  const existing = card.querySelector('.cert-detail');
+  if (existing) {
+    existing.remove();
+    return;
+  }
+  const panel = document.createElement('div');
+  panel.className = 'cert-detail';
+  panel.innerHTML = '<p class="loading">Loading certification report…</p>';
+  card.appendChild(panel);
+  try {
+    const res = await fetch(`/api/certification/${encodeURIComponent(venueId)}`);
+    if (!res.ok) throw new Error(`certification ${res.status}`);
+    const data = await res.json();
+    panel.innerHTML = `<pre class="cert-markdown">${esc(data.markdown)}</pre>`;
+  } catch (e) {
+    panel.innerHTML = `<p class="issues">Failed to load certification: ${esc(e.message)}</p>`;
+  }
 }
 
 async function markEvidenceLinks(grid) {

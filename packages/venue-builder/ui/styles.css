@@ -36,6 +36,25 @@ header p { margin: 0; color: var(--muted); }
 }
 .badge.ok { background: #34c75933; color: var(--ok); }
 .badge.fail { background: #ff3b3033; color: var(--bad); }
+.badge.cert { margin-left: 0.35rem; }
+.badge.cert.missing { background: #8e8e9333; color: var(--muted); }
+.card.cert-ok { box-shadow: inset 3px 0 0 var(--ok); }
+.card.cert-fail { box-shadow: inset 3px 0 0 var(--bad); }
+.card.cert-missing { box-shadow: inset 3px 0 0 var(--muted); }
+.cert-summary { font-size: 0.95rem; color: var(--muted); font-weight: 500; }
+.blockers, .asks { margin: 0.5rem 0 0; padding-left: 1.2rem; font-size: 0.85rem; color: var(--bad); }
+.asks { color: #b25000; }
+.cert-detail { margin-top: 0.75rem; border-top: 1px solid var(--border); padding-top: 0.75rem; }
+.cert-markdown {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  max-height: 16rem;
+  overflow: auto;
+}
+.cert-detail-btn { border-color: var(--muted); }
 .stats { font-size: 0.9rem; margin: 0.5rem 0; }
 .stats dt { color: var(--muted); display: inline; }
 .stats dd { display: inline; margin: 0 1rem 0 0.25rem; }
