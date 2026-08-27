@@ -44,6 +44,9 @@ const RIDE = (p) => p && (p.c === 'coaster' || p.c === 'ride');
  */
 export function shippedTypeForSeed(seed) {
   if (!seed) return null;
+  if (seed.sourceGap === 'parks-api-inventory' || seed.sourceGap === 'queue-times-inventory') {
+    return 'inventory';
+  }
   if (DROP_SEED_TYPES.has(seed.type)) return null;
   if (seed.sourceGap === 'credits' || seed.sourceGap === 'locality') return null;
   if (seed.sourceGap === 'ambient_ops') return null;
@@ -55,9 +58,6 @@ export function shippedTypeForSeed(seed) {
     return 'path_disputed';
   }
   if (seed.sourceGap === 'camping' || seed.type === 'poi_attribute') return 'camping';
-  if (seed.sourceGap === 'parks-api-inventory' || seed.sourceGap === 'queue-times-inventory') {
-    return 'inventory';
-  }
   if (seed.type === 'poi_presence' || seed.sourceGap === 'missing-poi') {
     return presenceTypeFromSeed(seed);
   }

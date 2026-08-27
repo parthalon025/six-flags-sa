@@ -34,7 +34,6 @@ const {
 const { shippedGapsDocument, SHIPPED_GAP_TYPES } = await import(
   '../../packages/venue-builder/lib/ship-gaps.mjs'
 );
-const { gapsDocumentFor } = await import('../../packages/venue-builder/lib/venue-io.mjs');
 const { SHIPPED_GAP_TYPES: PHONE_GAP_TYPES } = await import('../../apps/party-tracker/lib/venue/store.js');
 
 const ridePois = [
@@ -88,6 +87,19 @@ await check('declared adapter gap notes suppress inventory asks', () => {
     gapNotes: { 'parks-api': 'ThemeParks.wiki has no entity for this park' },
   });
   assert.equal(asks.length, 0);
+  return true;
+});
+
+await check('no adapter cache emits no inventory asks or gaps', () => {
+  const { asks } = inventoryAsksFromAdapters({ pois: ridePois, parksApiCache: null, gapNotes: {} });
+  assert.equal(asks.length, 0);
+  assert.deepEqual(inventoryGapsFromAsks(asks), []);
+  return true;
+});
+
+await check('ratio-only inventory gap when coverage is low but no bundle names remain', () => {
+  const gaps = inventoryGapsFromAsks([{ coverage: 0.2, compare: { onlyInBundle: [] } }]);
+  assert.deepEqual(gaps, [{ type: 'inventory', target: null }]);
   return true;
 });
 

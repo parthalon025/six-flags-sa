@@ -58,7 +58,7 @@ export function inventoryAsksFromAdapters({
   const asks = [];
 
   if (parksApiCache?.attractions?.length && !gapNotes['parks-api']) {
-    const compare = compareParksApiToBundle({ parksApi: parksApiCache, pois });
+    const compare = compareParksApiToBundle({ parksApi: parksApiCache, pois: rideables });
     const coverage = rideables.length ? compare.matched / rideables.length : 1;
     if (coverage < INVENTORY_COVERAGE_THRESHOLD) {
       asks.push({
@@ -75,7 +75,7 @@ export function inventoryAsksFromAdapters({
   }
 
   if (qtCache?.rides?.length && !gapNotes['queue-times']) {
-    const compare = compareQueueTimesToBundle({ queueTimes: qtCache, pois });
+    const compare = compareQueueTimesToBundle({ queueTimes: qtCache, pois: rideables });
     const coverage = rideables.length ? compare.matched / rideables.length : 1;
     if (coverage < INVENTORY_COVERAGE_THRESHOLD) {
       asks.push({
