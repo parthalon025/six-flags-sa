@@ -27,6 +27,7 @@ import {
   overlayModel,
   parkMapPalettes,
   worldFor,
+  worldWithLandTints,
 } from '../../apps/party-tracker/lib/parkMapView.js';
 import {
   OVERLAY_SOURCES,
@@ -1152,6 +1153,19 @@ const MAP_JSON = {
     null,
     'a box of no ground has no camera that frames it',
   );
+}
+
+{
+  const withLands = {
+    meta: { id: 'kings-island', bounds: WORLD.bounds },
+    lands: [{ r: [[-84.279, 39.334], [-84.268, 39.341], [-84.270, 39.350]], n: 'Rivertown' }],
+  };
+  const tinted = worldWithLandTints(worldFor(withLands), 'watercolor-quest', {
+    Rivertown: { fill: '#C6BCAF', stroke: '#908779', label: '#2C2416' },
+  });
+  assert.equal(tinted.geometry.lands.features[0].properties.tint, '#C6BCAF');
+  const generated = worldWithLandTints(worldFor(withLands), 'day', null);
+  assert.match(generated.geometry.lands.features[0].properties.tint, /^hsl\(/);
 }
 
 {
