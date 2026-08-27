@@ -72,7 +72,7 @@ import {
   parseCatalogArgs,
   pipelineOptsFromCatalogArgs,
 } from '../lib/build-pipeline.mjs';
-import { loadCatalog, selectParks, withIds } from '../lib/top-parks-catalog.mjs';
+import { loadCatalog, selectParks, withIds, pipelineHeightOptsForPark } from '../lib/top-parks-catalog.mjs';
 
 const OVERPASS = [
   'https://overpass-api.de/api/interpreter',
@@ -1460,7 +1460,10 @@ async function runSinglePipeline(argv) {
     locality: args.locality || '',
     kind: args.kind || 'theme-park',
   };
-  const result = await runVenuePipeline(park, pipelineOptsFromCatalogArgs(catalogArgs));
+  const baseOpts = pipelineOptsFromCatalogArgs(catalogArgs);
+  const { cliAllowNoHeights, ...rest } = baseOpts;
+  const heightOpts = pipelineHeightOptsForPark(park, { cliAllowNoHeights });
+  const result = await runVenuePipeline(park, { ...rest, ...heightOpts });
   process.exit(result.status === 'built' || result.status === 'dry-run' ? 0 : 1);
 }
 

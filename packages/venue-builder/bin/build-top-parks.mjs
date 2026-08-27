@@ -15,7 +15,7 @@
  *   npm run venues:build-top100 -- --allow-no-heights   # geometry only
  */
 
-import { loadCatalog, selectParks } from '../lib/top-parks-catalog.mjs';
+import { loadCatalog, selectParks, pipelineHeightOptsForPark } from '../lib/top-parks-catalog.mjs';
 import { runVenuePipeline } from '../lib/build-pipeline.mjs';
 
 const USAGE = `
@@ -30,7 +30,8 @@ Build the top 100 US theme parks through the unified venue pipeline.
   --dry-run             print pipeline stages without running them
   --delay <seconds>     pause between parks (default: 5)
   --retries <n>         attempts per build step (default: 3)
-  --allow-no-heights    geometry only; skip research, heights, rebuild, agent
+  --allow-no-heights    geometry only for every park (overrides catalog)
+  --no-allow-no-heights force strict heights for every park (overrides catalog)
   --no-browser          skip Playwright for JS-rendered park sites
   --no-attractions      skip attractions inventory
   --no-agent            skip build-agent (QA, GIS, vision, validation)
@@ -46,7 +47,7 @@ function parseArgs(argv) {
     dryRun: false,
     delay: 5,
     retries: 3,
-    allowNoHeights: false,
+    allowNoHeights: null,
     browser: true,
     attractions: true,
     agent: true,
@@ -62,6 +63,7 @@ function parseArgs(argv) {
     else if (a === '--delay') out.delay = Number(argv[++i]);
     else if (a === '--retries') out.retries = Number(argv[++i]);
     else if (a === '--allow-no-heights') out.allowNoHeights = true;
+    else if (a === '--no-allow-no-heights') out.allowNoHeights = false;
     else if (a === '--no-browser') out.browser = false;
     else if (a === '--no-attractions') out.attractions = false;
     else if (a === '--no-agent') out.agent = false;
@@ -92,23 +94,26 @@ async function main() {
     process.exit(0);
   }
 
-  const mode = args.allowNoHeights ? 'geometry only' : 'full pipeline (OSM + research + heights + agent)';
-  console.error(`Building ${parks.length} of ${catalog.parks.length} catalog parks (${mode})…`);
+  const globalMode = args.allowNoHeights === true
+    ? 'geometry only (CLI)'
+    : args.allowNoHeights === false
+      ? 'strict heights (CLI)'
+      : 'per-catalog defaults';
+  console.error(`Building ${parks.length} of ${catalog.parks.length} catalog parks (${globalMode})…`);
 
-  const pipelineOpts = {
+  const basePipelineOpts = {
     dryRun: args.dryRun,
     retries: args.retries,
-    allowNoHeights: args.allowNoHeights,
     browser: args.browser,
     attractions: args.attractions,
     agent: args.agent,
     rebuildOnly: args.skipExisting,
-    skip: args.allowNoHeights ? ['research', 'heights', 'rebuild', 'agent'] : [],
   };
 
   const results = [];
   for (const [i, park] of parks.entries()) {
-    const result = await runVenuePipeline(park, pipelineOpts);
+    const heightOpts = pipelineHeightOptsForPark(park, { cliAllowNoHeights: args.allowNoHeights });
+    const result = await runVenuePipeline(park, { ...basePipelineOpts, ...heightOpts });
     results.push(result);
     if (result.status === 'failed') {
       console.error(`  ! ${park.id} failed: ${result.error || 'unknown error'} — continuing`);

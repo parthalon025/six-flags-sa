@@ -142,6 +142,7 @@ export const TEST_ESTATE = {
 
   // --- test/builder: assertions over generated venue output ----------------
   'test/builder/ambient-signal-seeds.mjs': ['test:builder'],
+  'test/builder/allow-no-heights-catalog.mjs': ['test:builder'],
   'test/builder/attractions-sidecar.mjs': ['test:builder'],
   'test/builder/check-names.mjs': ['test:builder'],
   'test/builder/compare.mjs': ['test:builder'],

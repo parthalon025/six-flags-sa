@@ -35,6 +35,7 @@ import { compileDisplay } from './visual-factory/index.mjs';
 import { loadParksApiData } from './adapters/parks-api.mjs';
 import { readSources } from './venue-sources.mjs';
 import { loadOfficialData } from './venue-official-site.mjs';
+import { pipelineHeightOptsForPark } from './top-parks-catalog.mjs';
 
 const BUILDER_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const BUILDER_BIN = path.join(BUILDER_ROOT, '..', 'bin', 'build-venue.mjs');
@@ -401,7 +402,9 @@ export async function runVenueBatch(parks, opts = {}) {
 
   const results = [];
   for (const [i, park] of parks.entries()) {
-    const result = await runVenuePipeline(park, { ...pipelineOpts, dryRun });
+    const { cliAllowNoHeights, ...rest } = pipelineOpts;
+    const heightOpts = pipelineHeightOptsForPark(park, { cliAllowNoHeights });
+    const result = await runVenuePipeline(park, { ...rest, ...heightOpts, dryRun });
     results.push(result);
 
     if (openPr && result.status === 'built' && !dryRun) {
@@ -449,7 +452,7 @@ export function parseCatalogArgs(argv) {
     dryRun: false,
     delay: 5,
     retries: 3,
-    allowNoHeights: false,
+    allowNoHeights: null,
     browser: true,
     attractions: true,
     agent: true,
@@ -480,6 +483,7 @@ export function parseCatalogArgs(argv) {
     else if (a === '--delay') out.delay = Number(argv[++i]);
     else if (a === '--retries') out.retries = Number(argv[++i]);
     else if (a === '--allow-no-heights') out.allowNoHeights = true;
+    else if (a === '--no-allow-no-heights') out.allowNoHeights = false;
     else if (a === '--no-browser') out.browser = false;
     else if (a === '--no-attractions') out.attractions = false;
     else if (a === '--no-agent') out.agent = false;
@@ -516,7 +520,7 @@ export function pipelineOptsFromCatalogArgs(args, { batch = false } = {}) {
   return {
     dryRun: args.dryRun,
     retries: args.retries,
-    allowNoHeights: args.allowNoHeights,
+    cliAllowNoHeights: args.allowNoHeights,
     applyAliases: args.applyAliases,
     browser: args.browser,
     attractions: args.attractions,
@@ -527,6 +531,5 @@ export function pipelineOptsFromCatalogArgs(args, { batch = false } = {}) {
     constrain: args.constrain,
     mesh: args.mesh ?? !batch,
     rebuildOnly: args.skipExisting,
-    skip: args.allowNoHeights ? ['research', 'aliases', 'heights', 'rebuild', 'agent'] : [],
   };
 }

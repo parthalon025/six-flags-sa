@@ -15,7 +15,48 @@ import { BUILDER_ROOT } from '../src/paths.mjs';
 
 export const CATALOG_FILE = path.join(BUILDER_ROOT, 'data', 'top-100-us-theme-parks.json');
 
-/** @typedef {{ rank: number, name: string, place: string, locality: string, kind?: string, id?: string, skip?: boolean, note?: string }} ParkEntry */
+/** @typedef {{ rank: number, name: string, place: string, locality: string, kind?: string, allowNoHeights?: boolean, id?: string, skip?: boolean, note?: string }} ParkEntry */
+
+/** Park kinds that legitimately publish no height-gated attractions (#428). */
+export const HEIGHT_LESS_KINDS = new Set(['water-park', 'zoo', 'aquarium']);
+
+const HEIGHTLESS_SKIP = ['research', 'aliases', 'heights', 'rebuild', 'agent'];
+
+/**
+ * Whether a catalog row defaults to the allow-no-heights escape hatch.
+ * @param {ParkEntry} entry
+ */
+export function catalogAllowsNoHeights(entry = {}) {
+  if (entry.allowNoHeights === true) return true;
+  if (entry.allowNoHeights === false) return false;
+  if (entry.kind && HEIGHT_LESS_KINDS.has(entry.kind)) return true;
+  return false;
+}
+
+/**
+ * Resolve allow-no-heights for one catalog park.
+ * Precedence: explicit CLI flag (true/false) > catalog default > strict.
+ *
+ * @param {{ cliAllowNoHeights?: boolean | null, catalogEntry?: ParkEntry }} opts
+ */
+export function resolveAllowNoHeights({ cliAllowNoHeights = null, catalogEntry = {} } = {}) {
+  if (cliAllowNoHeights === true) return true;
+  if (cliAllowNoHeights === false) return false;
+  return catalogAllowsNoHeights(catalogEntry);
+}
+
+/**
+ * Pipeline height-stage options for one catalog park (#428).
+ * @param {ParkEntry} park
+ * @param {{ cliAllowNoHeights?: boolean | null }} opts
+ */
+export function pipelineHeightOptsForPark(park, { cliAllowNoHeights = null } = {}) {
+  const allowNoHeights = resolveAllowNoHeights({ cliAllowNoHeights, catalogEntry: park });
+  return {
+    allowNoHeights,
+    skip: allowNoHeights ? [...HEIGHTLESS_SKIP] : [],
+  };
+}
 
 /**
  * @returns {{ version: number, source: string, generated: string, parks: ParkEntry[] }}
