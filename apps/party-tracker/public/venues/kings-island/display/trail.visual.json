@@ -1,0 +1,167 @@
+{
+  "skin": "trail",
+  "venue": "kings-island",
+  "tokens": {
+    "mode": "day",
+    "colors": {
+      "path": "#8B7355",
+      "grass": "#B8D4A0",
+      "label": "#2C2416",
+      "water": "#7EC8E3",
+      "ground": "#F5F0E8",
+      "building": "#E8E0D4"
+    },
+    "labelHalo": true,
+    "contrastFloor": 4.5
+  },
+  "basedOn": {
+    "map": "2026-08-09"
+  },
+  "terrain": {
+    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n40w085/USGS_13_n40w085.tif",
+    "grid": {
+      "cols": 240,
+      "rows": 197
+    },
+    "bounds": {
+      "east": -84.2595,
+      "west": -84.2775,
+      "north": 39.348,
+      "south": 39.3365
+    },
+    "relief": {
+      "max": 238.9,
+      "min": 190.5
+    },
+    "source": "usgs-3dep",
+    "fitness": "marginal",
+    "hillshade": {
+      "file": "hillshade.png",
+      "azimuth": 315,
+      "altitude": 45
+    },
+    "cellMetres": 6.45,
+    "resolution": 10,
+    "constrained": {
+      "pads": 206,
+      "nodes": 139445,
+      "paths": 757,
+      "water": 24
+    },
+    "steepDegrees": 18,
+    "surfaceModel": false
+  },
+  "version": 1,
+  "fallback": {
+    "landTone": "name-hue"
+  },
+  "surfaces": {
+    "lot": {
+      "color": "#CDC8C0",
+      "layers": [
+        "parking"
+      ],
+      "material": "concrete--lot"
+    },
+    "pool": {
+      "color": "#6BC6E5",
+      "layers": [
+        "pool"
+      ],
+      "material": "water--pool"
+    },
+    "slide": {
+      "color": "#B07951",
+      "layers": [
+        "slide"
+      ],
+      "material": "fiberglass--flume"
+    },
+    "water": {
+      "color": "#6FBEE0",
+      "layers": [
+        "water"
+      ],
+      "material": "water--calm"
+    },
+    "walkway": {
+      "color": "#877862",
+      "layers": [
+        "path"
+      ],
+      "material": "paving-stones--warm"
+    },
+    "structure": {
+      "color": "#ACA79D",
+      "layers": [
+        "building"
+      ],
+      "material": "roofing--shingle"
+    },
+    "vegetation": {
+      "color": "#90A373",
+      "layers": [
+        "grass",
+        "wood",
+        "park"
+      ],
+      "material": "grass--meadow"
+    },
+    "service-road": {
+      "color": "#6A5B47",
+      "layers": [
+        "service"
+      ],
+      "material": "asphalt--worn"
+    },
+    "coaster-track": {
+      "color": "#43423D",
+      "layers": [
+        "coaster"
+      ],
+      "material": "steel--track"
+    }
+  },
+  "landTones": {
+    "Area 72": {
+      "day": "#EAE4F1",
+      "night": "#231D2A"
+    },
+    "Rivertown": {
+      "day": "#E4F1E4",
+      "night": "#1D2A1D"
+    },
+    "Soak City": {
+      "day": "#E4EEF1",
+      "night": "#1D272A"
+    },
+    "Coney Mall": {
+      "day": "#F1EAE4",
+      "night": "#2A231D"
+    },
+    "Action Zone": {
+      "day": "#E4ECF1",
+      "night": "#1D252A"
+    },
+    "Camp Snoopy": {
+      "day": "#ECF1E4",
+      "night": "#252A1D"
+    },
+    "Oktoberfest": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Planet Snoopy": {
+      "day": "#F1EFE4",
+      "night": "#2A281D"
+    },
+    "Adventure Port": {
+      "day": "#E4F1EF",
+      "night": "#1D2A28"
+    },
+    "International Street": {
+      "day": "#F1EEE4",
+      "night": "#2A271D"
+    }
+  }
+}

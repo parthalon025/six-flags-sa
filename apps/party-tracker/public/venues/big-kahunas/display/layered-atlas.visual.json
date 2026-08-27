@@ -1,0 +1,115 @@
+{
+  "skin": "layered-atlas",
+  "venue": "big-kahunas",
+  "tokens": {
+    "mode": "day",
+    "colors": {
+      "path": "#3F6570",
+      "grass": "#A7C58E",
+      "label": "#243B45",
+      "water": "#5CA8B3",
+      "ground": "#C9D6C0",
+      "building": "#C9B58D",
+      "groundEdge": "#6E8975",
+      "pathCasing": "#C9D6C0",
+      "structureEdge": "#7A6655"
+    },
+    "labelHalo": true,
+    "contrastFloor": 4.5
+  },
+  "basedOn": {
+    "map": "2026-08-10"
+  },
+  "terrain": {
+    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n31w087/USGS_13_n31w087.tif",
+    "grid": {
+      "cols": 240,
+      "rows": 271
+    },
+    "bounds": {
+      "east": -86.46936,
+      "west": -86.47545,
+      "north": 30.39219,
+      "south": 30.38621
+    },
+    "relief": {
+      "max": 17.6,
+      "min": 2.1
+    },
+    "source": "usgs-3dep",
+    "fitness": "coarse",
+    "hillshade": {
+      "file": "hillshade.png",
+      "azimuth": 315,
+      "altitude": 45
+    },
+    "cellMetres": 2.44,
+    "resolution": 10,
+    "constrained": {
+      "pads": 69,
+      "nodes": 95619,
+      "paths": 173,
+      "water": 4
+    },
+    "steepDegrees": 18,
+    "surfaceModel": false
+  },
+  "version": 1,
+  "fallback": {
+    "landTone": "name-hue"
+  },
+  "surfaces": {
+    "pool": {
+      "color": "#57B3C8",
+      "layers": [
+        "pool"
+      ],
+      "material": "water--pool"
+    },
+    "slide": {
+      "color": "#837161",
+      "layers": [
+        "slide"
+      ],
+      "material": "fiberglass--flume"
+    },
+    "water": {
+      "color": "#5AAAC3",
+      "layers": [
+        "water"
+      ],
+      "material": "water--calm"
+    },
+    "walkway": {
+      "color": "#596F72",
+      "layers": [
+        "path"
+      ],
+      "material": "paving-stones--warm"
+    },
+    "structure": {
+      "color": "#998D72",
+      "layers": [
+        "building"
+      ],
+      "material": "roofing--shingle"
+    },
+    "vegetation": {
+      "color": "#859A68",
+      "layers": [
+        "grass",
+        "wood",
+        "park"
+      ],
+      "material": "grass--meadow"
+    },
+    "service-road": {
+      "color": "#3C5358",
+      "layers": [
+        "service"
+      ],
+      "material": "asphalt--worn"
+    }
+  },
+  "landTones": {}
+}

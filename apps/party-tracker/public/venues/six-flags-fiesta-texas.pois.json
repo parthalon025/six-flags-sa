@@ -1,1606 +1,1606 @@
 [
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "shop",
     "i": "acme-company-store",
     "n": "ACME Company Store",
     "lat": 29.598641,
-    "lng": -98.612473,
-    "c": "shop",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.612473
   },
   {
+    "a": "DC Universe",
+    "c": "food",
     "i": "aztek-the-ultimate-nachos",
     "n": "Aztek The Ultimate Nachos",
     "lat": 29.596613,
-    "lng": -98.610475,
-    "c": "food",
-    "a": "DC Universe"
+    "lng": -98.610475
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 48,
+      "alone": null
+    },
     "i": "bahama-blaster",
     "n": "Bahama Blaster",
     "lat": 29.60098,
-    "lng": -98.61002,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.61002
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": 48,
+      "min": 0,
+      "alone": null
+    },
     "i": "bamboo-chutes",
     "n": "Bamboo Chutes",
     "lat": 29.6008,
     "lng": -98.61048,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 0,
-      "alone": null,
-      "max": 48
-    },
     "note": "Children's slide — the park posts a maximum, not a minimum."
   },
   {
+    "a": "DC Universe",
+    "c": "coaster",
+    "h": {
+      "max": null,
+      "min": 36,
+      "alone": null
+    },
     "i": "bat-girl-coaster-chase",
     "n": "Bat Girl: Coaster Chase",
     "lat": 29.596535,
-    "lng": -98.609987,
-    "c": "coaster",
-    "a": "DC Universe",
-    "h": {
-      "min": 36,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.609987
   },
   {
+    "a": "Rockville",
+    "c": "coaster",
+    "h": {
+      "max": 77,
+      "min": 48,
+      "alone": null
+    },
     "i": "batman-the-ride",
     "n": "BATMAN The Ride",
     "lat": 29.596759,
-    "lng": -98.609373,
-    "c": "coaster",
-    "a": "Rockville",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": 77
-    }
+    "lng": -98.609373
   },
   {
+    "a": "Rockville",
+    "c": "landmark",
     "i": "batmobile",
     "n": "Batmobile",
     "lat": 29.596248,
-    "lng": -98.609502,
-    "c": "landmark",
-    "a": "Rockville"
+    "lng": -98.609502
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "shop",
     "i": "beach-bum-surf-co",
     "n": "Beach Bum Surf Co.",
     "lat": 29.598859,
-    "lng": -98.611083,
-    "c": "shop",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.611083
   },
   {
+    "a": "Rockville",
+    "c": "food",
     "i": "bee-bop-s",
     "n": "Bee Bop's",
     "lat": 29.596132,
-    "lng": -98.608675,
-    "c": "food",
-    "a": "Rockville"
+    "lng": -98.608675
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 48,
+      "alone": null
+    },
     "i": "bermuda-triagle",
     "n": "Bermuda Triagle",
     "lat": 29.60013,
     "lng": -98.61076,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    },
     "note": "OpenStreetMap spells it \"Triagle\"; the park spells it Triangle."
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 48,
+      "alone": null
+    },
     "i": "bermuda-triangle-riptide-runner-slide-pool",
     "n": "Bermuda Triangle, Riptide Runner Slide Pool",
     "lat": 29.599801,
-    "lng": -98.610599,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.610599
   },
   {
+    "a": "Rockville",
+    "c": "food",
     "i": "blue-snowman-soft-serve",
     "n": "Blue Snowman Soft Serve",
     "lat": 29.59551,
-    "lng": -98.608782,
-    "c": "food",
-    "a": "Rockville"
+    "lng": -98.608782
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": 54,
+      "min": 42,
+      "alone": null
+    },
     "i": "bonzai-pipelines",
     "n": "Bonzai Pipelines",
     "lat": 29.60032,
     "lng": -98.61158,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 42,
-      "alone": null,
-      "max": 54
-    },
     "note": "Children's racer."
   },
   {
+    "a": "Texas State Square",
+    "c": "coaster",
+    "h": {
+      "max": null,
+      "min": 48,
+      "alone": null
+    },
     "i": "boomerang-coast-to-coast",
     "n": "Boomerang Coast to Coast",
     "lat": 29.598332,
-    "lng": -98.610796,
-    "c": "coaster",
-    "a": "Texas State Square",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.610796
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": 54,
+      "min": 36,
+      "alone": null
+    },
     "i": "bucking-broncos",
     "n": "Bucking Broncos",
     "lat": 29.598305,
     "lng": -98.61269,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 36,
-      "alone": null,
-      "max": 54
-    },
     "note": "Formerly Buckarooz"
   },
   {
+    "a": "Spassburg",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 36,
+      "alone": 42
+    },
     "i": "bugs-white-water-rapids",
     "n": "Bugs White Water Rapids",
     "lat": 29.597136,
-    "lng": -98.610157,
-    "c": "ride",
-    "a": "Spassburg",
-    "h": {
-      "min": 36,
-      "alone": 42,
-      "max": null
-    }
+    "lng": -98.610157
   },
   {
+    "a": "Rockville",
+    "c": "shop",
     "i": "candy-storm",
     "n": "Candy Storm",
     "lat": 29.596004,
-    "lng": -98.60902,
-    "c": "shop",
-    "a": "Rockville"
+    "lng": -98.60902
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "food",
     "i": "canyon-smokehouse",
     "n": "Canyon Smokehouse",
     "lat": 29.598395,
-    "lng": -98.612695,
-    "c": "food",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.612695
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "food",
     "i": "captain-jack-s-snack-shack",
     "n": "Captain Jack's Snack Shack",
     "lat": 29.59898,
-    "lng": -98.611223,
-    "c": "food",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.611223
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "food",
     "i": "chop-six",
     "n": "Chop Six",
     "lat": 29.597914,
-    "lng": -98.612915,
-    "c": "food",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.612915
   },
   {
+    "a": "Los Festivales",
+    "c": "coaster",
+    "h": {
+      "max": null,
+      "min": 54,
+      "alone": null
+    },
     "i": "chupacabra",
     "n": "Chupacabra",
     "lat": 29.598875,
-    "lng": -98.608365,
-    "c": "coaster",
-    "a": "Los Festivales",
-    "h": {
-      "min": 54,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.608365
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "shop",
     "i": "coca-cola-ahh",
     "n": "Coca-Cola Ahh",
     "lat": 29.599995,
-    "lng": -98.611735,
-    "c": "shop",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.611735
   },
   {
+    "a": "Los Festivales",
+    "c": "shop",
     "i": "coca-cola-refresh-station",
     "n": "Coca-Cola Refresh Station",
     "lat": 29.599163,
-    "lng": -98.609456,
-    "c": "shop",
-    "a": "Los Festivales"
+    "lng": -98.609456
   },
   {
+    "a": "Rockville",
+    "c": "shop",
     "i": "coca-cola-refresh-station-2",
     "n": "Coca-Cola Refresh Station",
     "lat": 29.59585,
-    "lng": -98.609538,
-    "c": "shop",
-    "a": "Rockville"
+    "lng": -98.609538
   },
   {
+    "a": "Los Festivales",
+    "c": "ride",
     "i": "coca-cola-vip-lounge",
     "n": "Coca-Cola VIP Lounge",
     "lat": 29.599031,
-    "lng": -98.610301,
-    "c": "ride",
-    "a": "Los Festivales"
+    "lng": -98.610301
   },
   {
+    "a": "Rockville",
+    "c": "shop",
     "i": "cocktail-s-on-the-corner",
     "n": "Cocktail's on The Corner",
     "lat": 29.595711,
-    "lng": -98.608972,
-    "c": "shop",
-    "a": "Rockville"
+    "lng": -98.608972
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
     "i": "coral-cove",
     "n": "Coral Cove",
     "lat": 29.60035,
-    "lng": -98.611448,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.611448
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
     "i": "cowabunga",
     "n": "Cowabunga",
     "lat": 29.60042,
-    "lng": -98.61157,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.61157
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "food",
     "i": "crackaxle-dippin-dots",
     "n": "Crackaxle Dippin' Dots",
     "lat": 29.59856,
-    "lng": -98.6123,
-    "c": "food",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.6123
   },
   {
+    "a": "Fiesta Bay Boardwalk",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": null,
+      "alone": 42
+    },
     "i": "crow-s-nest",
     "n": "Crow's Nest",
     "lat": 29.596075,
     "lng": -98.60753,
-    "c": "ride",
-    "a": "Fiesta Bay Boardwalk",
-    "h": {
-      "min": null,
-      "alone": 42,
-      "max": null
-    },
     "note": "Walking age and up with a grown-up. No single riders."
   },
   {
+    "a": "DC Universe",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 42,
+      "alone": 48
+    },
     "i": "cyborg-cyber-revolution",
     "n": "Cyborg: Cyber Revolution",
     "lat": 29.59687,
-    "lng": -98.610253,
-    "c": "ride",
-    "a": "DC Universe",
-    "h": {
-      "min": 42,
-      "alone": 48,
-      "max": null
-    }
+    "lng": -98.610253
   },
   {
+    "a": "Rockville",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": null,
+      "alone": 42
+    },
     "i": "daffy-s-bus-stop",
     "n": "Daffy's Bus Stop",
     "lat": 29.596055,
     "lng": -98.608135,
-    "c": "ride",
-    "a": "Rockville",
-    "h": {
-      "min": null,
-      "alone": 42,
-      "max": null
-    },
     "note": "Anyone over 54\" has to be riding with a child under 54\"."
   },
   {
+    "a": "DC Universe",
+    "c": "shop",
     "i": "daily-planet-newsstand-gifts",
     "n": "Daily Planet Newsstand & Gifts",
     "lat": 29.596569,
-    "lng": -98.61066,
-    "c": "shop",
-    "a": "DC Universe"
+    "lng": -98.61066
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 48,
+      "alone": null
+    },
     "i": "dare-devil-dive-flying-machines",
     "n": "Dare Devil Dive Flying Machines",
     "lat": 29.597771,
-    "lng": -98.613217,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.613217
   },
   {
+    "a": "DC Universe",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 36,
+      "alone": 48
+    },
     "i": "dc-super-villains-swing",
     "n": "DC Super-Villains Swing",
     "lat": 29.59617,
-    "lng": -98.609998,
-    "c": "ride",
-    "a": "DC Universe",
-    "h": {
-      "min": 36,
-      "alone": 48,
-      "max": null
-    }
+    "lng": -98.609998
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "food",
     "i": "dippin-dots",
     "n": "Dippin' Dots",
     "lat": 29.599913,
-    "lng": -98.609821,
-    "c": "food",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.609821
   },
   {
+    "a": "Rockville",
+    "c": "food",
     "i": "dippin-dots-2",
     "n": "Dippin' Dots",
     "lat": 29.596225,
-    "lng": -98.608298,
-    "c": "food",
-    "a": "Rockville"
+    "lng": -98.608298
   },
   {
+    "a": "DC Universe",
+    "c": "food",
     "i": "dippin-dots-3",
     "n": "Dippin' Dots",
     "lat": 29.596992,
-    "lng": -98.610649,
-    "c": "food",
-    "a": "DC Universe"
+    "lng": -98.610649
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "food",
     "i": "dippin-dots-4",
     "n": "Dippin' Dots",
     "lat": 29.597425,
-    "lng": -98.612655,
-    "c": "food",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.612655
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "food",
     "i": "dom-julio-s-beach-bar",
     "n": "Dom Julio's Beach Bar",
     "lat": 29.600629,
-    "lng": -98.610373,
-    "c": "food",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.610373
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "food",
     "i": "dr-butterskotch-s-original-elixir",
     "n": "Dr. Butterskotch's Original Elixir",
     "lat": 29.598745,
-    "lng": -98.61196,
-    "c": "food",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.61196
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "coaster",
+    "h": {
+      "max": 78,
+      "min": 52,
+      "alone": null
+    },
     "i": "dr-diabolical-s-cliffhanger",
     "n": "Dr. Diabolical's Cliffhanger",
     "lat": 29.5981,
-    "lng": -98.611345,
-    "c": "coaster",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 52,
-      "alone": null,
-      "max": 78
-    }
+    "lng": -98.611345
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "gate",
     "i": "entrance",
     "n": "Entrance",
     "lat": 29.604356,
-    "lng": -98.608722,
-    "c": "gate",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.608722
   },
   {
+    "a": "Fiesta Bay Boardwalk",
+    "c": "food",
     "i": "fat-burger-fiesta-bay-boardwalk",
     "n": "Fat Burger - Fiesta Bay Boardwalk",
     "lat": 29.595826,
-    "lng": -98.607644,
-    "c": "food",
-    "a": "Fiesta Bay Boardwalk"
+    "lng": -98.607644
   },
   {
+    "a": "Fiesta Bay Boardwalk",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 48,
+      "alone": null
+    },
     "i": "fireball",
     "n": "Fireball",
     "lat": 29.595398,
-    "lng": -98.608042,
-    "c": "ride",
-    "a": "Fiesta Bay Boardwalk",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.608042
   },
   {
+    "a": "Fiesta Bay Boardwalk",
+    "c": "food",
     "i": "fireball-snacks",
     "n": "Fireball Snacks",
     "lat": 29.5955,
-    "lng": -98.607915,
-    "c": "food",
-    "a": "Fiesta Bay Boardwalk"
+    "lng": -98.607915
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "service",
     "i": "first-aid",
     "n": "First Aid",
     "lat": 29.599751,
-    "lng": -98.610158,
-    "c": "service",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.610158
   },
   {
+    "a": "Spassburg",
+    "c": "service",
     "i": "first-aid-2",
     "n": "First Aid",
     "lat": 29.597447,
-    "lng": -98.609248,
-    "c": "service",
-    "a": "Spassburg"
+    "lng": -98.609248
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": null,
+      "alone": 36
+    },
     "i": "foghorn-leghorn-s-barnyard-railway",
     "n": "Foghorn Leghorn's Barnyard Railway",
     "lat": 29.59829,
     "lng": -98.612835,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": null,
-      "alone": 36,
-      "max": null
-    },
     "note": "Anyone over 54\" has to be riding with a child under 54\"."
   },
   {
+    "a": "Los Festivales",
+    "c": "shop",
     "i": "fuel-charging-rod-station",
     "n": "Fuel Charging Rod Station",
     "lat": 29.599335,
-    "lng": -98.609768,
-    "c": "shop",
-    "a": "Los Festivales"
+    "lng": -98.609768
   },
   {
+    "a": "Rockville",
+    "c": "food",
     "i": "funnel-liscious",
     "n": "Funnel*Liscious",
     "lat": 29.595803,
-    "lng": -98.609674,
-    "c": "food",
-    "a": "Rockville"
+    "lng": -98.609674
   },
   {
+    "a": "Los Festivales",
+    "c": "coaster",
+    "h": {
+      "max": null,
+      "min": 54,
+      "alone": null
+    },
     "i": "goliath",
     "n": "Goliath",
     "lat": 29.5987,
     "lng": -98.60767,
-    "c": "coaster",
-    "a": "Los Festivales",
-    "h": {
-      "min": 54,
-      "alone": null,
-      "max": null
-    },
     "note": "Runs as Chupacabra since the 2024 rename — the map still carries both names."
   },
   {
+    "a": "DC Universe",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 48,
+      "alone": null
+    },
     "i": "green-lantern-emerald-flight",
     "n": "Green Lantern Emerald Flight",
     "lat": 29.596843,
-    "lng": -98.61051,
-    "c": "ride",
-    "a": "DC Universe",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.61051
   },
   {
+    "a": "Los Festivales",
+    "c": "landmark",
     "i": "guest-relations",
     "n": "Guest Relations",
     "lat": 29.599612,
-    "lng": -98.609527,
-    "c": "landmark",
-    "a": "Los Festivales"
+    "lng": -98.609527
   },
   {
+    "a": "Los Festivales",
+    "c": "landmark",
     "i": "guest-services",
     "n": "Guest Services",
     "lat": 29.599158,
-    "lng": -98.610059,
-    "c": "landmark",
-    "a": "Los Festivales"
+    "lng": -98.610059
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 36,
+      "alone": 42
+    },
     "i": "gully-washer",
     "n": "Gully Washer",
     "lat": 29.597382,
-    "lng": -98.613361,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 36,
-      "alone": 42,
-      "max": null
-    }
+    "lng": -98.613361
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 36,
+      "alone": 42
+    },
     "i": "gully-washer-2",
     "n": "Gully Washer",
     "lat": 29.597926,
-    "lng": -98.613589,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 36,
-      "alone": 42,
-      "max": null
-    }
+    "lng": -98.613589
   },
   {
+    "a": "Los Festivales",
+    "c": "shop",
     "i": "heroes",
     "n": "Heroes",
     "lat": 29.598855,
-    "lng": -98.609915,
-    "c": "shop",
-    "a": "Los Festivales"
+    "lng": -98.609915
   },
   {
+    "a": "Los Festivales",
+    "c": "food",
     "i": "hot-roasted-corn",
     "n": "Hot Roasted Corn",
     "lat": 29.598745,
-    "lng": -98.610065,
-    "c": "food",
-    "a": "Los Festivales"
+    "lng": -98.610065
   },
   {
+    "a": "Fiesta Bay Boardwalk",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 48,
+      "alone": null
+    },
     "i": "hurricane-force-5",
     "n": "Hurricane Force 5",
     "lat": 29.595935,
-    "lng": -98.607235,
-    "c": "ride",
-    "a": "Fiesta Bay Boardwalk",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.607235
   },
   {
+    "a": "Rockville",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 36,
+      "alone": null
+    },
     "i": "hustler",
     "n": "Hustler",
     "lat": 29.59629,
-    "lng": -98.608987,
-    "c": "ride",
-    "a": "Rockville",
-    "h": {
-      "min": 36,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.608987
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "coaster",
+    "h": {
+      "max": null,
+      "min": 48,
+      "alone": null
+    },
     "i": "iron-rattler",
     "n": "Iron Rattler",
     "lat": 29.598478,
-    "lng": -98.613044,
-    "c": "coaster",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.613044
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "shop",
     "i": "iron-rattler-mercantile",
     "n": "Iron Rattler Mercantile",
     "lat": 29.59807,
-    "lng": -98.612845,
-    "c": "shop",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.612845
   },
   {
+    "a": "DC Universe",
+    "c": "food",
     "i": "johnny-rockets",
     "n": "Johnny Rockets",
     "lat": 29.596312,
-    "lng": -98.610577,
-    "c": "food",
-    "a": "DC Universe"
+    "lng": -98.610577
   },
   {
+    "a": "DC Universe",
+    "c": "coaster",
+    "h": {
+      "max": null,
+      "min": 36,
+      "alone": null
+    },
     "i": "kid-flash-cosmic-coaster",
     "n": "Kid Flash Cosmic Coaster",
     "lat": 29.597293,
-    "lng": -98.610903,
-    "c": "coaster",
-    "a": "DC Universe",
-    "h": {
-      "min": 36,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.610903
   },
   {
+    "a": "DC Universe",
+    "c": "coaster",
+    "h": {
+      "max": null,
+      "min": 36,
+      "alone": null
+    },
     "i": "kiddee-koaster",
     "n": "Kiddee Koaster",
     "lat": 29.5964,
-    "lng": -98.61003,
-    "c": "coaster",
-    "a": "DC Universe",
-    "h": {
-      "min": 36,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.61003
   },
   {
+    "a": "Spassburg",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": null,
+      "alone": 36
+    },
     "i": "kinderstein",
     "n": "Kinderstein",
     "lat": 29.597215,
     "lng": -98.609772,
-    "c": "ride",
-    "a": "Spassburg",
-    "h": {
-      "min": null,
-      "alone": 36,
-      "max": null
-    },
     "note": "Anyone over 54\" has to be riding with a child under 54\"."
   },
   {
+    "a": "Texas State Square",
+    "c": "shop",
     "i": "la-cantina",
     "n": "La Cantina",
     "lat": 29.5985,
-    "lng": -98.610895,
-    "c": "shop",
-    "a": "Texas State Square"
+    "lng": -98.610895
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "food",
     "i": "la-panaderia-la-cantera",
     "n": "La Panaderia - La Cantera",
     "lat": 29.603099,
     "lng": -98.603309,
-    "c": "food",
-    "tel": "+1 210-600-4460",
-    "a": "Six Flags Fiesta Texas"
+    "tel": "+1 210-600-4460"
   },
   {
+    "a": "Los Festivales",
+    "c": "shop",
     "i": "las-banderas",
     "n": "Las Banderas",
     "lat": 29.599145,
-    "lng": -98.609563,
-    "c": "shop",
-    "a": "Los Festivales"
+    "lng": -98.609563
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": null,
+      "alone": 42
+    },
     "i": "lone-star-lagoon",
     "n": "Lone Star Lagoon",
     "lat": 29.600562,
-    "lng": -98.609784,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": null,
-      "alone": 42,
-      "max": null
-    }
+    "lng": -98.609784
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "show",
     "i": "lone-star-lil-s-amphitheater",
     "n": "Lone Star Lil's Amphitheater",
     "lat": 29.597779,
-    "lng": -98.611609,
-    "c": "show",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.611609
   },
   {
+    "a": "Los Festivales",
+    "c": "landmark",
     "i": "lost-and-found",
     "n": "Lost and Found",
     "lat": 29.599521,
-    "lng": -98.609538,
-    "c": "landmark",
-    "a": "Los Festivales"
+    "lng": -98.609538
   },
   {
+    "a": "DC Universe",
+    "c": "shop",
     "i": "metro-park-pub",
     "n": "Metro Park Pub",
     "lat": 29.596776,
-    "lng": -98.610762,
-    "c": "shop",
-    "a": "DC Universe"
+    "lng": -98.610762
   },
   {
+    "a": "DC Universe",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": null,
+      "alone": 42
+    },
     "i": "metropolis-transit-authority",
     "n": "Metropolis Transit Authority",
     "lat": 29.596933,
-    "lng": -98.609988,
-    "c": "ride",
-    "a": "DC Universe",
-    "h": {
-      "min": null,
-      "alone": 42,
-      "max": null
-    }
+    "lng": -98.609988
   },
   {
+    "a": "Los Festivales",
+    "c": "food",
     "i": "mockingbird-funnel-cakes",
     "n": "Mockingbird Funnel Cakes",
     "lat": 29.598997,
-    "lng": -98.609702,
-    "c": "food",
-    "a": "Los Festivales"
+    "lng": -98.609702
   },
   {
+    "a": "Los Festivales",
+    "c": "shop",
     "i": "my-six-flags-photos",
     "n": "My Six Flags Photos",
     "lat": 29.599127,
-    "lng": -98.609885,
-    "c": "shop",
-    "a": "Los Festivales"
+    "lng": -98.609885
   },
   {
+    "a": "Texas State Square",
+    "c": "food",
     "i": "old-blues-barbeque",
     "n": "Old Blues Barbeque",
     "lat": 29.598735,
-    "lng": -98.611458,
-    "c": "food",
-    "a": "Texas State Square"
+    "lng": -98.611458
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "shop",
     "i": "palace-vintage-photography",
     "n": "Palace Vintage Photography",
     "lat": 29.597828,
-    "lng": -98.612675,
-    "c": "shop",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.612675
   },
   {
+    "a": "Fiesta Bay Boardwalk",
+    "c": "coaster",
+    "h": {
+      "max": null,
+      "min": 42,
+      "alone": 47
+    },
     "i": "pandemonium",
     "n": "Pandemonium",
     "lat": 29.595172,
-    "lng": -98.607268,
-    "c": "coaster",
-    "a": "Fiesta Bay Boardwalk",
-    "h": {
-      "min": 42,
-      "alone": 47,
-      "max": null
-    }
+    "lng": -98.607268
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
     "i": "paradise-cove",
     "n": "Paradise Cove",
     "lat": 29.600718,
-    "lng": -98.610443,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.610443
   },
   {
+    "a": "Rockville",
+    "c": "shop",
     "i": "park-row-refresh-station",
     "n": "Park Row Refresh Station",
     "lat": 29.596042,
-    "lng": -98.609384,
-    "c": "shop",
-    "a": "Rockville"
+    "lng": -98.609384
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "parking",
     "i": "parking",
     "n": "Parking",
     "lat": 29.602036,
-    "lng": -98.608036,
-    "c": "parking",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.608036
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "parking",
     "i": "parking-2",
     "n": "Parking",
     "lat": 29.607774,
-    "lng": -98.607896,
-    "c": "parking",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.607896
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "parking",
     "i": "parking-3",
     "n": "Parking",
     "lat": 29.600973,
-    "lng": -98.604817,
-    "c": "parking",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.604817
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "parking",
     "i": "parking-4",
     "n": "Parking",
     "lat": 29.605832,
-    "lng": -98.614615,
-    "c": "parking",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.614615
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "parking",
     "i": "parking-5",
     "n": "Parking",
     "lat": 29.592812,
-    "lng": -98.609656,
-    "c": "parking",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.609656
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "parking",
     "i": "parking-6",
     "n": "Parking",
     "lat": 29.592274,
-    "lng": -98.608429,
-    "c": "parking",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.608429
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "parking",
     "i": "parking-7",
     "n": "Parking",
     "lat": 29.597455,
-    "lng": -98.617809,
-    "c": "parking",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.617809
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "parking",
     "i": "parking-8",
     "n": "Parking",
     "lat": 29.597649,
-    "lng": -98.617245,
-    "c": "parking",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.617245
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "parking",
     "i": "parking-9",
     "n": "Parking",
     "lat": 29.596914,
-    "lng": -98.617819,
-    "c": "parking",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.617819
   },
   {
+    "a": "Rockville",
+    "c": "food",
     "i": "pete-s-eats",
     "n": "Pete's Eats",
     "lat": 29.596776,
-    "lng": -98.608629,
-    "c": "food",
-    "a": "Rockville"
+    "lng": -98.608629
   },
   {
+    "a": "Fiesta Bay Boardwalk",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": null,
+      "alone": 42
+    },
     "i": "pirates-of-the-deep-sea",
     "n": "Pirates of the Deep Sea",
     "lat": 29.596266,
-    "lng": -98.607333,
-    "c": "ride",
-    "a": "Fiesta Bay Boardwalk",
-    "h": {
-      "min": null,
-      "alone": 42,
-      "max": null
-    }
+    "lng": -98.607333
   },
   {
+    "a": "Rockville",
+    "c": "food",
     "i": "pit-stop",
     "n": "Pit Stop",
     "lat": 29.596825,
-    "lng": -98.609082,
-    "c": "food",
-    "a": "Rockville"
+    "lng": -98.609082
   },
   {
+    "a": "DC Universe",
+    "c": "food",
     "i": "planet-krypton-cafe",
     "n": "Planet Krypton Cafe",
     "lat": 29.596613,
-    "lng": -98.61029,
-    "c": "food",
-    "a": "DC Universe"
+    "lng": -98.61029
   },
   {
+    "a": "DC Universe",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": null,
+      "alone": 42
+    },
     "i": "poison-ivy-toxic-spin",
     "n": "Poison Ivy Toxic Spin",
     "lat": 29.596723,
-    "lng": -98.610073,
-    "c": "ride",
-    "a": "DC Universe",
-    "h": {
-      "min": null,
-      "alone": 42,
-      "max": null
-    }
+    "lng": -98.610073
   },
   {
+    "a": "Rockville",
+    "c": "coaster",
+    "h": {
+      "max": null,
+      "min": 54,
+      "alone": null
+    },
     "i": "poltergeist",
     "n": "Poltergeist",
     "lat": 29.597207,
-    "lng": -98.608572,
-    "c": "coaster",
-    "a": "Rockville",
-    "h": {
-      "min": 54,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.608572
   },
   {
+    "a": "Rockville",
+    "c": "coaster",
+    "h": {
+      "max": null,
+      "min": 54,
+      "alone": null
+    },
     "i": "poltergeist-2",
     "n": "Poltergeist",
     "lat": 29.596975,
-    "lng": -98.608317,
-    "c": "coaster",
-    "a": "Rockville",
-    "h": {
-      "min": 54,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.608317
   },
   {
+    "a": "Rockville",
+    "c": "food",
     "i": "primo-s-pizzeria",
     "n": "Primo's Pizzeria",
     "lat": 29.595707,
-    "lng": -98.609121,
-    "c": "food",
-    "a": "Rockville"
+    "lng": -98.609121
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "food",
     "i": "redlands-grill-by-j-alexander-s",
     "n": "Redlands Grill by J. Alexander's",
     "lat": 29.605994,
     "lng": -98.60375,
-    "c": "food",
-    "tel": "+1 210-435-9411",
-    "a": "Six Flags Fiesta Texas"
+    "tel": "+1 210-435-9411"
   },
   {
+    "a": "Rockville",
+    "c": "restroom",
     "i": "restrooms",
     "n": "Restrooms",
     "lat": 29.596185,
-    "lng": -98.60933,
-    "c": "restroom",
-    "a": "Rockville"
+    "lng": -98.60933
   },
   {
+    "a": "Spassburg",
+    "c": "restroom",
     "i": "restrooms-2",
     "n": "Restrooms",
     "lat": 29.597304,
-    "lng": -98.609085,
-    "c": "restroom",
-    "a": "Spassburg"
+    "lng": -98.609085
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "restroom",
     "i": "restrooms-3",
     "n": "Restrooms",
     "lat": 29.598183,
-    "lng": -98.613004,
-    "c": "restroom",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.613004
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "restroom",
     "i": "restrooms-4",
     "n": "Restrooms",
     "lat": 29.59748,
-    "lng": -98.612015,
-    "c": "restroom",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.612015
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "restroom",
     "i": "restrooms-5",
     "n": "Restrooms",
     "lat": 29.60011,
-    "lng": -98.610201,
-    "c": "restroom",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.610201
   },
   {
+    "a": "Los Festivales",
+    "c": "restroom",
     "i": "restrooms-6",
     "n": "Restrooms",
     "lat": 29.599279,
-    "lng": -98.609218,
-    "c": "restroom",
-    "a": "Los Festivales"
+    "lng": -98.609218
   },
   {
+    "a": "Los Festivales",
+    "c": "restroom",
     "i": "restrooms-7",
     "n": "Restrooms",
     "lat": 29.598627,
-    "lng": -98.609711,
-    "c": "restroom",
-    "a": "Los Festivales"
+    "lng": -98.609711
   },
   {
+    "a": "Fiesta Bay Boardwalk",
+    "c": "restroom",
     "i": "restrooms-8",
     "n": "Restrooms",
     "lat": 29.596181,
-    "lng": -98.607385,
-    "c": "restroom",
-    "a": "Fiesta Bay Boardwalk"
+    "lng": -98.607385
   },
   {
+    "a": "DC Universe",
+    "c": "restroom",
     "i": "restrooms-9",
     "n": "Restrooms",
     "lat": 29.59649,
-    "lng": -98.610195,
-    "c": "restroom",
-    "a": "DC Universe"
+    "lng": -98.610195
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "restroom",
     "i": "restrooms-10",
     "n": "Restrooms",
     "lat": 29.598968,
-    "lng": -98.610991,
-    "c": "restroom",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.610991
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "restroom",
     "i": "restrooms-11",
     "n": "Restrooms",
     "lat": 29.600608,
-    "lng": -98.611525,
-    "c": "restroom",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.611525
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
     "i": "ripqurl",
     "n": "RipQurl",
     "lat": 29.60017,
-    "lng": -98.6115,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.6115
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 48,
+      "alone": null
+    },
     "i": "riptide-runner",
     "n": "Riptide Runner",
     "lat": 29.60025,
-    "lng": -98.61062,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.61062
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "coaster",
+    "h": {
+      "max": null,
+      "min": 42,
+      "alone": null
+    },
     "i": "road-runner-express",
     "n": "Road Runner Express",
     "lat": 29.598774,
-    "lng": -98.612372,
-    "c": "coaster",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 42,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.612372
   },
   {
+    "a": "Rockville",
+    "c": "show",
     "i": "rockville-high-school",
     "n": "Rockville High School",
     "lat": 29.595758,
-    "lng": -98.608372,
-    "c": "show",
-    "a": "Rockville"
+    "lng": -98.608372
   },
   {
+    "a": "Spassburg",
+    "c": "food",
     "i": "s-ngerfest-halle",
     "n": "Sängerfest Halle",
     "lat": 29.597748,
-    "lng": -98.609465,
-    "c": "food",
-    "a": "Spassburg"
+    "lng": -98.609465
   },
   {
+    "a": "Spassburg",
+    "c": "show",
     "i": "sangerfest-halle-stage",
     "n": "Sangerfest Halle Stage",
     "lat": 29.597665,
-    "lng": -98.609401,
-    "c": "show",
-    "a": "Spassburg"
+    "lng": -98.609401
   },
   {
+    "a": "Rockville",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 52,
+      "alone": null
+    },
     "i": "scream",
     "n": "Scream",
     "lat": 29.596441,
-    "lng": -98.608351,
-    "c": "ride",
-    "a": "Rockville",
-    "h": {
-      "min": 52,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.608351
   },
   {
+    "a": "DC Universe",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 42,
+      "alone": 48
+    },
     "i": "shazam-tower-of-eternity",
     "n": "Shazam! Tower of Eternity",
     "lat": 29.59681,
-    "lng": -98.609923,
-    "c": "ride",
-    "a": "DC Universe",
-    "h": {
-      "min": 42,
-      "alone": 48,
-      "max": null
-    }
+    "lng": -98.609923
   },
   {
+    "a": "Texas State Square",
+    "c": "shop",
     "i": "soft-frozen-lemonade",
     "n": "Soft Frozen Lemonade",
     "lat": 29.59851,
-    "lng": -98.610585,
-    "c": "shop",
-    "a": "Texas State Square"
+    "lng": -98.610585
   },
   {
+    "a": "Fiesta Bay Boardwalk",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 36,
+      "alone": 46
+    },
     "i": "spinsanity",
     "n": "Spinsanity",
     "lat": 29.59585,
-    "lng": -98.60791,
-    "c": "ride",
-    "a": "Fiesta Bay Boardwalk",
-    "h": {
-      "min": 36,
-      "alone": 46,
-      "max": null
-    }
+    "lng": -98.60791
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
     "i": "splash-water-springs",
     "n": "Splash Water Springs",
     "lat": 29.600314,
-    "lng": -98.611847,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.611847
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
     "i": "stingray-racer",
     "n": "Stingray Racer",
     "lat": 29.60032,
-    "lng": -98.61151,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.61151
   },
   {
+    "a": "Los Festivales",
+    "c": "landmark",
     "i": "stroller-wheelchair-rental",
     "n": "Stroller & Wheelchair Rental",
     "lat": 29.599117,
-    "lng": -98.609384,
-    "c": "landmark",
-    "a": "Los Festivales"
+    "lng": -98.609384
   },
   {
+    "a": "Spassburg",
+    "c": "shop",
     "i": "studio-6f",
     "n": "Studio 6F",
     "lat": 29.597574,
-    "lng": -98.610004,
-    "c": "shop",
-    "a": "Spassburg"
+    "lng": -98.610004
   },
   {
+    "a": "DC Universe",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 44,
+      "alone": 48
+    },
     "i": "supergirl-sky-flight",
     "n": "Supergirl Sky Flight",
     "lat": 29.596694,
     "lng": -98.610949,
-    "c": "ride",
-    "a": "DC Universe",
-    "h": {
-      "min": 44,
-      "alone": 48,
-      "max": null
-    },
     "note": "Formerly SkyScreamer"
   },
   {
+    "a": "DC Universe",
+    "c": "coaster",
+    "h": {
+      "max": null,
+      "min": 54,
+      "alone": null
+    },
     "i": "superman-krypton-coaster",
     "n": "Superman: Krypton Coaster",
     "lat": 29.59606,
-    "lng": -98.610758,
-    "c": "coaster",
-    "a": "DC Universe",
-    "h": {
-      "min": 54,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.610758
   },
   {
+    "a": "Rockville",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": null,
+      "alone": 42
+    },
     "i": "taz-s-tornado",
     "n": "Taz's Tornado",
     "lat": 29.596251,
-    "lng": -98.608037,
-    "c": "ride",
-    "a": "Rockville",
-    "h": {
-      "min": null,
-      "alone": 42,
-      "max": null
-    }
+    "lng": -98.608037
   },
   {
+    "a": "Texas State Square",
+    "c": "show",
     "i": "teatro-fiesta",
     "n": "Teatro Fiesta",
     "lat": 29.598796,
-    "lng": -98.610777,
-    "c": "show",
-    "a": "Texas State Square"
+    "lng": -98.610777
   },
   {
+    "a": "Texas State Square",
+    "c": "show",
     "i": "texas-state-square",
     "n": "Texas State Square",
     "lat": 29.598583,
-    "lng": -98.610354,
-    "c": "show",
-    "a": "Texas State Square"
+    "lng": -98.610354
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 42,
+      "alone": null
+    },
     "i": "texas-treehouse",
     "n": "Texas Treehouse",
     "lat": 29.600197,
-    "lng": -98.61219,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 42,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.61219
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 42,
+      "alone": null
+    },
     "i": "texas-treehouse-slide-pool",
     "n": "Texas Treehouse Slide Pool",
     "lat": 29.600426,
     "lng": -98.612168,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 42,
-      "alone": null,
-      "max": null
-    },
     "note": "Rule is the Texas Treehouse's, which the slides and the splash pool share."
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 42,
+      "alone": null
+    },
     "i": "texas-tumble-tube-shoot",
     "n": "Texas Tumble Tube Shoot",
     "lat": 29.59967,
     "lng": -98.61192,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 42,
-      "alone": null,
-      "max": null
-    },
     "note": "The park lists it as Texas Tumble."
   },
   {
+    "a": "DC Universe",
+    "c": "shop",
     "i": "the-caped-crusader",
     "n": "The Caped Crusader",
     "lat": 29.597015,
-    "lng": -98.610435,
-    "c": "shop",
-    "a": "DC Universe"
+    "lng": -98.610435
   },
   {
+    "a": "Spassburg",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": null,
+      "alone": 42
+    },
     "i": "the-grand-carousel",
     "n": "The Grand Carousel",
     "lat": 29.597368,
     "lng": -98.609414,
-    "c": "ride",
-    "a": "Spassburg",
-    "h": {
-      "min": null,
-      "alone": 42,
-      "max": null
-    },
     "note": "Lap children and infants on the chariots only."
   },
   {
+    "a": "DC Universe",
+    "c": "ride",
+    "h": {
+      "max": 84,
+      "min": 52,
+      "alone": null
+    },
     "i": "the-joker-carnival-of-chaos",
     "n": "The Joker: Carnival of Chaos",
     "lat": 29.595938,
-    "lng": -98.610247,
-    "c": "ride",
-    "a": "DC Universe",
-    "h": {
-      "min": 52,
-      "alone": null,
-      "max": 84
-    }
+    "lng": -98.610247
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "shop",
     "i": "thirsty-buffalo-saloon",
     "n": "Thirsty Buffalo Saloon",
     "lat": 29.597688,
-    "lng": -98.612702,
-    "c": "shop",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.612702
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 48,
+      "alone": null
+    },
     "i": "thunder-rapids-water-coaster",
     "n": "Thunder Rapids Water Coaster",
     "lat": 29.60121,
     "lng": -98.60973,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    },
     "note": "The park lists it as Thunder Rapids."
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "food",
     "i": "tidal-wave-cafe",
     "n": "Tidal Wave Cafe",
     "lat": 29.599811,
-    "lng": -98.61002,
-    "c": "food",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.61002
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 48,
+      "alone": null
+    },
     "i": "tornado",
     "n": "Tornado",
     "lat": 29.60022,
-    "lng": -98.61024,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.61024
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 48,
+      "alone": null
+    },
     "i": "tornado-slide-pool",
     "n": "Tornado Slide Pool",
     "lat": 29.600442,
-    "lng": -98.610433,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.610433
   },
   {
+    "a": "Texas State Square",
+    "c": "shop",
     "i": "trader-six",
     "n": "Trader Six",
     "lat": 29.598705,
-    "lng": -98.61124,
-    "c": "shop",
-    "a": "Texas State Square"
+    "lng": -98.61124
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "shop",
     "i": "tradewinds",
     "n": "Tradewinds",
     "lat": 29.59998,
-    "lng": -98.61024,
-    "c": "shop",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.61024
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "food",
     "i": "tropical-smoothie-cafe",
     "n": "Tropical Smoothie Cafe",
     "lat": 29.60359,
     "lng": -98.603485,
-    "c": "food",
-    "tel": "+1-210-694-1322",
-    "a": "Six Flags Fiesta Texas"
+    "tel": "+1-210-694-1322"
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
     "i": "tube-shoot",
     "n": "Tube Shoot",
     "lat": 29.60026,
-    "lng": -98.61072,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.61072
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "shop",
     "i": "tutti-nail-bar",
     "n": "Tutti Nail Bar",
     "lat": 29.603493,
     "lng": -98.60346,
-    "c": "shop",
-    "tel": "+1-210-595-6245",
-    "a": "Six Flags Fiesta Texas"
+    "tel": "+1-210-595-6245"
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 42,
+      "alone": null
+    },
     "i": "tx-treehouse-green-slide",
     "n": "Tx Treehouse Green Slide",
     "lat": 29.60027,
     "lng": -98.6123,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 42,
-      "alone": null,
-      "max": null
-    },
     "note": "One of the Texas Treehouse slides; the rule is the treehouse's."
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 42,
+      "alone": null
+    },
     "i": "tx-treehouse-red-slide",
     "n": "Tx Treehouse Red Slide",
     "lat": 29.60035,
     "lng": -98.61225,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 42,
-      "alone": null,
-      "max": null
-    },
     "note": "One of the Texas Treehouse slides; the rule is the treehouse's."
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 42,
+      "alone": null
+    },
     "i": "tx-treehouse-teal-slide",
     "n": "Tx Treehouse Teal Slide",
     "lat": 29.60035,
     "lng": -98.61219,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 42,
-      "alone": null,
-      "max": null
-    },
     "note": "One of the Texas Treehouse slides; the rule is the treehouse's."
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 42,
+      "alone": null
+    },
     "i": "tx-treehouse-yellow-slide",
     "n": "Tx Treehouse Yellow Slide",
     "lat": 29.60023,
     "lng": -98.61226,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": 42,
-      "alone": null,
-      "max": null
-    },
     "note": "One of the Texas Treehouse slides; the rule is the treehouse's."
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
     "i": "vortex",
     "n": "Vortex",
     "lat": 29.60022,
-    "lng": -98.6116,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.6116
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "shop",
     "i": "watering-hole-refresh-station",
     "n": "Watering Hole Refresh Station",
     "lat": 29.598,
-    "lng": -98.61289,
-    "c": "shop",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.61289
   },
   {
+    "a": "Fiesta Bay Boardwalk",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": 36,
+      "alone": 48
+    },
     "i": "wave-runner",
     "n": "Wave Runner",
     "lat": 29.596238,
-    "lng": -98.607672,
-    "c": "ride",
-    "a": "Fiesta Bay Boardwalk",
-    "h": {
-      "min": 36,
-      "alone": 48,
-      "max": null
-    }
+    "lng": -98.607672
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "shop",
     "i": "waxing-the-city",
     "n": "Waxing the City",
     "lat": 29.60339,
     "lng": -98.603429,
-    "c": "shop",
-    "tel": "+1-210-690-9100",
-    "a": "Six Flags Fiesta Texas"
+    "tel": "+1-210-690-9100"
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": null,
+      "alone": 42
+    },
     "i": "white-water-canyon",
     "n": "White Water Canyon",
     "lat": 29.599386,
-    "lng": -98.610985,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": null,
-      "alone": 42,
-      "max": null
-    }
+    "lng": -98.610985
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
     "i": "wipeout",
     "n": "Wipeout",
     "lat": 29.60044,
-    "lng": -98.61157,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "lng": -98.61157
   },
   {
+    "a": "Rockville",
+    "c": "shop",
     "i": "wonder-woman-gifts",
     "n": "Wonder Woman Gifts",
     "lat": 29.595387,
-    "lng": -98.609032,
-    "c": "shop",
-    "a": "Rockville"
+    "lng": -98.609032
   },
   {
+    "a": "Rockville",
+    "c": "coaster",
+    "h": {
+      "max": null,
+      "min": 48,
+      "alone": null
+    },
     "i": "wonder-woman-golden-lasso-coaster",
     "n": "Wonder Woman Golden Lasso Coaster",
     "lat": 29.595194,
-    "lng": -98.608454,
-    "c": "coaster",
-    "a": "Rockville",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
+    "lng": -98.608454
   },
   {
+    "a": "Six Flags Fiesta Texas",
+    "c": "ride",
+    "h": {
+      "max": null,
+      "min": null,
+      "alone": 36
+    },
     "i": "yosemite-sam-s-wacky-wagons",
     "n": "Yosemite Sam's Wacky Wagons",
     "lat": 29.598178,
     "lng": -98.61288,
-    "c": "ride",
-    "a": "Six Flags Fiesta Texas",
-    "h": {
-      "min": null,
-      "alone": 36,
-      "max": null
-    },
     "note": "Anyone over 54\" has to be riding with a child under 54\"."
   },
   {
+    "a": "Los Festivales",
+    "c": "show",
     "i": "zaragoza-theater",
     "n": "Zaragoza Theater",
     "lat": 29.598599,
-    "lng": -98.609317,
-    "c": "show",
-    "a": "Los Festivales"
+    "lng": -98.609317
   }
 ]
