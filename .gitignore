@@ -16,6 +16,8 @@ scripts/lib/clerk-apple-connection.json
 # Wayfinder efforts — committed so macro / Cloud resume can track fog
 !/.scratch/factories-to-app/
 !/.scratch/factories-to-app/**
+!/.scratch/g1-village-green/
+!/.scratch/g1-village-green/**
 
 # isolated worktrees agents check out while working in parallel
 .claude/worktrees/
