@@ -210,6 +210,7 @@ export const TEST_ESTATE = {
   'test/scripts/local-ci-pass.test.mjs': ['ci-gate'],
   'test/scripts/map-performance-contract.test.mjs': ['ci-gate'],
   'test/scripts/matt-review.test.mjs': ['ci-gate'],
+  'test/scripts/neon-runbook.test.mjs': ['ci-gate'],
   'test/scripts/matt-standards.test.mjs': ['ci-gate'],
   'test/scripts/orchestrator.test.mjs': ['ci-gate'],
   'test/scripts/pre-push.test.mjs': ['ci-gate'],
