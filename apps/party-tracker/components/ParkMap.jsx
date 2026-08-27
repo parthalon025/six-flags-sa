@@ -76,9 +76,8 @@ import { overlayGeoJson } from '@/lib/overlayGeo';
 import { parkMapRenderer } from '@/lib/mapLibreConfigured';
 import { boundsOfPoints, cameraRequest, overlayModel, worldFor } from '@/lib/parkMapView';
 
-/* MapLibre is a large dependency and the shipped renderer is still the SVG
-   one, so the engine loads only for the guest who is actually drawing through
-   it. `ssr: false` for the ordinary reason: it needs a canvas. */
+/* MapLibre is a large dependency, so the engine loads lazily. `ssr: false`
+   for the ordinary reason: it needs a canvas. */
 const ParkMapGl = dynamic(() => import('./ParkMapGl'), { ssr: false });
 
 /** Which renderer this phone is drawing through.
