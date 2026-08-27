@@ -181,8 +181,8 @@ export async function exportFromPostdb(venueId, opts = {}) {
   const skipWrite = truthUrlPaths(venueId);
   const written = [];
   for (const [urlPath, buf] of assembled.files) {
-    if (skipWrite.has(urlPath)) continue;
     const dest = path.join(venueDir, urlPath.replace(/^\/venues\//, ''));
+    if (skipWrite.has(urlPath) && existsSync(dest)) continue;
     mkdirSync(path.dirname(dest), { recursive: true });
     writeFileSync(dest, buf);
     written.push(dest);
