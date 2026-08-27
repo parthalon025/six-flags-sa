@@ -46,6 +46,7 @@ const BUILDER_PATHS = [
 const BACKSIDE_PATHS = [
   'scripts/**',
   'test/scripts/**',
+  'test/app/postgres-probe.test.mjs',
   '.github/workflows/**',
   '.dependency-cruiser.cjs',
   'apps/party-tracker/app/api/**',
@@ -122,7 +123,10 @@ function matchesBackside(file) {
 }
 
 function isTestAppOnly(paths) {
-  return paths.length > 0 && paths.every((f) => pathMatchesAny(f, ['test/app/**']));
+  return (
+    paths.length > 0
+    && paths.every((f) => pathMatchesAny(f, ['test/app/**']) && !matchesBackside(f))
+  );
 }
 
 export function verticalById(id) {
