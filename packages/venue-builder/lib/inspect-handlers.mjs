@@ -11,6 +11,11 @@ import {
   readEvidenceReviewHtml,
   renderEvidenceMissingPage,
 } from './inspect-evidence.mjs';
+import {
+  certificationDashboard,
+  certificationDetail,
+} from './inspect-certification.mjs';
+import { MANIFEST_FILE } from '../src/paths.mjs';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -26,6 +31,7 @@ const MIME = {
  */
 export function createInspectHandler(opts) {
   const overrideDir = opts.overrideDir || OVERRIDE_DIR;
+  const manifestPath = opts.manifestPath || MANIFEST_FILE;
 
   return (req, res) => {
     const host = req.headers.host || '127.0.0.1';
@@ -35,6 +41,26 @@ export function createInspectHandler(opts) {
       const reports = compareAll();
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(summary(reports)));
+      return;
+    }
+
+    if (url.pathname === '/api/certifications') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(certificationDashboard({ overrideDir, manifestPath })));
+      return;
+    }
+
+    const certificationApi = url.pathname.match(/^\/api\/certification\/([^/]+)$/);
+    if (certificationApi) {
+      const venueId = decodeURIComponent(certificationApi[1]);
+      const detail = certificationDetail(venueId, { overrideDir });
+      if (!detail.available) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ venueId, available: false, error: 'certification.json missing' }));
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(detail));
       return;
     }
 
