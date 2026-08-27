@@ -73,9 +73,11 @@ export const CAPABILITIES = [
   {
     id: 'lands',
     weakness: 'no-districts',
-    tool: 'overrides.lands or OSM land-use polygons',
-    file: 'data/venues/<id>/overrides.json',
-    note: 'Named districts for low-zoom map readability.',
+    tool: 'OSM land-use polygons; per-Zone character in the grounding harvest',
+    file: 'data/venues/<id>/display/grounding.json',
+    note: 'Named Zones for low-zoom readability. The harvest states what each Zone is '
+      + '(woodland, water, steel, midway…), never a colour — every Skin re-expresses '
+      + 'that in its own palette. Tints in overrides.json are ignored.',
   },
   {
     id: 'entity-resolution',
@@ -102,14 +104,14 @@ export const CAPABILITIES = [
     id: 'evidence-graph',
     weakness: 'low-entrance-confidence',
     tool: 'npm run venues:attractions -- <id> --report',
-    file: 'data/venues/<id>/attractions.json + scripts/lib/evidence-graph.mjs',
+    file: 'data/venues/<id>/attractions.json + packages/venue-builder/lib/evidence-graph.mjs',
     note: 'Converging claims per feature; fusion publishes only validated coordinates.',
   },
   {
     id: 'playwright-research',
     weakness: 'no-official-cache',
     tool: 'adapter: playwright (wrap) — future venues:research --browser',
-    file: 'scripts/lib/adapters/registry.mjs',
+    file: 'packages/venue-builder/lib/adapters/registry.mjs',
     note: 'Browser agent for park maps and accessibility pages beyond regex fetch.',
   },
   {

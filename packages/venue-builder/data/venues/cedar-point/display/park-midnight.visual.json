@@ -9,6 +9,12 @@
     "contrastFloor": 4.5,
     "labelHalo": true,
     "mode": "night",
+    "landTones": {
+      "cover": 0.3,
+      "lean": 0.34,
+      "spread": 0.07,
+      "steps": 5
+    },
     "colors": {
       "path": "#C4A882",
       "ground": "#1A1520",
@@ -87,53 +93,89 @@
     }
   },
   "landTones": {
-    "Lighthouse Point": {
-      "day": "#C9B79E",
-      "night": "#39323F"
-    },
-    "Frontier Town": {
-      "day": "#C9B79E",
-      "night": "#39323F"
-    },
-    "Main Midway": {
-      "day": "#C9B79E",
-      "night": "#39323F"
-    },
-    "Frontier Trail": {
-      "day": "#C9B79E",
-      "night": "#39323F"
-    },
-    "Millennium Midway": {
-      "day": "#C9B79E",
-      "night": "#39323F"
-    },
-    "Gemini Midway": {
-      "day": "#C9B79E",
-      "night": "#39323F"
+    "Camp Snoopy": {
+      "night": {
+        "fill": "#2C2730",
+        "stroke": "#716B6C",
+        "label": "#F0E8DC"
+      }
     },
     "Cedar Point Shores": {
-      "day": "#C9B79E",
-      "night": "#39323F"
+      "night": {
+        "fill": "#2C2730",
+        "stroke": "#716B6C",
+        "label": "#F0E8DC"
+      }
     },
-    "Lakeside Midway": {
-      "day": "#C9B79E",
-      "night": "#39323F"
+    "Frontier Town": {
+      "night": {
+        "fill": "#241F29",
+        "stroke": "#6B6568",
+        "label": "#F0E8DC"
+      }
     },
-    "Camp Snoopy": {
-      "day": "#C9B79E",
-      "night": "#39323F"
+    "Frontier Trail": {
+      "night": {
+        "fill": "#241F29",
+        "stroke": "#6B6568",
+        "label": "#F0E8DC"
+      }
+    },
+    "Gemini Midway": {
+      "night": {
+        "fill": "#211D26",
+        "stroke": "#696466",
+        "label": "#F0E8DC"
+      }
     },
     "Kiddy Kingdom": {
-      "day": "#C9B79E",
-      "night": "#39323F"
+      "night": {
+        "fill": "#2C2730",
+        "stroke": "#716B6C",
+        "label": "#F0E8DC"
+      }
+    },
+    "Lakeside Midway": {
+      "night": {
+        "fill": "#231E28",
+        "stroke": "#6B6567",
+        "label": "#F0E8DC"
+      }
+    },
+    "Lighthouse Point": {
+      "night": {
+        "fill": "#231E28",
+        "stroke": "#6B6567",
+        "label": "#F0E8DC"
+      }
+    },
+    "Main Midway": {
+      "night": {
+        "fill": "#211D26",
+        "stroke": "#696466",
+        "label": "#F0E8DC"
+      }
+    },
+    "Millennium Midway": {
+      "night": {
+        "fill": "#231E28",
+        "stroke": "#6B6567",
+        "label": "#F0E8DC"
+      }
     },
     "Planet Snoopy": {
-      "day": "#C9B79E",
-      "night": "#39323F"
+      "night": {
+        "fill": "#332F38",
+        "stroke": "#757071",
+        "label": "#F0E8DC"
+      }
     },
     "Professor Delbert's Frontier Fling": {
-      "day": "#C9B79E",
-      "night": "#39323F"
+      "night": {
+        "fill": "#332F38",
+        "stroke": "#757071",
+        "label": "#F0E8DC"
+      }
     }
   },
   "fallback": {

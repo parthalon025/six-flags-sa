@@ -828,8 +828,8 @@
   {
     "i": "parking",
     "n": "Parking",
-    "lat": 29.602036,
-    "lng": -98.608036,
+    "lat": 29.602037,
+    "lng": -98.608034,
     "c": "parking",
     "a": "Six Flags Fiesta Texas"
   },
@@ -844,8 +844,8 @@
   {
     "i": "parking-3",
     "n": "Parking",
-    "lat": 29.600973,
-    "lng": -98.604817,
+    "lat": 29.600975,
+    "lng": -98.604818,
     "c": "parking",
     "a": "Six Flags Fiesta Texas"
   },
@@ -868,32 +868,32 @@
   {
     "i": "parking-6",
     "n": "Parking",
-    "lat": 29.592274,
-    "lng": -98.608429,
+    "lat": 29.592273,
+    "lng": -98.608428,
     "c": "parking",
     "a": "Six Flags Fiesta Texas"
   },
   {
     "i": "parking-7",
     "n": "Parking",
-    "lat": 29.597455,
-    "lng": -98.617809,
+    "lat": 29.597452,
+    "lng": -98.617813,
     "c": "parking",
     "a": "Six Flags Fiesta Texas"
   },
   {
     "i": "parking-8",
     "n": "Parking",
-    "lat": 29.597649,
-    "lng": -98.617245,
+    "lat": 29.597646,
+    "lng": -98.617249,
     "c": "parking",
     "a": "Six Flags Fiesta Texas"
   },
   {
     "i": "parking-9",
     "n": "Parking",
-    "lat": 29.596914,
-    "lng": -98.617819,
+    "lat": 29.596912,
+    "lng": -98.617817,
     "c": "parking",
     "a": "Six Flags Fiesta Texas"
   },

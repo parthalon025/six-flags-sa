@@ -1,0 +1,206 @@
+{
+  "version": 1,
+  "venue": "kings-island",
+  "skin": "midnight-carnival",
+  "basedOn": {
+    "map": "2026-08-09"
+  },
+  "tokens": {
+    "contrastFloor": 4.5,
+    "labelHalo": true,
+    "mode": "night",
+    "landTones": {
+      "cover": 0.36,
+      "lean": 0.5,
+      "spread": 0.12,
+      "steps": 5
+    },
+    "colors": {
+      "path": "#C98A3B",
+      "ground": "#2A2140",
+      "water": "#101C2E",
+      "grass": "#1E3328",
+      "building": "#241F33",
+      "label": "#F5D9A0",
+      "structureEdge": "#3E6B9E",
+      "groundEdge": "#352A52",
+      "pathCasing": "#241833"
+    }
+  },
+  "surfaces": {
+    "walkway": {
+      "material": "paving-stones--warm",
+      "layers": [
+        "path"
+      ],
+      "color": "#AC8653"
+    },
+    "service-road": {
+      "material": "asphalt--worn",
+      "layers": [
+        "service"
+      ],
+      "color": "#8F6938"
+    },
+    "vegetation": {
+      "material": "grass--meadow",
+      "layers": [
+        "grass",
+        "wood",
+        "park"
+      ],
+      "color": "#33432B"
+    },
+    "water": {
+      "material": "water--calm",
+      "layers": [
+        "water"
+      ],
+      "color": "#2D5674"
+    },
+    "pool": {
+      "material": "water--pool",
+      "layers": [
+        "pool"
+      ],
+      "color": "#295F78"
+    },
+    "coaster-track": {
+      "material": "steel--track",
+      "layers": [
+        "coaster"
+      ],
+      "color": "#BBAF90"
+    },
+    "slide": {
+      "material": "fiberglass--flume",
+      "layers": [
+        "slide"
+      ],
+      "color": "#D58741"
+    },
+    "structure": {
+      "material": "roofing--shingle",
+      "layers": [
+        "building"
+      ],
+      "color": "#36333C"
+    },
+    "lot": {
+      "material": "concrete--lot",
+      "layers": [
+        "parking"
+      ],
+      "color": "#58545F"
+    }
+  },
+  "landTones": {
+    "Action Zone": {
+      "night": {
+        "fill": "#304062",
+        "stroke": "#32385C",
+        "label": "#F5D9A0"
+      }
+    },
+    "Adventure Port": {
+      "night": {
+        "fill": "#3A3D4F",
+        "stroke": "#383650",
+        "label": "#F5D9A0"
+      }
+    },
+    "Area 72": {
+      "night": {
+        "fill": "#4E5F80",
+        "stroke": "#454C70",
+        "label": "#F5D9A0"
+      }
+    },
+    "Camp Snoopy": {
+      "night": {
+        "fill": "#40464C",
+        "stroke": "#3C3C4E",
+        "label": "#F5D9A0"
+      }
+    },
+    "Coney Mall": {
+      "night": {
+        "fill": "#6D4E36",
+        "stroke": "#594140",
+        "label": "#F5D9A0"
+      }
+    },
+    "International Street": {
+      "night": {
+        "fill": "#928070",
+        "stroke": "#716266",
+        "label": "#F5D9A0"
+      }
+    },
+    "Oktoberfest": {
+      "night": {
+        "fill": "#2E273F",
+        "stroke": "#302846",
+        "label": "#F5D9A0"
+      }
+    },
+    "Planet Snoopy": {
+      "night": {
+        "fill": "#8C6D54",
+        "stroke": "#6E5653",
+        "label": "#F5D9A0"
+      }
+    },
+    "Rivertown": {
+      "night": {
+        "fill": "#21282E",
+        "stroke": "#28293B",
+        "label": "#F5D9A0"
+      }
+    },
+    "Soak City": {
+      "night": {
+        "fill": "#1B1E30",
+        "stroke": "#24223C",
+        "label": "#F5D9A0"
+      }
+    }
+  },
+  "fallback": {
+    "landTone": "name-hue"
+  },
+  "terrain": {
+    "source": "usgs-3dep",
+    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n40w085/USGS_13_n40w085.tif",
+    "resolution": 10,
+    "surfaceModel": false,
+    "cellMetres": 6.45,
+    "fitness": "marginal",
+    "relief": {
+      "min": 190.5,
+      "max": 238.9
+    },
+    "grid": {
+      "cols": 240,
+      "rows": 197
+    },
+    "hillshade": {
+      "file": "hillshade.png",
+      "azimuth": 315,
+      "altitude": 45
+    },
+    "bounds": {
+      "north": 39.348,
+      "south": 39.3365,
+      "east": -84.2595,
+      "west": -84.2775
+    },
+    "steepDegrees": 18,
+    "constrained": {
+      "paths": 757,
+      "water": 24,
+      "pads": 206,
+      "nodes": 139445
+    }
+  }
+}

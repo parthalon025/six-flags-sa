@@ -9,6 +9,12 @@
     "contrastFloor": 4.5,
     "labelHalo": true,
     "mode": "day",
+    "landTones": {
+      "cover": 0.24,
+      "lean": 0.4,
+      "spread": 0.1,
+      "steps": 5
+    },
     "colors": {
       "path": "#756276",
       "ground": "#F4EFDF",

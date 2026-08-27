@@ -279,8 +279,16 @@
       "target": "tornado-slide-pool"
     },
     {
+      "type": "queue",
+      "target": "tube-shoot"
+    },
+    {
       "type": "path",
       "target": null
+    },
+    {
+      "type": "verify",
+      "target": "open-meteo"
     }
   ]
 }

@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./poi.js": "./poi.js",
     "./ontology.js": "./ontology.js",
     "./wayFlags.js": "./wayFlags.js",
     "./mapSymbols.js": "./mapSymbols.js",

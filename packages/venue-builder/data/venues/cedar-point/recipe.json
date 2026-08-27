@@ -15,20 +15,16 @@
     "locality": "Sandusky, Ohio",
     "kind": "theme-park",
     "pad": 0,
-    "decorativeTolerance": 4
+    "decorativeTolerance": 4,
+    "sources": "data/venues/cedar-point/sources.json"
   },
   "built": {
-    "at": "2026-08-09",
+    "at": "2026-08-26",
     "counts": {
-      "pois": 429,
-      "rides": 76,
-      "heights": 74,
-      "shapes": 3275
+      "pois": 427,
+      "rides": 74,
+      "heights": 73,
+      "shapes": 3300
     }
-  },
-  "consolidate": {
-    "cadence": "weekly",
-    "lastAt": null,
-    "_comment": "E0.6 cadence — consolidate graduates accepted edits into this package; never public/venues"
   }
 }

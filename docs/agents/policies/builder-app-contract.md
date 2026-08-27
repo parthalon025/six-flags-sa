@@ -9,7 +9,7 @@ Package seams: [packages/README.md](../../packages/README.md).
 If a generated file under `apps/party-tracker/public/venues/` or `apps/party-tracker/lib/venueIndex.js` is wrong — a missing ride, a wrong height, a bad tag mapping, a stale manifest entry — never hand-edit the generated JSON/JS to patch it. Fix it at the source instead:
 
 - A tag rule, inference or pipeline bug → fix the builder code (`packages/venue-builder/bin/`, `packages/venue-builder/lib/`).
-- A one-off correction for a single venue (height, area, alias, hand-added place, district tint, recipe/box/sources) → fix that venue's own input under `packages/venue-builder/data/venues/<id>/` (`overrides.json`, `sources.json`, `recipe.json`, `ids.json`, `attractions.json`, `heights.json`).
+- A one-off correction for a single venue (height, area, alias, hand-added place, recipe/box/sources) → fix that venue's own input under `packages/venue-builder/data/venues/<id>/` (`overrides.json`, `sources.json`, `recipe.json`, `ids.json`, `attractions.json`, `heights.json`), or — for how a Zone is painted — its grounding harvest at `data/venues/<id>/display/grounding.json`.
 
 Then regenerate with `npm run venues:build`, `venues:rebuild`, `venues:overrides`, `venues:reindex` or `venues:attractions`. `packages/venue-builder/data/venues/` is builder input and is meant to be hand-edited; `apps/party-tracker/public/venues/*.json` and `apps/party-tracker/lib/venueIndex.js` are builder output and are not.
 

@@ -38,7 +38,8 @@ import {
 } from '../lib/geometry.mjs';
 import {
   LAYERS, LINE_LAYERS, POI_RULES, LAYER_RULES, ROUTED_LAYERS, UNNAMED_AREA_CATEGORIES, UNNAMED_LABELS,
-  campDetailsFromTags, classify, isCampground, isCampPitch, isLand, isVenueOutline, wayAttributes,
+  campDetailsFromTags, classify, isCampground, isCampPitch, isLand, isVenueOutline, openingHoursFromTags,
+  wayAttributes,
 } from '../lib/osm-tags.mjs';
 import { OVERRIDE_DIR, gapsDocumentFor, readJson, readOverrides, reindex, serializeVenue, slugify, VENUE_DIR, writeVenue, venueSidecar } from '../lib/venue-io.mjs';
 import { mirrorTruthToPostdb } from '../lib/map-factory/postdb-sync.mjs';
@@ -548,7 +549,7 @@ export function heightFromTags(tags) {
   return h;
 }
 
-function buildPois(elements, areaCandidates, opts) {
+export function buildPois(elements, areaCandidates, opts) {
   const out = [];
   const push = (tags, lat, lng, el) => {
     const c = classify(POI_RULES, tags);
@@ -558,7 +559,7 @@ function buildPois(elements, areaCandidates, opts) {
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
     const poi = { n: name, lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)), c };
     /* Which OpenStreetMap object this came off, as `n123` / `w123` / `r123`.
-       Not identity — see scripts/lib/venue-ids.mjs for why an element id cannot
+       Not identity — see lib/venue-ids.mjs for why an element id cannot
        be the primary key here — but it is the tiebreaker that lets a rebuild
        recognise a place a mapper has renamed or nudged, and it is the only
        thread back from a row in the bundle to the thing a human can go and fix.
@@ -579,6 +580,8 @@ function buildPois(elements, areaCandidates, opts) {
     // whose mapper recorded none gets them from the overrides file instead.
     const camp = c === 'campsite' ? campDetailsFromTags(tags) : null;
     if (camp) poi.camp = camp;
+    const oh = openingHoursFromTags(tags);
+    if (oh) poi.oh = oh;
     out.push(poi);
   };
 
@@ -609,7 +612,10 @@ function buildPois(elements, areaCandidates, opts) {
     if (!dupe) kept.push(poi);
     // The ride is mapped twice and only one of the pair carries the sign. Keep
     // the survey rather than whichever node happened to be read first.
-    else if (poi.h && !dupe.h) dupe.h = poi.h;
+    else {
+      if (poi.h && !dupe.h) dupe.h = poi.h;
+      if (poi.oh && !dupe.oh) dupe.oh = poi.oh;
+    }
   }
   return kept;
 }
@@ -986,8 +992,17 @@ async function reapply(only, { strict = true } = {}) {
     // has to move it too — otherwise correcting a hookup would need a full
     // rebuild, which is the thing this mode exists to avoid.
     if (overrides.camping?.defaults) next = { ...next, camping: overrides.camping.defaults };
-    const tints = landTints(overrides);
-    if (tints) next = { ...next, lands: tints };
+    warnLegacyLandTints(id, overrides);
+    /* Treatment leaving truth is a migration, not just a stopped write: a
+       venue built before this change still carries `meta.lands` on disk, and
+       --reapply exists precisely to move a correction with no network round
+       trip. Dropping it here is what makes the removal reach the shipped
+       map.json and the manifest row the phone reads. */
+    if (next?.lands) {
+      const { lands: _dropped, ...withoutTints } = next;
+      next = withoutTints;
+      console.error(`  · ${id}: dropped meta.lands — Zone tone is the Visual factory's (display/grounding.json)`);
+    }
     writeVenue({ meta: next, map, pois });
     const postdb = await mirrorTruthToPostdb(id, {
       map: { meta: next, ...map },
@@ -1197,15 +1212,21 @@ function splitCsv(line) {
   return out;
 }
 
-/** The hand-picked district tints out of an overrides file, minus its notes. */
-function landTints(overrides) {
-  const lands = overrides?.lands;
-  if (!lands) return null;
-  const out = {};
-  for (const theme of ['night', 'day']) {
-    if (lands[theme] && Object.keys(lands[theme]).length) out[theme] = lands[theme];
-  }
-  return Object.keys(out).length ? out : null;
+/**
+ * Zone tints used to be copied out of an overrides file into `map.meta.lands`
+ * — treatment written into truth by the Map factory, which the Visual factory
+ * then had to obey. The Visual factory owns Zone tone now (ADR-0013, ADR-0020
+ * grounding rule), so this build writes none. A World whose overrides file
+ * still carries the old block is told where the relationship goes instead,
+ * rather than having it silently ignored.
+ */
+function warnLegacyLandTints(id, overrides) {
+  if (!overrides?.lands) return;
+  console.error(
+    `! ${id}: overrides.json still carries \`lands\` — map truth no longer carries treatment. `
+    + `Move each Zone's character to data/venues/${id}/display/grounding.json `
+    + '(see docs/adr/0020-imagery-ground-truth.md); the tints here are ignored.',
+  );
 }
 
 /* --------------------------------------------------------------- rebuild - */
@@ -1350,7 +1371,7 @@ const mapOf = (layers, anchors, boundary) => ({
  * is normalised to the date already on disk first: otherwise every rebuild
  * differs, and a check that always says "changed" answers nothing.
  */
-function driftFrom({ id, meta, map, pois, existingMeta }) {
+export function driftFrom({ id, meta, map, pois, existingMeta }) {
   const read = (file) => {
     try {
       return readFileSync(file, 'utf8');
@@ -1808,6 +1829,7 @@ async function buildOne(args, { previous = null } = {}) {
   const drawn = Object.values(layers).reduce((n, l) => n + l.length, 0);
   if (!drawn) throw new Error('OpenStreetMap has nothing mapped in that box — check the coordinates.');
 
+  warnLegacyLandTints(id, overrides);
   const meta = {
     id,
     name,
@@ -1843,10 +1865,13 @@ async function buildOne(args, { previous = null } = {}) {
        campground is full hookup, a pitch is not individually full hookup. The
        app reads a pitch's own details over this. */
     ...(camping?.defaults ? { camping: camping.defaults } : existingMeta?.camping ? { camping: existingMeta.camping } : {}),
-    /* This venue's own district tints, where somebody has hand-picked any. The
-       renderer generates a colour for every district that is not named here, so
-       a venue built from OpenStreetMap alone needs none of it. */
-    ...(landTints(overrides) ? { lands: landTints(overrides) } : existingMeta?.lands ? { lands: existingMeta.lands } : {}),
+    /* No Zone tints here. `meta.lands` carried a per-Zone {fill, stroke, label}
+       table for day and night — pure treatment, written by the Map factory into
+       the artifact that is supposed to hold only geometry, Places and Gaps, and
+       then given precedence over the Visual factory's own derivation. Zone tone
+       is a Skin's job; the World states relationships (its WorldCover cache and
+       display/grounding.json) and every Skin re-expresses them in its own
+       palette. */
     generated: new Date().toISOString().slice(0, 10),
   };
 
@@ -1868,6 +1893,12 @@ async function buildOne(args, { previous = null } = {}) {
         + `${expectLock.walkable_km_min} km — a rebuild would shrink routing coverage.`,
     );
   }
+
+  /* Inventory publish mutates the POI list the bundle ships. Drift is checked
+     against those bytes, so publish runs first — otherwise every venue whose
+     inventory stamps entrances onto places reads as perpetually drifted. */
+  const inv = inventory(id, args, { map: builtMap, pois, existing: readJson(listFile(id)) });
+  const publishedFields = publish(id, pois, inv.records, PUBLISH_AT);
 
   const drift = driftFrom({ id, meta, map: builtMap, pois, existingMeta });
   if (!drift.changed && existingMeta?.generated) meta.generated = existingMeta.generated;
@@ -1941,8 +1972,6 @@ async function buildOne(args, { previous = null } = {}) {
     return;
   }
 
-  const inv = inventory(id, args, { map: builtMap, pois, existing: readJson(listFile(id)) });
-  const published = publish(id, pois, inv.records, PUBLISH_AT);
   const sidecar = {
     version: SCHEMA_VERSION,
     _comment:
@@ -1956,7 +1985,7 @@ async function buildOne(args, { previous = null } = {}) {
   if (writeSettled(listFile(id), sidecar)) {
     console.error(`  · inventory: wrote ${path.relative(process.cwd(), listFile(id))}`);
   }
-  if (published) console.error(`  · inventory: published ${published} field(s) onto places`);
+  if (publishedFields) console.error(`  · inventory: published ${publishedFields} field(s) onto places`);
 
   const written = writeVenue({ meta, map: builtMap, pois });
   const postdb = await mirrorTruthToPostdb(id, {

@@ -88,7 +88,7 @@
     },
     {
       "type": "queue",
-      "target": "lake-eerie-nor-easter"
+      "target": "lake-eerie-nor-easter-2"
     },
     {
       "type": "queue",
@@ -216,10 +216,6 @@
     },
     {
       "type": "queue",
-      "target": "snake-river-falls"
-    },
-    {
-      "type": "queue",
       "target": "snoopy-bounce"
     },
     {
@@ -243,12 +239,24 @@
       "target": "splash2o"
     },
     {
+      "type": "queue",
+      "target": "steel-vengeance"
+    },
+    {
+      "type": "queue",
+      "target": "storm-surge"
+    },
+    {
       "type": "path",
       "target": null
     },
     {
       "type": "path",
       "target": "siren-s-curse"
+    },
+    {
+      "type": "verify",
+      "target": "open-meteo"
     }
   ]
 }

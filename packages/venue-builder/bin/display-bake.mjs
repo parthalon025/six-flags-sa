@@ -45,7 +45,8 @@ import { kitBriefSystem, parseKitAnswer } from '../lib/display-kit-brief.mjs';
 import {
   readAssetLedger, assetPath, assetsForTarget, creditsManifest,
 } from '../lib/display-assets.mjs';
-import { readMaterials } from '../lib/display-pack.mjs';
+import { isoTemplateForKit, readMaterials, readSkinTemplates } from '../lib/display-pack.mjs';
+import { ISO_MAP_TEMPLATES } from '@party-tracker/shared/isoWorld.js';
 import { compiledPath, materialsCreditsManifest, verifyCompiledMaterials } from '../lib/display-materials.mjs';
 import { dualGridIndices } from '../lib/display-autotile.mjs';
 import { chatCompletion } from '../lib/venue-llm.mjs';
@@ -67,6 +68,9 @@ const ISO_LEDGER = assetsForTarget(FULL_LEDGER, 'iso');
 // compiled textures verify on disk actually paint (a gap paints authored
 // flat and the pack's material_textures_resolve row reports it).
 const MATERIALS = readMaterials();
+// SkinTemplate ledger — the bake reads it for one thing: which iso recipe the
+// Skin bound to each kit declared (skins.json `isoTemplate`).
+const SKIN_TEMPLATES = readSkinTemplates();
 const MATERIAL_REPORT = verifyCompiledMaterials(MATERIALS);
 
 const KITS_DIR = path.join(OVERRIDE_DIR, '..', 'display', 'kits');
@@ -316,8 +320,14 @@ for (const id of ids) {
       // iso ledger slice serves the iso tier under the same label.
       const flatTree = kit.sprites.tree?.sprite?.asset;
       const treeAsset = flatTree && ISO_LEDGER[`${flatTree}-iso`] ? `${flatTree}-iso` : null;
-      const geometry = isoBakeGeometry(model, kit, { rotation, px, treeAsset });
-      const plan = isoStylePoints(model, stylePoints(model), { rotation, px });
+      // The recipe this kit's Skin actually asked for (skins.json
+      // `isoTemplate`), not display-iso's default. An unbound kit keeps the
+      // default; a bound one that declares nothing a recipe answers to throws.
+      const isoTemplate = isoTemplateForKit(SKIN_TEMPLATES, kitId, ISO_MAP_TEMPLATES);
+      if (isoTemplate) console.error(`  iso recipe: ${isoTemplate} (declared by the Skin bound to ${kitId})`);
+      const isoOpts = { rotation, px, ...(isoTemplate ? { template: isoTemplate } : {}) };
+      const geometry = isoBakeGeometry(model, kit, { ...isoOpts, treeAsset });
+      const plan = isoStylePoints(model, stylePoints(model), isoOpts);
       points = plan.points;
       skips = plan.skips;
       const sheets = isoSheets(kit, treeAsset);

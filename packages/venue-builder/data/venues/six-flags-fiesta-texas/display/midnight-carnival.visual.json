@@ -1,0 +1,178 @@
+{
+  "version": 1,
+  "venue": "six-flags-fiesta-texas",
+  "skin": "midnight-carnival",
+  "basedOn": {
+    "map": "2026-08-09"
+  },
+  "tokens": {
+    "contrastFloor": 4.5,
+    "labelHalo": true,
+    "mode": "night",
+    "landTones": {
+      "cover": 0.36,
+      "lean": 0.5,
+      "spread": 0.12,
+      "steps": 5
+    },
+    "colors": {
+      "path": "#C98A3B",
+      "ground": "#2A2140",
+      "water": "#101C2E",
+      "grass": "#1E3328",
+      "building": "#241F33",
+      "label": "#F5D9A0",
+      "structureEdge": "#3E6B9E",
+      "groundEdge": "#352A52",
+      "pathCasing": "#241833"
+    }
+  },
+  "surfaces": {
+    "walkway": {
+      "material": "paving-stones--warm",
+      "layers": [
+        "path"
+      ],
+      "color": "#AC8653"
+    },
+    "service-road": {
+      "material": "asphalt--worn",
+      "layers": [
+        "service"
+      ],
+      "color": "#8F6938"
+    },
+    "vegetation": {
+      "material": "grass--meadow",
+      "layers": [
+        "grass",
+        "wood",
+        "park"
+      ],
+      "color": "#33432B"
+    },
+    "water": {
+      "material": "water--calm",
+      "layers": [
+        "water"
+      ],
+      "color": "#2D5674"
+    },
+    "pool": {
+      "material": "water--pool",
+      "layers": [
+        "pool"
+      ],
+      "color": "#295F78"
+    },
+    "coaster-track": {
+      "material": "steel--track",
+      "layers": [
+        "coaster"
+      ],
+      "color": "#BBAF90"
+    },
+    "slide": {
+      "material": "fiberglass--flume",
+      "layers": [
+        "slide"
+      ],
+      "color": "#D58741"
+    },
+    "structure": {
+      "material": "roofing--shingle",
+      "layers": [
+        "building"
+      ],
+      "color": "#36333C"
+    },
+    "lot": {
+      "material": "concrete--lot",
+      "layers": [
+        "parking"
+      ],
+      "color": "#58545F"
+    }
+  },
+  "landTones": {
+    "DC Universe": {
+      "night": {
+        "fill": "#2E273F",
+        "stroke": "#302846",
+        "label": "#F5D9A0"
+      }
+    },
+    "Fiesta Bay Boardwalk": {
+      "night": {
+        "fill": "#3B344B",
+        "stroke": "#39314D",
+        "label": "#F5D9A0"
+      }
+    },
+    "Los Festivales": {
+      "night": {
+        "fill": "#2B253B",
+        "stroke": "#2F2743",
+        "label": "#F5D9A0"
+      }
+    },
+    "Rockville": {
+      "night": {
+        "fill": "#282237",
+        "stroke": "#2D2540",
+        "label": "#F5D9A0"
+      }
+    },
+    "Spassburg": {
+      "night": {
+        "fill": "#2E273F",
+        "stroke": "#302846",
+        "label": "#F5D9A0"
+      }
+    },
+    "Texas State Square": {
+      "night": {
+        "fill": "#474156",
+        "stroke": "#413955",
+        "label": "#F5D9A0"
+      }
+    }
+  },
+  "fallback": {
+    "landTone": "name-hue"
+  },
+  "terrain": {
+    "source": "usgs-3dep",
+    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n30w099/USGS_13_n30w099.tif",
+    "resolution": 10,
+    "surfaceModel": false,
+    "cellMetres": 6.64,
+    "fitness": "marginal",
+    "relief": {
+      "min": 295.8,
+      "max": 375.9
+    },
+    "grid": {
+      "cols": 240,
+      "rows": 254
+    },
+    "hillshade": {
+      "file": "hillshade.png",
+      "azimuth": 315,
+      "altitude": 45
+    },
+    "bounds": {
+      "north": 29.60751,
+      "south": 29.59224,
+      "east": -98.60144,
+      "west": -98.61789
+    },
+    "steepDegrees": 18,
+    "constrained": {
+      "paths": 938,
+      "water": 40,
+      "pads": 268,
+      "nodes": 163785
+    }
+  }
+}

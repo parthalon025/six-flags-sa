@@ -7,7 +7,7 @@
 
 This note investigates open-source projects and data sources for two separate gaps:
 
-1. **Truth-layer evidence.** `scripts/lib/evidence.mjs` (registry row `venue-evidence-engine`) already reserves fusion weights for `aerial`, `cv_detection`, `cv_segmentation`, `video`, and `traced` evidence, but nothing in the registry populates them today. `docs/guide/venue-builder.md` says outright that the builder "does not look at aerial imagery, run computer vision over it, watch a ride walkthrough or fetch a park's PDF" — this is the "door for the rest" that document leaves open.
+1. **Truth-layer evidence.** `packages/venue-builder/lib/evidence.mjs` (registry row `venue-evidence-engine`) already reserves fusion weights for `aerial`, `cv_detection`, `cv_segmentation`, `video`, and `traced` evidence, but nothing in the registry populates them today. `docs/guide/venue-builder.md` says outright that the builder "does not look at aerial imagery, run computer vision over it, watch a ride walkthrough or fetch a park's PDF" — this is the "door for the rest" that document leaves open.
 2. **Display-layer material ground truth.** PR #471 (branch `claude/custom-maps-builder-venue-6y1fte`) adds a PBR material pipeline per ADR-0013's Display split (`display/base.pmtiles`, `visual.json`, skin assets). That pipeline needs real-world-derived land cover and material references — a different problem from Truth-layer geometry evidence, and this note keeps the two apart throughout.
 
 Every claim below traces to a license file, terms page, or first-party repo/docs — not a blog summary. Where a claim could only be sourced from a summary or forum thread, it is labeled **secondary**.
@@ -162,7 +162,7 @@ For park maps distributed as vector PDFs (not scans), the geometry is often alre
 
 ## 5. Material/texture recognition for the PBR display pipeline (PR #471) — Display layer, not Truth layer
 
-**This section is explicitly Display, not Truth.** Nothing here should populate `evidence_sources`, feed `scripts/lib/evidence.mjs`, or influence `pois.json`/`map.json`/`gaps.json`. Per ADR-0013, PR #471's PBR pipeline feeds `visual.json` and the `display/` asset pack only — geometry stays exactly what the Truth layer already published, and the builder still "never invents geometry." The tools below inform *how the ground looks*, not *where things are*.
+**This section is explicitly Display, not Truth.** Nothing here should populate `evidence_sources`, feed `packages/venue-builder/lib/evidence.mjs`, or influence `pois.json`/`map.json`/`gaps.json`. Per ADR-0013, PR #471's PBR pipeline feeds `visual.json` and the `display/` asset pack only — geometry stays exactly what the Truth layer already published, and the builder still "never invents geometry." The tools below inform *how the ground looks*, not *where things are*.
 
 ### Poly Haven and ambientCG — CC0 PBR texture libraries (recommended first prototype target)
 

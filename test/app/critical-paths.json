@@ -1,8 +1,16 @@
 {
-  "$schema_note": "Written inventory of the user-visible capabilities we ship, and the named check in `suites` that covers each one. Nothing enforces it: a grep for check titles could only prove the strings still exist, never that the check still asserts the capability. Epics add a row when they land a vertical slice, and the reviewer reads the row against the check.",
+  "$schema_note": "Critical-path e2e contract. Middle ground: not every click, but every user-visible capability we ship must keep a named check. Epics add rows when they land a vertical slice.",
   "suites": {
     "functional": "test/app/functional.mjs",
     "grandma": "test/app/grandma.mjs"
+  },
+  "context": {
+    "note": "Fingerprint of the domain context this contract was last reviewed against. When CONTEXT.md or docs/adr change, review the rows below against the new capabilities, then restamp: node test/app/coverage-contract.mjs --stamp",
+    "files": [
+      "CONTEXT.md",
+      "docs/adr"
+    ],
+    "sha256": "03b3c7a24d33955d51013fd90c93c9f225f29002729cfa182a2dc07c15996dad"
   },
   "paths": [
     {
@@ -25,13 +33,6 @@
       "user_action": "Tap the on-map OSM notice into Settings, see every sourced attribution with its license",
       "suite": "functional",
       "check": "the on-map OSM notice opens Settings straight to Credits, listing sourced attributions"
-    },
-    {
-      "id": "map-label-declutter",
-      "slice": "Navigate",
-      "user_action": "Read the park map at rest by World Zone and ride names, not every Place title",
-      "suite": "functional",
-      "check": "park-wide rest shows Zone names and ride names, not every Place"
     },
     {
       "id": "heights-filter",
@@ -134,9 +135,9 @@
     {
       "id": "clerk-profile-oauth",
       "slice": "EP",
-      "user_action": "First paint is splash; Sign in is /sign-in, not an in-place OAuth wall",
+      "user_action": "Sign in or Guest from the Profile gate; Google/Apple on /sign-in",
       "suite": "functional",
-      "check": "first paint is the splash, not an in-place OAuth wall"
+      "check": "Profile gate shows Sign in and Guest"
     },
     {
       "id": "ep5-sharing",
@@ -293,18 +294,11 @@
       "check": "leaving removes the member from the other phone’s roster"
     },
     {
-      "id": "maplibre-shipped",
-      "slice": "Navigate",
-      "user_action": "See the park drawn by MapLibre, not the retired SVG world map",
-      "suite": "functional",
-      "check": "park geometry is drawn"
-    },
-    {
       "id": "iso-custom-map",
       "slice": "Adventure",
-      "user_action": "Wear the Pixel tycoon Skin and keep the MapLibre map (OSM until a certified bake exists)",
+      "user_action": "Wear the Pixel tycoon Skin and see its isometric Custom map",
       "suite": "functional",
-      "check": "wearing Pixel tycoon keeps the MapLibre map (OSM until a bake exists)"
+      "check": "wearing Pixel tycoon draws the isometric custom map"
     },
     {
       "id": "baked-world-map",
@@ -314,26 +308,27 @@
       "check": "wearing Watercolor quest draws the baked world image under the overlay"
     },
     {
-      "id": "delivery-delta-sync",
-      "slice": "Navigate",
-      "user_action": "Update a cached World bundle using the revision cursor so only changed files download",
+      "id": "skin-zone-tones",
+      "slice": "Adventure",
+      "user_action": "Wear a Skin and see this World's Zones repainted in that Skin's own palette",
       "suite": "functional",
-      "check": "revision-cursor bundle sync returns a delta manifest with fewer files when since lags head"
-    },
+      "check": "wearing a Skin repaints the World's Zones from its own display pack"
+    }
+  ],
+  "upcoming": [
     {
       "id": "train-h-zoom-bands",
       "slice": "Navigate",
       "user_action": "Pinch from park overview in to one ride and see detail emerge, never a hard band cut or a tilt and restyle in the same instant",
       "suite": "functional",
-      "check": "crossing each band boundary keeps a parent placeholder drawn, ramps added content across the crossfade, and holds the pitch ease off the boundary"
+      "check": "TODO (Train H, ADR-0021 clauses 2/4): crossing each band boundary keeps a parent placeholder drawn, ramps added content across the crossfade, and holds the pitch ease off the boundary"
     },
     {
       "id": "train-h-offline-download",
       "slice": "Navigate",
       "user_action": "Choose 'make this park available offline' and see the download size stated before it runs",
       "suite": "functional",
-      "check": "the offline action states its size, runs only on the guest's choice, and no pyramid downloads on Skin wear"
+      "check": "TODO (Train H, ADR-0021 clause 5): the offline action states its size, runs only on the guest's choice, and no pyramid downloads on Skin wear"
     }
-  ],
-  "upcoming": []
+  ]
 }
