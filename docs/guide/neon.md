@@ -14,8 +14,8 @@ Parkbound uses optional Postgres for profiles and contributions (`DATABASE_URL`)
 
 When `NODE_ENV=production` or Vercel **Production** (`VERCEL_ENV=production`) and `DATABASE_URL` is missing:
 
-1. **Deploy gate** — `scripts/lib/vercel-ignore.mjs` blocks the production build with category `production-postgres-missing` and a message naming `DATABASE_URL`.
-2. **Readiness** — `pingPostgres()` returns `ok: false` with `backend: 'memory'` so a misconfigured instance does not report fully ready.
+1. **Deploy gate** — `scripts/lib/vercel-ignore.mjs` sets category `production-postgres-missing` and **skips** the production build (Vercel ignore exit `0`). The previous production deployment stays live; the skip reason names `DATABASE_URL` in the ignore-step log. This is not a red CI check — it prevents shipping a new production build without Postgres credentials.
+2. **Probe seam** — `pingPostgres()` returns `ok: false` with `backend: 'memory'` when the guard fires, so any caller (including a future `/api/ready` merge in **#437**) can surface not-ready. **`/api/ready` does not call `pingPostgres` yet** — it still probes only the party store (Upstash).
 
 Dev, test, and preview without `DATABASE_URL` are unchanged (memory backend, no guard noise).
 

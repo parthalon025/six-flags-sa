@@ -6,22 +6,22 @@
 export const PRODUCTION_POSTGRES_GUARD_MESSAGE =
   'DATABASE_URL is required in production — see docs/guide/neon.md';
 
-/** @param {NodeJS.ProcessEnv} env */
-export function isProductionRuntime(env = process.env) {
-  return env.NODE_ENV === 'production' || env.VERCEL_ENV === 'production';
+/** @param {NodeJS.ProcessEnv} runtimeEnv */
+export function isProductionRuntime(runtimeEnv = process.env) {
+  return runtimeEnv.NODE_ENV === 'production' || runtimeEnv.VERCEL_ENV === 'production';
 }
 
-/** @param {NodeJS.ProcessEnv} env */
-export function postgresCredentialsConfigured(env = process.env) {
-  return Boolean(env.DATABASE_URL?.trim());
+/** @param {NodeJS.ProcessEnv} runtimeEnv */
+export function postgresCredentialsConfigured(runtimeEnv = process.env) {
+  return Boolean(runtimeEnv.DATABASE_URL?.trim());
 }
 
 /**
- * @param {NodeJS.ProcessEnv} env
+ * @param {NodeJS.ProcessEnv} runtimeEnv
  * @returns {{ ok: boolean, reason?: string }}
  */
-export function checkProductionPostgresGuard(env = process.env) {
-  if (!isProductionRuntime(env)) return { ok: true };
-  if (postgresCredentialsConfigured(env)) return { ok: true };
+export function checkProductionPostgresGuard(runtimeEnv = process.env) {
+  if (!isProductionRuntime(runtimeEnv)) return { ok: true };
+  if (postgresCredentialsConfigured(runtimeEnv)) return { ok: true };
   return { ok: false, reason: PRODUCTION_POSTGRES_GUARD_MESSAGE };
 }
