@@ -2,13 +2,14 @@
 /**
  * Executive resume — NOW + inventory across sessions and platforms.
  *
- *   npm run resume:init     Create GitHub executive dashboard issue + pointer
+ *   npm run resume:init     Create GitHub executive dashboard issue + durable pointer
+ *   npm run resume:link -- --issue <n>   Link committed pointer to existing issue (e.g. 643)
  *   npm run resume:pull     Issue → .scratch/resume.json (+ refresh inventory)
  *   npm run resume:push     Local now/human → issue + refresh
  *   npm run resume:refresh  Regenerate inventory only
- *   npm run resume:print    Exec markdown to stdout
+ *   npm run resume:print    Human prose to stdout (add --markdown for full inventory)
  *   npm run resume:check    Drift warnings (NOW vs inventory)
- *   npm run resume:start    Session start brief (resume + Matt workflow + ritual)
+ *   npm run resume:start    Session start brief (prose + Matt workflow)
  *   npm run resume:agent-patch -- --next "..." [--doing "..."]
  *   npm run resume:end-turn -- --next "..." [--doing "..."]
  *   npm run resume:timer-fired [--next "..." --doing "..."]
@@ -23,11 +24,13 @@ import {
   checkDrift,
   endTurn,
   initDashboardIssue,
+  linkDashboard,
   loadLocal,
   pullFromIssue,
   pushToIssue,
   refreshInventory,
   renderMarkdown,
+  renderProse,
   saveLocal,
   sessionStartBrief,
   subscribeTimerInstructions,
@@ -43,9 +46,20 @@ function argValue(flag) {
   return i >= 0 ? process.argv[i + 1] : undefined;
 }
 
+function hasFlag(flag) {
+  return process.argv.includes(flag);
+}
+
+/** Terminal output for humans — prose by default; --markdown for the full wall. */
+function show(resume) {
+  console.log(hasFlag('--markdown') ? renderMarkdown(resume) : renderProse(resume));
+}
+
 const USAGE = `Usage:
   node scripts/executive-resume.mjs init
+  node scripts/executive-resume.mjs link --issue <number> [--url <url>]
   node scripts/executive-resume.mjs pull | push | refresh | print | check | start
+  node scripts/executive-resume.mjs print [--markdown]
   node scripts/executive-resume.mjs agent-patch --next "<step>" [--doing "<text>"]
   node scripts/executive-resume.mjs end-turn --next "<step>" [--doing "<text>"]
   node scripts/executive-resume.mjs timer-fired [--next "<step>" --doing "<text>"]
@@ -58,24 +72,36 @@ try {
   switch (cmd) {
     case 'init': {
       const resume = initDashboardIssue({ root });
-      console.log(renderMarkdown(resume));
+      show(resume);
       console.error('\nPin the JSON comment on the issue, then set NOW in GitHub or .scratch/resume.json human fields.');
       break;
     }
+    case 'link': {
+      const issue = argValue('--issue');
+      if (!issue) {
+        console.error('resume:link requires --issue <number> (e.g. 643)');
+        code = 1;
+        break;
+      }
+      const pointer = linkDashboard({ issueNumber: Number(issue), url: argValue('--url') || null, root });
+      console.log(JSON.stringify(pointer, null, 2));
+      console.error(`Linked durable pointer → #${pointer.issueNumber}${pointer.url ? ` (${pointer.url})` : ''}`);
+      break;
+    }
     case 'pull': {
-      console.log(renderMarkdown(pullFromIssue({ root })));
+      show(pullFromIssue({ root }));
       break;
     }
     case 'push': {
-      console.log(renderMarkdown(pushToIssue({ resume: loadLocal(root), root })));
+      show(pushToIssue({ resume: loadLocal(root), root }));
       break;
     }
     case 'refresh': {
-      console.log(renderMarkdown(saveLocal(refreshInventory(loadLocal(root), { cwd: root }), root)));
+      show(saveLocal(refreshInventory(loadLocal(root), { cwd: root }), root));
       break;
     }
     case 'print':
-      console.log(renderMarkdown(refreshInventory(loadLocal(root), { cwd: root })));
+      show(refreshInventory(loadLocal(root), { cwd: root }));
       break;
     case 'check': {
       const resume = refreshInventory(loadLocal(root), { cwd: root });
@@ -101,7 +127,7 @@ try {
       } catch (err) {
         console.error(`push skipped: ${err.message}`);
       }
-      console.log(renderMarkdown(resume));
+      show(resume);
       break;
     }
     case 'timer-prompt':
@@ -119,13 +145,13 @@ try {
         code = 1;
         break;
       }
-      console.log(renderMarkdown(endTurn({ nextStep: next, iWasDoing: doing, root })));
+      show(endTurn({ nextStep: next, iWasDoing: doing, root }));
       break;
     }
     case 'timer-fired': {
       const next = argValue('--next');
       const doing = argValue('--doing');
-      console.log(renderMarkdown(endTurn({ nextStep: next, iWasDoing: doing, markTimer: true, root })));
+      show(endTurn({ nextStep: next, iWasDoing: doing, markTimer: true, root }));
       console.error('\nAsk the user: "Still on NOW or switch?"');
       break;
     }
