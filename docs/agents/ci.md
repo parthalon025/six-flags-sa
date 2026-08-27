@@ -12,6 +12,7 @@ Matt-standard layout: **workflows orchestrate; scripts own policy.** Do not dupl
 | `party-tracker-ui.mjs` | `unpackBuildArtifact()`, `waitForHealth()` | Playwright jobs — unpack artifact + health wait |
 | `pre-merge-vertical.mjs` | `runPreMergeVertical()` | Agent merge gate — static + browser vertical; writes `scripts/ci/local-ci-pass.json` |
 | `../lib/clerk-e2e.mjs` | `clerkE2eBlockReason()` | Auth UI diffs require Clerk-on browser e2e before merge |
+| `../lib/ci-lane-plan.mjs` | `canonLanePlan()`, `staticStepsForFiles()`, `laneGithubOutputs()` | Canon lanes → static steps and GitHub job flags (GitHub mirrors this) |
 | `../lib/vertical-e2e.mjs` | `requiredVerticals()`, `verticalE2eBlockReason()` | Which verticals a diff owes, and what blocks a merge without them |
 | `local-ci-pass.mjs` | `runWrite()`, `runCheck()` | Writes the `local-ci-verified` stamp after a local vertical; tells GitHub which jobs it already proved |
 | `../lib/local-ci-pass.mjs` | `localCiDecision()`, `STATIC_STEPS` | The tag: what a local CI run covers, and when GitHub may honour it |
@@ -36,12 +37,12 @@ The run prints the verticals the diff owes (`scripts/lib/vertical-e2e.mjs`), run
 |-------|-----------|
 | Docs-only | Stamp only — no static floor or verticals (matches GitHub touch-only skip) |
 | Agent policy / wayfinder | Thin policy tests only (`scripts/lib/agent-policy-diff.mjs`) — no static floor, verticals, or matt-review |
-| Static (floor) | `test:ci-gate` → `test:unit` → `lint` → `test:module-select` → `build -w @party-tracker/app` |
+| Static (lane-derived) | Subset of `STATIC_STEPS` from `scripts/lib/ci-lane-plan.mjs` — app/guest lane owes the full floor; backside owes `test:ci-gate` only |
 | `backside` vertical | `test:ci-gate` — scripts, API routes, server libs, non-UI packages |
-| `builder` vertical | `test:builder` — assertions over generated venue output |
+| `builder` vertical | `test:builder` (+ factory legs when paths require) — assertions over generated venue output |
 | `app` vertical | guest module-select only — start app + `test:validate-ui:changed` + zoom sweep in a real browser |
 
-Docs-only and agent-policy branches owe nothing and skip straight through. `--skip-browser` is **refused** when module-select says the diff is guest-visible — static steps prove the build compiles, not that a guest can still use it. Code paths no vertical claims fail closed: the diff owes every vertical until a lane claims the path. Policy: `scripts/lib/vertical-e2e.mjs` and `scripts/lib/agent-policy-diff.mjs`. See [vertical-e2e policy](./policies/vertical-e2e.md).
+Canon lane plan (`scripts/lib/ci-lane-plan.mjs`) is the source of truth for which static steps and GitHub jobs a diff owes. GitHub `test-app.yml` reads `scripts/ci/lane-plan.mjs` outputs (`canon_*`) so workflow jobs mirror the same lanes. Policy: `scripts/lib/vertical-e2e.mjs`, `scripts/lib/ci-lane-plan.mjs`, and `scripts/lib/agent-policy-diff.mjs`. See [vertical-e2e policy](./policies/vertical-e2e.md).
 
 After a successful run, `scripts/ci/local-ci-pass.json` records the diff, the module selection, the static steps and the `verticals` that ran, tagged `local-ci-verified` (schema 3 — a stamp without the tag or without the verticals never covers a code diff). Commit that file with your branch. Use `--no-stamp` to validate without writing the file.
 
