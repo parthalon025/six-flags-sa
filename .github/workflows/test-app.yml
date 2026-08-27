@@ -127,12 +127,15 @@ jobs:
         run: |
           BASE_REF="${{ github.base_ref }}"
           ANY_UI="${{ steps.lane.outputs.canon_any_ui }}"
+          PR_HEAD="${{ github.event.pull_request.head.sha }}"
           if [ -z "$BASE_REF" ]; then
             # Push to main: the merge commit is a different diff from any PR
             # head, and it is the tree we ship. It always re-proves itself.
             node scripts/ci/local-ci-pass.mjs check --base origin/main --any-ui "$ANY_UI" --force-full
           elif [ "$FORCE_FULL" = "true" ]; then
-            node scripts/ci/local-ci-pass.mjs check --base "origin/$BASE_REF" --any-ui "$ANY_UI" --force-full
+            node scripts/ci/local-ci-pass.mjs check --base "origin/$BASE_REF" --head "$PR_HEAD" --any-ui "$ANY_UI" --force-full
+          elif [ -n "$PR_HEAD" ]; then
+            node scripts/ci/local-ci-pass.mjs check --base "origin/$BASE_REF" --head "$PR_HEAD" --any-ui "$ANY_UI"
           else
             node scripts/ci/local-ci-pass.mjs check --base "origin/$BASE_REF" --any-ui "$ANY_UI"
           fi

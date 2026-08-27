@@ -52,9 +52,9 @@ The tag means *local CI already ran everything the skipped jobs would have run, 
 
 | Property | How it holds |
 |----------|--------------|
-| Same code | `diffHash` — the branch diff vs merge-base with the stamp files excluded, so committing the stamp never invalidates it and any code change does |
-| Same everything else | base ref, merge-base, module selection, `package-lock.json` and `modules.json` hashes all have to match |
-| Nothing waved through | the stamp must list every step in `STATIC_STEPS` and every vertical the diff owes; `pre-merge-vertical` writes it only after they all pass |
+| Same code | `diffHash` — merge-base…PR head vs base (stamp files excluded). GitHub passes `--head` from `pull_request.head.sha` so the hash matches local runs on the branch tip, not the merge commit checkout |
+| Same proof | `staticSteps`, `verticals`, `factoryLegs`, and `browserVertical` when the canon lanes require them — not module-select alone |
+| Nothing waved through | the stamp must list every static step and vertical the diff owes; `stampProvesLocalRun()` gates `skip_ci` |
 | Not written by hand | `local-ci-pass.mjs write` (the hand path) records no tag and no verticals, so it can only ever skip the narrower UI matrix |
 
 `gate` and `select` never skip — `select` is the job that reads the tag, and something unskippable has to.
