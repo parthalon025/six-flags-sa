@@ -1,16 +1,8 @@
 {
   "schema": 1,
-<<<<<<< HEAD
-  "diffHash": "6f0d0fbc185eb521",
-  "mergeBase": "3d97dc2deec5e61dae345cce8fad2f04fd3bbdfe",
+  "diffHash": "c1c9b22b9eca3605",
+  "mergeBase": "b041666b0c73af7791358e3f706c09618dcb509c",
   "model": "claude-sonnet-5",
   "gitnexus": "ok",
-  "recordedAt": "2026-08-27T16:44:25.463Z"
-=======
-  "diffHash": "288147fc12dd7103",
-  "mergeBase": "3d97dc2deec5e61dae345cce8fad2f04fd3bbdfe",
-  "model": "claude-sonnet-5",
-  "gitnexus": "ok",
-  "recordedAt": "2026-08-27T17:43:46.144Z"
->>>>>>> origin/main
+  "recordedAt": "2026-08-27T17:46:49.289Z"
 }
