@@ -12,7 +12,7 @@ Full documentation split out of the root README. Start with [Features](features.
 | [Walking directions](walking-directions.md) | On-device routing from venue geometry. |
 | [How the party works](party.md) | Host, transports, failover, and standalone server. |
 | [API](api.md) | Mailbox, REST surface, weather proxy, and rate limits. |
-| [Neon Postgres](neon.md) | Connection pooling, `PG_POOL_MAX`, pooled vs direct endpoints. |
+| [Neon Postgres](neon.md) | `DATABASE_URL`, production guard, and memory fallback. |
 | [Notifications](notifications.md) | Web Push setup and what gets sent. |
 | [Browser limits](browser-limits.md) | What the web platform cannot do yet. |
 | [Tests](testing.md) | Unit, functional, grandma, visual, and CI modules. |
@@ -26,7 +26,6 @@ Full documentation split out of the root README. Start with [Features](features.
 | [Store releases](store-releases.md) | Web vs metadata vs native — when App Store review applies. |
 | [Apple Developer](apple-developer.md) | Identifiers vs Xcode vs Keys; SIWA Services ID. |
 | [Release cycle](release-cycle.md) | Merge-driven web shipping; when to dispatch store.yml. |
-| [Neon Postgres](neon.md) | Preview branching, `DATABASE_URL` wiring, pooling, and exhaustion. |
 
 ## See also
 

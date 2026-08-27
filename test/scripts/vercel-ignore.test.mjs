@@ -13,12 +13,34 @@ import {
   decideVercelBuild,
   isAgentPreviewBranch,
   applyLiveAutomationGate,
+  applyProductionPostgresGuard,
 } from '../../scripts/lib/vercel-ignore.mjs';
+import {
+  isProductionRuntime,
+  checkProductionPostgresGuard,
+  postgresCredentialsConfigured,
+  PRODUCTION_POSTGRES_GUARD_MESSAGE,
+} from '../../apps/party-tracker/lib/productionPostgresGuard.js';
 import { isVersionStampOnlyChange } from '../../scripts/lib/version-stamp.mjs';
 import {
   AUTOMATION_DEPLOY_BUDGET,
   USER_DEPLOY_RESERVE,
 } from '../../scripts/lib/vercel-budget.mjs';
+
+assert.equal(isProductionRuntime({ NODE_ENV: 'production' }), true);
+assert.equal(isProductionRuntime({ VERCEL_ENV: 'production' }), true);
+assert.equal(
+  isProductionRuntime({ NODE_ENV: 'production', VERCEL_ENV: 'preview' }),
+  false,
+  'Vercel preview is not production for the postgres guard',
+);
+assert.equal(isProductionRuntime({ NODE_ENV: 'development' }), false);
+assert.equal(isProductionRuntime({ NODE_ENV: 'test' }), false);
+assert.equal(postgresCredentialsConfigured({ DATABASE_URL: 'postgresql://u:p@host/db' }), true);
+assert.equal(
+  checkProductionPostgresGuard({ NODE_ENV: 'production', DATABASE_URL: '' }).reason,
+  PRODUCTION_POSTGRES_GUARD_MESSAGE,
+);
 
 assert.equal(
   decideVercelBuild({ files: ['apps/party-tracker/lib/party/hostService.js'] }).build,
@@ -306,6 +328,29 @@ assert.equal(
   assert.equal(gated.build, true);
   assert.equal(gated.liveGate.tier, 'warn');
   assert.match(gated.reason, /approaching the cap/, 'warn-tier reason must reach the logged decision');
+}
+
+{
+  const prodBuild = decideVercelBuild({
+    files: ['apps/party-tracker/lib/party/hostService.js'],
+    env: 'production',
+    gitRef: 'main',
+  });
+  const blocked = applyProductionPostgresGuard(prodBuild, {
+    vercelEnv: 'production',
+    runtimeEnv: { NODE_ENV: 'production', DATABASE_URL: '' },
+  });
+  assert.equal(blocked.build, false);
+  assert.equal(blocked.category, 'production-postgres-missing');
+  assert.match(blocked.reason, /DATABASE_URL/);
+  const allowed = applyProductionPostgresGuard(prodBuild, {
+    vercelEnv: 'production',
+    runtimeEnv: {
+      NODE_ENV: 'production',
+      DATABASE_URL: 'postgresql://u:p@host/db',
+    },
+  });
+  assert.equal(allowed.build, true);
 }
 
 console.log('vercel-ignore: ok');
