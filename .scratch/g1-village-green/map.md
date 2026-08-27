@@ -27,6 +27,30 @@ first; Cedar Point after KI certifies. Visual factory restyles, never reposition
 - **Props:** Block first ship until minimum prop vocabulary exists — bridges at path×water crossings, fence/barrel scatter near buildings; not full G1 B6 on day one, but enough to prove it is not a recolor.
 - **Signage:** Category glyphs on live overlay carry names; optional in-world shop/INN sprites at landmark POIs only (G1 C3 partial negation).
 
+## Goal line — G1 and beyond
+
+Sequencing is fixed by [kings-island-goal-matrix.md](../../docs/goals/kings-island-goal-matrix.md)
+(cost → benefit). G1 is goal #1 of five; the four after it are not open questions, they are
+queued work:
+
+| Order | Goal | Look | Lane | Cost | Why it is next |
+|-------|------|------|------|------|----------------|
+| 1 | **G1 village-green** | cozy 16-bit RPG village | new `village-green` kit on the tile-and-sprite bake | days (kit + sprite ledger rows) | closest to what exists; proves the sprite lane at reference quality |
+| 2 | **G5 pixel overworld** | SNES world map | pixel pass over the existing bake — quantize (image-q), Sobel outlines, DEM terrace cliffs, path-dot nodes | small–moderate | converts shipped `pixel-tycoon` from live SVG to a certified baked world; retires the last color-swap-era renderer |
+| 3 | **G4 surveyor's sketch** | sepia ink hex-map | NPR lane — hachure fills, stroke displacement, parchment ground, vignette sprites, optional hex overlay | moderate | proves NPR generalizes past watercolor; mostly re-points `layered-atlas` line-work machinery |
+| 4 | **G2 quest atlas** | painted adventure world-map | painted lane pushed to gouache + relief shading, **plus a quest-node overlay renderer** | largest procedural build | the node-path overlay is a *feature*, not a style — the map draws the XP ladder; schedule when the reward loop needs its showcase |
+| 5 | **G3 masterplan** | 3D aerial park render | **Blender tier (E.1)** — truth-extruded massing, bpypolyskel roofs, scattered canopies, baked AO | the Blender stage itself | store-listing-grade imagery; flagship-only economics |
+
+Shared machinery worth noting: **G5 and G2 share the node-path overlay renderer**, so whichever
+ships first pays for both. G3 is the only goal that needs a new tier (E.1 Blender,
+`operating-stack.json` `local-blender`, "$0 software").
+
+Acceptance is identical per goal: full certification including geo-fidelity and beyond-palette
+distinctness vs every shipped look, the 20-point matrix extended with per-goal treatment
+assertions, byte-identical rerun (procedural goals) or a stated perceptual threshold (G3) — then
+the owner eye pass side-by-side with the reference image. The reference is the goal; resemblance
+is judged by the owner, not the machine.
+
 ## Not yet specified
 
 - Design request doc beside ledgers (pillar line, exemplar pin, per-axis targets for `village-green`).
