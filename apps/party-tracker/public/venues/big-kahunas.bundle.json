@@ -4,12 +4,12 @@
   "basedOn": {
     "map": "2026-08-10"
   },
-  "bytes": 67196,
+  "bytes": 67262,
   "files": [
     {
       "path": "/venues/big-kahunas.gaps.json",
-      "bytes": 1715,
-      "sha256": "3a7dbdfcb4cb97f64075a3aa5408a5e3c085f0ceaf515619538bb998d9363f0c"
+      "bytes": 1781,
+      "sha256": "eef7f3f0a4fbfaaa024b2a87febe80af3e0feb3f24498aba1ec157b8257be92b"
     },
     {
       "path": "/venues/big-kahunas.map.json",

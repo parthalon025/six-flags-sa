@@ -293,6 +293,10 @@
     {
       "type": "path",
       "target": null
+    },
+    {
+      "type": "verify",
+      "target": "open-meteo"
     }
   ]
 }

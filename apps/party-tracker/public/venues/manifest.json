@@ -38,7 +38,7 @@
         "pois": 32,
         "rides": 23,
         "heights": 23,
-        "gaps": 24
+        "gaps": 25
       }
     },
     {
@@ -89,10 +89,10 @@
       "gaps": "/venues/cedar-point.gaps.json",
       "bundle": "/venues/cedar-point.bundle.json",
       "counts": {
-        "pois": 428,
-        "rides": 75,
-        "heights": 74,
-        "gaps": 62
+        "pois": 427,
+        "rides": 74,
+        "heights": 73,
+        "gaps": 64
       }
     },
     {
@@ -128,10 +128,10 @@
       "gaps": "/venues/kings-island.gaps.json",
       "bundle": "/venues/kings-island.bundle.json",
       "counts": {
-        "pois": 164,
+        "pois": 165,
         "rides": 68,
         "heights": 65,
-        "gaps": 72
+        "gaps": 74
       }
     },
     {
@@ -170,8 +170,70 @@
         "pois": 160,
         "rides": 70,
         "heights": 60,
-        "gaps": 70
+        "gaps": 72
       }
     }
-  ]
+  ],
+  "generatedBinding": {
+    "algorithm": "sha256-aggregate-v1",
+    "sha256": "5337cdf5554ff734a0eb85563dc6988d8714714bfed6c223dfeb5b23c3756cc3",
+    "files": [
+      {
+        "path": "apps/party-tracker/lib/venueIndex.js",
+        "sha256": "102022fd6e0687697869431c367eb38e85dbc0c37f9607ec5c0aa0244a0fe9a1"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/big-kahunas.gaps.json",
+        "sha256": "eef7f3f0a4fbfaaa024b2a87febe80af3e0feb3f24498aba1ec157b8257be92b"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/big-kahunas.map.json",
+        "sha256": "dad70e6da0aca7863dcfbf6c6b4d216ff2b8066ea61c0805d050e7945e2258ab"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/big-kahunas.pois.json",
+        "sha256": "93930e5483181c4afb2041f9e8f52df8dfc4e790332719f11c0d1731ac108ee7"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/cedar-point.gaps.json",
+        "sha256": "31fe9066c882a73ac6b0086453b87f58c510d8afeff885c4087cc50dffde8ed7"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/cedar-point.map.json",
+        "sha256": "b349911c15ba310395762253bb89d47ed235bccb3d8fe6afe9aa9deba15d2a0c"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/cedar-point.pois.json",
+        "sha256": "99ab28c4bdd69f85a2624f86e4fae30ad34310f0e494dc48366119cb4290673a"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/kings-island.gaps.json",
+        "sha256": "e1492f004adbc385be972714ae8ef573c016ebfc1fada9a6ec35c695da8d23f7"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/kings-island.map.json",
+        "sha256": "f3776f608301da0a698e9c5a596d2c7986d96970d6752dd350d6324e8ab9645d"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/kings-island.pois.json",
+        "sha256": "fc53a7d72902333428f19575d39ead2810efbd3b85feb5d11223506afe9552ee"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/manifest.json",
+        "sha256": "9f7d59ccba5a7f0b8aaa1ce5c8119158aeaac2553d4a526f9fedc8f1c161b37b"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/six-flags-fiesta-texas.gaps.json",
+        "sha256": "308e00a39db0f38c342dcfeb9f96c6b8424a0e98f73e9b94af50e55eb627ed1a"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/six-flags-fiesta-texas.map.json",
+        "sha256": "673813295b34c5e5985bc268e69d12ec5ba7517631cddb5e42368d2b83147cea"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/six-flags-fiesta-texas.pois.json",
+        "sha256": "d6ac73fe1416c528824066abe464a3b4e27523d45fdc9076985b35bca94b50d8"
+      }
+    ]
+  }
 }

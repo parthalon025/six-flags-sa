@@ -39,6 +39,7 @@ import {
 import { shippedGapsForVenue } from './ship-gaps.mjs';
 import { routeImageryExtractions } from './imagery-claims.mjs';
 import { writeBundleManifest } from './venue-bundle.mjs';
+import { buildGeneratedBinding } from './delivery/builder-app-contract.mjs';
 import { writeRoutingCoverage } from '../src/routing-coverage.mjs';
 import { readSources, adapterGapNotes, externalAdaptersFromCatalog } from './venue-sources.mjs';
 import { adapterCacheFile } from './adapters/_cache.mjs';
@@ -223,9 +224,13 @@ export function reindex({ preferredDefault } = {}) {
     default: venues.some((v) => v.id === wanted) ? wanted : fallback,
     venues,
   };
-  writeJson(MANIFEST_FILE, manifest, true);
   writeIndex(manifest);
   writeRoutingCoverage(venues);
+  // Stamp after venueIndex.js exists so the binding covers every generated file
+  // the app reads — hand edits to public/venues/*.json or venueIndex.js fail CI.
+  writeJson(MANIFEST_FILE, manifest, true);
+  manifest.generatedBinding = buildGeneratedBinding();
+  writeJson(MANIFEST_FILE, manifest, true);
   return manifest;
 }
 

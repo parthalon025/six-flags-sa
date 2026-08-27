@@ -77,6 +77,11 @@ assert.deepEqual(
   ['backside'],
   'server lib is backside without browser',
 );
+assert.deepEqual(
+  requiredVerticals(['test/app/postgres-probe.test.mjs']),
+  ['backside'],
+  'postgres probe seam is backside, not guest browser',
+);
 
 assert.deepEqual(requiredVerticals(['CLAUDE.md', '.gitnexus/graph.db']), []);
 assert.equal(noCodeWorkRequired(['docs/guide/testing.md']), true);

@@ -4,12 +4,12 @@
   "basedOn": {
     "map": "2026-08-09"
   },
-  "bytes": 384962,
+  "bytes": 385093,
   "files": [
     {
       "path": "/venues/six-flags-fiesta-texas.gaps.json",
-      "bytes": 5085,
-      "sha256": "b92f965146bd3c4f36e6fcc83c017839d6cf65da80b9ea29625ef2b63a736040"
+      "bytes": 5216,
+      "sha256": "308e00a39db0f38c342dcfeb9f96c6b8424a0e98f73e9b94af50e55eb627ed1a"
     },
     {
       "path": "/venues/six-flags-fiesta-texas.map.json",
@@ -19,7 +19,7 @@
     {
       "path": "/venues/six-flags-fiesta-texas.pois.json",
       "bytes": 31383,
-      "sha256": "be3aeeade159d133ada37adab359d70cd17487d0bc28ec41b16d42493f7c6cae"
+      "sha256": "d6ac73fe1416c528824066abe464a3b4e27523d45fdc9076985b35bca94b50d8"
     },
     {
       "path": "/venues/six-flags-fiesta-texas/display/blueprint-survey.visual.json",

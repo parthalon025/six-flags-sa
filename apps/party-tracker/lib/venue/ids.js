@@ -7,7 +7,7 @@
  * and an edit whose key moved is not moved, it is lost.
  *
  * The key is issued at build time and written into the bundle, from a ledger
- * committed beside the venue's overrides file. See packages/venue-builder/lib/venue-ids.mjs
+ * committed beside the venue's overrides file. See the venue-builder id ledger
  * for how a rebuild matches a place back to the number it already had; nothing
  * about that reaches a phone, which only ever reads `i`.
  *

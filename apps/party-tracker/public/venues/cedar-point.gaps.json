@@ -253,6 +253,10 @@
     {
       "type": "path",
       "target": "siren-s-curse"
+    },
+    {
+      "type": "verify",
+      "target": "open-meteo"
     }
   ]
 }

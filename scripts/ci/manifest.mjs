@@ -20,6 +20,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/bump-version.test.mjs',
   'test/scripts/version-stamp.test.mjs',
   'test/scripts/vercel-ignore.test.mjs',
+  'test/scripts/production-redis-guard.test.mjs',
   'test/scripts/vercel-deploy-gate.test.mjs',
   'test/scripts/store-release-plan.test.mjs',
   'test/scripts/app-store-connect-pack.test.mjs',
@@ -31,7 +32,6 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/git-env.test.mjs',
   'test/scripts/glance-rail-dead-code.test.mjs',
   'test/scripts/agent-docs.test.mjs',
-  'test/scripts/venue-builder-guide.test.mjs',
   'test/scripts/credits.test.mjs',
   // design-bundle.test.mjs is deliberately NOT here. Every other entry is a
   // pure script test, which is what lets the Gate job run before a workspace
@@ -68,6 +68,13 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/app-store-connect.test.mjs',
   'test/scripts/store-screenshot-compose.test.mjs',
   'test/scripts/app-test-origin.test.mjs',
+  'test/scripts/builder-certify-ci.test.mjs',
+  'test/scripts/build-venue-workflow.test.mjs',
+  'test/scripts/builder-app-contract.test.mjs',
+  'test/scripts/compare-cert-freshness.test.mjs',
+  'test/scripts/neon-runbook.test.mjs',
+  'test/scripts/post-deploy-check.test.mjs',
+  'test/scripts/integrate-test-estate.test.mjs',
 ];
 
 /**
@@ -81,4 +88,6 @@ export const GATE_EXCLUDED_TESTS = {
     'reaches app source — the bundle calls mapPaint() for its skin swatches rather than copying hexes, so it imports lib/world.js and on into @party-tracker/shared, which the Gate job runs too early to resolve. Runs via npm run test:unit where the workspace is installed.',
   'test/scripts/venues-report-cli.test.mjs':
     'spawns npm run venues:report, which loads external-claims and @party-tracker/shared — unresolvable before workspace install. Checklist + expect locks run in venue-report-gate.test.mjs at the gate; CLI exit code runs via npm run test:unit (#366).',
+  'test/scripts/venue-builder-guide.test.mjs':
+    'imports packages/venue-builder/lib/build-pipeline.mjs for STAGES — unresolvable before workspace install. Runs via npm run test:builder (#431).',
 };

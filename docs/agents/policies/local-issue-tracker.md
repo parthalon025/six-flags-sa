@@ -36,6 +36,7 @@ Used by `/wayfinder`. The **map** is a file with one **child** file per ticket.
 | Effort | Map |
 | --- | --- |
 | factories → app end-state | `.scratch/factories-to-app/map.md` (supersedes GitHub #625–630). Operating stack + Matt NOW: `scripts/lib/operating-stack.json` (survives scratch loss). |
+| G1 Village green Skin | `.scratch/g1-village-green/map.md` — RPG tilemap world; wayfinder → grill → spec. |
 
 ## Implementation tickets (`/to-tickets`)
 

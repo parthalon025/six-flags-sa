@@ -4,12 +4,12 @@
   "basedOn": {
     "map": "2026-08-09"
   },
-  "bytes": 11677535,
+  "bytes": 11677816,
   "files": [
     {
       "path": "/venues/kings-island.gaps.json",
-      "bytes": 5018,
-      "sha256": "a2deb52cf38114f1c4e25811b85f9435668049df0c2298140629ed166091c9ab"
+      "bytes": 5153,
+      "sha256": "e1492f004adbc385be972714ae8ef573c016ebfc1fada9a6ec35c695da8d23f7"
     },
     {
       "path": "/venues/kings-island.map.json",
@@ -18,8 +18,8 @@
     },
     {
       "path": "/venues/kings-island.pois.json",
-      "bytes": 30526,
-      "sha256": "711fcdbf2927c0c0a110b1d01ea1cce109fdd21397538f541e17e83ddbd16be8"
+      "bytes": 30672,
+      "sha256": "fc53a7d72902333428f19575d39ead2810efbd3b85feb5d11223506afe9552ee"
     },
     {
       "path": "/venues/kings-island/display/blueprint-survey.visual.json",
