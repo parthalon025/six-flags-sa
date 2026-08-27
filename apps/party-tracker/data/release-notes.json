@@ -606,5 +606,11 @@
     "items": [
       "chore(consolidation): mega PR — app, API probes, contributions, guest map"
     ]
+  },
+  "1.35.2": {
+    "title": "What's new",
+    "items": [
+      "fix(#436,#443): Postgres deploy guard + deploy:post-check (#727)"
+    ]
   }
 }
