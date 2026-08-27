@@ -3167,6 +3167,36 @@ await check('cedar point lists numbered campsite pitches', async () => {
 
 await CP.context.close();
 
+console.log('\n--- delivery delta sync ---');
+
+await check('revision-cursor bundle sync returns a delta manifest with fewer files when since lags head', async () => {
+  const fullRes = await fetch(`${BASE}/api/venues/kings-island/bundle`);
+  if (!fullRes.ok) throw new Error(`full bundle HTTP ${fullRes.status}`);
+  const full = await fullRes.json();
+  const headRev = full.basedOn?.revisionId;
+  if (!headRev) throw new Error('full manifest missing basedOn.revisionId');
+  if (!full.files?.length) throw new Error('full manifest has no files');
+
+  const upToDateRes = await fetch(
+    `${BASE}/api/venues/kings-island/bundle?since=${encodeURIComponent(headRev)}`,
+  );
+  if (!upToDateRes.ok) throw new Error(`delta bundle HTTP ${upToDateRes.status}`);
+  const upToDate = await upToDateRes.json();
+  if (upToDate.files.length !== 0) {
+    throw new Error(`expected 0 files when since matches head, got ${upToDate.files.length}`);
+  }
+
+  const unknownRes = await fetch(
+    `${BASE}/api/venues/kings-island/bundle?since=${encodeURIComponent('00000000-0000-0000-0000-000000000000')}`,
+  );
+  if (!unknownRes.ok) throw new Error(`unknown-since bundle HTTP ${unknownRes.status}`);
+  const unknown = await unknownRes.json();
+  if (unknown.files.length !== full.files.length) {
+    throw new Error('unknown since must fall back to the full manifest file list');
+  }
+  return true;
+});
+
 console.log('\n--- admin inspection ---');
 
 await check('World inspection API returns all built Worlds', async () => {

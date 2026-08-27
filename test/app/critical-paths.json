@@ -305,6 +305,13 @@
       "user_action": "Wear the Watercolor quest Skin and see its baked world drawn on truth bounds",
       "suite": "functional",
       "check": "wearing Watercolor quest draws the baked world image under the overlay"
+    },
+    {
+      "id": "delivery-delta-sync",
+      "slice": "Navigate",
+      "user_action": "Update a cached World bundle using the revision cursor so only changed files download",
+      "suite": "functional",
+      "check": "revision-cursor bundle sync returns a delta manifest with fewer files when since lags head"
     }
   ],
   "upcoming": [
