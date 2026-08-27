@@ -17,6 +17,7 @@
  */
 
 import { PUBLISH_AT, atLeast } from './evidence.mjs';
+import { ambientSignalShipArtifacts } from './ambient-signal-seeds.mjs';
 
 /** Builder ask key → contribution quest type (design taxonomy). */
 export const REQUEST_TO_QUEST = {
@@ -163,10 +164,12 @@ export function questSeedsForVenue({
   reqs = [],
   attractions = null,
   includeAmbient = true,
+  signalSeeds = [],
 } = {}) {
   const durable = [
     ...questSeedsFromRequests(venueId, reqs),
     ...questSeedsFromEntrances(venueId, attractions),
+    ...signalSeeds,
   ];
   const ambient = includeAmbient
     ? TIER1_AMBIENT.map((a) => ({
