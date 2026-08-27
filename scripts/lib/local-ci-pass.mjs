@@ -26,6 +26,7 @@
  *   shouldSkipGithubUi(stamp, context, { anyUi })
  *   shouldSkipGithubCi(stamp, context)
  *   localCiDecision(stamp, context, { anyUi, forceFull })
+ *   staticNpmStepsForFiles(files, manifest)
  */
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -33,6 +34,13 @@ import { scrubGitEnv } from './git-env.mjs';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  canonLanePlan,
+  jobsProvenByStamp,
+  jobsRequiredByCanon,
+  stampProvesCanonJobs,
+  staticStepsForFiles,
+} from './ci-lane-plan.mjs';
 import {
   loadModulesManifest,
   selectModulesFromFiles,
@@ -80,6 +88,12 @@ export const STATIC_STEPS = [
 ];
 
 export const STATIC_STEP_IDS = STATIC_STEPS.map((s) => s.id);
+
+/** Canon static steps for this diff → npm argv rows (pre-merge-vertical). */
+export function staticNpmStepsForFiles(files, manifest = loadModulesManifest()) {
+  const ids = staticStepsForFiles(files, manifest);
+  return STATIC_STEPS.filter((s) => ids.includes(s.id)).map((s) => s.npm);
+}
 
 /** GitHub jobs the tag may skip: the static floor above plus the verticals. */
 export const TAG_SKIPPED_JOBS = [
@@ -174,18 +188,26 @@ export function buildLocalCiContext({
       ? { modules: manifest.modules.map((m) => m.id), fullSuite: true }
       : selectModulesFromFiles(files, manifest);
   const modules = [...selection.modules].sort();
-  const needsBrowser = files == null ? true : needsBrowserForFiles(files, manifest);
+  const plan = canonLanePlan(files, manifest);
+  const needsBrowser = plan.needsBrowser;
 
   return {
     schema: LOCAL_CI_PASS_SCHEMA,
-    verticals: requiredVerticals(files),
+    verticals: plan.verticals,
     head,
     diffHash: diffHashFor(mergeBase, cwd),
     mergeBase,
     baseRef,
+    files,
     modules,
     needsBrowser,
-    staticSteps: [...STATIC_STEP_IDS],
+    staticSteps: plan.staticSteps,
+    factoryLegs: {
+      map: plan.runMapFactory,
+      visual: plan.runVisualFactory,
+      delivery: plan.runDeliveryFactory,
+    },
+    canonJobs: jobsRequiredByCanon(files, manifest),
     lockHash: hashFile(join(cwd, 'package-lock.json')),
     manifestHash: hashFile(join(cwd, 'test/app/modules.json')),
   };
@@ -206,6 +228,7 @@ export function writeLocalCiPass(
     context,
     browserVertical = false,
     verticals = [],
+    factoryLegsRan = [],
     tag = LOCAL_CI_TAG,
     recordedAt = new Date().toISOString(),
   },
@@ -222,6 +245,7 @@ export function writeLocalCiPass(
     browserVertical,
     verticals: [...verticals].sort(),
     staticSteps: context.staticSteps,
+    factoryLegs: [...factoryLegsRan].sort(),
     lockHash: context.lockHash,
     manifestHash: context.manifestHash,
     recordedAt,
@@ -295,6 +319,7 @@ export function shouldSkipGithubCi(stamp, context) {
   if (stamp.tag !== LOCAL_CI_TAG) return false;
   if (!stampCoversVerticals(stamp, context.verticals)) return false;
   if (context.needsBrowser && stamp.browserVertical !== true) return false;
+  if (!stampProvesCanonJobs(stamp, context)) return false;
   return true;
 }
 
@@ -320,6 +345,12 @@ export function localCiSkipReason(stamp, context) {
   }
   if (context.needsBrowser && stamp.browserVertical !== true) {
     return 'stamp has no browser vertical for a UI diff — full CI will run';
+  }
+  if (!stampProvesCanonJobs(stamp, context)) {
+    const required = context.canonJobs || jobsRequiredByCanon(context.files);
+    const proven = new Set(jobsProvenByStamp(stamp));
+    const missing = required.filter((j) => !proven.has(j));
+    return `stamp does not prove canon GitHub jobs (${missing.join(', ')}) — full CI will run`;
   }
   return `${LOCAL_CI_TAG}: local CI covered this diff — skipping ${TAG_SKIPPED_JOBS.join(', ')}`;
 }

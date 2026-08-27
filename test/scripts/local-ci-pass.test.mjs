@@ -24,8 +24,10 @@ import {
   shouldSkipGithubUi,
   shouldSkipLocalPreMerge,
   stampCoversContext,
+  staticNpmStepsForFiles,
   writeLocalCiPass,
 } from '../../scripts/lib/local-ci-pass.mjs';
+import { jobsRequiredByCanon } from '../../scripts/lib/ci-lane-plan.mjs';
 import { STATIC_NPM_STEPS } from '../../scripts/ci/pre-merge-vertical.mjs';
 import { runCheck, runWrite } from '../../scripts/ci/local-ci-pass.mjs';
 
@@ -37,9 +39,14 @@ import { runCheck, runWrite } from '../../scripts/ci/local-ci-pass.mjs';
     assert.ok(covered.has(job), `${job} is skipped by the tag but no static step covers it`);
   }
   assert.deepEqual(
+    staticNpmStepsForFiles(['scripts/lib/vercel-ignore.mjs']),
+    STATIC_STEPS.filter((s) => s.id === 'test:ci-gate').map((s) => s.npm),
+    'backside-only static npm steps mirror canon lanes',
+  );
+  assert.deepEqual(
     STATIC_NPM_STEPS,
     STATIC_STEPS.map((s) => s.npm),
-    'pre-merge-vertical runs exactly the steps the stamp records',
+    'fail-closed unreadable diff uses full static floor',
   );
   for (const job of ['builder', 'ui']) {
     assert.ok(TAG_SKIPPED_JOBS.includes(job), `${job} belongs to the tag's skip set`);
@@ -58,10 +65,12 @@ try {
     diffHash: 'diff123456789abc',
     mergeBase: 'def456',
     baseRef: 'origin/main',
+    files: ['apps/party-tracker/components/Sheet.jsx'],
     modules: ['lint', 'party'],
     needsBrowser: true,
     verticals: ['app'],
     staticSteps: [...STATIC_STEP_IDS],
+    canonJobs: jobsRequiredByCanon(['apps/party-tracker/components/Sheet.jsx']),
     lockHash: 'lockhash12345678',
     manifestHash: 'manifest12345678',
   };
@@ -168,7 +177,15 @@ try {
   );
 
   // Docs-only diffs owe no verticals, so the tag covers them on its own.
-  const docsContext = { ...context, needsBrowser: false, verticals: [], modules: [] };
+  const docsContext = {
+    ...context,
+    files: ['docs/guide/testing.md'],
+    needsBrowser: false,
+    verticals: [],
+    staticSteps: [],
+    canonJobs: [],
+    modules: [],
+  };
   const docsStamp = writeLocalCiPass(
     { context: docsContext, browserVertical: false, verticals: [] },
     tmp,
@@ -209,10 +226,12 @@ try {
       diffHash: 'hand123456789abc',
       mergeBase: 'def456',
       baseRef: 'origin/main',
+      files: ['apps/party-tracker/components/Sheet.jsx'],
       modules: ['party'],
       needsBrowser: true,
       verticals: ['app'],
       staticSteps: [...STATIC_STEP_IDS],
+      canonJobs: jobsRequiredByCanon(['apps/party-tracker/components/Sheet.jsx']),
       lockHash: 'lockhash12345678',
       manifestHash: 'manifest12345678',
     };
@@ -231,7 +250,8 @@ try {
 
 const realContext = buildLocalCiContext({ baseRef: 'origin/main' });
 assert.ok(realContext.head, 'buildLocalCiContext resolves HEAD in repo');
-assert.deepEqual(realContext.staticSteps, [...STATIC_STEP_IDS]);
+assert.ok(Array.isArray(realContext.staticSteps), 'context records canon static steps');
+assert.ok(Array.isArray(realContext.canonJobs), 'context records canon GitHub jobs');
 
 const prevOut = process.env.GITHUB_OUTPUT;
 const outFile = join(tmpdir(), `local-ci-pass-out-${process.pid}`);
