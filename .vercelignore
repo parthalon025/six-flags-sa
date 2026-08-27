@@ -16,10 +16,22 @@ coverage/
 # Root venue builder inputs only — do not match apps/party-tracker/data/
 /data/
 
-# Builder package source is large and unused at runtime; keep package.json so
-# npm workspaces still resolve.
+# Builder package source is large; keep package.json so npm workspaces resolve.
+# Wear-time delivery (ticket 17) imports @party-tracker/venue-builder/delivery.js
+# at runtime — whitelist that closure only (no sharp / factory bins).
 packages/venue-builder/**
 !packages/venue-builder/package.json
+!packages/venue-builder/lib/delivery/**
+!packages/venue-builder/lib/db/**
+!packages/venue-builder/lib/postdb-io.mjs
+!packages/venue-builder/lib/venue-io.mjs
+!packages/venue-builder/lib/venue-bundle.mjs
+!packages/venue-builder/lib/evidence.mjs
+!packages/venue-builder/lib/imagery-claims.mjs
+!packages/venue-builder/lib/quest-seeds.mjs
+!packages/venue-builder/lib/ship-gaps.mjs
+!packages/venue-builder/src/paths.mjs
+!packages/venue-builder/src/routing-coverage.mjs
 
 # Repo scripts are not part of the Next build (ignoreCommand + bump stay).
 scripts/**

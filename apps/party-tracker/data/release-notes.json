@@ -582,5 +582,17 @@
     "items": [
       "fix(app): show welcome intro gate for signed-in users with GPS already on (#701)"
     ]
+  },
+  "1.34.2": {
+    "title": "What's new",
+    "items": [
+      "fix(vercel): ship venue-builder delivery runtime for bundle sync API [vercel build] (#706)"
+    ]
+  },
+  "1.34.3": {
+    "title": "What's new",
+    "items": [
+      "fix: consolidate remaining fixes (#573, #574) + UNSCORED_RANK_DEFAULTS"
+    ]
   }
 }

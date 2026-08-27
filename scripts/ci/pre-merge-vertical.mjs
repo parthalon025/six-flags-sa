@@ -20,23 +20,26 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   loadModulesManifest,
-  selectModulesFromFiles,
 } from '../../test/app/lib/module-select.mjs';
-import {
-  healthAlreadyServing,
-  startProductionServer,
-  waitForHealth,
-} from './party-tracker-ui.mjs';
+import { allocateAppPort, appOrigin, healthUrl } from '../lib/app-test-origin.mjs';
+import { startProductionServer, waitForHealth } from './party-tracker-ui.mjs';
 import {
   STATIC_STEPS,
   buildLocalCiContext,
   readLocalCiPass,
   shouldSkipLocalPreMerge,
+  staticNpmStepsForFiles,
   writeLocalCiPass,
 } from '../lib/local-ci-pass.mjs';
+import { canonLanePlan } from '../lib/ci-lane-plan.mjs';
 import { clerkE2eBlockReason } from '../lib/clerk-e2e.mjs';
 import { ensureClerkEnvForCi } from '../lib/cloud-agent-clerk-env.mjs';
 import {
+  isAgentPolicyOnlyDiff,
+  runPolicyTestsForFiles,
+} from '../lib/agent-policy-diff.mjs';
+import {
+  guestBrowserRequired,
   noCodeWorkRequired,
   requiredVerticals,
   verticalById,
@@ -53,11 +56,17 @@ import { runLiveZoomSweep } from '../lib/map-perf-gate.mjs';
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
 /**
- * The static floor, in run order. Derived from `STATIC_STEPS` rather than
- * restated: the stamp records those ids, and GitHub skips the jobs they cover,
- * so a second copy here would let the two drift into a lie.
+ * Full static floor npm argv rows — used when the diff is unreadable (fail closed).
  */
 export const STATIC_NPM_STEPS = STATIC_STEPS.map((step) => step.npm);
+
+function runNodeScript(rel, args, cwd = root) {
+  const r = spawnSync(process.execPath, [join(cwd, rel), ...args], {
+    cwd,
+    stdio: 'inherit',
+  });
+  return r.status ?? 1;
+}
 
 export function gitChangedFiles(baseRef = 'origin/main', cwd = root) {
   try {
@@ -81,11 +90,9 @@ export function gitChangedFiles(baseRef = 'origin/main', cwd = root) {
   }
 }
 
+/** @deprecated use guestBrowserRequired from vertical-e2e.mjs */
 export function needsBrowserVertical(files, manifest = loadModulesManifest()) {
-  if (files == null) return true;
-  if (!files.length) return false;
-  const sel = selectModulesFromFiles(files, manifest);
-  return sel.modules.length > 0;
+  return guestBrowserRequired(files, manifest);
 }
 
 export function runNpmStep(args, cwd = root) {
@@ -97,12 +104,17 @@ export function runNpmStep(args, cwd = root) {
   return r.status ?? 1;
 }
 
-function runValidateUiChanged(baseRef, cwd = root) {
+function runValidateUiChanged(baseRef, cwd = root, { baseUrl } = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(
       'npm',
       ['run', 'test:validate-ui:changed', '--', '--base', baseRef, '--no-health'],
-      { cwd, stdio: 'inherit', env: process.env, shell: process.platform === 'win32' },
+      {
+        cwd,
+        stdio: 'inherit',
+        env: baseUrl ? { ...process.env, BASE_URL: baseUrl } : process.env,
+        shell: process.platform === 'win32',
+      },
     );
     child.on('error', reject);
     child.on('close', (code) => {
@@ -126,9 +138,14 @@ export async function runPreMergeVertical({
   }
 
   const files = gitChangedFiles(baseRef, cwd);
+  const manifest = loadModulesManifest();
+  const plan = canonLanePlan(files, manifest);
   const required = requiredVerticals(files);
   console.log(
     `pre-merge-vertical: verticals required — ${required.join(', ') || 'none (no code work in this diff)'}`,
+  );
+  console.log(
+    `pre-merge-vertical: static steps — ${plan.staticSteps.join(', ') || 'none'}`,
   );
 
   // Refusing a flag combination should not cost a full static run, so the
@@ -141,16 +158,27 @@ export async function runPreMergeVertical({
   }
 
   if (noCodeWorkRequired(files)) {
-    console.log(
-      'pre-merge-vertical: no code work in this diff — skipping static floor and verticals',
-    );
+    if (isAgentPolicyOnlyDiff(files)) {
+      console.log('pre-merge-vertical: agent-policy diff — thin policy tests only');
+      const policyCode = runPolicyTestsForFiles(files, cwd);
+      if (policyCode !== 0) return policyCode;
+    } else {
+      console.log(
+        'pre-merge-vertical: no code work in this diff — skipping static floor and verticals',
+      );
+    }
     if (!noStamp) {
       writeLocalCiPass({ context, browserVertical: false, verticals: [] }, cwd);
     }
     return 0;
   }
 
-  for (const args of STATIC_NPM_STEPS) {
+  const staticNpm =
+    files == null ? STATIC_NPM_STEPS : staticNpmStepsForFiles(files, manifest);
+  const ran = [];
+  const factoryLegsRan = [];
+
+  for (const args of staticNpm) {
     if (args[1] === 'build') {
       const clerkEnv = ensureClerkEnvForCi(cwd);
       if (!clerkEnv.wrote) {
@@ -166,11 +194,8 @@ export async function runPreMergeVertical({
     console.log(`\npre-merge-vertical: npm ${args.join(' ')}`);
     const code = runNpmStep(args, cwd);
     if (code !== 0) return code;
+    if (args[1] === 'test:ci-gate' && required.includes('backside')) ran.push('backside');
   }
-
-  const ran = [];
-  // test:ci-gate is a static step and is exactly the automation vertical.
-  if (required.includes('automation')) ran.push('automation');
 
   const clerkBlock = clerkE2eBlockReason({ files: files || [], skipBrowser });
   if (clerkBlock) {
@@ -202,38 +227,39 @@ export async function runPreMergeVertical({
     const code = runNpmStep(['run', 'test:builder'], cwd);
     if (code !== 0) return code;
     ran.push('builder');
+    for (const [leg, flag] of [
+      ['map', plan.runMapFactory],
+      ['visual', plan.runVisualFactory],
+      ['delivery', plan.runDeliveryFactory],
+    ]) {
+      if (!flag) continue;
+      console.log(`\npre-merge-vertical: factory leg — ${leg}`);
+      const legCode = runNodeScript('test/builder/factory-modules.mjs', ['--leg', leg], cwd);
+      if (legCode !== 0) return legCode;
+      factoryLegsRan.push(leg);
+    }
   }
 
-  const browserWanted = required.includes('app') || needsBrowserVertical(files);
+  const browserWanted = guestBrowserRequired(files);
   if (skipBrowser) {
     console.log('pre-merge-vertical: browser vertical skipped (--skip-browser)');
   } else if (!browserWanted) {
     console.log('pre-merge-vertical: no UI modules for diff — browser vertical skipped');
   } else {
-    if (await healthAlreadyServing()) {
-      console.error(
-        [
-          'pre-merge-vertical: something is already serving the app port.',
-          'A leftover server from an earlier run holds the build it started with,',
-          'so the browser vertical would prove that build, not the one just made.',
-          'Stop it and re-run:',
-          "  pkill -f 'next start' || pkill -f next-server",
-        ].join('\n'),
-      );
-      return 1;
-    }
-    console.log('\npre-merge-vertical: starting app for browser vertical');
-    startProductionServer({ root: cwd });
-    await waitForHealth();
-    await runValidateUiChanged(baseRef, cwd);
-    const sweep = await runLiveZoomSweep({ minFps: 30, throttle: 4 });
+    const port = await allocateAppPort();
+    const baseUrl = appOrigin(port);
+    console.log(`\npre-merge-vertical: starting app for browser vertical on ${baseUrl}`);
+    startProductionServer({ root: cwd, port });
+    await waitForHealth({ url: healthUrl(baseUrl) });
+    await runValidateUiChanged(baseRef, cwd, { baseUrl });
+    const sweep = await runLiveZoomSweep({ minFps: 30, throttle: 4, baseUrl });
     if (!sweep.ok) {
       console.error(
         `pre-merge-vertical: zoom sweep failed (${sweep.reason || `${sweep.fps} fps < ${sweep.minFps}`})`,
       );
       return 1;
     }
-    if (required.includes('app')) ran.push('app');
+    ran.push('app');
   }
 
   const block = verticalE2eBlockReason({ files, ran, skipBrowser });
@@ -244,7 +270,12 @@ export async function runPreMergeVertical({
 
   if (!noStamp) {
     writeLocalCiPass(
-      { context, browserVertical: ran.includes('app'), verticals: ran },
+      {
+        context,
+        browserVertical: ran.includes('app'),
+        verticals: ran,
+        factoryLegsRan,
+      },
       cwd,
     );
   }
