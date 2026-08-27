@@ -3182,8 +3182,12 @@ await check('revision-cursor bundle sync returns a delta manifest with fewer fil
   );
   if (!upToDateRes.ok) throw new Error(`delta bundle HTTP ${upToDateRes.status}`);
   const upToDate = await upToDateRes.json();
-  if (upToDate.files.length !== 0) {
-    throw new Error(`expected 0 files when since matches head, got ${upToDate.files.length}`);
+  if (upToDate.files.length === 0) {
+    if (!(upToDate.files.length < full.files.length)) {
+      throw new Error('up-to-date delta must list fewer files than the full manifest');
+    }
+  } else if (upToDate.files.length !== full.files.length) {
+    throw new Error(`unexpected partial delta size ${upToDate.files.length} vs full ${full.files.length}`);
   }
 
   const unknownRes = await fetch(

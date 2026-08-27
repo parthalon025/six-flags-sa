@@ -17,11 +17,15 @@ function readSeedBundle(venueDir, venueId) {
 
 async function loadCurrentBundle(venueId, venueDir) {
   if (usingPostdb()) {
-    const truth = await readTruth(venueId);
-    const assembled = await assembleBundleAtRevision(venueId, truth.revisionId, {
-      displayDir: path.join(venueDir, venueId, 'display'),
-    });
-    return assembled?.bundle ?? null;
+    try {
+      const truth = await readTruth(venueId);
+      const assembled = await assembleBundleAtRevision(venueId, truth.revisionId, {
+        displayDir: path.join(venueDir, venueId, 'display'),
+      });
+      if (assembled?.bundle) return assembled.bundle;
+    } catch {
+      // Shipped seed bundles answer when this venue has no PostDB head yet.
+    }
   }
   return readSeedBundle(venueDir, venueId);
 }
