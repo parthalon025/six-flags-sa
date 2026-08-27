@@ -187,6 +187,7 @@ export const TEST_ESTATE = {
   'test/scripts/billing-sync-check.test.mjs': ['ci-gate', 'test:unit'],
   'test/scripts/lakebase-config.test.mjs': ['ci-gate', 'test:unit'],
   'test/scripts/postdb-migrate.test.mjs': ['ci-gate', 'test:unit'],
+  'test/scripts/post-deploy-check.test.mjs': ['ci-gate'],
   'test/scripts/databricks-auth.test.mjs': ['ci-gate', 'test:unit'],
   'test/scripts/bump-version.test.mjs': ['ci-gate'],
   'test/scripts/app-test-origin.test.mjs': ['ci-gate'],
