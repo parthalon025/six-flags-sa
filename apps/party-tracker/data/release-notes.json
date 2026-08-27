@@ -576,5 +576,11 @@
     "items": [
       "feat(delivery): PostDB export + delta sync + display-schema gate (tickets 16–18) (#667)"
     ]
+  },
+  "1.34.1": {
+    "title": "What's new",
+    "items": [
+      "fix(app): show welcome intro gate for signed-in users with GPS already on (#701)"
+    ]
   }
 }
