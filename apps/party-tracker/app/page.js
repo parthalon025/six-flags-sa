@@ -25,14 +25,14 @@ import useWeather from '@/components/useWeather';
 import useAppUpdate from '@/components/useAppUpdate';
 import useMovementLog from '@/components/useMovementLog';
 import { BRAND, GLYPHS, WORDS } from '@/lib/brand';
-import { INTRO_KEY, firstRunOverlay } from '@/lib/introGate';
+import { INTRO_KEY, firstRunOverlay, profileWelcomeName } from '@/lib/introGate';
 import { haptic, listenInviteUrls, pushWatchCompass, registerPush, shouldRegisterPush } from '@/lib/native';
 import { loadWatchSettings, mapRotationDegrees, watchCompassPushState } from '@/lib/compass';
 import {
   SHEET_GAP,
   SHEET_LIST_AT_PX,
   SHEET_PEEK_PX,
-  SHEET_PLACE_PX,
+  sheetPlacePx,
   nextSheetStop,
   sheetCrowdsMap,
   sheetForm,
@@ -69,7 +69,7 @@ import { newMemberId } from '@/lib/core/ids';
 import { clearPendingInvite } from '@/lib/party/inviteStash';
 import { mapDisplayPosition } from '@/lib/gps/display';
 import { FOLLOW_RESUME_MS, followShouldResume } from '@/lib/parkMapView';
-import { resolveSession } from '@/lib/auth/session';
+import { resolveSession, readLocalSession } from '@/lib/auth/session';
 import { listManagedGuests, upsertManagedGuest } from '@/lib/auth/profileCache';
 import { useAuth } from '@clerk/nextjs';
 import AuthBridge from '@/components/AuthBridge';
@@ -330,7 +330,9 @@ function ParkApp({ isSignedIn }) {
 
   const [identity, setIdentity] = useState(null); // {id, name}
   /** Soft-gate profile (EP.3–EP.4) — null while anonymous; map still works. */
-  const [authSession, setAuthSession] = useState(null);
+  const [authSession, setAuthSession] = useState(() =>
+    typeof window !== 'undefined' ? readLocalSession() : null,
+  );
   const [managedGuests, setManagedGuests] = useState([]);
 
   const handleBindProfile = useCallback((userId) => {
@@ -513,6 +515,7 @@ function ParkApp({ isSignedIn }) {
   // The sheet's open stops are fractions of the viewport, so their height in
   // pixels is only knowable once there is a window to ask.
   const [viewportH, setViewportH] = useState(844);
+  const [viewportW, setViewportW] = useState(375);
   const stops = useMemo(() => sheetStops(viewportH), [viewportH]);
 
   /* The two things the app itself ever does to the sheet, and both of them are
@@ -529,8 +532,8 @@ function ParkApp({ isSignedIn }) {
   /* A map-tapped place is a collapsed Maps card, not half the screen. Set
      rather than grow: a sheet already at peek would otherwise stay tall. */
   const fitPlaceSheet = useCallback(
-    () => setSheetPx(Math.min(stops.full, SHEET_PLACE_PX)),
-    [stops.full],
+    () => setSheetPx(Math.min(stops.full, sheetPlacePx(viewportW))),
+    [stops.full, viewportW],
   );
 
   // Shared by the sheet's chips and the map's own key, which are two views of
@@ -934,6 +937,7 @@ function ParkApp({ isSignedIn }) {
   const showIntroSplash = introSeen === false && !logoSplashDismissed;
   /** Brand welcome on the gate after the logo splash, before GPS/park intake. */
   const showWelcomeGate = introSeen === false && logoSplashDismissed && !nearestIntent;
+  const visitorName = useMemo(() => profileWelcomeName(authSession), [authSession]);
 
   const askingPark = Boolean(parkChoice);
   /** Inline park question on the gate (GPS path), including after "nearest park". */
@@ -1093,13 +1097,23 @@ function ParkApp({ isSignedIn }) {
   useEffect(() => {
     const measure = () => {
       const h = window.innerHeight;
+      const w = window.innerWidth;
       setViewportH(h);
+      setViewportW(w);
       // A sheet taller than the screen it is on is not a sheet. The clamp runs
       // on every measure rather than only at boot, because the software
       // keyboard coming up is a resize too, and a sheet left at 88% of a tall
       // phone would otherwise be pinned off the top of the short one.
       const ceiling = sheetStops(h).full;
-      setSheetPx((px) => Math.min(px, ceiling));
+      const { tab: at, stacks: cur } = navRef.current;
+      const navStack = cur?.[at] ?? [];
+      if (navStack[navStack.length - 1] === 'place') {
+        // Place-detail height depends on viewport width — refit on resize so a
+        // narrowed phone does not keep a one-row action budget (#574).
+        setSheetPx(Math.min(ceiling, sheetPlacePx(w)));
+      } else {
+        setSheetPx((px) => Math.min(px, ceiling));
+      }
     };
     measure();
     window.addEventListener('resize', measure);
@@ -1132,10 +1146,15 @@ function ParkApp({ isSignedIn }) {
   }, [geo.status]);
 
   useEffect(() => {
+    // First-run intake owns the gate until intro is marked seen. Phones that
+    // already granted GPS — common for a signed-in return — hit 'live' before
+    // the splash yields to the welcome step; closing here skipped the welcome
+    // gate entirely.
+    if (introSeen !== true) return;
     if (!askingPark && (geo.status === 'live' || parkAsked)) {
       setGateOpen(false);
     }
-  }, [geo.status, askingPark, parkAsked]);
+  }, [geo.status, askingPark, parkAsked, introSeen]);
 
   useEffect(() => {
     positionRef.current = position;
@@ -4000,6 +4019,7 @@ function ParkApp({ isSignedIn }) {
       {showIntroSplash && (
         <IntroSplash
           version={appUpdate.version}
+          visitorName={visitorName}
           onContinue={() => setLogoSplashDismissed(true)}
         />
       )}
@@ -4042,6 +4062,7 @@ function ParkApp({ isSignedIn }) {
           venueName={venue?.name}
           status={geo.status}
           error={geo.error}
+          visitorName={visitorName}
           welcome={
             nearestIntent ||
             showWelcomeGate ||

@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { scrubGitEnv } from '../../scripts/lib/git-env.mjs';
 import { recordCapture } from './lib/readme-shots.mjs';
 import {
+  BASE,
   closeGate,
   dismissNavigation,
   go,
@@ -214,7 +215,7 @@ async function main() {
 
   const page = await context.newPage();
   await stubWeather(page);
-  await page.goto(process.env.BASE_URL || 'http://127.0.0.1:3000', { waitUntil: 'domcontentloaded' });
+  await page.goto(BASE, { waitUntil: 'domcontentloaded' });
   await closeGate(page);
   await hydrated(page);
   await mapReady(page);

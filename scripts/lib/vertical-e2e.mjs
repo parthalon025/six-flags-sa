@@ -2,18 +2,10 @@
  * Vertical e2e gate — every code diff must be proven through the stack it
  * ships in, and the run's *output* must be asserted, before merge.
  *
- * Two words, both load-bearing:
- *   vertical  — the change exercised end to end in the real thing (a browser
- *               against the production build, the builder over real venue
- *               data, the workflow entry points CI actually calls), not a
- *               unit that stops at the seam it changed.
- *   output    — assertions over what that run produced (DOM and behaviour,
- *               generated venue files, returned decisions). An exit code is
- *               not output validation; a suite that only proves the process
- *               started proves nothing about the change.
- *
- * Static steps (lint, unit, build) stay necessary and stay insufficient: they
- * are the floor of `pre-merge-vertical`, never the proof.
+ * Three lanes (plus docs/agent policy):
+ *   app      — guest-facing browser + validate-ui (module-select only)
+ *   builder  — venue factory output (`test:builder`)
+ *   backside — scripts, API routes, server libs, non-UI packages (`test:ci-gate`)
  *
  * Interface:
  *   VERTICALS
@@ -21,11 +13,17 @@
  *   verticalsForFiles(files)
  *   unclassifiedCodeFiles(files)
  *   requiredVerticals(files)
+ *   guestBrowserRequired(files, manifest)
  *   verticalPlan(files)
  *   stampCoversVerticals(stamp, required)
  *   verticalE2eBlockReason({ files, ran, skipBrowser })
  */
-import { pathMatchesAny } from '../../test/app/lib/module-select.mjs';
+import {
+  loadModulesManifest,
+  pathMatchesAny,
+  selectModulesFromFiles,
+} from '../../test/app/lib/module-select.mjs';
+import { isAgentPolicyOnlyDiff } from './agent-policy-diff.mjs';
 import { isGitnexusCiNoise } from './gitnexus-only.mjs';
 import { isVersionStampOnlyChange } from './version-stamp.mjs';
 
@@ -38,30 +36,41 @@ export const STAMP_FILES = [
   'scripts/ci/matt-review-pass.json',
 ];
 
+const BUILDER_PATHS = [
+  'packages/venue-builder/**',
+  'data/venues/**',
+  'apps/party-tracker/public/venues/**',
+  'test/builder/**',
+];
+
+const BACKSIDE_PATHS = [
+  'scripts/**',
+  'test/scripts/**',
+  '.github/workflows/**',
+  '.dependency-cruiser.cjs',
+  'apps/party-tracker/app/api/**',
+  'apps/party-tracker/lib/**',
+  'db/migrations/**',
+  'packages/**',
+  'package.json',
+  'package-lock.json',
+  'eslint.config.mjs',
+  'turbo.json',
+  'vercel.json',
+];
+
 /**
  * One row per shipped vertical. `command` is the run that produces the
- * evidence; `validates` names the output that run asserts on — if you cannot
- * fill `validates` with something the suite actually reads, it is not a
- * vertical and does not belong here.
+ * evidence; `validates` names the output that run asserts on.
  */
 export const VERTICALS = [
   {
     id: 'app',
-    title: 'App browser vertical',
+    title: 'App guest browser vertical',
     command: 'npm run test:validate-ui:changed',
     validates:
       'guest-visible behaviour in a real browser against the production build — functional checks, grandma task scores, and a clean console',
-    paths: [
-      'apps/**',
-      'packages/**',
-      'test/app/**',
-      'test/shots/**',
-      'eslint.config.mjs',
-      'vercel.json',
-      'turbo.json',
-      'package.json',
-      'package-lock.json',
-    ],
+    paths: [],
   },
   {
     id: 'builder',
@@ -69,25 +78,15 @@ export const VERTICALS = [
     command: 'npm run test:builder',
     validates:
       'generated venue output — world, gaps/quests and compare assertions read the built venue files, not the builder internals',
-    paths: [
-      'packages/venue-builder/**',
-      'data/venues/**',
-      'apps/party-tracker/public/venues/**',
-      'test/builder/**',
-    ],
+    paths: BUILDER_PATHS,
   },
   {
-    id: 'automation',
-    title: 'Automation vertical',
+    id: 'backside',
+    title: 'Backside vertical',
     command: 'npm run test:ci-gate',
     validates:
       'the CI, deploy and stamp decisions returned by the exported functions the workflows call',
-    paths: [
-      'scripts/**',
-      'test/scripts/**',
-      '.github/workflows/**',
-      '.dependency-cruiser.cjs',
-    ],
+    paths: BACKSIDE_PATHS,
   },
 ];
 
@@ -101,10 +100,6 @@ function normalize(file) {
   return String(file).replace(/\\/g, '/').replace(/^\.\//, '');
 }
 
-/**
- * The files a vertical may be selected by: session index noise and the gate's
- * own stamps are neither code work nor evidence of it.
- */
 function candidates(files = []) {
   return files
     .map(normalize)
@@ -118,26 +113,93 @@ export function isCodeFile(file) {
   return CODE_PATH.test(f);
 }
 
+function matchesBuilder(file) {
+  return pathMatchesAny(file, BUILDER_PATHS);
+}
+
+function matchesBackside(file) {
+  return pathMatchesAny(file, BACKSIDE_PATHS);
+}
+
+function isTestAppOnly(paths) {
+  return paths.length > 0 && paths.every((f) => pathMatchesAny(f, ['test/app/**']));
+}
+
 export function verticalById(id) {
   return VERTICALS.find((v) => v.id === id) || null;
 }
 
+function guestLibPatterns(manifest = loadModulesManifest()) {
+  const patterns = new Set();
+  for (const mod of manifest.modules || []) {
+    if (mod.kind === 'builder') continue;
+    for (const p of mod.paths || []) {
+      if (p.startsWith('apps/party-tracker/lib/')) patterns.add(p);
+    }
+  }
+  return [...patterns];
+}
+
+function isGuestBrowserPath(file, manifest = loadModulesManifest()) {
+  const f = normalize(file);
+  if (!pathMatchesAny(f, ['apps/party-tracker/**', 'test/app/**'])) return false;
+  if (pathMatchesAny(f, ['apps/party-tracker/app/api/**'])) return false;
+  if (pathMatchesAny(f, ['packages/**'])) return false;
+  if (pathMatchesAny(f, ['apps/party-tracker/lib/**'])) {
+    return pathMatchesAny(f, guestLibPatterns(manifest));
+  }
+  return true;
+}
+
+/** Guest visual e2e — module-select guest suites only, not every app touch. */
+export function guestBrowserRequired(files, manifest = loadModulesManifest()) {
+  if (files == null) return true;
+  const paths = candidates(files);
+  if (!paths.length) return false;
+  const guestPaths = paths.filter((f) => isGuestBrowserPath(f, manifest));
+  if (!guestPaths.length) return false;
+  const sel = selectModulesFromFiles(guestPaths, manifest);
+  const guestModules = sel.modules.filter((id) => id !== 'builder');
+  return guestModules.length > 0;
+}
+
+function verticalIdsForPaths(paths) {
+  if (isVersionStampOnlyChange(paths)) return [];
+  if (isAgentPolicyOnlyDiff(paths)) return [];
+  if (isTestAppOnly(paths)) return [];
+
+  const ids = new Set();
+  for (const f of paths) {
+    if (matchesBuilder(f)) {
+      ids.add('builder');
+    } else if (matchesBackside(f)) {
+      ids.add('backside');
+    }
+  }
+  if (guestBrowserRequired(paths)) ids.add('app');
+
+  return VERTICAL_IDS.filter((id) => ids.has(id));
+}
+
 /** Verticals whose paths this diff touches, in VERTICALS order. */
 export function verticalsForFiles(files = []) {
-  const paths = candidates(files);
-  // Post-merge version stamps are machine-written and prove nothing about
-  // behaviour — the same exemption module selection makes.
-  if (isVersionStampOnlyChange(paths)) return [];
-  return VERTICALS.filter((v) => paths.some((f) => pathMatchesAny(f, v.paths))).map((v) => v.id);
+  return verticalIdsForPaths(candidates(files));
 }
 
 /** Code files no vertical claims — the map has a hole and cannot be trusted. */
 export function unclassifiedCodeFiles(files = []) {
   const paths = candidates(files);
   if (isVersionStampOnlyChange(paths)) return [];
+  if (isAgentPolicyOnlyDiff(paths)) return [];
+  if (isTestAppOnly(paths)) return [];
   return paths
     .filter((f) => isCodeFile(f))
-    .filter((f) => !VERTICALS.some((v) => pathMatchesAny(f, v.paths)));
+    .filter(
+      (f) =>
+        !matchesBuilder(f)
+        && !matchesBackside(f)
+        && !pathMatchesAny(f, ['apps/party-tracker/**']),
+    );
 }
 
 /**
@@ -146,13 +208,18 @@ export function unclassifiedCodeFiles(files = []) {
  */
 export function requiredVerticals(files) {
   if (files == null) return [...VERTICAL_IDS];
-  if (unclassifiedCodeFiles(files).length) return [...VERTICAL_IDS];
-  return verticalsForFiles(files);
+  const paths = candidates(files);
+  const unclassified = unclassifiedCodeFiles(files);
+  if (unclassified.length) return [...VERTICAL_IDS];
+  return verticalIdsForPaths(paths);
 }
 
-/** Known diff with no code work — docs, ADRs, agent prose; owes no vertical or static floor. */
+/** Known diff with no code work — docs, ADRs, agent policy; owes no vertical or static floor. */
 export function noCodeWorkRequired(files) {
-  return files !== null && requiredVerticals(files).length === 0;
+  if (files == null) return false;
+  const paths = candidates(files);
+  if (isAgentPolicyOnlyDiff(paths)) return true;
+  return requiredVerticals(files).length === 0;
 }
 
 /** Required verticals with the command and the output each one proves. */
@@ -184,10 +251,6 @@ function describe(ids) {
 /**
  * null when merge may proceed; otherwise the blocker plus the exact runs.
  *
- * Called twice by pre-merge-vertical: once up front with `ran = required`, so
- * a refused `--skip-browser` costs nothing before the slow steps, and once
- * after the run with what actually executed.
- *
  * @param {{files: string[]|null, ran?: string[], skipBrowser?: boolean}} input
  * @returns {string | null}
  */
@@ -195,9 +258,9 @@ export function verticalE2eBlockReason({ files, ran = [], skipBrowser = false } 
   const required = requiredVerticals(files);
   if (!required.length) return null;
 
-  if (skipBrowser && required.includes('app')) {
+  if (skipBrowser && guestBrowserRequired(files)) {
     return [
-      'code diff changes app behaviour — the browser vertical is required (do not --skip-browser).',
+      'code diff changes guest-visible app behaviour — the browser vertical is required (do not --skip-browser).',
       'Static steps prove the build compiles, not that a guest can still use it. Run:',
       '  npm run build && npm start &   # wait for /api/health',
       `  ${verticalById('app').command}`,

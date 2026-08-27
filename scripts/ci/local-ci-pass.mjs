@@ -25,6 +25,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 function parseArgs(argv) {
   const opts = {
     baseRef: 'origin/main',
+    headRef: 'HEAD',
     noBrowser: false,
     anyUi: false,
     forceFull: false,
@@ -32,13 +33,14 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--base') opts.baseRef = argv[++i];
+    else if (arg === '--head') opts.headRef = argv[++i];
     else if (arg === '--no-browser') opts.noBrowser = true;
     else if (arg === '--any-ui') opts.anyUi = argv[++i] === 'true';
     else if (arg === '--force-full') opts.forceFull = true;
     else if (arg === '--help' || arg === '-h') {
       console.log(`Usage:
-  local-ci-pass.mjs write [--base origin/main] [--no-browser]
-  local-ci-pass.mjs check [--base origin/main] [--any-ui true|false] [--force-full]`);
+  local-ci-pass.mjs write [--base origin/main] [--head <sha>] [--no-browser]
+  local-ci-pass.mjs check [--base origin/main] [--head <sha>] [--any-ui true|false] [--force-full]`);
       process.exit(0);
     }
   }
@@ -83,8 +85,8 @@ export function runWrite({ baseRef, noBrowser, cwd = root, context } = {}) {
   return stamp;
 }
 
-export function runCheck({ baseRef, anyUi, forceFull = false, cwd = root } = {}) {
-  const context = buildLocalCiContext({ baseRef, cwd });
+export function runCheck({ baseRef, headRef = 'HEAD', anyUi, forceFull = false, cwd = root } = {}) {
+  const context = buildLocalCiContext({ baseRef, headRef, cwd });
   const stamp = readLocalCiPass(cwd);
   const decision = localCiDecision(stamp, context, { anyUi, forceFull });
 
@@ -108,7 +110,7 @@ async function main(argv = process.argv.slice(2)) {
     return;
   }
   if (cmd === 'check') {
-    runCheck({ baseRef: opts.baseRef, anyUi: opts.anyUi, forceFull: opts.forceFull });
+    runCheck({ baseRef: opts.baseRef, headRef: opts.headRef, anyUi: opts.anyUi, forceFull: opts.forceFull });
     return;
   }
   console.error('Usage: local-ci-pass.mjs <write|check> [options]');

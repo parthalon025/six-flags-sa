@@ -8,7 +8,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { scrubGitEnv } from '../../scripts/lib/git-env.mjs';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -24,8 +24,10 @@ import {
   shouldSkipGithubUi,
   shouldSkipLocalPreMerge,
   stampCoversContext,
+  staticNpmStepsForFiles,
   writeLocalCiPass,
 } from '../../scripts/lib/local-ci-pass.mjs';
+import { jobsRequiredByCanon } from '../../scripts/lib/ci-lane-plan.mjs';
 import { STATIC_NPM_STEPS } from '../../scripts/ci/pre-merge-vertical.mjs';
 import { runCheck, runWrite } from '../../scripts/ci/local-ci-pass.mjs';
 
@@ -37,9 +39,14 @@ import { runCheck, runWrite } from '../../scripts/ci/local-ci-pass.mjs';
     assert.ok(covered.has(job), `${job} is skipped by the tag but no static step covers it`);
   }
   assert.deepEqual(
+    staticNpmStepsForFiles(['scripts/lib/vercel-ignore.mjs']),
+    STATIC_STEPS.filter((s) => s.id === 'test:ci-gate').map((s) => s.npm),
+    'backside-only static npm steps mirror canon lanes',
+  );
+  assert.deepEqual(
     STATIC_NPM_STEPS,
     STATIC_STEPS.map((s) => s.npm),
-    'pre-merge-vertical runs exactly the steps the stamp records',
+    'fail-closed unreadable diff uses full static floor',
   );
   for (const job of ['builder', 'ui']) {
     assert.ok(TAG_SKIPPED_JOBS.includes(job), `${job} belongs to the tag's skip set`);
@@ -58,10 +65,12 @@ try {
     diffHash: 'diff123456789abc',
     mergeBase: 'def456',
     baseRef: 'origin/main',
+    files: ['apps/party-tracker/components/Sheet.jsx'],
     modules: ['lint', 'party'],
     needsBrowser: true,
     verticals: ['app'],
     staticSteps: [...STATIC_STEP_IDS],
+    canonJobs: jobsRequiredByCanon(['apps/party-tracker/components/Sheet.jsx']),
     lockHash: 'lockhash12345678',
     manifestHash: 'manifest12345678',
   };
@@ -82,6 +91,11 @@ try {
     stampCoversContext(stamp, { ...context, head: 'committed-the-stamp' }),
     true,
     'committing the stamp moves HEAD but not the diff — the stamp still covers',
+  );
+  assert.equal(
+    stampCoversContext({ ...stamp, modules: [] }, context),
+    true,
+    'module selection does not block a valid local CI stamp',
   );
   assert.equal(
     stampCoversContext(stamp, { ...context, mergeBase: 'base-tip-of-the-merge-commit' }),
@@ -168,7 +182,15 @@ try {
   );
 
   // Docs-only diffs owe no verticals, so the tag covers them on its own.
-  const docsContext = { ...context, needsBrowser: false, verticals: [], modules: [] };
+  const docsContext = {
+    ...context,
+    files: ['docs/guide/testing.md'],
+    needsBrowser: false,
+    verticals: [],
+    staticSteps: [],
+    canonJobs: [],
+    modules: [],
+  };
   const docsStamp = writeLocalCiPass(
     { context: docsContext, browserVertical: false, verticals: [] },
     tmp,
@@ -209,10 +231,12 @@ try {
       diffHash: 'hand123456789abc',
       mergeBase: 'def456',
       baseRef: 'origin/main',
+      files: ['apps/party-tracker/components/Sheet.jsx'],
       modules: ['party'],
       needsBrowser: true,
       verticals: ['app'],
       staticSteps: [...STATIC_STEP_IDS],
+      canonJobs: jobsRequiredByCanon(['apps/party-tracker/components/Sheet.jsx']),
       lockHash: 'lockhash12345678',
       manifestHash: 'manifest12345678',
     };
@@ -231,7 +255,8 @@ try {
 
 const realContext = buildLocalCiContext({ baseRef: 'origin/main' });
 assert.ok(realContext.head, 'buildLocalCiContext resolves HEAD in repo');
-assert.deepEqual(realContext.staticSteps, [...STATIC_STEP_IDS]);
+assert.ok(Array.isArray(realContext.staticSteps), 'context records canon static steps');
+assert.ok(Array.isArray(realContext.canonJobs), 'context records canon GitHub jobs');
 
 const prevOut = process.env.GITHUB_OUTPUT;
 const outFile = join(tmpdir(), `local-ci-pass-out-${process.pid}`);
@@ -310,6 +335,61 @@ try {
     ctx.diffHash,
     'a train-sized patch must still hash — ENOBUFS used to write diffHash: null after a green vertical',
   );
+  rmSync(dir, { recursive: true, force: true });
+}
+
+// PR head sha must match local branch tip — not the merge commit GitHub checks out.
+{
+  const dir = mkdtempSync(join(tmpdir(), 'localci-pr-head-'));
+  const git = (...a) =>
+    execFileSync('git', a, { cwd: dir, env: scrubGitEnv(), encoding: 'utf8' }).trim();
+  git('init', '-qb', 'main');
+  git('config', 'user.email', 't@e.st');
+  git('config', 'user.name', 'T');
+  mkdirSync(join(dir, 'scripts', 'lib'), { recursive: true });
+  writeFileSync(join(dir, 'scripts', 'lib', 'a.mjs'), 'export const a = 1;\n');
+  git('add', '.');
+  git('commit', '-qm', 'base');
+  const baseSha = git('rev-parse', 'HEAD');
+  git('checkout', '-qb', 'feature');
+  writeFileSync(join(dir, 'scripts', 'lib', 'a.mjs'), 'export const a = 2;\n');
+  git('add', '.');
+  git('commit', '-qm', 'feature change');
+  const featureHead = git('rev-parse', 'HEAD');
+  git('checkout', 'main');
+  writeFileSync(join(dir, 'scripts', 'lib', 'b.mjs'), 'export const b = 1;\n');
+  git('add', '.');
+  git('commit', '-qm', 'main moves');
+  const baseTip = git('rev-parse', 'HEAD');
+  git('merge', '--no-ff', 'feature', '-qm', 'merge feature');
+
+  const stampCtx = buildLocalCiContext({
+    baseRef: baseTip,
+    headRef: featureHead,
+    cwd: dir,
+  });
+  const stamp = writeLocalCiPass(
+    {
+      context: stampCtx,
+      browserVertical: false,
+      verticals: ['backside'],
+      factoryLegsRan: [],
+    },
+    dir,
+  );
+
+  const prCtx = buildLocalCiContext({ baseRef: baseTip, headRef: featureHead, cwd: dir });
+  const brokenCtx = buildLocalCiContext({ baseRef: 'main', headRef: 'HEAD', cwd: dir });
+
+  assert.equal(prCtx.diffHash, stamp.diffHash, 'PR head diff must match local stamp');
+  assert.notEqual(
+    brokenCtx.diffHash,
+    stamp.diffHash,
+    'checked-out merge commit without --head must not match',
+  );
+  assert.equal(shouldSkipGithubCi(stamp, prCtx), true, 'local run skips GitHub CI for PR head');
+  assert.equal(shouldSkipGithubCi(stamp, brokenCtx), false, 'merge checkout alone must not skip');
+
   rmSync(dir, { recursive: true, force: true });
 }
 
