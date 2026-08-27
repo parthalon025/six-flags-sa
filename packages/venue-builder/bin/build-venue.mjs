@@ -38,7 +38,8 @@ import {
 } from '../lib/geometry.mjs';
 import {
   LAYERS, LINE_LAYERS, POI_RULES, LAYER_RULES, ROUTED_LAYERS, UNNAMED_AREA_CATEGORIES, UNNAMED_LABELS,
-  campDetailsFromTags, classify, isCampground, isCampPitch, isLand, isVenueOutline, wayAttributes,
+  campDetailsFromTags, classify, isCampground, isCampPitch, isLand, isVenueOutline, openingHoursFromTags,
+  wayAttributes,
 } from '../lib/osm-tags.mjs';
 import { OVERRIDE_DIR, gapsDocumentFor, readJson, readOverrides, reindex, serializeVenue, slugify, VENUE_DIR, writeVenue, venueSidecar } from '../lib/venue-io.mjs';
 import { mirrorTruthToPostdb } from '../lib/map-factory/postdb-sync.mjs';
@@ -548,7 +549,7 @@ export function heightFromTags(tags) {
   return h;
 }
 
-function buildPois(elements, areaCandidates, opts) {
+export function buildPois(elements, areaCandidates, opts) {
   const out = [];
   const push = (tags, lat, lng, el) => {
     const c = classify(POI_RULES, tags);
@@ -579,6 +580,8 @@ function buildPois(elements, areaCandidates, opts) {
     // whose mapper recorded none gets them from the overrides file instead.
     const camp = c === 'campsite' ? campDetailsFromTags(tags) : null;
     if (camp) poi.camp = camp;
+    const oh = openingHoursFromTags(tags);
+    if (oh) poi.oh = oh;
     out.push(poi);
   };
 
@@ -609,7 +612,10 @@ function buildPois(elements, areaCandidates, opts) {
     if (!dupe) kept.push(poi);
     // The ride is mapped twice and only one of the pair carries the sign. Keep
     // the survey rather than whichever node happened to be read first.
-    else if (poi.h && !dupe.h) dupe.h = poi.h;
+    else {
+      if (poi.h && !dupe.h) dupe.h = poi.h;
+      if (poi.oh && !dupe.oh) dupe.oh = poi.oh;
+    }
   }
   return kept;
 }
