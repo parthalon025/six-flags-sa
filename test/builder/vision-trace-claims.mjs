@@ -60,6 +60,8 @@ const first = applyVisionTraceClaims([record], [{ rel: 'traces/orion.geojson', c
 assert.equal(first.applied, 1);
 assert.deepEqual(first.reviewKeys, [key]);
 assert.equal(first.graphSummary.withClaims, 1);
+assert.match(first.convergence, /band/);
+assert.equal(record.features.queue_entrance.confidence, 'unknown');
 
 const sidecar = { attractions: [record] };
 const { nodes } = graphFromSidecar(sidecar);

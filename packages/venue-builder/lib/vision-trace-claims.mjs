@@ -6,15 +6,17 @@
  */
 
 import { existsSync } from 'node:fs';
+import { normaliseRideName } from '@party-tracker/shared/mapSymbols.js';
 import {
   addEvidence,
   SCHEMA_VERSION,
   trim,
 } from './attractions.mjs';
-import { graphFromSidecar } from './evidence-graph.mjs';
+import { convergenceReport, graphFromSidecar } from './evidence-graph.mjs';
 import { PUBLISH_AT } from './evidence.mjs';
 import { readSources } from './venue-sources.mjs';
 import { readJson, resolveBuilderPath } from './venue-io.mjs';
+import { REVIEW_FILE } from './venue-review.mjs';
 import {
   fromTracedFile,
   inventory,
@@ -30,18 +32,23 @@ export function reviewKeyForVisionTrace({ place, feature, dataset }) {
   return `vision-trace:${id}:${feature}:${ds}`;
 }
 
-/** Trace + imagery dataset relative paths from sources.json. */
+/** Trace and imagery dataset paths from sources.json (on-disk only). */
 export function traceDatasetPaths(venueId) {
   const { data: catalog } = readSources(venueId);
   const trace = catalog?.datasets?.trace || [];
   const imagery = catalog?.datasets?.imagery || [];
-  const rows = [...trace, ...imagery];
   const out = [];
-  for (const ds of rows) {
+  for (const ds of trace) {
     const rel = typeof ds === 'string' ? ds : ds?.path;
     if (!rel) continue;
     const file = resolveBuilderPath(rel);
-    if (file && existsSync(file)) out.push({ rel, file });
+    if (file && existsSync(file)) out.push({ rel, file, kind: 'trace' });
+  }
+  for (const ds of imagery) {
+    const rel = typeof ds === 'string' ? ds : ds?.path;
+    if (!rel) continue;
+    const file = resolveBuilderPath(rel);
+    if (file && existsSync(file)) out.push({ rel, file, kind: 'imagery' });
   }
   return out;
 }
@@ -50,26 +57,13 @@ function recordIndex(rows) {
   const exact = new Map();
   const normal = new Map();
   for (const row of rows) {
-    const name = row.name;
-    exact.set(String(name).toLowerCase(), row);
-    const key = String(name)
-      .toLowerCase()
-      .replace(/^the\s+/, '')
-      .replace(/\s*\([^)]*\)\s*/g, '')
-      .trim();
+    exact.set(String(row.name).toLowerCase(), row);
+    const key = normaliseRideName(row.name);
     if (!key) continue;
     normal.set(key, normal.has(key) ? null : row);
   }
   return (rideName) =>
-    exact.get(String(rideName).toLowerCase())
-    || normal.get(
-      String(rideName)
-        .toLowerCase()
-        .replace(/^the\s+/, '')
-        .replace(/\s*\([^)]*\)\s*/g, '')
-        .trim(),
-    )
-    || null;
+    exact.get(String(rideName).toLowerCase()) || normal.get(normaliseRideName(rideName)) || null;
 }
 
 /**
@@ -121,13 +115,16 @@ export function applyVisionTraceClaims(records, claimBatches, { asOf } = {}) {
     venue: records[0]?.venue,
     attractions: records.map(trim),
   };
-  const { summary } = graphFromSidecar(sidecar);
+  const { nodes, summary } = graphFromSidecar(sidecar);
+  const entranceNode = nodes.find((n) => n.id?.endsWith(':queue_entrance') && n.claims?.length);
 
   return {
     applied,
     orphans: [...orphans],
     reviewKeys: [...reviewKeys],
     graphSummary: summary,
+    convergence: entranceNode ? convergenceReport(entranceNode) : null,
+    fusedBand: entranceNode?.fusion?.band ?? null,
   };
 }
 
@@ -156,6 +153,8 @@ export function enqueueVisionTraceClaims(venueId, { asOf = today(), dryRun = fal
   const state = inventory(venueId, {});
   const applyResult = applyVisionTraceClaims(state.records, claimBatches, { asOf });
 
+  applyReviewDecisionsToRecords(state.records, readJson(REVIEW_FILE(venueId), { decisions: [] }));
+
   const list = {
     version: SCHEMA_VERSION,
     venue: venueId,
@@ -166,10 +165,10 @@ export function enqueueVisionTraceClaims(venueId, { asOf = today(), dryRun = fal
 
   const wrote = !dryRun && writeSettled(listFile(venueId), list);
 
-  const traceProposals = datasets.map(({ rel, file }) => {
+  const traceProposals = datasets.map(({ rel, file, kind }) => {
     const claims = claimBatches.find((b) => b.rel === rel)?.claims || [];
     return {
-      source: 'traced',
+      source: kind === 'imagery' ? 'imagery' : 'traced',
       file: rel,
       featureCount: claims.length,
       note: 'Persisted to attractions sidecar — pending steward review',
@@ -199,4 +198,22 @@ export function pendingVisionTraceKeys(sidecar, reviewDoc = { decisions: [] }) {
     }
   }
   return [...pending];
+}
+
+/** Clear `pending` on evidence rows whose reviewKey has a steward decision. */
+export function applyReviewDecisionsToRecords(records, reviewDoc = { decisions: [] }) {
+  const decided = new Map(reviewDoc.decisions?.map((d) => [d.key, d.decision]) || []);
+  let cleared = 0;
+  for (const row of records) {
+    for (const slot of Object.values(row.features || {})) {
+      for (const ev of slot?.evidence || []) {
+        if (!ev.reviewKey || !ev.pending) continue;
+        if (decided.has(ev.reviewKey)) {
+          ev.pending = false;
+          cleared += 1;
+        }
+      }
+    }
+  }
+  return cleared;
 }
