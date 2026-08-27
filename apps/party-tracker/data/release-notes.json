@@ -594,5 +594,11 @@
     "items": [
       "fix: consolidate remaining fixes (#573, #574) + UNSCORED_RANK_DEFAULTS"
     ]
+  },
+  "1.35.0": {
+    "title": "What's new",
+    "items": [
+      "feat(agents): durable #643 pointer for cloud resume:start (#668)"
+    ]
   }
 }
