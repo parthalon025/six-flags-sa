@@ -20,6 +20,7 @@
  */
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { isAgentPolicyOnlyDiff } from './agent-policy-diff.mjs';
 import { scrubGitEnv } from './git-env.mjs';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -70,6 +71,7 @@ const CODE_PATH =
 /** Does this diff need a standards review? Unknown diffs fail closed. */
 export function reviewRequiredForFiles(files) {
   if (files == null) return true;
+  if (isAgentPolicyOnlyDiff(files)) return false;
   return files.some((f) => CODE_PATH.test(f) && !STAMP_EXCLUDES.includes(f));
 }
 
