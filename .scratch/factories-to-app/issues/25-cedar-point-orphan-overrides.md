@@ -59,7 +59,7 @@ test that already covers the intended behaviour.
 
 - [ ] Cedar Point's pois carry `Lake Erie Nor'easter` and `Waterin' Hole`
 - [ ] `test/builder/unit.mjs` override check passes without weakening the assertion
-- [ ] A test covers whichever cause was found (survivor id assignment, or override key resolution
+- [x] A test covers whichever cause was found (survivor id assignment, or override key resolution
       across dedup suffixes) and fails on its own message first
 - [ ] `npm run test:pre-merge-vertical` green
 
@@ -100,3 +100,20 @@ rematches on the OSM element and the key never rotates again.
 `test/builder/unit.mjs` — 576 passed, 0 failed.
 
 Follow-on filed as ticket 27 (`--reapply` strips ledger `osm` provenance).
+
+## Regression coverage (added 2026-08-27)
+
+The two-axis Spec review caught that the fix shipped with **no test** — this ticket's own
+acceptance asked for one and `dce60a1` touched no test file. Closed now by
+`test/builder/unit.mjs :: a rename override survives rebuild only while the ledger pins the OSM
+element`, pinned in `check-names.json`.
+
+It pins **both halves** of the mechanism rather than just the happy path:
+
+- a ledger record carrying the post-override name and **no `osm`** rotates its key on rebuild, and
+  an override filed under the base key resolves to `null` — the silent failure itself
+- the same record **with the OSM element pinned** keeps its key through the rename, which is why
+  re-keying to the live key is durable rather than a reprieve
+
+Verified discriminating: disabling `assignKeys` step 1 (the OSM-element rematch) makes it fail on
+its own message.
