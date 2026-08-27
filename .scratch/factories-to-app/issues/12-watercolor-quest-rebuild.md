@@ -2,7 +2,6 @@
 
 **What to build:** Bake kings-island with watercolor-quest kit, compile display pack, publish to live app public bundle.
 **Blocked by:** None
-**Status:** resolved
 
 - [x] Bake kings-island --kit watercolor-quest
 - [x] venues:display --bake

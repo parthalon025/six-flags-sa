@@ -1421,8 +1421,12 @@ async function runCatalogBatch(argv) {
     process.exit(0);
   }
 
-  const mode = args.allowNoHeights ? 'geometry only' : 'full pipeline';
-  console.error(`Building ${parks.length} of ${catalog.parks.length} catalog parks (${mode})…`);
+  const globalMode = args.allowNoHeights === true
+    ? 'geometry only (CLI)'
+    : args.allowNoHeights === false
+      ? 'strict heights (CLI)'
+      : 'per-catalog defaults';
+  console.error(`Building ${parks.length} of ${catalog.parks.length} catalog parks (${globalMode})…`);
 
   const summary = await runVenueBatch(parks, {
     ...pipelineOptsFromCatalogArgs(args, { batch: true }),

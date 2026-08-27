@@ -88,6 +88,21 @@ await check('pipelineHeightOptsForPark skips heights stages for catalog water-pa
   return true;
 });
 
+await check('catalog allowNoHeights:false overrides height-less kind', () => {
+  assert.equal(
+    catalogAllowsNoHeights({ kind: 'water-park', allowNoHeights: false }),
+    false,
+  );
+  assert.equal(
+    resolveAllowNoHeights({
+      cliAllowNoHeights: null,
+      catalogEntry: { kind: 'water-park', allowNoHeights: false },
+    }),
+    false,
+  );
+  return true;
+});
+
 await check('top-100 catalog annotates known water parks (#428)', async () => {
   const { loadCatalog } = await import('../../packages/venue-builder/lib/top-parks-catalog.mjs');
   const catalog = loadCatalog();
