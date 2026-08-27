@@ -4843,7 +4843,8 @@ await check('a queue with nothing to go on is reported, not guessed at', () => {
 
 /* --------------------------------------------------------- camping detail -- */
 
-const { campDetailsFromTags } = await import('../../packages/venue-builder/lib/osm-tags.mjs');
+const { campDetailsFromTags, openingHoursFromTags } = await import('../../packages/venue-builder/lib/osm-tags.mjs');
+const { validatePoi } = await import('@party-tracker/shared/poi.js');
 const { campChips, campDetails, campSearchText } = await import('../../apps/party-tracker/lib/camping.js');
 
 await check('hookups are read off whatever the mapper wrote', () => {
@@ -4862,6 +4863,85 @@ await check('hookups are read off whatever the mapper wrote', () => {
   // Nothing recorded is not the same as recorded as absent.
   assert.equal(campDetailsFromTags({ name: 'Site 12' }), null);
   assert.equal(campDetailsFromTags({ power_supply: 'no' }).power, false);
+  return true;
+});
+
+/* ---------------------------------------------------- opening hours tag -- */
+
+await check('opening_hours is carried as a raw string when present', () => {
+  assert.equal(openingHoursFromTags({ opening_hours: 'Mo-Fr 10:00-18:00' }), 'Mo-Fr 10:00-18:00');
+  assert.equal(openingHoursFromTags({ opening_hours: ' 24/7 ' }), '24/7');
+  assert.equal(openingHoursFromTags({ name: 'Cafe' }), null);
+  assert.equal(openingHoursFromTags({ opening_hours: '' }), null);
+  return true;
+});
+
+await check('the shared POI schema accepts opening hours on a place row', () => {
+  assert.deepEqual(
+    validatePoi({
+      n: 'Kings Island Theater',
+      lat: 39.34,
+      lng: -84.27,
+      c: 'show',
+      oh: 'Jun-Aug Sa-Su 14:00-16:00',
+    }),
+    { ok: true },
+  );
+  assert.equal(validatePoi({ n: 'X', lat: 1, lng: 2, c: 'food', oh: 9 }).ok, false);
+  return true;
+});
+
+const { buildPois } = await import('../../packages/venue-builder/bin/build-venue.mjs');
+
+await check('a tagged POI round-trips opening_hours through buildPois', () => {
+  const elements = [
+    {
+      type: 'node',
+      id: 1,
+      lat: 39.344,
+      lon: -84.268,
+      tags: { name: 'Kings Island Theater', amenity: 'theatre', opening_hours: 'Jun-Aug Sa-Su 14:00-16:00' },
+    },
+  ];
+  const pois = buildPois(elements, [], { dedupeMetres: 35 });
+  assert.equal(pois.length, 1);
+  assert.equal(pois[0].oh, 'Jun-Aug Sa-Su 14:00-16:00');
+  assert.equal(pois[0].c, 'show');
+  assert.deepEqual(validatePoi(pois[0]), { ok: true });
+  return true;
+});
+
+await check('a POI with no opening_hours tag is unchanged apart from coordinates', () => {
+  const elements = [
+    { type: 'node', id: 2, lat: 39.345, lon: -84.269, tags: { name: 'Blue Ice Cream', amenity: 'ice_cream' } },
+  ];
+  const pois = buildPois(elements, [], { dedupeMetres: 35 });
+  assert.equal(pois.length, 1);
+  assert.equal(pois[0].oh, undefined);
+  assert.deepEqual(Object.keys(pois[0]).sort(), ['c', 'lat', 'lng', 'n', 'osm']);
+  return true;
+});
+
+await check('when two POIs dedupe, the survivor keeps opening hours from either', () => {
+  const elements = [
+    {
+      type: 'node',
+      id: 3,
+      lat: 39.3441,
+      lon: -84.2681,
+      tags: { name: 'Orion', attraction: 'roller_coaster' },
+    },
+    {
+      type: 'node',
+      id: 4,
+      lat: 39.34415,
+      lon: -84.26815,
+      tags: { name: 'Orion', attraction: 'roller_coaster', opening_hours: 'May-Sep 10:00-22:00' },
+    },
+  ];
+  const pois = buildPois(elements, [], { dedupeMetres: 35 });
+  assert.equal(pois.length, 1);
+  assert.equal(pois[0].oh, 'May-Sep 10:00-22:00');
   return true;
 });
 
