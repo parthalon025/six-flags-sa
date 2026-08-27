@@ -135,7 +135,7 @@ await check('shipped gaps path includes stale and conflict seeds', () => {
     gapNotes: {},
     asOf: '2026-08-27',
   });
-  assert.ok(doc.gaps.some((g) => g.type === 'verify' && g.target === null));
+  assert.ok(doc.gaps.some((g) => g.type === 'verify' && g.target === 'parks-api'));
   assert.ok(doc.gaps.some((g) => g.type === 'path_disputed' && g.target === 'maverick'));
   return true;
 });

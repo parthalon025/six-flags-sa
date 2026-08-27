@@ -3,8 +3,9 @@
  *
  * Builder ask seeds and low-confidence queue evidence stay in certification
  * sidecars. This module is the seam that ships what guests can settle:
- * height, queue, path, restroom, food, gate, camping. Credits, aliases,
- * locality, and live ops never go in `*.gaps.json`.
+ * height, queue, path, path_disputed, restroom, food, gate, camping, verify
+ * (stale adapter cache). Credits, aliases, locality, and live ops never go
+ * in `*.gaps.json`.
  *
  * Place keys `i` are unique. Invent one Gap per `i`. A display name is only
  * a fallback when exactly one Place has that title; an ambiguous title is
@@ -217,7 +218,7 @@ export function shippedGapsDocument({ venueId, seeds = [], pois = [], map = null
       continue;
     }
     if (type === 'verify') {
-      add(type, null);
+      add(type, seed.adapterId || null);
       continue;
     }
     add(type, null);
