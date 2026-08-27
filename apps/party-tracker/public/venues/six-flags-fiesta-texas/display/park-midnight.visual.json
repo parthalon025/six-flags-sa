@@ -1,0 +1,151 @@
+{
+  "skin": "park-midnight",
+  "venue": "six-flags-fiesta-texas",
+  "tokens": {
+    "mode": "night",
+    "colors": {
+      "path": "#C4A882",
+      "grass": "#1E3020",
+      "label": "#F0E8DC",
+      "water": "#1E4A5C",
+      "ground": "#1A1520",
+      "building": "#2A2438"
+    },
+    "labelHalo": true,
+    "contrastFloor": 4.5
+  },
+  "basedOn": {
+    "map": "2026-08-09"
+  },
+  "terrain": {
+    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n30w099/USGS_13_n30w099.tif",
+    "grid": {
+      "cols": 240,
+      "rows": 254
+    },
+    "bounds": {
+      "east": -98.60144,
+      "west": -98.61789,
+      "north": 29.60751,
+      "south": 29.59224
+    },
+    "relief": {
+      "max": 375.9,
+      "min": 295.8
+    },
+    "source": "usgs-3dep",
+    "fitness": "marginal",
+    "hillshade": {
+      "file": "hillshade.png",
+      "azimuth": 315,
+      "altitude": 45
+    },
+    "cellMetres": 6.64,
+    "resolution": 10,
+    "constrained": {
+      "pads": 268,
+      "nodes": 163785,
+      "paths": 938,
+      "water": 40
+    },
+    "steepDegrees": 18,
+    "surfaceModel": false
+  },
+  "version": 1,
+  "fallback": {
+    "landTone": "name-hue"
+  },
+  "surfaces": {
+    "lot": {
+      "color": "#5B5762",
+      "layers": [
+        "parking"
+      ],
+      "material": "concrete--lot"
+    },
+    "pool": {
+      "color": "#327A94",
+      "layers": [
+        "pool"
+      ],
+      "material": "water--pool"
+    },
+    "slide": {
+      "color": "#D2996C",
+      "layers": [
+        "slide"
+      ],
+      "material": "fiberglass--flume"
+    },
+    "water": {
+      "color": "#35728F",
+      "layers": [
+        "water"
+      ],
+      "material": "water--calm"
+    },
+    "walkway": {
+      "color": "#A9987D",
+      "layers": [
+        "path"
+      ],
+      "material": "paving-stones--warm"
+    },
+    "structure": {
+      "color": "#3A363F",
+      "layers": [
+        "building"
+      ],
+      "material": "roofing--shingle"
+    },
+    "vegetation": {
+      "color": "#334126",
+      "layers": [
+        "grass",
+        "wood",
+        "park"
+      ],
+      "material": "grass--meadow"
+    },
+    "service-road": {
+      "color": "#8C7B62",
+      "layers": [
+        "service"
+      ],
+      "material": "asphalt--worn"
+    },
+    "coaster-track": {
+      "color": "#B8B8B4",
+      "layers": [
+        "coaster"
+      ],
+      "material": "steel--track"
+    }
+  },
+  "landTones": {
+    "Rockville": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Spassburg": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "DC Universe": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Los Festivales": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Texas State Square": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Fiesta Bay Boardwalk": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    }
+  }
+}

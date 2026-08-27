@@ -21,6 +21,31 @@ import {
 import { buildBundleManifest, shippedDisplayFiles } from '../venue-bundle.mjs';
 import { bundlePath, VENUE_DIR } from './delivery-io.mjs';
 
+const TRUTH_KINDS = ['map', 'pois', 'gaps'];
+
+function truthUrlPaths(venueId) {
+  return new Set(TRUTH_KINDS.map((kind) => `/venues/${venueId}.${kind}.json`));
+}
+
+/** Pin bundle hashes to the bytes already on disk when the truth trio is shipped. */
+function overlayShippedTruthBytes(venueId, venueDir, assembled) {
+  const files = new Map(assembled.files);
+  for (const kind of TRUTH_KINDS) {
+    const diskPath = path.join(venueDir, `${venueId}.${kind}.json`);
+    if (!existsSync(diskPath)) continue;
+    files.set(`/venues/${venueId}.${kind}.json`, readFileSync(diskPath));
+  }
+  return {
+    ...assembled,
+    files,
+    bundle: buildBundleManifest({
+      id: venueId,
+      basedOn: assembled.basedOn,
+      files,
+    }),
+  };
+}
+
 function truthBuffers(venueId, map, pois, gaps) {
   const meta = map?.meta ?? { id: venueId };
   const { meta: _ignored, ...layers } = map || {};
@@ -138,20 +163,26 @@ export async function exportFromPostdb(venueId, opts = {}) {
   const displaySpecs = Object.fromEntries(packs.map((p) => [p.skinId, p.body]));
   const extraFiles = existsSync(displayDir) ? extraDisplayFiles(venueId, displayDir) : new Map();
 
-  const assembled = assembleExportBundle({
+  const assembled = overlayShippedTruthBytes(
     venueId,
-    revisionId: truth.revisionId,
-    generated: truth.generated ?? truth.map?.meta?.generated ?? null,
-    map: truth.map,
-    pois: truth.pois,
-    gaps: truth.gaps,
-    displaySpecs,
-    extraFiles,
-  });
+    venueDir,
+    assembleExportBundle({
+      venueId,
+      revisionId: truth.revisionId,
+      generated: truth.generated ?? truth.map?.meta?.generated ?? null,
+      map: truth.map,
+      pois: truth.pois,
+      gaps: truth.gaps,
+      displaySpecs,
+      extraFiles,
+    }),
+  );
 
+  const skipWrite = truthUrlPaths(venueId);
   const written = [];
   for (const [urlPath, buf] of assembled.files) {
     const dest = path.join(venueDir, urlPath.replace(/^\/venues\//, ''));
+    if (skipWrite.has(urlPath) && existsSync(dest)) continue;
     mkdirSync(path.dirname(dest), { recursive: true });
     writeFileSync(dest, buf);
     written.push(dest);

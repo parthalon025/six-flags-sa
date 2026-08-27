@@ -65,7 +65,8 @@ if (!legArg || legArg === 'delivery') {
   assert.equal(typeof gate.ok, 'boolean');
   const published = await publishBundle('kings-island', { skipReindex: true, filesOnly: true });
   assert.ok(published.bundle?.files?.length, 'seed bundle readable through delivery export seam');
-  assert.equal(published.revisionId, null);
+  assert.equal(published.revisionId, published.bundle.basedOn.revisionId);
+  assert.ok(published.bundle.basedOn.revisionId, 'seed bundle pins basedOn.revisionId');
   assert.equal(SINCE_QUERY, 'since');
   const since = parseSinceParam(new URLSearchParams('since=rev-ki'));
   assert.equal(since.since, 'rev-ki');
@@ -78,6 +79,10 @@ if (!legArg || legArg === 'delivery') {
     priorKnown: false,
   });
   assert.equal(delta.mode, 'full', 'unknown since → full KI manifest');
+
+  execFileSync('node', ['test/builder/delivery-export.mjs'], { cwd: ROOT, stdio: 'inherit' });
+  execFileSync('node', ['test/builder/delivery-seed-export.mjs'], { cwd: ROOT, stdio: 'inherit' });
+  execFileSync('node', ['test/builder/delivery-delta.mjs'], { cwd: ROOT, stdio: 'inherit' });
 }
 
 // dependency-cruiser boundary rules (visual → map-io only)

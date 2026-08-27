@@ -2,9 +2,10 @@
   "version": 1,
   "venue": "cedar-point",
   "basedOn": {
-    "map": "2026-08-09"
+    "map": "2026-08-09",
+    "revisionId": "760c590a-272b-4ea6-8e51-9dc63b439d73"
   },
-  "bytes": 598653,
+  "bytes": 612430,
   "files": [
     {
       "path": "/venues/cedar-point.gaps.json",
@@ -20,6 +21,26 @@
       "path": "/venues/cedar-point.pois.json",
       "bytes": 72727,
       "sha256": "caea6a9a833bc28250fb833e29bbd468326a44224df86f1444e1066784f9af2b"
+    },
+    {
+      "path": "/venues/cedar-point/display/layered-atlas.visual.json",
+      "bytes": 3493,
+      "sha256": "47448cf9788eea64741af38b0b00353b86cc4ba1a952d7299d9ea3c126fdbae7"
+    },
+    {
+      "path": "/venues/cedar-point/display/park-midnight.visual.json",
+      "bytes": 3399,
+      "sha256": "6b3eaa7caae4c52fa3715dfbe3db3d8dd63ba16b81c3f099992fd1d0033225e6"
+    },
+    {
+      "path": "/venues/cedar-point/display/trail.visual.json",
+      "bytes": 3389,
+      "sha256": "92351dfac578a4615cf1dc82d04368455a49f7337d5791bf27dd4153327cf7b1"
+    },
+    {
+      "path": "/venues/cedar-point/display/watercolor-quest.visual.json",
+      "bytes": 3496,
+      "sha256": "db5dea11875606b6d64807731919ae28106abf18d8ac3f83f01a5aaf656d7e45"
     }
   ]
 }

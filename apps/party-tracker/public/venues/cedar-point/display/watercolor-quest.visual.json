@@ -1,0 +1,179 @@
+{
+  "skin": "watercolor-quest",
+  "venue": "cedar-point",
+  "tokens": {
+    "mode": "day",
+    "colors": {
+      "path": "#756276",
+      "grass": "#D9D0B5",
+      "label": "#57485C",
+      "water": "#8FB5C2",
+      "ground": "#F4EFDF",
+      "building": "#B8A68D",
+      "groundEdge": "#C9BFAE",
+      "pathCasing": "#F4EFDF",
+      "structureEdge": "#756276"
+    },
+    "labelHalo": true,
+    "contrastFloor": 4.5
+  },
+  "basedOn": {
+    "map": "2026-08-09"
+  },
+  "terrain": {
+    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n42w083/USGS_13_n42w083.tif",
+    "grid": {
+      "cols": 240,
+      "rows": 257
+    },
+    "bounds": {
+      "east": -82.67521,
+      "west": -82.69661,
+      "north": 41.4926,
+      "south": 41.4753
+    },
+    "relief": {
+      "max": 179.4,
+      "min": 173.3
+    },
+    "source": "usgs-3dep",
+    "fitness": "marginal",
+    "hillshade": {
+      "file": "hillshade.png",
+      "azimuth": 315,
+      "altitude": 45
+    },
+    "cellMetres": 7.44,
+    "resolution": 10,
+    "constrained": {
+      "pads": 226,
+      "nodes": 110376,
+      "paths": 1032,
+      "water": 51
+    },
+    "steepDegrees": 18,
+    "surfaceModel": false
+  },
+  "version": 1,
+  "fallback": {
+    "landTone": "name-hue"
+  },
+  "surfaces": {
+    "lot": {
+      "color": "#B0A595",
+      "layers": [
+        "parking"
+      ],
+      "material": "concrete--lot"
+    },
+    "pool": {
+      "color": "#75BBD1",
+      "layers": [
+        "pool"
+      ],
+      "material": "water--pool"
+    },
+    "slide": {
+      "color": "#A36F64",
+      "layers": [
+        "slide"
+      ],
+      "material": "fiberglass--flume"
+    },
+    "water": {
+      "color": "#79B2CC",
+      "layers": [
+        "water",
+        "sea"
+      ],
+      "material": "water--calm"
+    },
+    "walkway": {
+      "color": "#7A6E76",
+      "layers": [
+        "path"
+      ],
+      "material": "paving-stones--warm"
+    },
+    "structure": {
+      "color": "#8F8472",
+      "layers": [
+        "building"
+      ],
+      "material": "roofing--shingle"
+    },
+    "vegetation": {
+      "color": "#A3A17F",
+      "layers": [
+        "grass",
+        "wood",
+        "park"
+      ],
+      "material": "grass--meadow"
+    },
+    "service-road": {
+      "color": "#5D515B",
+      "layers": [
+        "service"
+      ],
+      "material": "asphalt--worn"
+    },
+    "coaster-track": {
+      "color": "#5D5867",
+      "layers": [
+        "coaster"
+      ],
+      "material": "steel--track"
+    }
+  },
+  "landTones": {
+    "Camp Snoopy": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Main Midway": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Frontier Town": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Gemini Midway": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Kiddy Kingdom": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Planet Snoopy": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Frontier Trail": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Lakeside Midway": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Lighthouse Point": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Millennium Midway": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Cedar Point Shores": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Professor Delbert's Frontier Fling": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    }
+  }
+}

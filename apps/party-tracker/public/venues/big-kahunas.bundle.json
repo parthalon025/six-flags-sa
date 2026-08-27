@@ -2,9 +2,10 @@
   "version": 1,
   "venue": "big-kahunas",
   "basedOn": {
-    "map": "2026-08-10"
+    "map": "2026-08-10",
+    "revisionId": "c084f90e-0458-4211-a309-297f48345960"
   },
-  "bytes": 53371,
+  "bytes": 62096,
   "files": [
     {
       "path": "/venues/big-kahunas.gaps.json",
@@ -20,6 +21,26 @@
       "path": "/venues/big-kahunas.pois.json",
       "bytes": 12171,
       "sha256": "93930e5483181c4afb2041f9e8f52df8dfc4e790332719f11c0d1731ac108ee7"
+    },
+    {
+      "path": "/venues/big-kahunas/display/layered-atlas.visual.json",
+      "bytes": 2230,
+      "sha256": "07772e66cbac26dc6cc4895104cb685685506700050da8372ee65bf7576eccfd"
+    },
+    {
+      "path": "/venues/big-kahunas/display/park-midnight.visual.json",
+      "bytes": 2136,
+      "sha256": "b82f582adf654a4148c177c231d678fd074cd9326e6523a09f66965b7e54bf0d"
+    },
+    {
+      "path": "/venues/big-kahunas/display/trail.visual.json",
+      "bytes": 2126,
+      "sha256": "dd3290bf71a592eb839231e12ddb5b22dc51a7df6f074f3d43cb91c1494f5ac6"
+    },
+    {
+      "path": "/venues/big-kahunas/display/watercolor-quest.visual.json",
+      "bytes": 2233,
+      "sha256": "59a81d2a9219f9d9e2c995fe646663b849fc18d54d856e473b46613e9094e594"
     }
   ]
 }

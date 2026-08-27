@@ -165,6 +165,8 @@ export const TEST_ESTATE = {
   'test/builder/postdb-io.mjs': ['test:builder'],
   'test/builder/postdb-sync.mjs': ['test:builder'],
   'test/builder/delivery-export.mjs': ['test:builder'],
+  'test/builder/delivery-seed-export.mjs': ['test:builder'],
+  'test/builder/delivery-bundle-revision-gate.mjs': ['test:builder'],
   'test/builder/delivery-delta.mjs': ['test:builder'],
   'test/builder/display-schema-gate.mjs': ['test:builder'],
   'test/builder/poly-haven.mjs': ['test:builder'],
