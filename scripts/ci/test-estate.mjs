@@ -157,6 +157,7 @@ export const TEST_ESTATE = {
   'test/builder/ambient-signal-seeds.mjs': ['test:builder'],
   'test/builder/imagery-claims.mjs': ['test:builder'],
   'test/builder/imagery-ledger.mjs': ['test:builder'],
+  'test/builder/inspect-evidence.mjs': ['test:builder'],
   'test/builder/iso-track.mjs': ['test:builder'],
   'test/builder/iso-world.mjs': ['test:builder'],
   'test/builder/llm-agent.mjs': ['test:builder'],

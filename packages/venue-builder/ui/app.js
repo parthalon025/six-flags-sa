@@ -1,28 +1,13 @@
 const root = document.getElementById('root');
+const approvals = JSON.parse(localStorage.getItem('venue-builder-approvals') || '{}');
 
-async function postReview(venueId, decision) {
-  const res = await fetch('/api/review', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ venueId, decision }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || res.statusText);
-  return data.decision;
-}
-
-async function loadReviews() {
-  const res = await fetch('/api/reviews');
-  if (!res.ok) throw new Error(`reviews ${res.status}`);
-  return res.json();
+function saveApprovals() {
+  localStorage.setItem('venue-builder-approvals', JSON.stringify(approvals));
 }
 
 async function load() {
-  const [compareRes, reviews] = await Promise.all([
-    fetch('/api/compare'),
-    loadReviews(),
-  ]);
-  const data = await compareRes.json();
+  const res = await fetch('/api/compare');
+  const data = await res.json();
   root.innerHTML = '';
 
   const sum = document.createElement('p');
@@ -87,52 +72,54 @@ async function load() {
     pois.textContent = 'View POIs';
     actions.appendChild(pois);
 
-    let decision = reviews[stats.id] ?? null;
+    const evidence = document.createElement('a');
+    evidence.href = `/evidence/${stats.id}`;
+    evidence.target = '_blank';
+    evidence.textContent = 'Evidence review';
+    evidence.dataset.venue = stats.id;
+    evidence.className = 'evidence-link';
+    actions.appendChild(evidence);
 
     const approve = document.createElement('button');
     approve.type = 'button';
-    approve.className = `approve ${decision === 'approve' ? 'on' : ''}`;
-    approve.textContent = decision === 'approve' ? 'Approved for ship' : 'Approve for ship';
-    approve.addEventListener('click', async () => {
-      approve.disabled = true;
-      try {
-        decision = await postReview(stats.id, 'approve');
-        approve.classList.toggle('on', decision === 'approve');
-        approve.textContent = decision === 'approve' ? 'Approved for ship' : 'Approve for ship';
-        reject.classList.toggle('on', decision === 'reject');
-      } catch (e) {
-        alert(e.message);
-      } finally {
-        approve.disabled = false;
-      }
+    approve.className = `approve ${approvals[stats.id] ? 'on' : ''}`;
+    approve.textContent = approvals[stats.id] ? 'Approved for ship' : 'Approve for ship';
+    approve.addEventListener('click', () => {
+      approvals[stats.id] = !approvals[stats.id];
+      saveApprovals();
+      approve.classList.toggle('on', approvals[stats.id]);
+      approve.textContent = approvals[stats.id] ? 'Approved for ship' : 'Approve for ship';
     });
     actions.appendChild(approve);
-
-    const reject = document.createElement('button');
-    reject.type = 'button';
-    reject.className = `reject ${decision === 'reject' ? 'on' : ''}`;
-    reject.textContent = decision === 'reject' ? 'Rejected' : 'Reject';
-    reject.addEventListener('click', async () => {
-      reject.disabled = true;
-      try {
-        decision = await postReview(stats.id, 'reject');
-        reject.classList.toggle('on', decision === 'reject');
-        reject.textContent = decision === 'reject' ? 'Rejected' : 'Reject';
-        approve.classList.toggle('on', decision === 'approve');
-        approve.textContent = decision === 'approve' ? 'Approved for ship' : 'Approve for ship';
-      } catch (e) {
-        alert(e.message);
-      } finally {
-        reject.disabled = false;
-      }
-    });
-    actions.appendChild(reject);
 
     card.appendChild(actions);
     grid.appendChild(card);
   }
 
   root.appendChild(grid);
+  await markEvidenceLinks(grid);
+}
+
+async function markEvidenceLinks(grid) {
+  const links = [...grid.querySelectorAll('a.evidence-link')];
+  await Promise.all(
+    links.map(async (link) => {
+      const venueId = link.dataset.venue;
+      try {
+        const res = await fetch(`/api/evidence/${encodeURIComponent(venueId)}`);
+        if (!res.ok) throw new Error(`evidence status ${res.status}`);
+        const data = await res.json();
+        if (!data.available) {
+          link.classList.add('missing');
+          link.textContent = 'Evidence not generated';
+          link.title = 'Evidence review map not generated for this venue';
+        }
+      } catch {
+        link.classList.add('missing');
+        link.title = 'Could not check evidence review status';
+      }
+    }),
+  );
 }
 
 load().catch((e) => {
