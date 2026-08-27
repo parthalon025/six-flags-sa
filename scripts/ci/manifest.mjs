@@ -66,6 +66,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/app-store-connect.test.mjs',
   'test/scripts/store-screenshot-compose.test.mjs',
   'test/scripts/app-test-origin.test.mjs',
+  'test/scripts/builder-certify-ci.test.mjs',
 ];
 
 /**

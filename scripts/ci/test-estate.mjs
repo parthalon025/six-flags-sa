@@ -136,6 +136,7 @@ export const TEST_ESTATE = {
   'test/app/zoom-bands.test.mjs': ['test:unit'],
 
   // --- test/builder: assertions over generated venue output ----------------
+  'test/builder/certify-regression.mjs': ['test:builder'],
   'test/builder/check-names.mjs': ['test:builder'],
   'test/builder/compare.mjs': ['test:builder'],
   'test/builder/display-assets.mjs': ['test:builder'],
@@ -181,6 +182,7 @@ export const TEST_ESTATE = {
   'test/scripts/app-store-connect.test.mjs': ['ci-gate'],
   'test/scripts/apple-developer.test.mjs': ['ci-gate'],
   'test/scripts/bake-drift-watch.test.mjs': ['ci-gate'],
+  'test/scripts/builder-certify-ci.test.mjs': ['ci-gate'],
   'test/scripts/billing-sync-check.test.mjs': ['ci-gate', 'test:unit'],
   'test/scripts/lakebase-config.test.mjs': ['ci-gate', 'test:unit'],
   'test/scripts/postdb-migrate.test.mjs': ['ci-gate', 'test:unit'],
