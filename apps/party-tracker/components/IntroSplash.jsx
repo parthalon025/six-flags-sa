@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import BrandLockup from '@/components/BrandLockup';
 import { BRAND } from '@/lib/brand';
+import { welcomeEyebrow } from '@/lib/introGate';
 import { pendingReleaseNotes } from '@/lib/releaseNotes';
 import { APP_VERSION } from '@/lib/version';
 
@@ -10,7 +11,7 @@ import { APP_VERSION } from '@/lib/version';
  * First-run logo splash — brand, slogan, one-line pitch.
  * Tap the card to go on. Release notes stay behind the version line.
  */
-export default function IntroSplash({ version = APP_VERSION, onContinue }) {
+export default function IntroSplash({ version = APP_VERSION, visitorName = null, onContinue }) {
   const [showNotes, setShowNotes] = useState(false);
   const notes = pendingReleaseNotes(version);
 
@@ -57,7 +58,7 @@ export default function IntroSplash({ version = APP_VERSION, onContinue }) {
         }}
         aria-label="Tap to continue"
       >
-        <div className="gateEyebrow">Welcome</div>
+        <div className="gateEyebrow">{welcomeEyebrow(visitorName)}</div>
         <BrandLockup
           size="lg"
           stacked

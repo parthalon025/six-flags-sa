@@ -15,9 +15,8 @@ Committed wayfinder map for macro / Cloud resume fog tracking. Supersedes GitHub
 - **PostDB is the factory bus** (ADR-0024, owner Round 1) — git holds inputs/code; factory outputs live in Postgres.
 - **Three module seams** in one package: `map-factory/` · `visual-factory/` · `delivery/` (ADR-0025).
 - **Phone contract locked** — hash manifest, truth/display split, `planBundleSync`; delta via `?since=revision_id` (ticket 17).
-- **Trains H/I complete** — do not start new H/I slices; remaining work is app integration (tickets 20–21).
-- **Operating stack frozen** — Docker Postgres + CI `postgres:16` author-time; Vercel + Neon hosted; Cloudflare DNS only; Databricks PAUSED (`scripts/lib/operating-stack.json`).
-- **Delivery v1** — same-origin blobs + API manifest; R2 deferred until Vercel transfer bills (pending ticket 19 grill).
+- **Trains H/I complete** — guest Train H gaps shipped (tickets 20–21 on PR stack #714–#716).
+- **Delivery v1 complete** — PostDB export → Vercel same-origin blobs → hash-verified app cache (ADR-0024 Slice 1). R2 only when Vercel transfer bills (`addVendorWhen`, ticket 19 resolved).
 - **Tickets 15, 18 resolved** — PostDB Slice 1 and display-schema gate shipped (#667).
 
 ## Not yet specified

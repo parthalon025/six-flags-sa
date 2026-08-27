@@ -1,8 +1,16 @@
 {
   "schema": 1,
+<<<<<<< HEAD
   "diffHash": "53b204bcf5777709",
   "mergeBase": "45f161a4bb268658c20a79fd4490242e4c9b6cde",
   "model": "claude-sonnet-5",
   "gitnexus": "unavailable",
   "recordedAt": "2026-08-27T03:03:54.467Z"
+=======
+  "diffHash": "2af77a46cd1a5d9a",
+  "mergeBase": "96975b09cefa2fe2c56ff492a8b7e2d61514cb8d",
+  "model": "claude-sonnet-5",
+  "gitnexus": "unavailable",
+  "recordedAt": "2026-08-27T07:17:12.889Z"
+>>>>>>> origin/cursor/factories-to-app-ticket-16-1790
 }

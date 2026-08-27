@@ -11,11 +11,9 @@
  *   npm run test:visual
  */
 
-import { dismissUpdateSplash, dismissIntroSplash, go, launch, openPhone, until, signIn, IGNORABLE_CONSOLE } from './browser.mjs';
+import { BASE, dismissUpdateSplash, dismissIntroSplash, go, launch, openPhone, until, signIn, IGNORABLE_CONSOLE } from './browser.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
-
-const BASE = process.env.BASE_URL || 'http://127.0.0.1:3000';
 const OUT = path.join(process.cwd(), 'test', 'shots');
 // The Beast's station, so the shots land somewhere recognisable.
 const HOME = { latitude: 39.340154, longitude: -84.266027 };

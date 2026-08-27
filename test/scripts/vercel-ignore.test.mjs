@@ -219,6 +219,22 @@ for (const path of [
   );
 }
 
+// Wear-time bundle sync API imports @party-tracker/venue-builder/delivery.js — the
+// closure must ship on Vercel (ticket 17 / PR #667).
+for (const path of [
+  '!packages/venue-builder/lib/delivery/**',
+  '!packages/venue-builder/lib/db/**',
+  '!packages/venue-builder/lib/postdb-io.mjs',
+  '!packages/venue-builder/lib/venue-io.mjs',
+  '!packages/venue-builder/src/paths.mjs',
+]) {
+  assert.match(
+    vercelIgnore,
+    new RegExp(`^${path.replace(/\./g, '\\.').replace(/\//g, '\\/').replace(/\*\*/g, '\\*\\*')}$`, 'm'),
+    `.vercelignore must keep ${path} for venue bundle sync API`,
+  );
+}
+
 const sw = readFileSync(join(root, 'apps/party-tracker/public/sw.js'), 'utf8');
 assert.match(
   sw,

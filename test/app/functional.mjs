@@ -1254,6 +1254,60 @@ await check('precise sharing expires back to approximate', async () => {
 if (want('walk')) {
 console.log('\n--- walking directions ---');
 
+await check('a narrow phone opens place detail tall enough for two action rows', async () => {
+  const { sheetPlacePx } = await import('../../apps/party-tracker/lib/sheet.js');
+  const beast = { latitude: 39.340154, longitude: -84.266027 };
+  const phone = await openPhone(browser, {
+    lat: beast.latitude,
+    lng: beast.longitude,
+    label: 'NARROW',
+    venue: 'kings-island',
+    viewport: { width: 375, height: 844 },
+  });
+  const p = phone.page;
+  try {
+    for (let i = 0; i < 4; i += 1) {
+      const form = await p.locator('.sheet').evaluate((e) =>
+        ['peek', 'half', 'full', 'shut'].find((s) => e.classList.contains(s)) || null,
+      );
+      if (form === 'peek') break;
+      await p.getByRole('slider', { name: /Resize panel/ }).click();
+      await p.waitForTimeout(350);
+    }
+    await until(() => p.locator('[data-testid="park-map-gl"] canvas').count().then((n) => n >= 1), {
+      timeout: 20000,
+      label: 'park geometry',
+    });
+    try {
+      await tapMapPoi(p, 'The Beast', { timeout: 8000 });
+    } catch {
+      await tapMapPoi(p, null, { timeout: 12000 });
+    }
+    await until(async () => (await p.locator('[data-place-detail]').count()) > 0, {
+      timeout: 12000,
+      label: 'place detail sheet',
+    });
+    const budget = sheetPlacePx(375);
+    const sheetH = Number(
+      await p.locator('.app').evaluate((el) =>
+        parseFloat(getComputedStyle(el).getPropertyValue('--sheetH')),
+      ),
+    );
+    if (sheetH < budget) throw new Error(`sheet ${sheetH}px < narrow budget ${budget}px`);
+    const rally = p.locator('[data-place-detail]').getByRole('button', { name: 'Rally here', exact: true });
+    if (!(await rally.isVisible())) throw new Error('Rally here not visible without scroll');
+    const rallyBox = await rally.boundingBox();
+    const sheetBox = await p.locator('.sheet').boundingBox();
+    if (!rallyBox || !sheetBox) throw new Error('missing layout boxes');
+    if (rallyBox.y + rallyBox.height > sheetBox.y + sheetBox.height + 2) {
+      throw new Error('Rally here sits below the sheet stop');
+    }
+    return true;
+  } finally {
+    await phone.context.close();
+  }
+});
+
 await check('tapping a map icon opens place details and navigation', async () => {
   // After smoke/heights, phone A is mid-filter and mid-sheet. A tap on its
   // overlay pin misses MapLibre's hit-test. A fresh phone at the station
@@ -2524,6 +2578,78 @@ await check('the logo splash opens first and a tap moves to the welcome gate', a
   );
   const next = (await p.locator('.gate h2').innerText()).trim();
   if (next !== 'Plan your day') throw new Error(`tap advanced to: "${next}"`);
+  await fresh.close();
+  return true;
+});
+
+await check('GPS already granted still reaches the welcome gate after the splash', async () => {
+  const fresh = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    permissions: ['geolocation'],
+    geolocation: { latitude: 30.2672, longitude: -97.7431 },
+  });
+  await fresh.addInitScript(() => {
+    localStorage.removeItem('tracker-intro-seen');
+  });
+  const p = await fresh.newPage();
+  await p.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await hydrated(p);
+  await until(async () => (await p.locator('#intro-splash-title').count()) > 0, {
+    timeout: 10000,
+    label: 'the logo splash',
+  });
+  // A returning phone — often already signed in — usually has GPS on before
+  // the splash yields; closing the gate on 'live' used to skip the welcome step.
+  await p.locator('.introSplashCard').click();
+  await until(
+    async () => {
+      if (!(await p.locator('.gate h2').count())) return false;
+      const heading = (await p.locator('.gate h2').innerText()).trim();
+      return heading === 'Plan your day';
+    },
+    { timeout: 10000, label: 'welcome gate after splash with GPS already on' },
+  );
+  await fresh.close();
+  return true;
+});
+
+await check('the welcome intro greets a signed-in Profile by name', async () => {
+  const fresh = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    permissions: ['geolocation'],
+    geolocation: { latitude: 30.2672, longitude: -97.7431 },
+  });
+  await fresh.addInitScript(() => {
+    localStorage.removeItem('tracker-intro-seen');
+    sessionStorage.setItem(
+      'parkbound.session',
+      JSON.stringify({
+        userId: 'usr_test',
+        email: 'ava@parkbound.example',
+        displayName: 'Ava',
+        rank: 'visitor',
+        xp: 0,
+      }),
+    );
+  });
+  const p = await fresh.newPage();
+  await p.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await hydrated(p);
+  await until(async () => (await p.locator('#intro-splash-title').count()) > 0, {
+    timeout: 10000,
+    label: 'the logo splash',
+  });
+  const eyebrow = (await p.locator('.gate:has(#intro-splash-title) .gateEyebrow').innerText()).trim();
+  if (!/^Welcome,\s*Ava$/i.test(eyebrow)) throw new Error(`splash eyebrow: "${eyebrow}"`);
+  await p.locator('.introSplashCard').click();
+  await until(
+    async () => {
+      if (!(await p.locator('.gate h2').count())) return false;
+      const heading = (await p.locator('.gate h2').innerText()).trim();
+      return heading === 'Plan your day, Ava';
+    },
+    { timeout: 10000, label: 'welcome gate with Profile name' },
+  );
   await fresh.close();
   return true;
 });
