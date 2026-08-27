@@ -29,11 +29,11 @@ assert.equal(now.ticket, '21');
 assert.equal(now.stackedOn, '15');
 assert.deepEqual(now.then, []);
 assert.equal(now.status, 'resolved');
-assert.deepEqual(now.mergePending, ['711', '712', '714', '716']);
+assert.deepEqual(now.mergePending, []);
 assert.ok(now.doNotStart.includes('train-h'));
 assert.ok(now.doNotStart.includes('train-i'));
 assert.match(epicNowLine(spec), /ticket 21/);
-assert.match(epicNowLine(spec), /711/);
+assert.match(epicNowLine(spec), /merged to main/);
 
 assert.equal(shouldPrintEpicNow('factories-to-app', spec), true);
 assert.equal(shouldPrintEpicNow(null, spec), true);

@@ -7,11 +7,11 @@
   "epic": {
     "now": {
       "ticket": "21",
-      "title": "Epic complete — merge PR stack #711–#716",
+      "title": "Epic complete — merged to main",
       "stackedOn": "15",
       "then": [],
       "status": "resolved",
-      "mergePending": ["711", "712", "714", "716"],
+      "mergePending": [],
       "doNotStart": ["train-h", "train-i"]
     }
   },
