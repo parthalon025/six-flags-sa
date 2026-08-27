@@ -138,6 +138,7 @@ export const TEST_ESTATE = {
   // --- test/builder: assertions over generated venue output ----------------
   'test/builder/check-names.mjs': ['test:builder'],
   'test/builder/compare.mjs': ['test:builder'],
+  'test/builder/inspect-review.mjs': ['test:builder'],
   'test/builder/display-assets.mjs': ['test:builder'],
   'test/builder/display-bands.mjs': ['test:unit', 'test:builder'],
   'test/builder/display-distinct-cli.mjs': ['test:unit', 'test:builder'],
