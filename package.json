@@ -14,6 +14,7 @@
   "scripts": {
     "prepare": "husky",
     "dev": "npm run dev -w @party-tracker/app",
+    "prototype:q10": "npm run dev -w @party-tracker/app -- --port 3000",
     "build": "npm run build -w @party-tracker/app",
     "start": "npm run start -w @party-tracker/app",
     "lint": "npm run lint:boundaries && npm run lint -w @party-tracker/app",
