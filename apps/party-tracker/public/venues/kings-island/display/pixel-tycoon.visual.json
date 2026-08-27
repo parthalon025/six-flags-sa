@@ -1,26 +1,17 @@
 {
-  "skin": "midnight-carnival",
+  "skin": "pixel-tycoon",
   "venue": "kings-island",
   "tokens": {
-    "mode": "night",
+    "mode": "day",
     "colors": {
-      "path": "#C98A3B",
-      "grass": "#1E3328",
-      "label": "#F5D9A0",
-      "water": "#101C2E",
-      "ground": "#2A2140",
-      "building": "#241F33",
-      "groundEdge": "#352A52",
-      "pathCasing": "#241833",
-      "structureEdge": "#3E6B9E"
+      "path": "#E8D49C",
+      "grass": "#5C9C4C",
+      "label": "#1C140C",
+      "water": "#3C7CBC",
+      "ground": "#C4A46C",
+      "building": "#B45C4C"
     },
     "labelHalo": true,
-    "landTones": {
-      "lean": 0.5,
-      "cover": 0.36,
-      "steps": 5,
-      "spread": 0.12
-    },
     "contrastFloor": 4.5
   },
   "basedOn": {
@@ -66,49 +57,49 @@
   },
   "surfaces": {
     "lot": {
-      "color": "#58545F",
+      "color": "#AE796E",
       "layers": [
         "parking"
       ],
       "material": "concrete--lot"
     },
     "pool": {
-      "color": "#295F78",
+      "color": "#4498CE",
       "layers": [
         "pool"
       ],
       "material": "water--pool"
     },
     "slide": {
-      "color": "#D58741",
+      "color": "#E8B47B",
       "layers": [
         "slide"
       ],
       "material": "fiberglass--flume"
     },
     "water": {
-      "color": "#2D5674",
+      "color": "#4790C9",
       "layers": [
         "water"
       ],
       "material": "water--calm"
     },
     "walkway": {
-      "color": "#AC8653",
+      "color": "#BFB28D",
       "layers": [
         "path"
       ],
       "material": "paving-stones--warm"
     },
     "structure": {
-      "color": "#36333C",
+      "color": "#8D584B",
       "layers": [
         "building"
       ],
       "material": "roofing--shingle"
     },
     "vegetation": {
-      "color": "#33432B",
+      "color": "#588240",
       "layers": [
         "grass",
         "wood",
@@ -117,14 +108,14 @@
       "material": "grass--meadow"
     },
     "service-road": {
-      "color": "#8F6938",
+      "color": "#A29672",
       "layers": [
         "service"
       ],
       "material": "asphalt--worn"
     },
     "coaster-track": {
-      "color": "#BBAF90",
+      "color": "#393937",
       "layers": [
         "coaster"
       ],
@@ -133,74 +124,44 @@
   },
   "landTones": {
     "Area 72": {
-      "night": {
-        "fill": "#4E5F80",
-        "label": "#F5D9A0",
-        "stroke": "#454C70"
-      }
+      "day": "#EAE4F1",
+      "night": "#231D2A"
     },
     "Rivertown": {
-      "night": {
-        "fill": "#21282E",
-        "label": "#F5D9A0",
-        "stroke": "#28293B"
-      }
+      "day": "#E4F1E4",
+      "night": "#1D2A1D"
     },
     "Soak City": {
-      "night": {
-        "fill": "#1B1E30",
-        "label": "#F5D9A0",
-        "stroke": "#24223C"
-      }
+      "day": "#E4EEF1",
+      "night": "#1D272A"
     },
     "Coney Mall": {
-      "night": {
-        "fill": "#6D4E36",
-        "label": "#F5D9A0",
-        "stroke": "#594140"
-      }
+      "day": "#F1EAE4",
+      "night": "#2A231D"
     },
     "Action Zone": {
-      "night": {
-        "fill": "#304062",
-        "label": "#F5D9A0",
-        "stroke": "#32385C"
-      }
+      "day": "#E4ECF1",
+      "night": "#1D252A"
     },
     "Camp Snoopy": {
-      "night": {
-        "fill": "#40464C",
-        "label": "#F5D9A0",
-        "stroke": "#3C3C4E"
-      }
+      "day": "#ECF1E4",
+      "night": "#252A1D"
     },
     "Oktoberfest": {
-      "night": {
-        "fill": "#2E273F",
-        "label": "#F5D9A0",
-        "stroke": "#302846"
-      }
+      "day": "#C9B79E",
+      "night": "#39323F"
     },
     "Planet Snoopy": {
-      "night": {
-        "fill": "#8C6D54",
-        "label": "#F5D9A0",
-        "stroke": "#6E5653"
-      }
+      "day": "#F1EFE4",
+      "night": "#2A281D"
     },
     "Adventure Port": {
-      "night": {
-        "fill": "#3A3D4F",
-        "label": "#F5D9A0",
-        "stroke": "#383650"
-      }
+      "day": "#E4F1EF",
+      "night": "#1D2A28"
     },
     "International Street": {
-      "night": {
-        "fill": "#928070",
-        "label": "#F5D9A0",
-        "stroke": "#716266"
-      }
+      "day": "#F1EEE4",
+      "night": "#2A271D"
     }
   }
 }

@@ -2,9 +2,10 @@
   "version": 1,
   "venue": "kings-island",
   "basedOn": {
-    "map": "2026-08-09"
+    "map": "2026-08-09",
+    "revisionId": "7ce988f1-89e1-4cf5-8c58-969041986b1a"
   },
-  "bytes": 15180670,
+  "bytes": 15207369,
   "files": [
     {
       "path": "/venues/kings-island.gaps.json",
@@ -22,6 +23,16 @@
       "sha256": "fc53a7d72902333428f19575d39ead2810efbd3b85feb5d11223506afe9552ee"
     },
     {
+      "path": "/venues/kings-island/display/blueprint-survey.visual.json",
+      "bytes": 3949,
+      "sha256": "0366cd1764cc6114a0277ce50b484c0f185920400741a85aae82f79b54bad1e5"
+    },
+    {
+      "path": "/venues/kings-island/display/layered-atlas.visual.json",
+      "bytes": 3946,
+      "sha256": "0a00ea72c6a5982327dbe0d65f377932e0efc77234c338dc8dade72a13a8941e"
+    },
+    {
       "path": "/venues/kings-island/display/layered-atlas.world.json",
       "bytes": 302,
       "sha256": "fec504ad6fc0a3a502b085cabf64a5f2302cac88f2897276a41955ca531e4e18"
@@ -30,6 +41,31 @@
       "path": "/venues/kings-island/display/layered-atlas.world.png",
       "bytes": 4675648,
       "sha256": "cfec49db950bb026a6940f901d923eda0381430ded640f84629e900d4ab946ed"
+    },
+    {
+      "path": "/venues/kings-island/display/midnight-carnival.visual.json",
+      "bytes": 3971,
+      "sha256": "f4da5102a103eda67a5a79f08df6b59527e0354811b18bbd287c08204d3ba32f"
+    },
+    {
+      "path": "/venues/kings-island/display/park-midnight.visual.json",
+      "bytes": 3871,
+      "sha256": "736ac99b83baae97db46b9a99142d1ed7e434d2593b6dde0ab5529b7dff04170"
+    },
+    {
+      "path": "/venues/kings-island/display/pixel-tycoon.visual.json",
+      "bytes": 3173,
+      "sha256": "010319879472f5532153989e4c455a929076cb8f3ea7e9be47ba74ad8d365fe8"
+    },
+    {
+      "path": "/venues/kings-island/display/trail.visual.json",
+      "bytes": 3842,
+      "sha256": "74c12559c192e01bedb53a8b725900429d55fe2c7796daab44068696ad2210f2"
+    },
+    {
+      "path": "/venues/kings-island/display/watercolor-quest.visual.json",
+      "bytes": 3947,
+      "sha256": "2fc0d7c2764f87f16a6f71fdec039733f74a2041e139a598d5a888d4c59d0661"
     },
     {
       "path": "/venues/kings-island/display/watercolor-quest.world.json",

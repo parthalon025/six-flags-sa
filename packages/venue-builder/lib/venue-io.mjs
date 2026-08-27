@@ -195,11 +195,19 @@ export function reindex({ preferredDefault } = {}) {
     // bytes this reindex just shipped. It lists the truth trio plus whatever
     // display files have been published under public/venues/<id>/display/ —
     // the download manager's one trusted entry point per venue (ADR-0018).
+    // `basedOn.revisionId` is PostDB's to mint (ADR-0024) and reindex reads
+    // only file truth, so it cannot recompute the cursor — carry forward
+    // whatever the last `venues:export` pinned rather than dropping a field
+    // this pass does not own. Dropping it is what silently un-stamped every
+    // shipped bundle: `publishBundle` exports the revision-pinned manifest and
+    // then reindexes, and reindexing one venue rewrote all of them.
+    const bundleFile = path.join(VENUE_DIR, `${id}.bundle.json`);
     writeBundleManifest(id, {
       venueDir: VENUE_DIR,
       displayDir: path.join(VENUE_DIR, id, 'display'),
-      outFile: path.join(VENUE_DIR, `${id}.bundle.json`),
+      outFile: bundleFile,
       generated: map.meta?.generated ?? null,
+      revisionId: readJson(bundleFile)?.basedOn?.revisionId ?? null,
     });
     venues.push({
       ...map.meta,
