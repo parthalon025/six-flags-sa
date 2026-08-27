@@ -143,6 +143,32 @@ export async function listConsolidateCandidates() {
 }
 
 /**
+ * Steward accept — promote a pending durable contribution for consolidate export.
+ * @param {string} id
+ * @returns {Promise<object | null>}
+ */
+export async function acceptContribution(id) {
+  if (!id) return null;
+  const now = new Date();
+  if (usingPostgres()) {
+    const pool = await getPool();
+    const res = await pool.query(
+      `UPDATE contributions
+         SET status = 'accepted', resolved_at = $2
+       WHERE id = $1
+       RETURNING *`,
+      [id, now],
+    );
+    return rowToApi(res.rows[0]);
+  }
+  const row = mem.rows.get(id);
+  if (!row) return null;
+  row.status = 'accepted';
+  row.resolved_at = now;
+  return rowToApi(row);
+}
+
+/**
  * Thanks the finder — the Death Stranding like. Idempotent per
  * (contribution, thanker): only the first thanks feeds the author's
  * impact_helped; repeats and self-thanks count nothing and are not errors.
