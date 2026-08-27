@@ -3280,6 +3280,135 @@ await check('crossing each band boundary keeps a parent placeholder drawn, ramps
   return true;
 });
 
+console.log('\n--- offline pyramid download ---');
+
+await check("the offline action states its size, runs only on the guest's choice, and no pyramid downloads on Skin wear", async () => {
+  const bundleRes = await fetch(`${BASE}/venues/kings-island.bundle.json`);
+  if (!bundleRes.ok) throw new Error(`bundle HTTP ${bundleRes.status}`);
+  const baseManifest = await bundleRes.json();
+  const overviewBytes = 1_500_000;
+  const closeBytes = 2_500_000;
+  const overviewBody = 'overview-pmtiles-fixture';
+  const closeBody = 'close-pmtiles-fixture';
+  const { createHash } = await import('node:crypto');
+  const sha = (text) => createHash('sha256').update(text).digest('hex');
+  const augmentedManifest = {
+    ...baseManifest,
+    files: [
+      ...baseManifest.files,
+      {
+        path: '/venues/kings-island/display/overview.pmtiles',
+        bytes: overviewBytes,
+        sha256: sha(overviewBody),
+      },
+      {
+        path: '/venues/kings-island/display/close.pmtiles',
+        bytes: closeBytes,
+        sha256: sha(closeBody),
+      },
+    ],
+  };
+  const pyramidFetches = [];
+  const pyramidCached = () =>
+    p.evaluate(async () => {
+      const cache = await caches.open('tracker-venue-bundles-v1');
+      const overview = await cache.match('/venues/kings-island/display/overview.pmtiles');
+      const close = await cache.match('/venues/kings-island/display/close.pmtiles');
+      return { overview: Boolean(overview), close: Boolean(close) };
+    });
+
+  const P = await openPhone(browser, {
+    lat: 39.34395,
+    lng: -84.2673,
+    name: 'Offline',
+    label: 'OD',
+    venue: 'kings-island',
+  });
+  const p = P.page;
+  const ctx = P.context;
+  try {
+    const fulfillManifest = async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(augmentedManifest),
+      });
+    };
+    await ctx.route('**/venues/kings-island.bundle.json**', fulfillManifest);
+    await ctx.route('**/api/venues/kings-island/bundle**', fulfillManifest);
+    await ctx.route('**/*overview.pmtiles**', async (route) => {
+      pyramidFetches.push(route.request().url());
+      await route.fulfill({ status: 200, body: overviewBody });
+    });
+    await ctx.route('**/*close.pmtiles**', async (route) => {
+      pyramidFetches.push(route.request().url());
+      await route.fulfill({ status: 200, body: closeBody });
+    });
+
+    await p.evaluate(() => localStorage.setItem('parkbound-demo-skins', '1'));
+    await p.reload({ waitUntil: 'domcontentloaded' });
+    await p.waitForFunction(() => Boolean(document.querySelector('[data-testid="park-map-gl"] canvas')), null, {
+      timeout: 40000,
+    });
+    await closeGate(p);
+    await go(p, 'Collection');
+    const row = p.locator('.worldSkinRow .row', { hasText: 'Watercolor quest' }).first();
+    await row.scrollIntoViewIfNeeded();
+    if (/Locked|Out of season|This World/.test(await row.innerText())) {
+      throw new Error('Watercolor quest still locked after demo grant');
+    }
+    await row.click();
+    await p.waitForTimeout(1500);
+    const beforeOptIn = await pyramidCached();
+    if (beforeOptIn.overview || beforeOptIn.close) {
+      throw new Error('pyramid bands cached before guest opt-in');
+    }
+    if (pyramidFetches.length) {
+      throw new Error(`pyramid band network fetches on Skin wear: ${pyramidFetches.join(', ')}`);
+    }
+
+    await until(
+      async () =>
+        p.evaluate(async () => {
+          const cache = await caches.open('tracker-venue-bundles-v1');
+          const hit = await cache.match('/venues/kings-island.bundle.json');
+          if (!hit) return false;
+          const manifest = await hit.json();
+          return manifest.files?.some((f) => f.path?.includes('overview.pmtiles'));
+        }),
+      { timeout: 60000, label: 'floor sync to cache augmented manifest' },
+    );
+
+    await go(p, 'Settings');
+    await p.locator('.settingsTopic', { hasText: 'Map' }).click();
+    const card = p.locator('[data-testid="offline-park-download"]');
+    await card.waitFor({ state: 'visible', timeout: 15000 });
+    const bytesLabel = await p.locator('[data-testid="offline-park-bytes"]').innerText();
+    if (!/3\.8\s*MB/i.test(bytesLabel) && !/4(\.0)?\s*MB/i.test(bytesLabel)) {
+      throw new Error(`size must match manifest pyramid bytes (expected ~4 MB, got ${bytesLabel})`);
+    }
+    const beforeClick = await pyramidCached();
+    await p.locator('[data-testid="offline-park-download-btn"]').click();
+    await until(async () => {
+      const cached = await pyramidCached();
+      return cached.overview && cached.close;
+    }, {
+      timeout: 30000,
+      label: 'guest opt-in pyramid download lands in VENUE_BUNDLE_CACHE',
+    });
+    if (beforeClick.overview || beforeClick.close) {
+      throw new Error('pyramid bands were already cached before the button was tapped');
+    }
+  } finally {
+    await ctx.unroute('**/venues/kings-island.bundle.json**').catch(() => {});
+    await ctx.unroute('**/api/venues/kings-island/bundle**').catch(() => {});
+    await ctx.unroute('**/*overview.pmtiles**').catch(() => {});
+    await ctx.unroute('**/*close.pmtiles**').catch(() => {});
+    await P.context.close();
+  }
+  return true;
+});
+
 console.log('\n--- delivery delta sync ---');
 
 await check('revision-cursor bundle sync returns a delta manifest with fewer files when since lags head', async () => {

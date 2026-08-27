@@ -35,6 +35,12 @@ const {
   bundleIndexOf,
   mergeManifestDelta,
   planBundleSync,
+  pyramidBandIdFromPath,
+  isOptionalPyramidEntry,
+  pyramidBandEntries,
+  estimatePyramidBytes,
+  formatBundleBytes,
+  manifestFilesForScope,
   sha256Hex,
   contentTypeFor,
   syncVenueBundle,
@@ -192,6 +198,150 @@ await check('planBundleSync: changed fetches, unchanged keeps, removed drops', (
   const cold = planBundleSync(MANIFEST, bundleIndexOf(null));
   assert.equal(cold.fetch.length, 3);
   assert.deepEqual(cold.drop, []);
+});
+
+const PYRAMID_MANIFEST = {
+  ...MANIFEST,
+  files: [
+    ...MANIFEST.files,
+    {
+      path: '/venues/p/display/overview.pmtiles',
+      bytes: 1_500_000,
+      sha256: sha('overview-tiles'),
+    },
+    {
+      path: '/venues/p/display/close.pmtiles',
+      bytes: 2_500_000,
+      sha256: sha('close-tiles'),
+    },
+    {
+      path: '/venues/p/display/mid.pmtiles',
+      bytes: 800_000,
+      sha256: sha('mid-tiles'),
+    },
+  ],
+};
+
+await check('pyramid helpers identify overview and close, not mid', () => {
+  assert.equal(pyramidBandIdFromPath('/venues/p/display/overview.pmtiles'), 'overview');
+  assert.equal(pyramidBandIdFromPath('/venues/p/display/close.pmtiles'), 'close');
+  assert.equal(pyramidBandIdFromPath('/venues/p/display/mid.pmtiles'), null);
+  assert.equal(isOptionalPyramidEntry(PYRAMID_MANIFEST.files.at(-2)), true);
+  assert.equal(isOptionalPyramidEntry(PYRAMID_MANIFEST.files.at(-1)), false);
+  assert.deepEqual(
+    pyramidBandEntries(PYRAMID_MANIFEST).map((f) => f.path),
+    ['/venues/p/display/overview.pmtiles', '/venues/p/display/close.pmtiles'],
+  );
+  assert.equal(estimatePyramidBytes(PYRAMID_MANIFEST), 4_000_000);
+  assert.equal(formatBundleBytes(4_000_000), '3.8 MB');
+});
+
+await check('manifestFilesForScope splits floor from guest opt-in pyramid bands', () => {
+  const floor = manifestFilesForScope(PYRAMID_MANIFEST, 'floor');
+  const pyramid = manifestFilesForScope(PYRAMID_MANIFEST, 'pyramid');
+  assert.ok(floor.some((f) => f.path.endsWith('mid.pmtiles')));
+  assert.ok(!floor.some((f) => f.path.endsWith('overview.pmtiles')));
+  assert.deepEqual(
+    pyramid.map((f) => f.path),
+    ['/venues/p/display/overview.pmtiles', '/venues/p/display/close.pmtiles'],
+  );
+});
+
+await check('floor sync never fetches optional pyramid bands', async () => {
+  const caches = fakeCaches();
+  const extendedBodies = {
+    ...BODIES,
+    '/venues/p/display/overview.pmtiles': 'overview-bytes',
+    '/venues/p/display/close.pmtiles': 'close-bytes',
+  };
+  const manifestWithPyramid = {
+    ...MANIFEST,
+    files: [
+      ...MANIFEST.files,
+      {
+        path: '/venues/p/display/overview.pmtiles',
+        bytes: extendedBodies['/venues/p/display/overview.pmtiles'].length,
+        sha256: sha(extendedBodies['/venues/p/display/overview.pmtiles']),
+      },
+      {
+        path: '/venues/p/display/close.pmtiles',
+        bytes: extendedBodies['/venues/p/display/close.pmtiles'].length,
+        sha256: sha(extendedBodies['/venues/p/display/close.pmtiles']),
+      },
+    ],
+  };
+  const fetchImpl = async (input) => {
+    const raw = typeof input === 'string' ? input : input.url;
+    const url = raw.startsWith('http') ? new URL(raw).pathname + new URL(raw).search : raw;
+    fetchImpl.calls.push(url);
+    if (url === MANIFEST_URL) {
+      return new Response(JSON.stringify(manifestWithPyramid), { status: 200 });
+    }
+    const clean = url.split('?')[0];
+    if (clean in extendedBodies) return new Response(extendedBodies[clean], { status: 200 });
+    return new Response('', { status: 404 });
+  };
+  fetchImpl.calls = [];
+  const result = await syncVenueBundle(VENUE, { fetchImpl, cacheStorage: caches, scope: 'floor' });
+  assert.equal(result.ok, true);
+  assert.equal(
+    fetchImpl.calls.filter((u) => u.includes('overview.pmtiles') || u.includes('close.pmtiles')).length,
+    0,
+    'floor scope must not touch guest opt-in pyramid bands',
+  );
+});
+
+await check('pyramid sync fetches only overview and close, and never drops the floor', async () => {
+  const caches = fakeCaches();
+  const extendedBodies = {
+    ...BODIES,
+    '/venues/p/display/overview.pmtiles': 'overview-bytes',
+    '/venues/p/display/close.pmtiles': 'close-bytes',
+  };
+  const manifestWithPyramid = {
+    ...MANIFEST,
+    files: [
+      ...MANIFEST.files,
+      {
+        path: '/venues/p/display/overview.pmtiles',
+        bytes: extendedBodies['/venues/p/display/overview.pmtiles'].length,
+        sha256: sha(extendedBodies['/venues/p/display/overview.pmtiles']),
+      },
+      {
+        path: '/venues/p/display/close.pmtiles',
+        bytes: extendedBodies['/venues/p/display/close.pmtiles'].length,
+        sha256: sha(extendedBodies['/venues/p/display/close.pmtiles']),
+      },
+    ],
+  };
+  const makeFetch = (manifest) => {
+    const calls = [];
+    const impl = async (input) => {
+      const raw = typeof input === 'string' ? input : input.url;
+      const url = raw.startsWith('http') ? new URL(raw).pathname + new URL(raw).search : raw;
+      calls.push(url);
+      if (url === MANIFEST_URL) return new Response(JSON.stringify(manifest), { status: 200 });
+      const clean = url.split('?')[0];
+      if (clean in extendedBodies) return new Response(extendedBodies[clean], { status: 200 });
+      return new Response('', { status: 404 });
+    };
+    impl.calls = calls;
+    return impl;
+  };
+  await syncVenueBundle(VENUE, {
+    fetchImpl: makeFetch(MANIFEST),
+    cacheStorage: caches,
+    scope: 'floor',
+  });
+  const fetchImpl = makeFetch(manifestWithPyramid);
+  const result = await syncVenueBundle(VENUE, { fetchImpl, cacheStorage: caches, scope: 'pyramid' });
+  assert.equal(result.ok, true);
+  assert.equal(result.fetched, 2);
+  assert.equal(await textOf(caches, '/venues/p.map.json'), BODIES['/venues/p.map.json']);
+  assert.equal(
+    await textOf(caches, '/venues/p/display/overview.pmtiles'),
+    extendedBodies['/venues/p/display/overview.pmtiles'],
+  );
 });
 
 await check('bundleSyncUrl: delta API when a revision cursor exists, static path otherwise', () => {

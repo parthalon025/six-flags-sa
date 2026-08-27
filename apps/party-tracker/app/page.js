@@ -864,9 +864,9 @@ function ParkApp({ isSignedIn }) {
     bootVenue()
       // With the map on screen, complete it for offline: re-check the venue's
       // bundle manifest and pull whatever changed (lib/venue/download.js).
-      // syncVenueBundle never throws — offline is an ordinary state — so the
-      // catch below is bootVenue's alone.
-      .then((venue) => syncVenueBundle(venue))
+      // Floor scope only — overview and close pyramid bands wait for guest opt-in
+      // (ADR-0021 clause 5). syncVenueBundle never throws — offline is ordinary.
+      .then((venue) => syncVenueBundle(venue, { scope: 'floor' }))
       .catch((err) => setToast(err?.message || 'Could not load the map.'));
   }, []);
 
@@ -3737,6 +3737,7 @@ function ParkApp({ isSignedIn }) {
                 categoryCount={[...categories].filter((c) => presentCategories.has(c)).length}
                 categoryTotal={Object.keys(CATEGORIES).filter((c) => presentCategories.has(c)).length}
                 venueName={venue?.name}
+                venue={venue}
                 onPush={push}
                 pushKinds={notifier.KINDS}
                 pushPrefs={pushPrefs}

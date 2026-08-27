@@ -63,7 +63,7 @@ flowchart LR
 | PostDB export not gated in pre-merge vertical | 16 | Delivery leg runs `delivery-export` with `DATABASE_URL` in CI |
 | Delta sync not proven in browser vertical | 17 | ✅ Functional check + `delivery-delta-sync` critical-path row |
 | Band boundary UX | 20 | ✅ `train-h-zoom-bands` in `shipped` |
-| Offline pyramid download UI | 21 | `train-h-offline-download` moves from `upcoming` → `shipped` |
+| Offline pyramid download UI | 21 | ✅ `train-h-offline-download` in `shipped` |
 | Delivery architecture sign-off | 19 | Owner grill resolved; map.md updated |
 
 ## Ticket sequence
@@ -84,7 +84,7 @@ Operating stack (`scripts/lib/operating-stack.json`):
 | 18 | Display-schema CI gate | resolved | — |
 | 19 | Delivery closeout grill | ready-for-human | 17 |
 | 20 | Band crossfade critical path | resolved | 17 |
-| 21 | Offline pyramid download UI | ready-for-agent | 17 |
+| 21 | Offline pyramid download UI | resolved | 17 |
 
 ## Implementation rules
 
@@ -96,11 +96,11 @@ Operating stack (`scripts/lib/operating-stack.json`):
 
 ## Acceptance (epic done)
 
-- [ ] Tickets 16, 17, 20, 21 **resolved**; ticket 19 **resolved** (human)
+- [ ] Tickets 16, 19 **resolved**; tickets 17, 20, 21 **resolved**
 - [ ] Flagship venues export from PostDB with `revisionId` in seed bundles
 - [ ] `npm run venues:factory-validate -- --all` green with `DATABASE_URL`
 - [ ] `npm run test:pre-merge-vertical` green on epic branch
-- [ ] `critical-paths.json`: `train-h-zoom-bands` and `train-h-offline-download` in `shipped`
+- [x] `critical-paths.json`: `train-h-zoom-bands` and `train-h-offline-download` in `shipped`
 - [ ] No agent merges claiming map/display correct without build + browser proof
 
 ## References
