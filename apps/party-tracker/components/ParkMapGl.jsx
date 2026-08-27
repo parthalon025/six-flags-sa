@@ -26,6 +26,7 @@ import { frameBounds, offsetCentre } from '@party-tracker/shared/mapCamera.js';
 import { metresPerPixel, zoomForResolution } from '@party-tracker/shared/zoomBands.js';
 import { distance } from '@/lib/geo';
 import { mountMapView } from '@/lib/mapView';
+import { createBandViewport, requestStreamedBands } from '@/lib/bandViewport';
 import { createMapLibreRenderer } from '@/lib/mapViewMaplibre';
 import { PIN_LABEL_SIZE, PLACE_LABEL_SIZE, ZONE_LABEL_SIZE, markLabelStyle, overlayChrome } from '@/lib/overlayMarks';
 import { labelInk } from '@party-tracker/shared/mapSymbols.js';
@@ -224,10 +225,21 @@ export default function ParkMapGl({
     const node = containerRef.current;
     if (!node || !laidOut || !world?.bounds) return undefined;
     let alive = true;
+    let viewport = null;
     // A new World is a new Map. `mapReady` staying true across that swap
     // would skip the gesture effect below, and free look would stop
     // telling Follow a guest had moved the camera.
     setMapReady(false);
+
+    const hasBands = Boolean(world?.bands && Object.keys(world.bands).length);
+    const pullStreamedBands = (ids) => {
+      if (!hasBands) return;
+      return requestStreamedBands({
+        request: ids,
+        world,
+        received: (id) => viewport?.received(id),
+      });
+    };
 
     const view = mountMapView(node, {
       renderer: createMapLibreRenderer({
@@ -243,12 +255,14 @@ export default function ParkMapGl({
         onCameraMoved: (moved) => {
           if (!alive || !viewRef.current) return;
           viewRef.current.setCamera(moved);
+          viewport?.tick();
           paintMarks();
         },
         onLoad: () => {
           if (!alive) return;
           setMapReady(true);
           globalThis.__parkMapLibre = view.engine?.() ?? null;
+          globalThis.__parkMapView = view;
         },
         onTap: ({ point, lngLat }) => {
           if (!alive || !viewRef.current) return;
@@ -278,11 +292,22 @@ export default function ParkMapGl({
     });
     viewRef.current = view;
 
+    if (hasBands) {
+      viewport = createBandViewport({
+        world,
+        getCamera: () => view.state().camera,
+        onHeldChange: (ids) => view.setAvailableBands(ids),
+        onRequestChange: pullStreamedBands,
+      });
+      pullStreamedBands(viewport.tick().request);
+    }
+
     return () => {
       alive = false;
       setMapReady(false);
       viewRef.current = null;
       if (globalThis.__parkMapLibre) delete globalThis.__parkMapLibre;
+      if (globalThis.__parkMapView === view) delete globalThis.__parkMapView;
       view.destroy();
     };
     // Only the World changes what is mounted. The camera, the Overlay and the

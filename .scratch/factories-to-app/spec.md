@@ -62,7 +62,7 @@ flowchart LR
 | Seed bundles lack `basedOn.revisionId` | 16 | All flagship `*.bundle.json` carry revision; export in CI/release path |
 | PostDB export not gated in pre-merge vertical | 16 | Delivery leg runs `delivery-export` with `DATABASE_URL` in CI |
 | Delta sync not proven in browser vertical | 17 | ✅ Functional check + `delivery-delta-sync` critical-path row |
-| Band boundary UX | 20 | `train-h-zoom-bands` moves from `upcoming` → `shipped` |
+| Band boundary UX | 20 | ✅ `train-h-zoom-bands` in `shipped` |
 | Offline pyramid download UI | 21 | `train-h-offline-download` moves from `upcoming` → `shipped` |
 | Delivery architecture sign-off | 19 | Owner grill resolved; map.md updated |
 
@@ -83,7 +83,7 @@ Operating stack (`scripts/lib/operating-stack.json`):
 | 17 | Delta sync E2E in app | resolved | 16 |
 | 18 | Display-schema CI gate | resolved | — |
 | 19 | Delivery closeout grill | ready-for-human | 17 |
-| 20 | Band crossfade critical path | ready-for-agent | 17 |
+| 20 | Band crossfade critical path | resolved | 17 |
 | 21 | Offline pyramid download UI | ready-for-agent | 17 |
 
 ## Implementation rules

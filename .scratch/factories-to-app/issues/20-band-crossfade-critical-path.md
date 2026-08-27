@@ -4,15 +4,15 @@
 
 **Blocked by:** 17
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Acceptance
 
-- [ ] `apps/party-tracker/lib/mapView.js` + MapLibre adapter implement band plan crossfade (see `bandPlan.js`, `BandedWorldMap.jsx` preview)
-- [ ] Functional check in `test/app/functional.mjs` matching critical-paths user_action
-- [ ] `test/app/critical-paths.json`: row `train-h-zoom-bands` in `shipped`; remove from `upcoming`
-- [ ] No hard band cut; pitch ease and band boundary do not land in same instant
-- [ ] Browser vertical or recording proves pinch-zoom on a flagship with banded pack (Kings Island or Big Kahuna's)
+- [x] `apps/party-tracker/lib/mapView.js` + MapLibre adapter implement band plan crossfade (see `bandPlan.js`, `BandedWorldMap.jsx` preview)
+- [x] Functional check in `test/app/functional.mjs` matching critical-paths user_action
+- [x] `test/app/critical-paths.json`: row `train-h-zoom-bands` in `shipped`; remove from `upcoming`
+- [x] No hard band cut; pitch ease and band boundary do not land in same instant
+- [x] Browser vertical or recording proves pinch-zoom on a flagship with banded pack (Kings Island or Big Kahuna's)
 
 ## Notes
 
