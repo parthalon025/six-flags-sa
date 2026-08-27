@@ -142,6 +142,13 @@ function ParkMap(props) {
     [pois, visibleCategories],
   );
 
+  const categoryCounts = useMemo(() => {
+    const out = new Map();
+    (pois || []).forEach((p) => out.set(p.c, (out.get(p.c) || 0) + 1));
+    return out;
+  }, [pois]);
+  const presentCategories = useMemo(() => new Set(categoryCounts.keys()), [categoryCounts]);
+
   /* The live Overlay, as GeoJSON. One conversion, in `lib/overlayGeo.js`: the
      SVG renderer projected these same rows a second time by hand, and two
      projections of one Truth is how a party dot and the route it is walking
@@ -192,6 +199,8 @@ function ParkMap(props) {
         palette={pins}
         visibleCategories={visibleCategories}
         onToggleCategory={onToggleCategory}
+        presentCategories={presentCategories}
+        categoryCounts={categoryCounts}
         heightFilterOn={Boolean(
           eligibility
             && (pois || []).some((p) => {
