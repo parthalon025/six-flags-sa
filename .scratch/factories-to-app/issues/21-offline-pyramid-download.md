@@ -4,16 +4,16 @@
 
 **Blocked by:** 17
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Acceptance
 
-- [ ] UI affordance (venue sheet or install card) shows total bytes for overview + close bands before download starts
-- [ ] Download runs only on explicit guest action — not on wear or app start
-- [ ] Mid band remains offline floor from seed bundle; optional bands fetch into `VENUE_BUNDLE_CACHE`
-- [ ] Functional check in `test/app/functional.mjs` matching critical-paths user_action
-- [ ] `test/app/critical-paths.json`: row `train-h-offline-download` in `shipped`; remove from `upcoming`
-- [ ] Size estimate matches manifest file list (hash-addressed entries)
+- [x] UI affordance (venue sheet or install card) shows total bytes for overview + close bands before download starts
+- [x] Download runs only on explicit guest action — not on wear or app start
+- [x] Mid band remains offline floor from seed bundle; optional bands fetch into `VENUE_BUNDLE_CACHE`
+- [x] Functional check in `test/app/functional.mjs` matching critical-paths user_action
+- [x] `test/app/critical-paths.json`: row `train-h-offline-download` in `shipped`; remove from `upcoming`
+- [x] Size estimate matches manifest file list (hash-addressed entries)
 
 ## Notes
 

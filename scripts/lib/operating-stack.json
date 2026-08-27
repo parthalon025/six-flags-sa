@@ -6,12 +6,12 @@
   "adr": "docs/adr/0024-postdb-factory-bus.md",
   "epic": {
     "now": {
-      "ticket": "16",
-      "title": "Delivery export closeout",
+      "ticket": "21",
+      "title": "Epic complete — merge PR stack #711–#716",
       "stackedOn": "15",
-      "then": ["17"],
-      "parallelNotNow": ["18"],
-      "laterHuman": ["19"],
+      "then": [],
+      "status": "resolved",
+      "mergePending": ["711", "712", "714", "716"],
       "doNotStart": ["train-h", "train-i"]
     }
   },
