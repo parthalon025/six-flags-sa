@@ -250,10 +250,21 @@ export const SLICES = Object.freeze([
     //  where nothing was ever built — the suite caught this probe reporting the
     //  SVG retired in an empty checkout. The positive clause anchors it: the
     //  replacement has to be there before its absence means anything.
-    probe: (t) =>
-      t.has('apps/party-tracker/components/ParkMapGl.jsx')
-      && !t.has('apps/party-tracker/components/ParkMapSvg.jsx')
-      && !/PARK_MAP_RENDERERS\s*=\s*\[\s*'svg'/.test(t.read('apps/party-tracker/lib/mapLibreConfigured.js')),
+    //  Matched on content, not on syntax. The first version of this clause
+    //  grepped /PARK_MAP_RENDERERS\s*=\s*\[/ while the real file has always
+    //  said `= Object.freeze([`, so it was false on every real tree and true
+    //  only against the fixture written to satisfy it. A fixture proves a probe
+    //  CAN move; it does not prove the probe describes the code. Asking whether
+    //  'svg' is still spelled as a renderer needs no syntax at all.
+    probe: (t) => {
+      const switchFile = t.read('apps/party-tracker/lib/mapLibreConfigured.js');
+      return (
+        t.has('apps/party-tracker/components/ParkMapGl.jsx')
+        && !t.has('apps/party-tracker/components/ParkMapSvg.jsx')
+        && switchFile.includes('PARK_MAP_RENDERERS')
+        && !/PARK_MAP_RENDERERS[^\n]*'svg'/.test(switchFile)
+      );
+    },
   },
   {
     id: 'h14',
@@ -262,7 +273,14 @@ export const SLICES = Object.freeze([
     title: 'pixel-tycoon converts; iso retires; three Skins ship',
     needs: ['h5'],
     blocked: 'a',
-    probe: (t) => t.has('packages/venue-builder/data/display/kits/pixel-tycoon.json'),
+    //  Three jobs in the title, so three clauses. The first version checked
+    //  only that the kit file existed — satisfied by an empty {} — and would
+    //  have reported the slice built with the Skin unregistered and the iso
+    //  renderer still in the tree, which is two thirds of the work.
+    probe: (t) =>
+      t.read('packages/venue-builder/data/display/kits/pixel-tycoon.json').includes('palette')
+      && t.read('packages/venue-builder/data/display/skins.json').includes('pixel-tycoon')
+      && !t.read('packages/shared/isoWorld.js').includes('ISO_MAP_TEMPLATES'),
   },
   {
     id: 'h15',
