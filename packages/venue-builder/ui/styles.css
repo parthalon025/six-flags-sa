@@ -55,4 +55,9 @@ header p { margin: 0; color: var(--muted); }
 .actions a:hover, .actions button:hover { opacity: 0.85; }
 .approve { border-color: var(--ok); color: var(--ok); }
 .approve.on { background: var(--ok); color: #fff; }
+.evidence-link.missing {
+  opacity: 0.55;
+  border-style: dashed;
+  pointer-events: auto;
+}
 .summary { margin-bottom: 1rem; font-weight: 600; }
