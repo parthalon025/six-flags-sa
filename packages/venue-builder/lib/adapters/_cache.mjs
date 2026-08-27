@@ -5,7 +5,10 @@
 
 import path from 'node:path';
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { readJson, venueSidecar } from '../venue-io.mjs';
+// Imported from venue-fs.mjs, not venue-io.mjs: venue-io.mjs imports
+// adapterCacheFile from this file, so importing back from venue-io.mjs would
+// be a cycle (#32).
+import { readJson, venueSidecar } from '../venue-fs.mjs';
 
 /**
  * Adapter id → on-disk cache suffix (`${suffix}-cache.json`).
