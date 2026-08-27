@@ -42,6 +42,7 @@ scripts/**
 !scripts/lib/vercel-budget.mjs
 !scripts/lib/vercel-deploy-gate.mjs
 !scripts/lib/production-redis-guard.mjs
+!scripts/lib/production-postgres-guard.mjs
 !scripts/lib/version-stamp.mjs
 !scripts/lib/version-stamp-paths.json
 !scripts/lib/repo-path.mjs
