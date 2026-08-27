@@ -177,6 +177,7 @@ export const TEST_ESTATE = {
   'test/builder/tiles-export.mjs': ['test:builder'],
   'test/builder/unit.mjs': ['test:unit', 'test:builder'],
   'test/builder/venue-bundle.mjs': ['test:builder'],
+  'test/builder/venue-drift.test.mjs': ['test:builder'],
   'test/builder/world.mjs': ['test:unit', 'test:builder'],
 
   // --- test/scripts: the decisions the workflows call ----------------------

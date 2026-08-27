@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it: the bundle is overwritten by every rebuild and this is the accumulated evidence, which is the expensive part. Only features that clear \"moderate\" confidence are copied into the bundle the app reads. Refresh with: npm run venues:attractions -- kings-island",
+  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it.",
   "venue": "kings-island",
-  "generated": "2026-08-11",
+  "generated": "2026-08-26",
   "publish_at": "moderate",
   "attractions": [
     {
@@ -102,48 +102,6 @@
       },
       "last_verified": null,
       "place": "adventure-express"
-    },
-    {
-      "id": "arcade-games",
-      "name": "Arcade Games",
-      "venue": "kings-island",
-      "type": "attraction",
-      "at": {
-        "lat": 39.342906,
-        "lng": -84.264725
-      },
-      "features": {
-        "queue_entrance": {
-          "at": {
-            "lat": 39.34289,
-            "lng": -84.26478
-          },
-          "confidence": "unknown",
-          "score": 1,
-          "sources": [
-            "geometry"
-          ],
-          "evidence": [
-            {
-              "source": "geometry",
-              "at": {
-                "lat": 39.34289,
-                "lng": -84.26478
-              },
-              "date": "2026-08-09",
-              "note": "the walkable network at its closest, 5 m from the ride"
-            }
-          ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
-          "conflict": false,
-          "newest_evidence": "2026-08-09",
-          "stale": false
-        }
-      },
-      "last_verified": null,
-      "place": "arcade-games"
     },
     {
       "id": "aruba-tuba",
@@ -333,8 +291,8 @@
       "venue": "kings-island",
       "type": "attraction",
       "at": {
-        "lat": 39.341811,
-        "lng": -84.269915
+        "lat": 39.341784,
+        "lng": -84.2699
       },
       "features": {
         "queue_entrance": {
@@ -352,11 +310,11 @@
             {
               "source": "geometry",
               "at": {
-                "lat": 39.34187,
-                "lng": -84.26986
+                "lat": 39.34184,
+                "lng": -84.26979
               },
-              "date": "2026-08-09",
-              "note": "the walkable network at its closest, 8 m from the ride"
+              "date": "2026-08-26",
+              "note": "the walkable network at its closest, 11 m from the ride"
             },
             {
               "source": "parks_api",
@@ -372,7 +330,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-26",
           "stale": false
         }
       },
@@ -1520,11 +1478,11 @@
             {
               "source": "geometry",
               "at": {
-                "lat": 39.34222,
-                "lng": -84.26992
+                "lat": 39.34217,
+                "lng": -84.26997
               },
-              "date": "2026-08-09",
-              "note": "the walkable network at its closest, 4 m from the ride"
+              "date": "2026-08-26",
+              "note": "the walkable network at its closest, 3 m from the ride"
             },
             {
               "source": "parks_api",
@@ -1540,7 +1498,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-11",
+          "newest_evidence": "2026-08-26",
           "stale": false
         }
       },
@@ -2234,7 +2192,7 @@
       "type": "attraction",
       "at": {
         "lat": 39.342299,
-        "lng": -84.270058
+        "lng": -84.270061
       },
       "features": {
         "queue_entrance": {
@@ -2379,14 +2337,14 @@
       "venue": "kings-island",
       "type": "roller_coaster",
       "at": {
-        "lat": 39.341562,
-        "lng": -84.269372
+        "lat": 39.341646,
+        "lng": -84.269391
       },
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34161,
-            "lng": -84.26934
+            "lat": 39.34166,
+            "lng": -84.26944
           },
           "confidence": "unknown",
           "score": 1,
@@ -2397,18 +2355,18 @@
             {
               "source": "geometry",
               "at": {
-                "lat": 39.34161,
-                "lng": -84.26934
+                "lat": 39.34166,
+                "lng": -84.26944
               },
-              "date": "2026-08-09",
-              "note": "the walkable network at its closest, 6 m from the ride"
+              "date": "2026-08-26",
+              "note": "the walkable network at its closest, 4 m from the ride"
             }
           ],
           "from": "geometry",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-26",
           "stale": false
         }
       },

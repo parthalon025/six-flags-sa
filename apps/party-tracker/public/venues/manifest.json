@@ -73,26 +73,26 @@
         "caravans": true,
         "tents": false
       },
-      "generated": "2026-08-09",
+      "generated": "2026-08-26",
       "coverage": {
-        "ways": 1125,
+        "ways": 1128,
         "steps": 71,
         "bridge": 67,
         "tunnel": 2,
         "layer": 37,
         "oneway": 248,
         "restricted": 135,
-        "walkable_km": 88.3
+        "walkable_km": 88.6
       },
       "map": "/venues/cedar-point.map.json",
       "pois": "/venues/cedar-point.pois.json",
       "gaps": "/venues/cedar-point.gaps.json",
       "bundle": "/venues/cedar-point.bundle.json",
       "counts": {
-        "pois": 428,
-        "rides": 75,
-        "heights": 74,
-        "gaps": 62
+        "pois": 427,
+        "rides": 74,
+        "heights": 73,
+        "gaps": 63
       }
     },
     {
@@ -208,26 +208,26 @@
           }
         }
       },
-      "generated": "2026-08-09",
+      "generated": "2026-08-26",
       "coverage": {
-        "ways": 764,
+        "ways": 765,
         "steps": 2,
         "bridge": 36,
         "tunnel": 3,
         "layer": 39,
         "oneway": 144,
         "restricted": 34,
-        "walkable_km": 95.6
+        "walkable_km": 95.7
       },
       "map": "/venues/kings-island.map.json",
       "pois": "/venues/kings-island.pois.json",
       "gaps": "/venues/kings-island.gaps.json",
       "bundle": "/venues/kings-island.bundle.json",
       "counts": {
-        "pois": 164,
+        "pois": 165,
         "rides": 68,
         "heights": 65,
-        "gaps": 72
+        "gaps": 73
       }
     },
     {
@@ -247,7 +247,7 @@
       },
       "source": "OpenStreetMap contributors, ODbL",
       "credits": "Height requirements were compiled from the park's own Guest Safety and Accessibility Guide and from published 2026 height charts.",
-      "generated": "2026-08-09",
+      "generated": "2026-08-26",
       "coverage": {
         "ways": 975,
         "steps": 34,
@@ -266,7 +266,7 @@
         "pois": 160,
         "rides": 70,
         "heights": 60,
-        "gaps": 70
+        "gaps": 71
       }
     }
   ]

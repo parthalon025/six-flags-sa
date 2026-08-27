@@ -1350,7 +1350,7 @@ const mapOf = (layers, anchors, boundary) => ({
  * is normalised to the date already on disk first: otherwise every rebuild
  * differs, and a check that always says "changed" answers nothing.
  */
-function driftFrom({ id, meta, map, pois, existingMeta }) {
+export function driftFrom({ id, meta, map, pois, existingMeta }) {
   const read = (file) => {
     try {
       return readFileSync(file, 'utf8');
@@ -1869,6 +1869,12 @@ async function buildOne(args, { previous = null } = {}) {
     );
   }
 
+  /* Inventory publish mutates the POI list the bundle ships. Drift is checked
+     against those bytes, so publish runs first — otherwise every venue whose
+     inventory stamps entrances onto places reads as perpetually drifted. */
+  const inv = inventory(id, args, { map: builtMap, pois, existing: readJson(listFile(id)) });
+  const publishedFields = publish(id, pois, inv.records, PUBLISH_AT);
+
   const drift = driftFrom({ id, meta, map: builtMap, pois, existingMeta });
   if (!drift.changed && existingMeta?.generated) meta.generated = existingMeta.generated;
 
@@ -1941,8 +1947,6 @@ async function buildOne(args, { previous = null } = {}) {
     return;
   }
 
-  const inv = inventory(id, args, { map: builtMap, pois, existing: readJson(listFile(id)) });
-  const published = publish(id, pois, inv.records, PUBLISH_AT);
   const sidecar = {
     version: SCHEMA_VERSION,
     _comment:
@@ -1956,7 +1960,7 @@ async function buildOne(args, { previous = null } = {}) {
   if (writeSettled(listFile(id), sidecar)) {
     console.error(`  · inventory: wrote ${path.relative(process.cwd(), listFile(id))}`);
   }
-  if (published) console.error(`  · inventory: published ${published} field(s) onto places`);
+  if (publishedFields) console.error(`  · inventory: published ${publishedFields} field(s) onto places`);
 
   const written = writeVenue({ meta, map: builtMap, pois });
   const postdb = await mirrorTruthToPostdb(id, {
