@@ -60,7 +60,8 @@ import { identityOf } from '@/lib/venue/ids';
 import { bakedWorldBands } from '@/lib/customMap';
 import { overlayGeoJson } from '@/lib/overlayGeo';
 import { parkMapRenderer } from '@/lib/mapLibreConfigured';
-import { boundsOfPoints, cameraRequest, overlayModel, parkMapPalettes, worldFor } from '@/lib/parkMapView';
+import { boundsOfPoints, cameraRequest, overlayModel, parkMapPalettes, worldFor, worldWithLandTints } from '@/lib/parkMapView';
+import { useZoneTones } from '@/lib/zoneTones';
 
 /* MapLibre is a large dependency and the shipped renderer. `ssr: false`
    for the ordinary reason: it needs a canvas. */
@@ -121,6 +122,7 @@ function ParkMap(props) {
   } = props;
 
   const { surface, pins } = useMemo(() => parkMapPalettes(theme), [theme]);
+  const zoneTones = useZoneTones(data?.meta?.id, theme);
 
   /* The World, as the map view takes it — or null when this venue cannot be
      drawn yet, which is the ported path standing aside rather than framing a
@@ -130,8 +132,9 @@ function ParkMap(props) {
     const base = worldFor(data);
     if (!base) return null;
     const bands = bakedWorldBands(base.id, theme);
-    return bands ? { ...base, bands } : base;
-  }, [renderer, data, theme]);
+    const shaped = bands ? { ...base, bands } : base;
+    return worldWithLandTints(shaped, theme, zoneTones);
+  }, [renderer, data, theme, zoneTones]);
 
   /* Only the Places the guest has left switched on. Which Places to draw is a
      Truth-side question — a category switched off is a Place not on the map,
@@ -187,8 +190,24 @@ function ParkMap(props) {
     [follow, anchor, focusPoint, fit, navZoom, rotation, liftCentre],
   );
 
+  const mapWrapStyle = fogFilter
+    ? {
+        '--mapFogSaturate': String(fogFilter.saturate),
+        '--mapFogBright': String(fogFilter.brightness),
+      }
+    : undefined;
+
   if (!world) {
-    return <div data-testid="park-map-gl" className="mapMissing" data-follow={follow ? '1' : '0'} />;
+    return (
+      <div
+        className="mapWrap"
+        data-renderer="gl"
+        data-fog={fogFilter ? 'soft' : undefined}
+        style={mapWrapStyle}
+      >
+        <div data-testid="park-map-gl" className="mapMissing" data-follow={follow ? '1' : '0'} />
+      </div>
+    );
   }
 
   // The category key, over the canvas. The SVG renderer keeps its own; drawn
@@ -214,40 +233,42 @@ function ParkMap(props) {
   );
 
   return (
-    <ParkMapGl
-      world={world}
-      palette={surface}
-      pinPalette={pins}
-      eligibility={eligibility}
-      skin={theme ?? null}
-      // Every Place, not just the shown ones: this is the seam's own lookup for
-      // a pick, and it is fixed at mount. Handing it the filtered list would
-      // make a Place switched back on after mount draw fine and then throw on
-      // the tap that found it.
-      places={pois || []}
-      overlay={overlay}
-      alternatives={alternatives}
-      routeDone={routeDone}
-      puck={puck}
-      heading={heading}
-      rotation={rotation}
-      navId={routeTargetName}
-      planNextId={planNextPlaceId}
-      selectedId={selected ? identityOf(selected) : null}
-      camera={camera}
-      follow={follow}
-      insetBottom={bottomInset}
-      onSelectPlace={onSelectPoi}
-      onMapTap={onMapTap}
-      onUserPan={onUserPan}
-      style={
-        fogFilter
-          ? { filter: `saturate(${fogFilter.saturate}) brightness(${fogFilter.brightness})` }
-          : null
-      }
+    <div
+      className="mapWrap"
+      data-renderer="gl"
+      data-fog={fogFilter ? 'soft' : undefined}
+      style={mapWrapStyle}
     >
-      {legend}
-    </ParkMapGl>
+      <ParkMapGl
+        world={world}
+        palette={surface}
+        pinPalette={pins}
+        eligibility={eligibility}
+        skin={theme ?? null}
+        // Every Place, not just the shown ones: this is the seam's own lookup for
+        // a pick, and it is fixed at mount. Handing it the filtered list would
+        // make a Place switched back on after mount draw fine and then throw on
+        // the tap that found it.
+        places={pois || []}
+        overlay={overlay}
+        alternatives={alternatives}
+        routeDone={routeDone}
+        puck={puck}
+        heading={heading}
+        rotation={rotation}
+        navId={routeTargetName}
+        planNextId={planNextPlaceId}
+        selectedId={selected ? identityOf(selected) : null}
+        camera={camera}
+        follow={follow}
+        insetBottom={bottomInset}
+        onSelectPlace={onSelectPoi}
+        onMapTap={onMapTap}
+        onUserPan={onUserPan}
+      >
+        {legend}
+      </ParkMapGl>
+    </div>
   );
 }
 
