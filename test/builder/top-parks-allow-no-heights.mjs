@@ -63,6 +63,12 @@ await check('explicit catalog allow-no-heights false overrides kind default', ()
   return true;
 });
 
+await check('explicit catalog allow-no-heights true overrides strict theme-park', () => {
+  const park = { id: 'nickelodeon-universe', name: 'Nickelodeon Universe', kind: 'theme-park', 'allow-no-heights': true };
+  assert.equal(resolveAllowNoHeights(park, { cliAllowNoHeights: false }), true);
+  return true;
+});
+
 await check('pipelineSkipForAllowNoHeights skips height stages when allowed', () => {
   assert.deepEqual(pipelineSkipForAllowNoHeights(true), ['research', 'aliases', 'heights', 'rebuild', 'agent']);
   assert.deepEqual(pipelineSkipForAllowNoHeights(false), []);
