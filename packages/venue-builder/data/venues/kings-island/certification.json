@@ -193,7 +193,7 @@
           "Work from the park's own current-season attraction pages first. A park's own words are the source; a fan wiki is a lead to check, not an answer.",
           "Heights are in inches, as the American parks in this app publish them.",
           "Write down where each number came from. If a ride is not on the park's site, leave it out entirely and say so — an omission is recoverable and a guess is not.",
-          "Some of the list will not be rides. A midway game, an arcade, a lounge and a splash pool all arrive tagged as attractions and none of them has a height on a sign. Say which ones those are rather than inventing a rule for them — that answer is a fix to the category rules in scripts/lib/osm-tags.mjs, which helps every venue, not just this one."
+          "Some of the list will not be rides. A midway game, an arcade, a lounge and a splash pool all arrive tagged as attractions and none of them has a height on a sign. Say which ones those are rather than inventing a rule for them — that answer is a fix to the category rules in lib/osm-tags.mjs, which helps every venue, not just this one."
         ],
         "schema": "{\n  \"credits\": \"Height requirements were compiled from … for the 2026 season.\",\n  \"pois\": {\n    \"3 Point Challange\": { \"h\": { \"min\": 48, \"alone\": null, \"max\": null }, \"note\": \"300 lb maximum.\" },\n    \"Bank Ball\": { \"h\": { \"min\": 0, \"alone\": null, \"max\": null } }\n  }\n}",
         "rules": [

@@ -558,7 +558,7 @@ function buildPois(elements, areaCandidates, opts) {
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
     const poi = { n: name, lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)), c };
     /* Which OpenStreetMap object this came off, as `n123` / `w123` / `r123`.
-       Not identity — see scripts/lib/venue-ids.mjs for why an element id cannot
+       Not identity — see lib/venue-ids.mjs for why an element id cannot
        be the primary key here — but it is the tiebreaker that lets a rebuild
        recognise a place a mapper has renamed or nudged, and it is the only
        thread back from a row in the bundle to the thing a human can go and fix.

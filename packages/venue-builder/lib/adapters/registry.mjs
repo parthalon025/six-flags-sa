@@ -970,7 +970,7 @@ const ENTRIES = [
     id: 'venue-evidence-engine',
     name: 'Evidence fusion (this repo)',
     repo: 'six-flags-sa',
-    url: 'scripts/lib/evidence.mjs',
+    url: 'packages/venue-builder/lib/evidence.mjs',
     capability: 'Source-weighted fusion, publish bands, dissent reporting',
     role: 'EVIDENCE_ENGINE',
     stage: 'research',
