@@ -1,15 +1,15 @@
 # Spec — factories → app end-state
 
 **Effort:** `factories-to-app`  
-**Status:** Agent slice complete — human closeout pending (ticket 19)  
+**Status:** Complete — PR stack merge pending  
 **Supersedes:** GitHub #625–630  
 **Canon:** ADR-0024 (PostDB bus) · ADR-0025 (module seams) · ADR-0018 (delivery) · `scripts/lib/operating-stack.json`
 
 ---
 
-## Problem (resolved for agent scope)
+## Problem (resolved)
 
-The **Map factory** and **Visual factory** build and certify Worlds; Trains H/I shipped the MapLibre renderer, banded bakes, and evidence lane. The phone no longer treats git seed files as the only runtime bus: PostDB exports revision-pinned bundles, the app proves delta sync and guest Train H behaviors in the browser vertical.
+The **Map factory** and **Visual factory** build and certify Worlds; Trains H/I shipped the MapLibre renderer, banded bakes, and evidence lane. The phone no longer treats git seed files as the only runtime bus: PostDB exports revision-pinned bundles, the app proves delta sync and guest Train H behaviors in the browser vertical, and Delivery v1 architecture is signed off.
 
 ## Destination (shipped)
 
@@ -26,7 +26,7 @@ flowchart LR
 
 **Phone contract (locked):** hash-verified manifest, truth/display split, `planBundleSync` dedupe, atomic cache commit, `floor` vs `pyramid` sync scopes (ADR-0021 §5). See `apps/party-tracker/lib/venue/download.js`.
 
-## Goals — agent slice
+## Goals
 
 | # | Goal | Status | Evidence |
 |---|------|--------|----------|
@@ -35,6 +35,7 @@ flowchart LR
 | 3 | App proves delta sync E2E | ✅ | `/api/venues/:id/bundle?since=`, functional + `delivery-delta-sync` row |
 | 4 | Guest Train H gaps ship | ✅ | Band crossfade (#714); opt-in offline pyramid (#716) |
 | 5 | Vertical e2e | ✅ | `train-h-zoom-bands` + `train-h-offline-download` in `shipped`; pre-merge vertical green |
+| 6 | Delivery architecture sign-off | ✅ | Ticket 19 — ADR-0024 Slice 1; R2 per `addVendorWhen` |
 
 ## Non-goals (unchanged)
 
@@ -67,19 +68,20 @@ flowchart LR
 | Delta sync not proven in browser vertical | 17 | Functional check + `delivery-delta-sync` |
 | Band boundary UX | 20 | `train-h-zoom-bands` in `shipped` |
 | Offline pyramid download UI | 21 | `train-h-offline-download` in `shipped` |
+| Delivery architecture sign-off | 19 | ADR-0024 Slice 1; R2 deferred per `addVendorWhen` |
 
-## Open — human closeout only
+## Open — merge only
 
-| Gap | Ticket | Owner action |
-|-----|--------|--------------|
-| Delivery architecture sign-off | 19 | Grill: is v1 (PostDB → Vercel blobs → hash cache) sufficient, or R2 before fleet scale? PR #699 |
+| Item | Action |
+|------|--------|
+| PR stack | Merge #711 → #712 → #714 → #716 to `main` |
 
 ## Ticket ledger
 
 ```
 15 (resolved) → 16 (resolved) → 17 (resolved) → 20, 21 (resolved)
 18 (resolved, parallel)
-19 (human grill, after 17) — OPEN
+19 (resolved)
 ```
 
 | # | Title | Status |
@@ -88,21 +90,20 @@ flowchart LR
 | 16 | Delivery export closeout | resolved |
 | 17 | Delta sync E2E in app | resolved |
 | 18 | Display-schema CI gate | resolved |
-| 19 | Delivery closeout grill | **ready-for-human** |
+| 19 | Delivery closeout grill | resolved |
 | 20 | Band crossfade critical path | resolved |
 | 21 | Offline pyramid download UI | resolved |
 
 ## PR stack (merge order)
 
-1. #711 — ticket 16 (base: `main`)
+1. #711 — ticket 16 (base: `main`) — **MERGEABLE**
 2. #712 — ticket 17 (base: ticket-16)
 3. #714 — ticket 20 (base: ticket-17)
 4. #716 — ticket 21 (base: ticket-20)
 
 ## Acceptance (epic done)
 
-- [x] Tickets 17, 20, 21 **resolved**; ticket 16 **resolved**
-- [ ] Ticket 19 **resolved** (human grill — owner fills `issues/19-delivery-closeout-grill.md`)
+- [x] Tickets 16–21 **resolved**
 - [x] Flagship venues export from PostDB with `revisionId` in seed bundles
 - [x] `critical-paths.json`: `train-h-zoom-bands` and `train-h-offline-download` in `shipped`
 - [x] `npm run test:pre-merge-vertical` green on epic branch (pre-push)
