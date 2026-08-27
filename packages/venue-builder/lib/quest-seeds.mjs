@@ -17,6 +17,7 @@
  */
 
 import { PUBLISH_AT, atLeast } from './evidence.mjs';
+import { questSeedsFromInventory } from './inventory-gaps.mjs';
 
 /** Builder ask key → contribution quest type (design taxonomy). */
 export const REQUEST_TO_QUEST = {
@@ -162,11 +163,13 @@ export function questSeedsForVenue({
   venueId,
   reqs = [],
   attractions = null,
+  inventoryAsks = [],
   includeAmbient = true,
 } = {}) {
   const durable = [
     ...questSeedsFromRequests(venueId, reqs),
     ...questSeedsFromEntrances(venueId, attractions),
+    ...questSeedsFromInventory(venueId, inventoryAsks),
   ];
   const ambient = includeAmbient
     ? TIER1_AMBIENT.map((a) => ({

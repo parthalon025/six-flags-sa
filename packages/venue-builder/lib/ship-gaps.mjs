@@ -14,6 +14,7 @@
  */
 
 import { questSeedsFromEntrances } from './quest-seeds.mjs';
+import { inventoryShipArtifacts } from './inventory-gaps.mjs';
 
 export const SHIPPED_GAP_TYPES = Object.freeze([
   'height',
@@ -24,6 +25,7 @@ export const SHIPPED_GAP_TYPES = Object.freeze([
   'food',
   'gate',
   'camping',
+  'inventory',
 ]);
 
 /** Rides farther than this from walkable geometry get a targeted path Gap. */
@@ -53,6 +55,9 @@ export function shippedTypeForSeed(seed) {
     return 'path_disputed';
   }
   if (seed.sourceGap === 'camping' || seed.type === 'poi_attribute') return 'camping';
+  if (seed.sourceGap === 'parks-api-inventory' || seed.sourceGap === 'queue-times-inventory') {
+    return 'inventory';
+  }
   if (seed.type === 'poi_presence' || seed.sourceGap === 'missing-poi') {
     return presenceTypeFromSeed(seed);
   }
@@ -192,7 +197,13 @@ function presenceAndCampingSeeds(meta, pois) {
  * @param {{ venueId: string, seeds?: object[], pois?: object[], map?: object | null }} opts
  * @returns {{ version: number, venue: string, gaps: { type: string, target: string | null }[] }}
  */
-export function shippedGapsDocument({ venueId, seeds = [], pois = [], map = null } = {}) {
+export function shippedGapsDocument({
+  venueId,
+  seeds = [],
+  pois = [],
+  map = null,
+  inventoryGaps = [],
+} = {}) {
   const seen = new Set();
   const gaps = [];
   const add = (type, target) => {
@@ -212,10 +223,16 @@ export function shippedGapsDocument({ venueId, seeds = [], pois = [], map = null
       if (target) add(type, target);
       continue;
     }
+    if (type === 'inventory') {
+      add(type, seed.target ?? null);
+      continue;
+    }
     add(type, null);
   }
 
   for (const gap of pathGapsFromMap(pois, map)) add(gap.type, gap.target);
+
+  for (const gap of inventoryGaps) add(gap.type, gap.target);
 
   gaps.sort((a, b) => {
     const tr = (TYPE_RANK[a.type] ?? 99) - (TYPE_RANK[b.type] ?? 99);
@@ -242,11 +259,28 @@ export function shippedGapsForVenue({
   map = {},
   attractions = null,
   imageryGaps = [],
+  parksApiCache = null,
+  qtCache = null,
+  gapNotes = {},
 } = {}) {
+  const inventory = inventoryShipArtifacts({
+    venueId,
+    pois,
+    parksApiCache,
+    qtCache,
+    gapNotes,
+  });
   const seeds = [
     ...questSeedsFromEntrances(venueId, attractions),
     ...presenceAndCampingSeeds(meta, pois),
     ...imageryGaps,
+    ...inventory.seeds,
   ];
-  return shippedGapsDocument({ venueId, seeds, pois, map: map ?? {} });
+  return shippedGapsDocument({
+    venueId,
+    seeds,
+    pois,
+    map: map ?? {},
+    inventoryGaps: inventory.gaps,
+  });
 }

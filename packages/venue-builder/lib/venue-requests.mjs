@@ -362,6 +362,7 @@ export const briefJson = (venue, reqs, extras = {}) => ({
       venueId: venue?.id,
       reqs,
       attractions: extras.attractions || null,
+      inventoryAsks: extras.inventoryAsks || [],
       includeAmbient: extras.includeAmbient !== false,
     }),
 });
