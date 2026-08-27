@@ -535,7 +535,8 @@ passing it without having run `venues:bake` fails the pack on purpose.
 Tile export writes GeoJSON from the shipped contract and wraps Tippecanoe into
 `display/base.pmtiles` — a recorded gap, not a crash, when the binary is absent,
 though a Tippecanoe that runs and produces a broken or oversized archive still
-fails certification. Each Skin also gets a compiled MapLibre `<skin>.style.json`;
+fails certification. Inline `map.json` remains the shipped geometry path; tiles are
+the escape hatch ([ADR-0026](../adr/0026-venue-geometry-inline-vs-tiles.md)). Each Skin also gets a compiled MapLibre `<skin>.style.json`;
 `venues:render` serves the pack to headless Chromium and screenshots every
 Skin at the certification's truth-derived visual points — the builder-side
 descendant of the reference-skin visual matrix.

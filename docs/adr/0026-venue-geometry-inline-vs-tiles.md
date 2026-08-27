@@ -1,7 +1,8 @@
 # ADR-0026 — Venue geometry: inline `map.json` shipped, Tippecanoe export as escape hatch
 
 **Status:** Accepted (2026-08-27, #430)  
-**Depends on:** [ADR-0013 display pipeline](./0013-display-pipeline.md), [ADR-0015 terrain in display](./0015-terrain-in-display.md), [ADR-0019 zoomable worlds](./0019-zoomable-worlds.md)  
+**Amends:** [ADR-0013 display pipeline](./0013-display-pipeline.md) (geometry delivery path)  
+**Depends on:** [ADR-0002 dual-layer park truth](./0002-dual-layer-park-truth.md), [ADR-0013 display pipeline](./0013-display-pipeline.md), [ADR-0015 terrain in display](./0015-terrain-in-display.md), [ADR-0019 zoomable worlds](./0019-zoomable-worlds.md)  
 **See also:** [universal venue builder dependency matrix](../universal-venue-builder-dependency-matrix.md) (Tippecanoe row), `packages/venue-builder/lib/tiles-export.mjs`, `packages/venue-builder/lib/display-tiles.mjs`
 
 ## Context
@@ -11,7 +12,7 @@ The phone needs venue ground geometry — paths, buildings, water, coasters — 
 | Shape | Artifact | Consumer |
 |-------|----------|----------|
 | **Inline JSON** | `public/venues/<id>.map.json` | `ParkMap.jsx` / MapLibre caller, `lib/routing.js`, Places |
-| **Vector tiles** | Tippecanoe GeoJSON export → `base.pmtiles` (when built) | MapLibre GL reading local PMTiles |
+| **Vector tiles** | Tippecanoe GeoJSON export → `base.pmtiles` (when built) | Future MapLibre base layer; not yet the shipped consumer |
 
 ADR-0013 chose MapLibre + offline PMTiles as the **renderer target**, but Train H (ADR-0019) shipped MapLibre with **inline geometry** first: the caller reads `map.json` ways directly while overlay pins and routing stay on the truth layer. The Tippecanoe path (`venues:attractions --tiles`, `display-tiles.mjs`) writes GeoJSON layers and a `tippecanoe.sh` recipe; it does **not** invoke tippecanoe in CI unless the binary is installed (`wrap` dependency). Nothing in the shipped app bundle **requires** PMTiles today.
 
