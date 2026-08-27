@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import pg from 'pg';
 import { applyMigrations } from '../../scripts/postdb-migrate.mjs';
-import { seedVenueFromFiles } from '../../packages/venue-builder/lib/delivery/seed-postdb-from-files.mjs';
+import { seedVenueFromFiles } from '../../packages/venue-builder/lib/postdb-seed-from-files.mjs';
 import { exportFromPostdb } from '../../packages/venue-builder/lib/delivery/export-from-postdb.mjs';
 import { getHeadOutputsHash } from '../../packages/venue-builder/lib/postdb-io.mjs';
 import { readTruthFromFiles } from '../../packages/venue-builder/lib/map-factory/map-io.mjs';

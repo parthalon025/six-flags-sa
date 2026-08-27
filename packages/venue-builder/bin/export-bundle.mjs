@@ -11,7 +11,7 @@
 import path from 'node:path';
 import { assertPostdbAvailable } from '../lib/postdb-io.mjs';
 import { publishBundle } from '../lib/delivery/publish-bundle.mjs';
-import { seedVenueFromFiles } from '../lib/delivery/seed-postdb-from-files.mjs';
+import { seedVenueFromFiles } from '../lib/postdb-seed-from-files.mjs';
 import { VENUE_DIR, readJson } from '../lib/venue-io.mjs';
 
 const argv = process.argv.slice(2);

@@ -8,17 +8,17 @@
 
 import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
-import { OVERRIDE_DIR as BUILDER_VENUES } from '../../src/paths.mjs';
-import { readTruthFromFiles } from '../map-factory/map-io.mjs';
-import { mirrorTruthToPostdb } from '../map-factory/postdb-sync.mjs';
-import { mirrorDisplayPacksToPostdb } from '../visual-factory/postdb-sync.mjs';
-import { readJson } from '../venue-io.mjs';
+import { OVERRIDE_DIR as BUILDER_VENUES } from '../src/paths.mjs';
+import { readTruthFromFiles } from './map-factory/map-io.mjs';
+import { mirrorTruthToPostdb } from './map-factory/postdb-sync.mjs';
+import { mirrorDisplayPacksToPostdb } from './visual-factory/postdb-sync.mjs';
+import { readJson } from './venue-io.mjs';
 import {
   getHeadOutputsHash,
   getHeadRevisionId,
   outputsHash,
   usingPostdb,
-} from '../postdb-io.mjs';
+} from './postdb-io.mjs';
 
 /**
  * @param {string} venueId

@@ -6,7 +6,7 @@
 
 export { publishBundle } from './publish-bundle.mjs';
 export { assembleExportBundle, exportFromPostdb, assembleBundleAtRevision } from './export-from-postdb.mjs';
-export { seedVenueFromFiles, displaySpecsFromBuilder } from './seed-postdb-from-files.mjs';
+export { seedVenueFromFiles, displaySpecsFromBuilder } from '../postdb-seed-from-files.mjs';
 export {
   DELTA_STATUS,
   changedFiles,
