@@ -172,6 +172,7 @@
         "apps/party-tracker/lib/camping.js",
         "apps/party-tracker/lib/venueCompare.js",
         "apps/party-tracker/app/api/admin/**",
+        "apps/party-tracker/app/api/venues/**",
         "packages/venue-builder/data/venues/**",
         "fastlane/metadata/ios/routing_app_coverage.geojson"
       ]

@@ -28,9 +28,12 @@ process.emitWarning = (warning, ...rest) => {
 
 const {
   VENUE_BUNDLE_CACHE,
+  BUNDLE_SINCE_QUERY,
   bundleUrlFor,
+  bundleSyncUrl,
   hashedUrlFor,
   bundleIndexOf,
+  mergeManifestDelta,
   planBundleSync,
   sha256Hex,
   contentTypeFor,
@@ -189,6 +192,100 @@ await check('planBundleSync: changed fetches, unchanged keeps, removed drops', (
   const cold = planBundleSync(MANIFEST, bundleIndexOf(null));
   assert.equal(cold.fetch.length, 3);
   assert.deepEqual(cold.drop, []);
+});
+
+await check('bundleSyncUrl: delta API when a revision cursor exists, static path otherwise', () => {
+  assert.equal(bundleSyncUrl({ id: 'p', bundle: MANIFEST_URL }, null), MANIFEST_URL);
+  const delta = bundleSyncUrl({ id: 'p', bundle: MANIFEST_URL }, 'rev-a');
+  assert.match(delta, /^\/api\/venues\/p\/bundle\?/);
+  assert.equal(new URLSearchParams(delta.split('?')[1]).get(BUNDLE_SINCE_QUERY), 'rev-a');
+});
+
+await check('mergeManifestDelta: overlay changed entries onto the cached full manifest', () => {
+  const cached = manifestFor(['/venues/p.map.json', '/venues/p.pois.json']);
+  const incoming = {
+    ...cached,
+    basedOn: { map: '2026-08-16', revisionId: 'rev-b' },
+    files: [{ path: '/venues/p.map.json', bytes: 9, sha256: sha('{"meta":{"id":"p","v":2}}') }],
+  };
+  const merged = mergeManifestDelta(cached, incoming);
+  assert.equal(merged.files.length, 2);
+  assert.equal(merged.files.find((f) => f.path.endsWith('.map.json')).sha256, incoming.files[0].sha256);
+  assert.equal(merged.files.find((f) => f.path.endsWith('.pois.json')).sha256, cached.files[1].sha256);
+  assert.equal(mergeManifestDelta(null, incoming), incoming);
+});
+
+const REV_A = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+const REV_B = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+const MAP_V1 = '{"meta":{"id":"p","generated":"2026-08-15"}}';
+const MAP_V2 = '{"meta":{"id":"p","generated":"2026-08-16"}}';
+const DELTA_BODIES = {
+  '/venues/p.map.json': MAP_V2,
+  '/venues/p.pois.json': BODIES['/venues/p.pois.json'],
+  '/venues/p/display/trail.style.json': BODIES['/venues/p/display/trail.style.json'],
+};
+const manifestV1 = {
+  version: 1,
+  venue: 'p',
+  basedOn: { map: '2026-08-15', revisionId: REV_A },
+  files: Object.keys(BODIES).map((p) => ({ path: p, bytes: BODIES[p].length, sha256: sha(BODIES[p]) })),
+};
+const manifestV2Full = {
+  version: 1,
+  venue: 'p',
+  basedOn: { map: '2026-08-16', revisionId: REV_B },
+  files: Object.keys(DELTA_BODIES).map((p) => ({
+    path: p,
+    bytes: DELTA_BODIES[p].length,
+    sha256: sha(DELTA_BODIES[p]),
+  })),
+};
+const manifestV2Delta = {
+  ...manifestV2Full,
+  files: manifestV2Full.files.filter((f) => f.path.endsWith('.map.json')),
+};
+
+function fakeFetchDelta({ deltaManifest = manifestV2Delta } = {}) {
+  const calls = [];
+  const impl = async (input) => {
+    const raw = typeof input === 'string' ? input : input.url;
+    const url = raw.startsWith('http') ? new URL(raw).pathname + new URL(raw).search : raw;
+    calls.push(url);
+    if (url.startsWith('/api/venues/p/bundle')) {
+      return new Response(JSON.stringify(deltaManifest), { status: 200 });
+    }
+    if (url === MANIFEST_URL) {
+      return new Response(JSON.stringify(manifestV1), { status: 200 });
+    }
+    const clean = url.split('?')[0];
+    const body = DELTA_BODIES[clean];
+    if (!body) return new Response('', { status: 404 });
+    return new Response(body, { status: 200 });
+  };
+  impl.calls = calls;
+  return impl;
+}
+
+await check('revision-cursor sync: delta manifest merges and only changed hashes are fetched', async () => {
+  const caches = fakeCaches();
+  const bundleCache = await caches.open(VENUE_BUNDLE_CACHE);
+  await bundleCache.put(
+    MANIFEST_URL,
+    new Response(JSON.stringify(manifestV1), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+  );
+  for (const [path, body] of Object.entries(BODIES)) {
+    await bundleCache.put(path, new Response(body));
+  }
+  const fetchImpl = fakeFetchDelta();
+  const result = await syncVenueBundle(VENUE, { fetchImpl, cacheStorage: caches });
+  assert.equal(result.ok, true);
+  assert.equal(result.fetched, 1, 'only the changed map file is re-downloaded');
+  assert.equal(result.kept, 2, 'pois and display bytes already match');
+  assert.match(fetchImpl.calls[0], /\/api\/venues\/p\/bundle\?since=/, 'delta API used when cache carries revisionId');
+  assert.equal(await textOf(caches, '/venues/p.map.json'), MAP_V2);
+  const committed = JSON.parse(await textOf(caches, MANIFEST_URL));
+  assert.equal(committed.basedOn.revisionId, REV_B);
+  assert.equal(committed.files.length, 3);
 });
 
 /* ----------------------------------------------------------------- sync -- */
