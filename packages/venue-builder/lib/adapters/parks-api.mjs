@@ -83,7 +83,7 @@ export async function loadParksApiData(id, { fetch = false, offline = false, cac
 
 /** Compare ParksAPI names to bundle ride names. */
 export function compareParksApiToBundle({ parksApi = {}, pois = [] } = {}) {
-  const rides = pois.filter((p) => p.c === 'ride' || p.c === 'slide');
+  const rides = pois.filter((p) => p.c === 'ride' || p.c === 'slide' || p.c === 'coaster');
   const bundleNames = rides.map((p) => p.n);
   const apiNames = (parksApi.attractions || []).map((a) => a.name);
   const matched = new Set();
