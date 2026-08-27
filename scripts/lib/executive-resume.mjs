@@ -7,10 +7,12 @@
  *   - resume.md      → rendered view; never hand-edited
  *
  * Interface:
- *   emptyResume, loadLocal, saveLocal, renderMarkdown, refreshInventory, checkDrift
+ *   emptyResume, loadLocal, saveLocal, renderMarkdown, renderProse, refreshInventory, checkDrift
  *   agentPatch, mergeFromRemote, pullFromIssue, pushToIssue, sessionStartBrief
  *   endTurn, subscribeTimerInstructions, platformChange, createGoalObjective
  *   timerPrompt, TIMER_HOURS
+ *   resolvePointer, linkDashboard, loadDurablePointer, saveDurablePointer
+ *   DURABLE_POINTER_FILE (committed), POINTER_FILE (scratch cache)
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -24,7 +26,13 @@ export const REPO = join(here, '../..');
 export const SCRATCH = '.scratch';
 export const RESUME_JSON = `${SCRATCH}/resume.json`;
 export const RESUME_MD = `${SCRATCH}/resume.md`;
+/** Session-local cache (jsonCommentId); gitignored with .scratch/. */
 export const POINTER_FILE = `${SCRATCH}/executive-dashboard.json`;
+/**
+ * Committed durable pointer — survives ephemeral cloud VMs where .scratch/ is empty.
+ * Issue number lives here; scratch may overlay jsonCommentId.
+ */
+export const DURABLE_POINTER_FILE = 'docs/agents/executive-dashboard.json';
 export const JSON_MARKER_START = '<!-- executive-resume-json:v1 -->';
 export const JSON_MARKER_END = '<!-- /executive-resume-json -->';
 export const SCHEMA = 1;
@@ -90,6 +98,7 @@ export function resumePaths(root = REPO) {
     json: join(root, RESUME_JSON),
     md: join(root, RESUME_MD),
     pointer: join(root, POINTER_FILE),
+    durablePointer: join(root, DURABLE_POINTER_FILE),
   };
 }
 
@@ -159,19 +168,91 @@ export function parseJsonComment(body) {
   }
 }
 
-export function loadPointer(root = REPO) {
-  const { pointer } = resumePaths(root);
-  if (!existsSync(pointer)) return null;
+function readPointerFile(path) {
+  if (!existsSync(path)) return null;
   try {
-    return JSON.parse(readFileSync(pointer, 'utf8'));
+    return JSON.parse(readFileSync(path, 'utf8'));
   } catch {
     return null;
   }
 }
 
+/** Scratch-only pointer (session cache). Prefer resolvePointer for callers. */
+export function loadPointer(root = REPO) {
+  return readPointerFile(resumePaths(root).pointer);
+}
+
+/** Committed durable pointer (issue number survives cloud VM death). */
+export function loadDurablePointer(root = REPO) {
+  return readPointerFile(resumePaths(root).durablePointer);
+}
+
+/**
+ * Resolve dashboard pointer: durable issue number + optional scratch jsonCommentId.
+ * Cloud sessions with empty .scratch/ still find #643 via docs/agents/executive-dashboard.json.
+ * When durable exists it always wins for issueNumber/url — scratch never overrides them.
+ */
+export function resolvePointer(root = REPO) {
+  const durable = loadDurablePointer(root);
+  const scratch = loadPointer(root);
+  if (durable?.issueNumber) {
+    return {
+      issueNumber: Number(durable.issueNumber),
+      url: durable.url ?? null,
+      jsonCommentId: scratch?.jsonCommentId ?? null,
+    };
+  }
+  // Legacy: scratch-only pointer from before durable files existed
+  if (scratch?.issueNumber) {
+    return {
+      issueNumber: Number(scratch.issueNumber),
+      url: scratch.url ?? null,
+      jsonCommentId: scratch.jsonCommentId ?? null,
+    };
+  }
+  return null;
+}
+
+/** Write session-local jsonCommentId cache only (durable owns issueNumber/url). */
 export function savePointer(pointer, root = REPO) {
   ensureScratch(root);
-  writeFileSync(join(root, POINTER_FILE), `${JSON.stringify(pointer, null, 2)}\n`);
+  const cache = { jsonCommentId: pointer?.jsonCommentId ?? null };
+  writeFileSync(join(root, POINTER_FILE), `${JSON.stringify(cache, null, 2)}\n`);
+}
+
+/** Write committed durable pointer; refresh scratch comment-id cache. */
+export function saveDurablePointer(pointer, root = REPO) {
+  const { durablePointer } = resumePaths(root);
+  mkdirSync(dirname(durablePointer), { recursive: true });
+  const durable = {
+    issueNumber: Number(pointer.issueNumber),
+    url: pointer.url || null,
+  };
+  writeFileSync(durablePointer, `${JSON.stringify(durable, null, 2)}\n`);
+  savePointer({ jsonCommentId: pointer.jsonCommentId ?? null }, root);
+  return durable;
+}
+
+/**
+ * Link this repo to an existing executive dashboard issue (e.g. #643).
+ * Does not create a new issue — use init for first-time setup.
+ * Pass --url when gh cannot resolve the repo; never invent a placeholder URL.
+ */
+export function linkDashboard({ issueNumber, url = null, root = REPO, runner = execFileSync } = {}) {
+  if (!issueNumber) throw new Error('linkDashboard requires issueNumber');
+  const resolvedUrl = url || deriveIssueUrl(issueNumber, { root, runner });
+  return saveDurablePointer({ issueNumber, url: resolvedUrl, jsonCommentId: null }, root);
+}
+
+function deriveIssueUrl(issueNumber, { root, runner }) {
+  let slug;
+  try {
+    slug = runGh(['repo', 'view', '--json', 'nameWithOwner', '-q', '.nameWithOwner'], { cwd: root, runner });
+  } catch (err) {
+    throw new Error(`resume:link needs --url when gh cannot resolve the repo (${err.message})`);
+  }
+  if (!slug) throw new Error('resume:link needs --url when gh cannot resolve the repo');
+  return `https://github.com/${slug}/issues/${issueNumber}`;
 }
 
 function runGh(args, { cwd = REPO, runner = execFileSync } = {}) {
@@ -358,6 +439,51 @@ export function markTimerFired(resume) {
   };
 }
 
+/**
+ * Human-facing resume: one short executive brief in the terminal.
+ * Goal, progress, next step — not PR titles, draft lists, or inventory walls.
+ */
+export function renderProse(resume) {
+  const { now, human, lastStop, platform, updatedAt } = resume;
+  const paras = [];
+
+  if (!now?.task?.trim()) {
+    paras.push('No NOW task is set yet. Pick one thing before coding.');
+  } else {
+    paras.push(`Goal: ${now.task.trim()}.`);
+  }
+
+  if (now?.doneWhen?.length) {
+    paras.push(`Done when: ${now.doneWhen.join('; ')}`);
+  }
+
+  if (lastStop?.iWasDoing?.trim()) {
+    paras.push(`Progress: ${lastStop.iWasDoing.trim()}`);
+  }
+
+  if (now?.nextStep?.trim()) {
+    paras.push(`Next: ${now.nextStep.trim()}`);
+  } else if (now?.task?.trim()) {
+    paras.push('Next step is unset — say what to do next.');
+  }
+
+  if (human?.blockedOnMe?.length) {
+    paras.push(`Needs you: ${human.blockedOnMe.join('; ')}`);
+  }
+
+  if (human?.notes?.trim()) {
+    paras.push(human.notes.trim());
+  }
+
+  paras.push('Still on this, or switch?');
+
+  const meta = [`platform ${platform || 'unknown'}`];
+  if (updatedAt) meta.push(`updated ${updatedAt}`);
+  paras.push(`(${meta.join(' · ')})`);
+
+  return `${paras.join('\n\n')}\n`;
+}
+
 export function renderMarkdown(resume) {
   const lines = [
     '# Executive resume — Parkbound',
@@ -442,9 +568,9 @@ export function extractRemoteResume(payload) {
 }
 
 export function pullFromIssue({ root = REPO, runner = execFileSync, pointer: ptrIn } = {}) {
-  const pointer = ptrIn || loadPointer(root);
+  const pointer = ptrIn || resolvePointer(root);
   if (!pointer?.issueNumber) {
-    throw new Error(`No executive dashboard issue — run: npm run resume:init`);
+    throw new Error(`No executive dashboard issue — run: npm run resume:init or npm run resume:link -- --issue 643`);
   }
   let remote = null;
   if (pointer.jsonCommentId) {
@@ -499,8 +625,8 @@ export function pullFromIssue({ root = REPO, runner = execFileSync, pointer: ptr
 }
 
 export function pushToIssue({ resume, root = REPO, runner = execFileSync, pointer: ptrIn } = {}) {
-  const pointer = ptrIn || loadPointer(root);
-  if (!pointer?.issueNumber) throw new Error('No executive dashboard issue — run: npm run resume:init');
+  const pointer = ptrIn || resolvePointer(root);
+  if (!pointer?.issueNumber) throw new Error('No executive dashboard issue — run: npm run resume:init or npm run resume:link -- --issue 643');
 
   const bodyMd = renderMarkdown(refreshInventory(resume, { cwd: root, runner }));
   const payload = {
@@ -540,6 +666,12 @@ export function pushToIssue({ resume, root = REPO, runner = execFileSync, pointe
 }
 
 export function initDashboardIssue({ root = REPO, runner = execFileSync } = {}) {
+  const existing = resolvePointer(root);
+  if (existing?.issueNumber) {
+    throw new Error(
+      `Executive dashboard already linked (#${existing.issueNumber}). Use npm run resume:link -- --issue <n> to retarget, or resume:pull.`,
+    );
+  }
   const body = [
     '# Executive dashboard',
     '',
@@ -556,8 +688,8 @@ export function initDashboardIssue({ root = REPO, runner = execFileSync } = {}) 
   );
   const num = url.match(/\/issues\/(\d+)/)?.[1];
   if (!num) throw new Error(`Could not parse issue number from: ${url}`);
-  const pointer = { issueNumber: Number(num), jsonCommentId: null, url };
-  savePointer(pointer, root);
+  const pointer = { issueNumber: Number(num), jsonCommentId: null, url: url.trim() };
+  saveDurablePointer(pointer, root);
   const resume = saveLocal(emptyResume(), root);
   return pushToIssue({ resume, root, runner, pointer });
 }

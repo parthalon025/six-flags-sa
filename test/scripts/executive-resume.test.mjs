@@ -3,27 +3,36 @@
  * Executive resume — merge, drift, render, agent patch boundaries.
  */
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   agentPatch,
   applySessionPlatform,
   checkDrift,
   createGoalObjective,
+  DURABLE_POINTER_FILE,
   emptyResume,
   endTurn,
   gatherDraftPrs,
+  linkDashboard,
   loadLocal,
+  loadPointer,
   mergeFromRemote,
   parseJsonComment,
   platformChange,
+  pullFromIssue,
   refreshInventory,
   renderMarkdown,
+  renderProse,
+  resolvePointer,
   saveLocal,
   sessionStartBrief,
   subscribeTimerInstructions,
   wrapJsonComment,
+  initDashboardIssue,
 } from '../../scripts/lib/executive-resume.mjs';
 
 const scratch = mkdtempSync(join(tmpdir(), 'exec-resume-'));
@@ -92,6 +101,28 @@ assert.equal(afterSwitch.previousPlatform, 'cursor-local');
 assert.match(createGoalObjective({ now: { task: 'Ship resume', nextStep: 'Run tests' } }), /Ship resume — next: Run tests/);
 assert.match(createGoalObjective({ now: { task: 'Ship resume', nextStep: '' } }), /Ship resume/);
 
+// Human prose — short executive brief (goal / progress / next), not inventory
+const proseResume = emptyResume({ platform: 'cursor-cloud' });
+proseResume.now.task = 'Executive resume + ADHD keep-me-on-track';
+proseResume.now.ticket = '#643';
+proseResume.now.nextStep = 'Ship durable pointer';
+proseResume.now.doneWhen = ['Cloud sessions restore NOW', 'Pointer survives .scratch'];
+proseResume.lastStop.iWasDoing = 'Wrote resolvePointer; unit tests green';
+proseResume.human.blockedOnMe = ['Confirm the brief feels right'];
+proseResume.inventory.draftPrs = [{ number: 1, title: 'Noise PR title' }, { number: 2, title: 'Another title' }];
+const prose = renderProse(proseResume);
+assert.match(prose, /Goal: Executive resume/);
+assert.match(prose, /Done when: Cloud sessions restore NOW/);
+assert.match(prose, /Progress: Wrote resolvePointer/);
+assert.match(prose, /Next: Ship durable pointer/);
+assert.match(prose, /Needs you: Confirm the brief feels right/);
+assert.match(prose, /Still on this, or switch\?/);
+assert.doesNotMatch(prose, /draft PR/i);
+assert.doesNotMatch(prose, /Noise PR title/);
+assert.doesNotMatch(prose, /## Open inventory/);
+assert.doesNotMatch(prose, /Background noise/);
+assert.doesNotMatch(prose, /<!DOCTYPE html>/i);
+
 // Draft PRs — all open drafts, not @me only
 const drafts = gatherDraftPrs({
   cwd: root,
@@ -119,6 +150,91 @@ const sub = subscribeTimerInstructions();
 assert.equal(sub.name, 'executive-resume-12h');
 assert.equal(sub.delaySeconds, 43200);
 
+// Durable pointer — survives missing .scratch/executive-dashboard.json
+mkdirSync(join(root, 'docs/agents'), { recursive: true });
+writeFileSync(
+  join(root, DURABLE_POINTER_FILE),
+  `${JSON.stringify({ issueNumber: 643, url: 'https://github.com/example/repo/issues/643' }, null, 2)}\n`,
+);
+assert.equal(loadPointer(root), null, 'scratch pointer absent');
+const resolved = resolvePointer(root);
+assert.equal(resolved.issueNumber, 643);
+assert.equal(resolved.url, 'https://github.com/example/repo/issues/643');
+assert.equal(resolved.jsonCommentId, null);
+
+// Scratch overlays durable (session-local comment id cache only)
+writeFileSync(
+  join(root, '.scratch/executive-dashboard.json'),
+  `${JSON.stringify({ jsonCommentId: 999 }, null, 2)}\n`,
+);
+const overlaid = resolvePointer(root);
+assert.equal(overlaid.issueNumber, 643);
+assert.equal(overlaid.jsonCommentId, 999);
+assert.equal(overlaid.url, 'https://github.com/example/repo/issues/643');
+
+// Stale scratch issueNumber/url must not override durable
+writeFileSync(
+  join(root, '.scratch/executive-dashboard.json'),
+  `${JSON.stringify({ issueNumber: 1, url: 'https://stale.example/1', jsonCommentId: 42 }, null, 2)}\n`,
+);
+const durableWins = resolvePointer(root);
+assert.equal(durableWins.issueNumber, 643);
+assert.equal(durableWins.url, 'https://github.com/example/repo/issues/643');
+assert.equal(durableWins.jsonCommentId, 42);
+
+// linkDashboard writes durable; scratch cache is jsonCommentId-only
+rmSync(join(root, '.scratch/executive-dashboard.json'), { force: true });
+linkDashboard({ issueNumber: 643, url: 'https://github.com/example/repo/issues/643', root });
+const durableOnDisk = JSON.parse(readFileSync(join(root, DURABLE_POINTER_FILE), 'utf8'));
+assert.equal(durableOnDisk.issueNumber, 643);
+const scratchCache = JSON.parse(readFileSync(join(root, '.scratch/executive-dashboard.json'), 'utf8'));
+assert.deepEqual(Object.keys(scratchCache).sort(), ['jsonCommentId']);
+assert.equal(resolvePointer(root).issueNumber, 643);
+
+// link without --url fails loudly when gh cannot resolve (no fake owner/repo)
+assert.throws(
+  () =>
+    linkDashboard({
+      issueNumber: 99,
+      root,
+      runner: () => {
+        throw new Error('gh offline');
+      },
+    }),
+  /needs --url/,
+);
+
+// init is first-time only when durable already linked
+assert.throws(() => initDashboardIssue({ root, runner }), /already linked/);
+
+// pullFromIssue uses durable pointer when scratch is gone
+rmSync(join(root, '.scratch/executive-dashboard.json'), { force: true });
+const remoteBody = wrapJsonComment({
+  schema: 1,
+  now: { task: 'From durable pointer', ticket: null, doneWhen: [], nextStep: '', inScope: [], worktree: null, branch: null, draftPr: null },
+  human: { parkingLot: [], blockedOnMe: [], notes: '' },
+  lastStop: { iWasDoing: '', at: null },
+  timer: { everyHours: 12, lastFiredAt: null },
+});
+const pullRunner = (cmd, args) => {
+  if (cmd === 'gh' && args[0] === 'pr' && args[1] === 'list') return '[]';
+  if (cmd === 'gh' && args[0] === 'issue' && args[1] === 'list') return '[]';
+  if (cmd === 'gh' && args[0] === 'issue' && args[1] === 'view') {
+    return JSON.stringify({ body: `# Executive\n\n${remoteBody}`, comments: [] });
+  }
+  if (cmd === 'git' && args[0] === 'worktree') return '';
+  if (cmd === 'node' && args[0]?.includes('train-plan')) return 'nothing next';
+  throw new Error(`unexpected ${cmd} ${args.join(' ')}`);
+};
+const pulled = pullFromIssue({ root, runner: pullRunner });
+assert.equal(pulled.now.task, 'From durable pointer');
+
+// CLI entry: resume:link without --issue exits 1 (spec table row)
+const cli = join(fileURLToPath(new URL('../..', import.meta.url)), 'scripts/executive-resume.mjs');
+const missingIssue = spawnSync(process.execPath, [cli, 'link'], { encoding: 'utf8' });
+assert.equal(missingIssue.status, 1);
+assert.match(missingIssue.stderr, /requires --issue/);
+
 // sessionStartBrief prints one human brief, not full inventory/workflow dump
 const startScratch = mkdtempSync(join(tmpdir(), 'exec-resume-start-'));
 const startRoot = join(startScratch, 'repo');
@@ -144,5 +260,6 @@ assert.doesNotMatch(start, /# Matt workflow session brief/);
 assert.doesNotMatch(start, /### Draft PRs/);
 
 rmSync(startScratch, { recursive: true, force: true });
+
 rmSync(scratch, { recursive: true, force: true });
 console.log('executive-resume tests ok');
