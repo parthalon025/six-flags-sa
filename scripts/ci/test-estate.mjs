@@ -182,6 +182,7 @@ export const TEST_ESTATE = {
 
   // --- test/scripts: the decisions the workflows call ----------------------
   'test/scripts/agent-docs.test.mjs': ['ci-gate'],
+  'test/scripts/venue-builder-guide.test.mjs': ['ci-gate'],
   'test/scripts/app-store-connect-pack.test.mjs': ['ci-gate'],
   'test/scripts/app-store-connect.test.mjs': ['ci-gate'],
   'test/scripts/apple-developer.test.mjs': ['ci-gate'],
