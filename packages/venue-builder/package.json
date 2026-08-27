@@ -14,6 +14,7 @@
     "./map-factory.js": "./lib/map-factory/index.mjs",
     "./visual-factory.js": "./lib/visual-factory/index.mjs",
     "./delivery.js": "./lib/delivery/index.mjs",
+    "./builder-app-contract.js": "./lib/delivery/builder-app-contract.mjs",
     "./paths.js": "./src/paths.mjs",
     "./routing-coverage.js": "./src/routing-coverage.mjs"
   },
