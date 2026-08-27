@@ -13,7 +13,7 @@
  * Does not import venue-io (venue-io calls this after reading sidecars).
  */
 
-import { questSeedsFromEntrances } from './quest-seeds.mjs';
+import { questSeedsFromEntrances, questSeedsFromStaleAdapters, questSeedsFromEvidenceConflicts } from './quest-seeds.mjs';
 
 export const SHIPPED_GAP_TYPES = Object.freeze([
   'height',
@@ -50,6 +50,12 @@ export function shippedTypeForSeed(seed) {
     return 'queue';
   }
   if (seed.sourceGap === 'path_disputed' || seed.type === 'path_disputed') {
+    return 'path_disputed';
+  }
+  if (seed.sourceGap === 'adapter_stale') return 'path_disputed';
+  if (seed.sourceGap === 'evidence_conflict') {
+    const feat = String(seed.featureKey || '');
+    if (feat.includes('queue') || feat === 'queue_entrance') return 'queue';
     return 'path_disputed';
   }
   if (seed.sourceGap === 'camping' || seed.type === 'poi_attribute') return 'camping';
@@ -212,6 +218,10 @@ export function shippedGapsDocument({ venueId, seeds = [], pois = [], map = null
       if (target) add(type, target);
       continue;
     }
+    if (type === 'path_disputed' && seed.sourceGap === 'adapter_stale') {
+      add(type, null);
+      continue;
+    }
     add(type, null);
   }
 
@@ -242,9 +252,22 @@ export function shippedGapsForVenue({
   map = {},
   attractions = null,
   imageryGaps = [],
+  adapterCaches = null,
+  declaredAdapters = [],
+  catalog = null,
+  asOf = new Date().toISOString().slice(0, 10),
 } = {}) {
   const seeds = [
     ...questSeedsFromEntrances(venueId, attractions),
+    ...questSeedsFromEvidenceConflicts(venueId, attractions),
+    ...(adapterCaches
+      ? questSeedsFromStaleAdapters(venueId, {
+        adapters: declaredAdapters,
+        caches: adapterCaches,
+        catalog,
+        asOf,
+      })
+      : []),
     ...presenceAndCampingSeeds(meta, pois),
     ...imageryGaps,
   ];

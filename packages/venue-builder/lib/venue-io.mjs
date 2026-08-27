@@ -37,6 +37,8 @@ import {
   VENUE_DIR,
 } from '../src/paths.mjs';
 import { shippedGapsForVenue } from './ship-gaps.mjs';
+import { adapterCacheFile } from './adapters/_cache.mjs';
+import { externalAdaptersFromCatalog, readSources } from './venue-sources.mjs';
 import { routeImageryExtractions } from './imagery-claims.mjs';
 import { writeBundleManifest } from './venue-bundle.mjs';
 import { writeRoutingCoverage } from '../src/routing-coverage.mjs';
@@ -119,6 +121,15 @@ export function gapsDocumentFor({ meta, pois, map, extractions } = {}) {
     ? loaded
     : Array.isArray(loaded?.extractions) ? loaded.extractions : [];
   const imagery = routeImageryExtractions(list, { map: map || {} });
+  const { data: catalog } = id ? readSources(id) : { data: null };
+  const declaredAdapters = externalAdaptersFromCatalog(catalog, { fallback: [] });
+  const adapterCaches = {};
+  if (id) {
+    for (const adapterId of declaredAdapters) {
+      const cache = readJson(adapterCacheFile(id, adapterId), null);
+      if (cache) adapterCaches[adapterId] = cache;
+    }
+  }
   return shippedGapsForVenue({
     venueId: id,
     meta,
@@ -126,6 +137,9 @@ export function gapsDocumentFor({ meta, pois, map, extractions } = {}) {
     map: map || {},
     attractions,
     imageryGaps: imagery.gaps,
+    adapterCaches: id ? adapterCaches : null,
+    declaredAdapters,
+    catalog,
   });
 }
 

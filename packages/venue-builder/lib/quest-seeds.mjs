@@ -17,6 +17,8 @@
  */
 
 import { PUBLISH_AT, atLeast } from './evidence.mjs';
+import { adapterCacheIsStale, freshnessDaysForAdapter } from './adapter-freshness.mjs';
+import { graphFromSidecar } from './evidence-graph.mjs';
 
 /** Builder ask key → contribution quest type (design taxonomy). */
 export const REQUEST_TO_QUEST = {
@@ -144,6 +146,86 @@ export function questSeedsFromEntrances(venueId, attractionsSidecar) {
 }
 
 /**
+ * Adapters whose on-disk cache is older than the declared freshness window.
+ *
+ * @param {string} venueId
+ * @param {{ adapters?: string[], caches?: Record<string, object>, catalog?: object, asOf?: string }} [opts]
+ */
+export function questSeedsFromStaleAdapters(venueId, {
+  adapters = [],
+  caches = {},
+  catalog = null,
+  asOf = new Date().toISOString().slice(0, 10),
+} = {}) {
+  const seeds = [];
+  for (const adapterId of adapters) {
+    const cache = caches[adapterId];
+    if (!cache) continue;
+    const freshnessDays = freshnessDaysForAdapter(adapterId, catalog);
+    const { stale, fetched } = adapterCacheIsStale(cache, freshnessDays, asOf);
+    if (!stale) continue;
+    seeds.push({
+      venueId,
+      type: 'source_verify',
+      tier: 2,
+      graduation: 'adapter_refresh',
+      sourceGap: 'adapter_stale',
+      target: adapterId,
+      blocking: false,
+      whyOpenSourceFails:
+        'External research caches expire; stale adapter data cannot be trusted for fusion or QA.',
+      need: `Refresh ${adapterId} research cache (last fetched ${fetched || 'unknown'})`,
+      adapterId,
+      fetchedAt: fetched,
+      freshnessDays,
+    });
+  }
+  return seeds;
+}
+
+/**
+ * Evidence-graph nodes whose claims diverge — guests settle the standoff on the ground.
+ *
+ * @param {string} venueId
+ * @param {object | null} attractionsSidecar
+ */
+export function questSeedsFromEvidenceConflicts(venueId, attractionsSidecar) {
+  if (!attractionsSidecar) return [];
+  const { nodes } = graphFromSidecar(attractionsSidecar);
+  const seeds = [];
+  const seen = new Set();
+  for (const node of nodes) {
+    if (node.kind === 'ride' || node.kind === 'metadata') continue;
+    const colon = node.id.indexOf(':');
+    const rideId = colon >= 0 ? node.id.slice(0, colon) : node.id;
+    const featureKey = colon >= 0 ? node.id.slice(colon + 1) : node.label;
+    const row = (attractionsSidecar.attractions || []).find((a) => a.id === rideId);
+    const slot = row?.features?.[featureKey];
+    const conflict = Boolean(slot?.conflict || node.fusion?.conflict);
+    if (!conflict) continue;
+    const dedupe = `${rideId}:${featureKey}`;
+    if (seen.has(dedupe)) continue;
+    seen.add(dedupe);
+    seeds.push({
+      venueId,
+      type: 'conflict_settle',
+      tier: 2,
+      graduation: 'attractions_evidence',
+      sourceGap: 'evidence_conflict',
+      target: rideId,
+      featureKey,
+      rideName: node.rideName,
+      blocking: false,
+      whyOpenSourceFails:
+        'Independent sources disagree about where this feature is; averaging would invent a coordinate.',
+      need: `Settle ${featureKey.replace(/_/g, ' ')} conflict for ${node.rideName || rideId}`,
+      evidenceBand: node.fusion?.band || 'unknown',
+    });
+  }
+  return seeds.slice(0, 40);
+}
+
+/**
  * Ephemeral ops signals — always available as Tier-1 ambient quests once E9 ships.
  * Not derived from builder gaps; listed so the handoff doc and API share one catalogue.
  */
@@ -162,11 +244,24 @@ export function questSeedsForVenue({
   venueId,
   reqs = [],
   attractions = null,
+  adapterCaches = null,
+  declaredAdapters = [],
+  catalog = null,
+  asOf = new Date().toISOString().slice(0, 10),
   includeAmbient = true,
 } = {}) {
   const durable = [
     ...questSeedsFromRequests(venueId, reqs),
     ...questSeedsFromEntrances(venueId, attractions),
+    ...questSeedsFromEvidenceConflicts(venueId, attractions),
+    ...(adapterCaches
+      ? questSeedsFromStaleAdapters(venueId, {
+        adapters: declaredAdapters,
+        caches: adapterCaches,
+        catalog,
+        asOf,
+      })
+      : []),
   ];
   const ambient = includeAmbient
     ? TIER1_AMBIENT.map((a) => ({
