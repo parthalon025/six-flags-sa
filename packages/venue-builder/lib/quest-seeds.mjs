@@ -164,12 +164,22 @@ export function questSeedsForVenue({
   reqs = [],
   attractions = null,
   includeAmbient = true,
-  signalSeeds = [],
+  signalSeeds = null,
+  adapterCaches = null,
+  gapNotes = {},
+  asOf,
 } = {}) {
+  const derivedSignals = signalSeeds ?? ambientSignalShipArtifacts({
+    venueId,
+    adapterCaches: adapterCaches || {},
+    attractions,
+    gapNotes,
+    asOf,
+  }).seeds;
   const durable = [
     ...questSeedsFromRequests(venueId, reqs),
     ...questSeedsFromEntrances(venueId, attractions),
-    ...signalSeeds,
+    ...derivedSignals,
   ];
   const ambient = includeAmbient
     ? TIER1_AMBIENT.map((a) => ({

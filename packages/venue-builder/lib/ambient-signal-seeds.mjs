@@ -51,7 +51,7 @@ const CONFLICT_QUEST = Object.freeze({
  */
 export function adapterCacheIsStale(cache, freshnessDays, asOf) {
   const fetched = cache?.fetched;
-  if (!fetched) return true;
+  if (!fetched) return false;
   const asOfDate = new Date(`${asOf}T12:00:00Z`);
   const fetchedDate = new Date(`${String(fetched).slice(0, 10)}T12:00:00Z`);
   if (Number.isNaN(fetchedDate.getTime())) return true;
@@ -110,15 +110,16 @@ export function questSeedsFromConflicts(venueId, attractionsSidecar) {
   const seen = new Set();
   for (const node of nodes) {
     if (node.kind === 'ride') continue;
-    const conflict = Boolean(node.fusion?.conflict);
-    if (!conflict) continue;
-    const rideKey = String(node.rideName || node.id || '').split(':')[0];
+    const rideKey = node.id?.split(':')[0] || null;
     const row = (attractionsSidecar.attractions || []).find(
       (a) => a.id === rideKey || a.name === node.rideName,
     );
+    const featureKey = node.id?.split(':').slice(1).join(':') || node.label;
+    const slot = row?.features?.[featureKey];
+    const conflict = Boolean(node.fusion?.conflict || slot?.conflict);
     const target = row?.place || row?.id || rideKey || null;
     const dedupe = `${target}:${node.kind}`;
-    if (!target || seen.has(dedupe)) continue;
+    if (!conflict || !target || seen.has(dedupe)) continue;
     seen.add(dedupe);
     seeds.push({
       venueId,
