@@ -9,7 +9,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { compareVenue } from '../src/compare.mjs';
+import { bundleFingerprint, compareVenue } from '../src/compare.mjs';
 import { checklist, failures } from './venue-checklist.mjs';
 import { requests, briefJson } from './venue-requests.mjs';
 import { readRecipe } from './venue-recipe.mjs';
@@ -425,6 +425,7 @@ export function certifyVenue(id, opts = {}) {
     venue: { id: venue.id, name: venue.name, locality: venue.locality },
     certified,
     certifiedAt: certified ? new Date().toISOString() : null,
+    bundleFingerprint: bundleFingerprint(id),
     checks,
     ask: askBrief,
   };
@@ -441,6 +442,30 @@ export function certifyVenue(id, opts = {}) {
 export function certifyAll(opts = {}) {
   const manifest = readJson(path.join(VENUE_DIR, 'manifest.json'), { venues: [] });
   return manifest.venues.map((v) => certifyVenue(v.id, opts));
+}
+
+/**
+ * Re-run fleet certification and fail only when a venue that was certified in
+ * the committed certification.json no longer certifies (#402).
+ *
+ * @param {{ write?: boolean }} opts
+ * @returns {{ ok: boolean, regressions: Array<{ id: string, name: string, failedChecks: string[] }> }}
+ */
+export function certifyFleetRegression(opts = {}) {
+  const manifest = readJson(path.join(VENUE_DIR, 'manifest.json'), { venues: [] });
+  const regressions = [];
+  for (const { id } of manifest.venues) {
+    const prior = readJson(certificationFile(id), null);
+    const now = certifyVenue(id, opts);
+    if (prior?.certified && !now.certified) {
+      regressions.push({
+        id,
+        name: now.venue.name,
+        failedChecks: now.checks.filter((c) => !c.pass).map((c) => c.key),
+      });
+    }
+  }
+  return { ok: regressions.length === 0, regressions };
 }
 
 export function certificationFile(id) {

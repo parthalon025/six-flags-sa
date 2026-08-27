@@ -11,6 +11,7 @@ Examples already handled by scripts (read the file, do not re-document the inter
 | Concern | Use this |
 |---------|----------|
 | Skip Vercel builds / deploy budget (25 user, ~75 automation) | `scripts/lib/vercel-budget.mjs` + `scripts/lib/vercel-ignore.mjs` via `scripts/vercel-ignore.sh` (`vercel.json` `ignoreCommand`) |
+| Production Postgres credential guard (`DATABASE_URL` on Vercel Production) | `apps/party-tracker/lib/productionPostgresGuard.js` + `applyProductionPostgresGuard` in `scripts/lib/vercel-ignore.mjs` |
 | Post-merge version stamp files (bump + ignore skip) | `scripts/lib/version-stamp-paths.json` + `scripts/lib/version-stamp.mjs` |
 | Normalize repo-relative paths in scripts | `scripts/lib/repo-path.mjs` |
 | CI gate script tests (gitnexus, bump, vercel, stamps) | `npm run test:ci-gate` → `scripts/ci/gate-tests.mjs` |
