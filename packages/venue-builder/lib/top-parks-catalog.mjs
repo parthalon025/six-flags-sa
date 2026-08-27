@@ -15,7 +15,30 @@ import { BUILDER_ROOT } from '../src/paths.mjs';
 
 export const CATALOG_FILE = path.join(BUILDER_ROOT, 'data', 'top-100-us-theme-parks.json');
 
-/** @typedef {{ rank: number, name: string, place: string, locality: string, kind?: string, id?: string, skip?: boolean, note?: string }} ParkEntry */
+/** @typedef {{ rank: number, name: string, place: string, locality: string, kind?: string, id?: string, skip?: boolean, note?: string, 'allow-no-heights'?: boolean }} ParkEntry */
+
+/** Park kinds that legitimately ship without height-gated attractions. */
+export const HEIGHT_LESS_KINDS = new Set(['zoo', 'water-park']);
+
+/**
+ * Whether this catalog row should skip the heights gate in a batch run.
+ * Precedence: CLI --allow-no-heights > explicit catalog flag > kind default > strict.
+ *
+ * @param {ParkEntry} park
+ * @param {{ cliAllowNoHeights?: boolean }} opts
+ */
+export function resolveAllowNoHeights(park, { cliAllowNoHeights = false } = {}) {
+  if (cliAllowNoHeights) return true;
+  if (park['allow-no-heights'] === true) return true;
+  if (park['allow-no-heights'] === false) return false;
+  if (park.kind && HEIGHT_LESS_KINDS.has(park.kind)) return true;
+  return false;
+}
+
+/** Pipeline stages skipped when allow-no-heights is active for a park. */
+export function pipelineSkipForAllowNoHeights(allowNoHeights) {
+  return allowNoHeights ? ['research', 'aliases', 'heights', 'rebuild', 'agent'] : [];
+}
 
 /**
  * @returns {{ version: number, source: string, generated: string, parks: ParkEntry[] }}

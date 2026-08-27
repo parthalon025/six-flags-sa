@@ -15,7 +15,7 @@
  *   npm run venues:build-top100 -- --allow-no-heights   # geometry only
  */
 
-import { loadCatalog, selectParks } from '../lib/top-parks-catalog.mjs';
+import { loadCatalog, selectParks, resolveAllowNoHeights, pipelineSkipForAllowNoHeights } from '../lib/top-parks-catalog.mjs';
 import { runVenuePipeline } from '../lib/build-pipeline.mjs';
 
 const USAGE = `
@@ -92,22 +92,26 @@ async function main() {
     process.exit(0);
   }
 
-  const mode = args.allowNoHeights ? 'geometry only' : 'full pipeline (OSM + research + heights + agent)';
+  const mode = args.allowNoHeights ? 'geometry only (CLI)' : 'full pipeline (per-park catalog defaults)';
   console.error(`Building ${parks.length} of ${catalog.parks.length} catalog parks (${mode})…`);
 
-  const pipelineOpts = {
+  const basePipelineOpts = {
     dryRun: args.dryRun,
     retries: args.retries,
-    allowNoHeights: args.allowNoHeights,
     browser: args.browser,
     attractions: args.attractions,
     agent: args.agent,
     rebuildOnly: args.skipExisting,
-    skip: args.allowNoHeights ? ['research', 'heights', 'rebuild', 'agent'] : [],
   };
 
   const results = [];
   for (const [i, park] of parks.entries()) {
+    const allowNoHeights = resolveAllowNoHeights(park, { cliAllowNoHeights: args.allowNoHeights });
+    const pipelineOpts = {
+      ...basePipelineOpts,
+      allowNoHeights,
+      skip: pipelineSkipForAllowNoHeights(allowNoHeights),
+    };
     const result = await runVenuePipeline(park, pipelineOpts);
     results.push(result);
     if (result.status === 'failed') {

@@ -5398,6 +5398,8 @@ const {
   loadCatalog,
   withIds: catalogWithIds,
   selectParks,
+  resolveAllowNoHeights,
+  HEIGHT_LESS_KINDS,
 } = await import('../../packages/venue-builder/lib/top-parks-catalog.mjs');
 
 await check('the top-100 US theme park catalog has 100 unique venues', () => {
@@ -5422,6 +5424,48 @@ await check('selectParks can filter by rank range and skip existing recipes', ()
   const remaining = selectParks(catalog.parks, { skipExisting: true });
   assert.ok(remaining.length < 100);
   assert.ok(remaining.every((p) => !['cedar-point', 'kings-island', 'six-flags-fiesta-texas', 'big-kahunas'].includes(p.id)));
+  return true;
+});
+
+await check('resolveAllowNoHeights: coaster park stays strict without CLI or catalog flag', () => {
+  const coaster = { id: 'cedar-point', name: 'Cedar Point', kind: 'theme-park' };
+  assert.equal(resolveAllowNoHeights(coaster, { cliAllowNoHeights: false }), false);
+  return true;
+});
+
+await check('resolveAllowNoHeights: water-park kind defaults to allow-no-heights', () => {
+  const water = { id: 'schlitterbahn-new-braunfels', name: 'Schlitterbahn', kind: 'water-park' };
+  assert.equal(resolveAllowNoHeights(water, { cliAllowNoHeights: false }), true);
+  return true;
+});
+
+await check('resolveAllowNoHeights: zoo kind defaults to allow-no-heights', () => {
+  const zoo = { id: 'discovery-cove', name: 'Discovery Cove', kind: 'zoo' };
+  assert.equal(resolveAllowNoHeights(zoo, { cliAllowNoHeights: false }), true);
+  return true;
+});
+
+await check('resolveAllowNoHeights: CLI --allow-no-heights overrides catalog strictness', () => {
+  const coaster = { id: 'cedar-point', name: 'Cedar Point', kind: 'theme-park' };
+  assert.equal(resolveAllowNoHeights(coaster, { cliAllowNoHeights: true }), true);
+  return true;
+});
+
+await check('resolveAllowNoHeights: explicit catalog allow-no-heights false overrides kind default', () => {
+  const hybrid = { id: 'busch-gardens-tampa-bay', name: 'Busch Gardens', kind: 'zoo', 'allow-no-heights': false };
+  assert.equal(resolveAllowNoHeights(hybrid, { cliAllowNoHeights: false }), false);
+  return true;
+});
+
+await check('catalog annotates known water-park and zoo entries with height-less kinds', () => {
+  const catalog = loadCatalog();
+  const byId = Object.fromEntries(catalogWithIds(catalog.parks).map((p) => [p.id, p]));
+  assert.equal(byId['schlitterbahn-new-braunfels'].kind, 'water-park');
+  assert.equal(byId['discovery-cove'].kind, 'zoo');
+  assert.equal(byId['big-kahuna-s'].kind, 'water-park');
+  assert.equal(resolveAllowNoHeights(byId['cedar-point'], { cliAllowNoHeights: false }), false);
+  assert.ok(HEIGHT_LESS_KINDS.has('water-park'));
+  assert.ok(HEIGHT_LESS_KINDS.has('zoo'));
   return true;
 });
 
