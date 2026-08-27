@@ -18,23 +18,15 @@
 // transforms `data`.
 
 import { MEMBER_TTL_MS, PARTY_TTL_MS, evict } from './core/state.js';
+import { redisCredentialsConfigured } from '../../../scripts/lib/production-redis-guard.mjs';
+
+export { redisCredentialsConfigured };
 
 const PARTY_TTL_S = Math.round(PARTY_TTL_MS / 1000);
 export const MAILBOX_TTL_MS = 5 * 60 * 1000;
 const MAILBOX_TTL_S = Math.round(MAILBOX_TTL_MS / 1000);
 /** Deepest a single party's mailbox goes before the oldest messages fall off. */
 const MAILBOX_DEPTH = 500;
-
-/** @param {NodeJS.ProcessEnv} [env] */
-export function redisCredentialsConfigured(env = process.env) {
-  const url = String(
-    env.UPSTASH_REDIS_REST_URL || env.KV_REST_API_URL || '',
-  ).trim();
-  const token = String(
-    env.UPSTASH_REDIS_REST_TOKEN || env.KV_REST_API_TOKEN || '',
-  ).trim();
-  return Boolean(url && token);
-}
 
 const URL_BASE =
   process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || '';

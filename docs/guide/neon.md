@@ -43,6 +43,26 @@ npm run dev
 
 See [Databricks guide](databricks.md) for when PostDB factory verbs require `DATABASE_URL`.
 
+## Connection pool tuning (#440)
+
+Serverless functions open many short-lived connections. Always use Neon's **pooled endpoint** (`-pooler` in the hostname) in `DATABASE_URL` for runtime traffic. Use the direct (unpooled) URL only for migrations and one-off scripts (`DATABASE_URL_UNPOOLED`).
+
+Set `PG_POOL_MAX` to cap concurrent connections per instance. The default is **4** — enough for a single Vercel function without risking **connection exhaustion** on Neon's free tier. Raise it only when metrics show queueing, not preemptively.
+
+The app uses `@neondatabase/serverless` with the pooled URL. `/api/ready` will call `pingPostgres()` alongside the party store once **#437** lands; until then the probe seam exists for tests and deploy guards.
+
+## Preview branching (#439)
+
+We **recommend** a **branch-per-preview** Neon branch for Vercel preview deployments so schema experiments never touch **production** data. A single **shared dev** branch is fine for local **development** when engineers coordinate migrations manually.
+
+| Environment | Neon branch | `DATABASE_URL` scope |
+| --- | --- | --- |
+| **production** | `main` (pooled) | Vercel Production |
+| **preview** | ephemeral per PR (pooled) | Vercel Preview |
+| **development** | shared dev (pooled) | local `.env.local` only |
+
+After creating a preview branch, run `npm run postdb:migrate` against it before expecting contributions to persist. Without Postgres, the app stays on **memory** — the **production guard** blocks shipping that configuration to Vercel Production.
+
 ## Related issues
 
 - **#437** — combine Postgres probe into `/api/ready` alongside Upstash
