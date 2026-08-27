@@ -33,7 +33,7 @@
     { "rank": 28, "name": "Six Flags Over Georgia", "place": "Six Flags Over Georgia, Austell, Georgia", "locality": "Austell, Georgia" },
     { "rank": 29, "name": "Six Flags New England", "place": "Six Flags New England, Agawam, Massachusetts", "locality": "Agawam, Massachusetts" },
     { "rank": 30, "name": "Six Flags St. Louis", "place": "Six Flags St. Louis, Eureka, Missouri", "locality": "Eureka, Missouri" },
-    { "rank": 31, "name": "Six Flags America", "place": "Six Flags America, Bowie, Maryland", "locality": "Bowie, Maryland" },
+    { "rank": 31, "name": "Six Flags America", "place": "Six Flags America, Bowie, Maryland", "locality": "Upper Marlboro, Maryland", "box": { "south": 38.893, "west": -76.782, "north": 38.91, "east": -76.762 } },
     { "rank": 32, "name": "Six Flags Great Escape", "place": "Six Flags Great Escape, Queensbury, New York", "locality": "Queensbury, New York" },
     { "rank": 33, "name": "Six Flags Darien Lake", "place": "Six Flags Darien Lake, Darien Center, New York", "locality": "Darien Center, New York" },
     { "rank": 34, "name": "Six Flags Discovery Kingdom", "place": "Six Flags Discovery Kingdom, Vallejo, California", "locality": "Vallejo, California" },

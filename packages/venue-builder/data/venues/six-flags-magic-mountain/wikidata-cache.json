@@ -1,0 +1,18 @@
+{
+  "fetched": "2026-08-27",
+  "source": "wikidata.org",
+  "license": "CC0",
+  "search": "Six Flags Magic Mountain",
+  "entity": {
+    "qid": "Q1193015",
+    "label": "West Roxbury Parkway",
+    "website": null,
+    "coordinates": {
+      "lat": 42.302778,
+      "lng": -71.153056
+    },
+    "inception": null,
+    "operator": {},
+    "wikipedia": null
+  }
+}

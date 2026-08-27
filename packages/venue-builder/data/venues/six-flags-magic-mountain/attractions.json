@@ -1,0 +1,1768 @@
+{
+  "version": 1,
+  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it: the bundle is overwritten by every rebuild and this is the accumulated evidence, which is the expensive part. Only features that clear \"moderate\" confidence are copied into the bundle the app reads. Refresh with: npm run venues:attractions -- six-flags-magic-mountain",
+  "venue": "six-flags-magic-mountain",
+  "generated": "2026-08-27",
+  "publish_at": "moderate",
+  "attractions": [
+    {
+      "id": "apocalypse-the-ride",
+      "place": "apocalypse-the-ride",
+      "name": "Apocalypse: The Ride",
+      "venue": "six-flags-magic-mountain",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 34.421122,
+        "lng": -118.600185
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.42141,
+            "lng": -118.599748
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42101,
+                "lng": -118.60054
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 35 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.42141,
+                "lng": -118.599748
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"Apocalypse\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 85.1,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 85.1
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "batman-the-ride",
+      "place": "batman-the-ride",
+      "name": "Batman: The Ride",
+      "venue": "six-flags-magic-mountain",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 34.425791,
+        "lng": -118.600845
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.426047,
+            "lng": -118.600055
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42571,
+                "lng": -118.60081
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 10 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.426047,
+                "lng": -118.600055
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"BATMAN™ The Ride\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 78.7,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 78.7
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "buccaneer",
+      "place": "buccaneer",
+      "name": "Buccaneer",
+      "venue": "six-flags-magic-mountain",
+      "type": "attraction",
+      "at": {
+        "lat": 34.425875,
+        "lng": -118.597249
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.425934,
+            "lng": -118.597215
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42598,
+                "lng": -118.59713
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 16 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.425934,
+                "lng": -118.597215
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"Buccaneer\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "center-ring-games",
+      "place": "center-ring-games",
+      "name": "Center Ring Games",
+      "venue": "six-flags-magic-mountain",
+      "type": "attraction",
+      "at": {
+        "lat": 34.425468,
+        "lng": -118.598899
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.42545,
+            "lng": -118.59882
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42545,
+                "lng": -118.59882
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 8 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "crazanity",
+      "place": "crazanity",
+      "name": "CraZanity",
+      "venue": "six-flags-magic-mountain",
+      "type": "attraction",
+      "at": {
+        "lat": 34.425157,
+        "lng": -118.598574
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.424862,
+            "lng": -118.598639
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42526,
+                "lng": -118.59869
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 16 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.424862,
+                "lng": -118.598639
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"CraZanity\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 44.2,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 44.2
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "cyclone-500",
+      "place": "cyclone-500",
+      "name": "Cyclone 500",
+      "venue": "six-flags-magic-mountain",
+      "type": "attraction",
+      "at": {
+        "lat": 34.42267,
+        "lng": -118.600106
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.42264,
+            "lng": -118.60002
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42264,
+                "lng": -118.60002
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 9 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "dive-devil",
+      "place": "dive-devil",
+      "name": "Dive Devil",
+      "venue": "six-flags-magic-mountain",
+      "type": "attraction",
+      "at": {
+        "lat": 34.42306,
+        "lng": -118.600093
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.422866,
+            "lng": -118.599968
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42281,
+                "lng": -118.60009
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 28 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.422866,
+                "lng": -118.599968
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"Dive Devil\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "full-throttle-2",
+      "place": "full-throttle-2",
+      "name": "Full Throttle",
+      "venue": "six-flags-magic-mountain",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 34.424171,
+        "lng": -118.596814
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.4243,
+            "lng": -118.59645
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42418,
+                "lng": -118.59687
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 5 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.4243,
+                "lng": -118.59645
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"Full Throttle Restaurant\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 40.8,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 40.8
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "gold-rusher",
+      "place": "gold-rusher",
+      "name": "Gold Rusher",
+      "venue": "six-flags-magic-mountain",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 34.423497,
+        "lng": -118.598843
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.423564,
+            "lng": -118.599001
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42358,
+                "lng": -118.59897
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 15 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.423564,
+                "lng": -118.599001
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"Gold Rusher\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "goliath",
+      "place": "goliath",
+      "name": "Goliath",
+      "venue": "six-flags-magic-mountain",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 34.426842,
+        "lng": -118.59804
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.426449,
+            "lng": -118.597099
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42675,
+                "lng": -118.59807
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 11 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.426449,
+                "lng": -118.597099
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"Goliath\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 95.2,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 95.2
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "grand-carousel",
+      "place": "grand-carousel",
+      "name": "Grand Carousel",
+      "venue": "six-flags-magic-mountain",
+      "type": "attraction",
+      "at": {
+        "lat": 34.422407,
+        "lng": -118.59607
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.42247,
+            "lng": -118.59621
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42247,
+                "lng": -118.59621
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 15 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "jet-stream-2",
+      "place": "jet-stream-2",
+      "name": "Jet Stream",
+      "venue": "six-flags-magic-mountain",
+      "type": "attraction",
+      "at": {
+        "lat": 34.422638,
+        "lng": -118.599359
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.422976,
+            "lng": -118.599254
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42183,
+                "lng": -118.59899
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 60 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.422976,
+                "lng": -118.599254
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"Jet Stream\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 129,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 129
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "jet-stream",
+      "place": "jet-stream",
+      "name": "Jet Stream",
+      "venue": "six-flags-magic-mountain",
+      "type": "attraction",
+      "at": {
+        "lat": 34.422374,
+        "lng": -118.599045
+      },
+      "features": {},
+      "last_verified": null
+    },
+    {
+      "id": "lex-luthor-drop-of-doom",
+      "place": "lex-luthor-drop-of-doom",
+      "name": "Lex Luthor: Drop of Doom",
+      "venue": "six-flags-magic-mountain",
+      "type": "attraction",
+      "at": {
+        "lat": 34.426462,
+        "lng": -118.598352
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.426306,
+            "lng": -118.598526
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42648,
+                "lng": -118.59824
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 10 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.426306,
+                "lng": -118.598526
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"LEX LUTHOR™: Drop of Doom\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 32.6,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 32.6
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "lost-temple-rapids",
+      "place": "lost-temple-rapids",
+      "name": "Lost Temple Rapids",
+      "venue": "six-flags-magic-mountain",
+      "type": "attraction",
+      "at": {
+        "lat": 34.423981,
+        "lng": -118.594785
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.42401,
+            "lng": -118.59482
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42401,
+                "lng": -118.59482
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 5 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "mining-town-games",
+      "place": "mining-town-games",
+      "name": "Mining Town Games",
+      "venue": "six-flags-magic-mountain",
+      "type": "attraction",
+      "at": {
+        "lat": 34.42162,
+        "lng": -118.596979
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.42154,
+            "lng": -118.597
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42154,
+                "lng": -118.597
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 9 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "ninja",
+      "place": "ninja",
+      "name": "Ninja",
+      "venue": "six-flags-magic-mountain",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 34.422107,
+        "lng": -118.598349
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.421949,
+            "lng": -118.59827
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42212,
+                "lng": -118.59812
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 21 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.421949,
+                "lng": -118.59827
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"Ninja\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 23.4,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 23.4
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "revolution",
+      "place": "revolution",
+      "name": "Revolution",
+      "venue": "six-flags-magic-mountain",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 34.421649,
+        "lng": -118.596318
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.421694,
+            "lng": -118.596226
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42163,
+                "lng": -118.59626
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 6 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.421694,
+                "lng": -118.596226
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"The Great American Revolution\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "roaring-rapids",
+      "place": "roaring-rapids",
+      "name": "Roaring Rapids",
+      "venue": "six-flags-magic-mountain",
+      "type": "attraction",
+      "at": {
+        "lat": 34.421003,
+        "lng": -118.59793
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.42131,
+            "lng": -118.59737
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.4212,
+                "lng": -118.59787
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 22 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.42131,
+                "lng": -118.59737
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"Roaring Rapids\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 47.5,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 47.5
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "sandblasters",
+      "place": "sandblasters",
+      "name": "Sandblasters",
+      "venue": "six-flags-magic-mountain",
+      "type": "attraction",
+      "at": {
+        "lat": 34.424472,
+        "lng": -118.598908
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.42452,
+            "lng": -118.59901
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42452,
+                "lng": -118.59901
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 11 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "scrambler",
+      "place": "scrambler",
+      "name": "Scrambler",
+      "venue": "six-flags-magic-mountain",
+      "type": "attraction",
+      "at": {
+        "lat": 34.424173,
+        "lng": -118.598994
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.42423,
+            "lng": -118.59912
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42423,
+                "lng": -118.59912
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 13 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "scream",
+      "place": "scream",
+      "name": "Scream!",
+      "venue": "six-flags-magic-mountain",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 34.428514,
+        "lng": -118.59855
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.42376,
+            "lng": -118.59612
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.4284,
+                "lng": -118.59864
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 15 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.42376,
+                "lng": -118.59612
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"Max'd Out Mac & Screaming Spuds\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 562.7,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 562.7
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "slingshot",
+      "place": "slingshot",
+      "name": "SlingShot",
+      "venue": "six-flags-magic-mountain",
+      "type": "attraction",
+      "at": {
+        "lat": 34.421111,
+        "lng": -118.599259
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.42107,
+            "lng": -118.59935
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42107,
+                "lng": -118.59935
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 10 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "superman-escape-from-krypton",
+      "place": "superman-escape-from-krypton",
+      "name": "Superman: Escape from Krypton",
+      "venue": "six-flags-magic-mountain",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 34.42412,
+        "lng": -118.598075
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.42378,
+            "lng": -118.59803
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42378,
+                "lng": -118.59803
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 38 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "swashbuckler",
+      "place": "swashbuckler",
+      "name": "Swashbuckler",
+      "venue": "six-flags-magic-mountain",
+      "type": "attraction",
+      "at": {
+        "lat": 34.425807,
+        "lng": -118.597487
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.425948,
+            "lng": -118.597305
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42603,
+                "lng": -118.5973
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 30 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.425948,
+                "lng": -118.597305
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"Swashbuckler\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "tatsu",
+      "place": "tatsu",
+      "name": "Tatsu",
+      "venue": "six-flags-magic-mountain",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 34.422025,
+        "lng": -118.597506
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.421468,
+            "lng": -118.597455
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42191,
+                "lng": -118.5975
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 13 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.421468,
+                "lng": -118.597455
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"Tatsu\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 49,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 49
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "the-riddler-s-revenge",
+      "place": "the-riddler-s-revenge",
+      "name": "The Riddler's Revenge",
+      "venue": "six-flags-magic-mountain",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 34.424206,
+        "lng": -118.600639
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.42429,
+            "lng": -118.5999
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42413,
+                "lng": -118.60055
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 12 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.42429,
+                "lng": -118.5999
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"THE RIDDLER™’s Revenge\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 62.3,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 62.3
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "thunder-trough",
+      "place": "thunder-trough",
+      "name": "Thunder Trough",
+      "venue": "six-flags-magic-mountain",
+      "type": "attraction",
+      "at": {
+        "lat": 34.42425,
+        "lng": -118.59399
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.4242,
+            "lng": -118.59392
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.4242,
+                "lng": -118.59392
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 8 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "tornado-tube",
+      "place": "tornado-tube",
+      "name": "Tornado Tube",
+      "venue": "six-flags-magic-mountain",
+      "type": "attraction",
+      "at": {
+        "lat": 34.42435,
+        "lng": -118.59387
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.42446,
+            "lng": -118.59398
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42446,
+                "lng": -118.59398
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 16 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "twisted-colossus",
+      "place": "twisted-colossus",
+      "name": "Twisted Colossus",
+      "venue": "six-flags-magic-mountain",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 34.427525,
+        "lng": -118.597833
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.42736,
+            "lng": -118.598251
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42746,
+                "lng": -118.59779
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 8 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.42736,
+                "lng": -118.598251
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"Twisted Colossus\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 43.7,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 43.7
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "typhoon-tube",
+      "place": "typhoon-tube",
+      "name": "Typhoon Tube",
+      "venue": "six-flags-magic-mountain",
+      "type": "attraction",
+      "at": {
+        "lat": 34.42409,
+        "lng": -118.5941
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.42408,
+            "lng": -118.59406
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42408,
+                "lng": -118.59406
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 4 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "viper",
+      "place": "viper",
+      "name": "Viper",
+      "venue": "six-flags-magic-mountain",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 34.420943,
+        "lng": -118.595527
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.421044,
+            "lng": -118.595555
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.421,
+                "lng": -118.59553
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 6 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.421044,
+                "lng": -118.595555
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"Viper\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "west-coast-racers",
+      "place": "west-coast-racers",
+      "name": "West Coast Racers",
+      "venue": "six-flags-magic-mountain",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 34.422256,
+        "lng": -118.599685
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.42217,
+            "lng": -118.59972
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42222,
+                "lng": -118.59992
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 22 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.42217,
+                "lng": -118.59972
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"West Coast Racers\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "whistlestop-park",
+      "place": "whistlestop-park",
+      "name": "Whistlestop Park",
+      "venue": "six-flags-magic-mountain",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 34.426141,
+        "lng": -118.596896
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.42614,
+            "lng": -118.59702
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42614,
+                "lng": -118.59702
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 11 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "wonder-woman-flight-of-courage",
+      "place": "wonder-woman-flight-of-courage",
+      "name": "Wonder Woman: Flight of Courage",
+      "venue": "six-flags-magic-mountain",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 34.425472,
+        "lng": -118.599957
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.425646,
+            "lng": -118.599893
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.4256,
+                "lng": -118.60001
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 15 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.425646,
+                "lng": -118.599893
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"WONDER WOMAN™ Flight of Courage\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "x2",
+      "place": "x2",
+      "name": "X2",
+      "venue": "six-flags-magic-mountain",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 34.421571,
+        "lng": -118.593383
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 34.421653,
+            "lng": -118.594327
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 34.42147,
+                "lng": -118.59345
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 13 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 34.421653,
+                "lng": -118.594327
+              },
+              "date": "2026-08-27",
+              "note": "ParksAPI location for \"X2\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 83,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 83
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    }
+  ]
+}

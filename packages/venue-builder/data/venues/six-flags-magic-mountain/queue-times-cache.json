@@ -1,0 +1,237 @@
+{
+  "fetched": "2026-08-27T23:39:41",
+  "source": "queue-times.com",
+  "parkId": 32,
+  "parkName": "Six Flags Magic Mountain",
+  "operator": "Six Flags Entertainment Corporation",
+  "rides": [
+    {
+      "name": "Buccaneer",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Camp Bus",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Canyon Cruiser",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Circuit Breaker Grand Prix",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Grand American Carousel",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Jammin' Bumpers",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Jet Stream",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "JUSTICE LEAGUE™: Battle for Metropolis",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Looney Ballooneys",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Magic Mover",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Merrie Melodies Merrie Go Round",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Road Runner Express",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Roaring Rapids",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Swashbuckler",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Camp Duck Amuck Fun Fort",
+      "land": "Kids' Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Daffy’s Forest Four-Wheelers",
+      "land": "Kids' Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Funny Flyers",
+      "land": "Kids' Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Gold Rusher",
+      "land": "Kids' Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Sylvester’s Pounce and Bounce",
+      "land": "Kids' Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Taz’s Tazmanian Train Tours",
+      "land": "Kids' Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "TEEN TITANS™ Turbo Spin",
+      "land": "Kids' Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Apocalypse",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "BATMAN™ The Ride",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "CraZanity",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Dive Devil",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Full Throttle",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Goliath",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "LEX LUTHOR™: Drop of Doom",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Ninja",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "SCREAM",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Tatsu",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "The Great American Revolution",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "THE RIDDLER™’s Revenge",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Twisted Colossus",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Viper",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "West Coast Racers",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "WONDER WOMAN™ Flight of Courage",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "X2",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    }
+  ]
+}

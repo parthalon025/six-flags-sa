@@ -82,12 +82,17 @@ function readBuiltPois(id) {
 
 function buildArgsFor(park, extra = []) {
   const args = [
-    '--place', park.place,
     '--name', park.name,
     '--id', park.id,
     '--locality', park.locality,
     '--kind', park.kind || 'theme-park',
   ];
+  if (park.box) {
+    const { south, west, north, east } = park.box;
+    args.push('--bbox', `${south},${west},${north},${east}`);
+  } else {
+    args.push('--place', park.place);
+  }
   return args.concat(extra);
 }
 

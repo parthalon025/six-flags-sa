@@ -1,0 +1,1148 @@
+{
+  "version": 1,
+  "venue": {
+    "id": "six-flags-magic-mountain",
+    "name": "Six Flags Magic Mountain",
+    "locality": "Valencia, California"
+  },
+  "certified": false,
+  "certifiedAt": null,
+  "bundleFingerprint": "28ef96b6527c135c2ec72c7bf0898e41c0b3206f47480d4ff0a35a2a99a49924",
+  "checks": [
+    {
+      "key": "checklist",
+      "claim": "Required completeness items pass",
+      "pass": false,
+      "evidence": {
+        "numerator": 3,
+        "denominator": 4,
+        "detail": "Height rules"
+      },
+      "confidence": "low",
+      "falsifier": "Any required checklist item is missing",
+      "soWhat": "Half-built venues draw a map but hide whole app features silently"
+    },
+    {
+      "key": "compare",
+      "claim": "Built bundle matches manifest counts and has a recipe",
+      "pass": true,
+      "evidence": {
+        "numerator": 1,
+        "denominator": 1,
+        "detail": "manifest and disk agree",
+        "counts": {
+          "pois": 95,
+          "rides": 36,
+          "heights": 0,
+          "campsites": 0,
+          "paths": 314,
+          "hasHeightsTab": false
+        }
+      },
+      "confidence": "high",
+      "falsifier": "POI, ride, height, or path counts drift from manifest",
+      "soWhat": "The app reads manifest numbers; drift breaks trust in coverage badges"
+    },
+    {
+      "key": "route",
+      "claim": "Path graph has ≤2 islands and every ride snaps to the network",
+      "pass": false,
+      "evidence": {
+        "numerator": 33,
+        "denominator": 36,
+        "detail": "1 component(s), 3 ride(s) >35 m from network",
+        "components": 1,
+        "largestComponent": 4,
+        "farRides": [
+          {
+            "name": "Jet Stream",
+            "metres": 42
+          },
+          {
+            "name": "Jet Stream",
+            "metres": 61
+          },
+          {
+            "name": "Superman: Escape from Krypton",
+            "metres": 38
+          }
+        ]
+      },
+      "confidence": "moderate",
+      "falsifier": "OpenStreetMap path gaps strand rides on routing islands",
+      "soWhat": "Offline routing cannot reach a ride that is not on the walk network"
+    },
+    {
+      "key": "heights",
+      "claim": "Height rules present or declared absent",
+      "pass": false,
+      "evidence": {
+        "numerator": 0,
+        "denominator": 36,
+        "detail": "36 rides and no height rules — Rides tab will not ship",
+        "declaredAbsent": false
+      },
+      "confidence": "low",
+      "falsifier": "A park with rides ships without height filter coverage",
+      "soWhat": "Guests cannot filter by rider height offline without these rules"
+    },
+    {
+      "key": "false-rides",
+      "claim": "No height-chart headers or arcades ship as Rideable",
+      "pass": true,
+      "evidence": {
+        "numerator": 36,
+        "denominator": 36,
+        "detail": "no false rides in bundle"
+      },
+      "confidence": "high",
+      "falsifier": "OSM or height-chart ingest files amenity names as rides",
+      "soWhat": "Families see \"Check at the ride\" for places they cannot queue for"
+    },
+    {
+      "key": "entrances",
+      "claim": "Queue entrances published at ≥moderate or recorded as proposals",
+      "pass": true,
+      "evidence": {
+        "numerator": 0,
+        "denominator": 36,
+        "known": 35,
+        "detail": "0 published / 35 known / 36 rides inventoried"
+      },
+      "confidence": "low",
+      "falsifier": "No entrance evidence was inventoried for rideable attractions",
+      "soWhat": "Routing to a ride uses queue entrance coordinates when published"
+    },
+    {
+      "key": "ask",
+      "claim": "No blocking external requests remain",
+      "pass": false,
+      "evidence": {
+        "numerator": 1,
+        "denominator": 2,
+        "detail": "Ride height requirements",
+        "blocking": [
+          "heights"
+        ]
+      },
+      "confidence": "low",
+      "falsifier": "A blocking gap was papered over instead of recorded",
+      "soWhat": "Blocking requests mean a whole app feature is absent without saying so"
+    },
+    {
+      "key": "external_sources",
+      "claim": "Declared external adapters have caches or an honest gap note",
+      "pass": true,
+      "evidence": {
+        "numerator": 8,
+        "denominator": 8,
+        "detail": "8/8 caches, 0 gap(s); claims=24+32; attached=37",
+        "declared": [
+          "parks-api",
+          "queue-times",
+          "wikidata",
+          "rcdb",
+          "open-meteo",
+          "openhistoricalmap",
+          "project-sidewalk",
+          "esa-worldcover"
+        ],
+        "missingRequired": [],
+        "bySource": {
+          "parks_api": 24,
+          "queue_times": 29,
+          "wikidata": 1,
+          "open_meteo": 1,
+          "aerial": 1
+        }
+      },
+      "confidence": "high",
+      "falsifier": "sources.json lists a required adapter with no cache and no gaps.adapters note",
+      "soWhat": "Explore-more research sources must either feed the twin or show as an honest gap"
+    }
+  ],
+  "ask": {
+    "venue": {
+      "id": "six-flags-magic-mountain",
+      "name": "Six Flags Magic Mountain",
+      "locality": "Valencia, California",
+      "kind": "theme-park"
+    },
+    "overridesFile": "data/venues/six-flags-magic-mountain/overrides.json",
+    "blocking": true,
+    "requests": [
+      {
+        "key": "heights",
+        "need": "Ride height requirements",
+        "blocking": true,
+        "why": "Six Flags Magic Mountain (Valencia, California) has 36 rides and not one height rule, so the app ships without its Rides tab, its height slider, its running tally, the badge over the map and the struck-through markers. All of it, silently, from one missing file.",
+        "targets": [
+          "Apocalypse: The Ride",
+          "Batman: The Ride",
+          "Buccaneer",
+          "Center Ring Games",
+          "CraZanity",
+          "Cyclone 500",
+          "Dive Devil",
+          "Full Throttle",
+          "Gold Rusher",
+          "Goliath",
+          "Grand Carousel",
+          "Jet Stream",
+          "Lex Luthor: Drop of Doom",
+          "Lost Temple Rapids",
+          "Mining Town Games",
+          "Ninja",
+          "Revolution",
+          "Roaring Rapids",
+          "Sandblasters",
+          "Scrambler",
+          "Scream!",
+          "SlingShot",
+          "Superman: Escape from Krypton",
+          "Swashbuckler",
+          "Tatsu",
+          "The Riddler's Revenge",
+          "Thunder Trough",
+          "Tornado Tube",
+          "Twisted Colossus",
+          "Typhoon Tube",
+          "Viper",
+          "West Coast Racers",
+          "Whistlestop Park",
+          "Wonder Woman: Flight of Courage",
+          "X2"
+        ],
+        "ask": [
+          "Find the published height requirement for each ride listed below at Six Flags Magic Mountain (Valencia, California).",
+          "Work from the park's own current-season attraction pages first. A park's own words are the source; a fan wiki is a lead to check, not an answer.",
+          "Heights are in inches, as the American parks in this app publish them.",
+          "Write down where each number came from. If a ride is not on the park's site, leave it out entirely and say so — an omission is recoverable and a guess is not.",
+          "Some of the list will not be rides. A midway game, an arcade, a lounge and a splash pool all arrive tagged as attractions and none of them has a height on a sign. Say which ones those are rather than inventing a rule for them — that answer is a fix to the category rules in lib/osm-tags.mjs, which helps every venue, not just this one."
+        ],
+        "schema": "{\n  \"credits\": \"Height requirements were compiled from … for the 2026 season.\",\n  \"pois\": {\n    \"Apocalypse: The Ride\": { \"h\": { \"min\": 48, \"alone\": null, \"max\": null }, \"note\": \"300 lb maximum.\" },\n    \"Batman: The Ride\": { \"h\": { \"min\": 0, \"alone\": null, \"max\": null } }\n  }\n}",
+        "rules": [
+          "`min` is the floor nobody rides under. `min: 0` is the park saying there is no floor, and the app reads that back as \"No minimum\" — that is the right answer for a lazy river, and it is not the same as `null`, which means nobody has looked yet.",
+          "`alone` is the height below which a supervising rider has to come along. `max` is a ceiling, which most rides have none of.",
+          "Keys must match the place name in the bundle exactly, character for character. The list below is those names.",
+          "If the park publishes a rule for an attraction whose name is *not* in that list, put it under `_unmapped` in data/venues/six-flags-magic-mountain/overrides.json instead of under `pois`. An override keyed to a name nothing answers to is a correction that silently did not happen, and there is a test that fails on it. It moves up into `pois` the day OpenStreetMap gains that name.",
+          "If the park's name for a ride differs from the name in the list, key the entry by the park's name and add `\"alias\": \"<the name in the list>\"`.",
+          "Weight limits, life-jacket exceptions, \"must ride with an adult\", single-tube versus double — real rules this model has no field for — go in `note`, in the park's own terms. Never round one off into a height."
+        ]
+      },
+      {
+        "key": "missing-poi",
+        "need": "No a way in",
+        "blocking": false,
+        "why": "The glance rail keeps a standing card for each of these and it will not render. Nearly always a tag rule that did not match rather than a park with no toilets — but at a thinly-mapped park it can be the honest truth.",
+        "targets": [
+          "a way in — OSM tags the rules look for: barrier=gate, entrance=main, tourism=information"
+        ],
+        "ask": [
+          "First check how this place is actually tagged in OpenStreetMap, against the rules in lib/osm-tags.mjs. A rule that does not match is a fix that helps every venue.",
+          "If OpenStreetMap genuinely does not have them, the park almost certainly does — on the map it hands out at the gate. Trace it: `node scripts/trace-venue.mjs`, which ties the picture to the ground against control points you can find in both, and reports how far out it is before it will write anything.",
+          "Better still, put them into OpenStreetMap, which is where the rest of this venue comes from and where a fix reaches everybody rather than only this app."
+        ],
+        "schema": null,
+        "rules": [
+          "Do not estimate a position by eye. A pin read off an illustrated map without georeferencing it lands tens of metres out in a park a few hundred metres across, and a confidently wrong pin is worse than an absent one — nobody checks a map that looks right. Either a surveyed coordinate, or a traced one whose error the tracer has measured and stamped on it."
+        ]
+      }
+    ],
+    "questSeeds": {
+      "version": 1,
+      "venueId": "six-flags-magic-mountain",
+      "principle": "Open sources build the base map; gamified on-the-ground contributions fill what they cannot reliably settle.",
+      "durable": [
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Apocalypse: The Ride",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Batman: The Ride",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Buccaneer",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Center Ring Games",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "CraZanity",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Cyclone 500",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Dive Devil",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Full Throttle",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Gold Rusher",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Goliath",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Grand Carousel",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Jet Stream",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Lex Luthor: Drop of Doom",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Lost Temple Rapids",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Mining Town Games",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Ninja",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Revolution",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Roaring Rapids",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Sandblasters",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Scrambler",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Scream!",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "SlingShot",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Superman: Escape from Krypton",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Swashbuckler",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Tatsu",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "The Riddler's Revenge",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Thunder Trough",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Tornado Tube",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Twisted Colossus",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Typhoon Tube",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Viper",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "West Coast Racers",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Whistlestop Park",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Wonder Woman: Flight of Courage",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "X2",
+          "blocking": true,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "poi_presence",
+          "tier": 2,
+          "graduation": "osm_or_overrides",
+          "sourceGap": "missing-poi",
+          "target": "a way in — OSM tags the rules look for: barrier=gate, entrance=main, tourism=information",
+          "blocking": false,
+          "whyOpenSourceFails": "OSM may be incomplete inside the fence; guest presence reports fill toilets, food, and gates.",
+          "need": "No a way in"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "apocalypse-the-ride",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "batman-the-ride",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "buccaneer",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "low"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "center-ring-games",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "crazanity",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "cyclone-500",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "dive-devil",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "low"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "full-throttle-2",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "gold-rusher",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "low"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "goliath",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "grand-carousel",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "jet-stream-2",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_missing",
+          "target": "jet-stream",
+          "blocking": false,
+          "whyOpenSourceFails": "Queue entrances are rarely tagged in OSM; guests standing in line are the reliable source.",
+          "need": "Queue entrance position"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "lex-luthor-drop-of-doom",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "lost-temple-rapids",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "mining-town-games",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "ninja",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "revolution",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "low"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "roaring-rapids",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "sandblasters",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "scrambler",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "scream",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "slingshot",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "superman-escape-from-krypton",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "swashbuckler",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "low"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "tatsu",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "the-riddler-s-revenge",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "thunder-trough",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "tornado-tube",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "twisted-colossus",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "typhoon-tube",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "viper",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "low"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "west-coast-racers",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "low"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "whistlestop-park",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "wonder-woman-flight-of-courage",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "low"
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "geometry_nudge",
+          "tier": 2,
+          "graduation": "attractions_evidence",
+          "sourceGap": "entrance_low_confidence",
+          "target": "x2",
+          "blocking": false,
+          "whyOpenSourceFails": "Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.",
+          "need": "Confirm queue entrance",
+          "evidenceBand": "unknown"
+        }
+      ],
+      "ambient": [
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "ride_status",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Ride up / down / delayed",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "queue_band",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Queue short / medium / long",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "amenity_outage",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Restroom or fountain outage",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "crowd_hotspot",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Midway crowded",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        },
+        {
+          "venueId": "six-flags-magic-mountain",
+          "type": "hazard",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Spill or blocked path",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        }
+      ],
+      "counts": {
+        "durable": 72,
+        "ambient": 5
+      }
+    }
+  }
+}

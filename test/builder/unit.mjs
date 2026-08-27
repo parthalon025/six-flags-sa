@@ -5510,6 +5510,31 @@ await check('display stage defaults on for big-kahunas, off for everyone else', 
   return true;
 });
 
+await check('catalog box overrides place for geometry build args', async () => {
+  const originalLog = console.log;
+  const lines = [];
+  console.log = (...args) => lines.push(args.join(' '));
+  try {
+    await runVenuePipeline(
+      {
+        id: 'six-flags-america',
+        rank: 31,
+        name: 'Six Flags America',
+        place: 'Six Flags America, Bowie, Maryland',
+        locality: 'Upper Marlboro, Maryland',
+        box: { south: 38.893, west: -76.782, north: 38.91, east: -76.762 },
+      },
+      { dryRun: true },
+    );
+  } finally {
+    console.log = originalLog;
+  }
+  const geometry = lines.find((l) => l.startsWith('# geometry:'));
+  assert.match(geometry, /--bbox 38\.893,-76\.782,38\.91,-76\.762/);
+  assert.doesNotMatch(geometry, /--place/);
+  return true;
+});
+
 await check('parseCatalogArgs leaves display unset unless --display is passed, so the per-park default applies', () => {
   const unset = pipelineOptsFromCatalogArgs(parseCatalogArgs(['--pipeline']));
   assert.equal(unset.display, undefined);

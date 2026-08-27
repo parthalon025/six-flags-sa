@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "_comment": "How this venue was built, so it can be built again. Written by scripts/build-venue.mjs on every build; replayed with \"npm run venues:rebuild -- six-flags-america\". \"box\" is the bounding box before \"pad\" was applied to it, which is why a venue asked for by place name, by box or by a point and a radius all record the same field. Edit it by hand if you like — a rebuild reads whatever is here.",
+  "id": "six-flags-america",
+  "name": "Six Flags America",
+  "place": null,
+  "box": {
+    "south": 38.893,
+    "west": -76.782,
+    "north": 38.91,
+    "east": -76.762
+  },
+  "options": {
+    "name": "Six Flags America",
+    "locality": "Upper Marlboro, Maryland",
+    "kind": "theme-park",
+    "sources": "data/venues/six-flags-america/sources.json",
+    "allow-no-heights": true
+  },
+  "built": {
+    "at": "2026-08-27",
+    "counts": {
+      "pois": 53,
+      "rides": 14,
+      "heights": 0,
+      "shapes": 1487
+    }
+  }
+}

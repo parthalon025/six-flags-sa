@@ -1,0 +1,597 @@
+{
+  "version": 1,
+  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it: the bundle is overwritten by every rebuild and this is the accumulated evidence, which is the expensive part. Only features that clear \"moderate\" confidence are copied into the bundle the app reads. Refresh with: npm run venues:attractions -- six-flags-america",
+  "venue": "six-flags-america",
+  "generated": "2026-08-27",
+  "publish_at": "moderate",
+  "attractions": [
+    {
+      "id": "batwing",
+      "place": "batwing",
+      "name": "Batwing",
+      "venue": "six-flags-america",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 38.910295,
+        "lng": -76.778061
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 38.91035,
+            "lng": -76.77774
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 38.91035,
+                "lng": -76.77774
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 28 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "buccaneer-beach",
+      "place": "buccaneer-beach",
+      "name": "Buccaneer Beach",
+      "venue": "six-flags-america",
+      "type": "attraction",
+      "at": {
+        "lat": 38.905789,
+        "lng": -76.774117
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 38.90611,
+            "lng": -76.7741
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 38.90611,
+                "lng": -76.7741
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 36 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "crocodile-cal-s-caribbean-beach-house",
+      "place": "crocodile-cal-s-caribbean-beach-house",
+      "name": "Crocodile Cal's Caribbean Beach House",
+      "venue": "six-flags-america",
+      "type": "attraction",
+      "at": {
+        "lat": 38.905137,
+        "lng": -76.773003
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 38.90498,
+            "lng": -76.7731
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 38.90498,
+                "lng": -76.7731
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 19 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "firebird",
+      "place": "firebird",
+      "name": "Firebird",
+      "venue": "six-flags-america",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 38.90822,
+        "lng": -76.77518
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 38.90794,
+            "lng": -76.77502
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 38.90794,
+                "lng": -76.77502
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 34 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "great-race",
+      "place": "great-race",
+      "name": "Great Race",
+      "venue": "six-flags-america",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 38.907077,
+        "lng": -76.772238
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 38.90679,
+            "lng": -76.77201
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 38.90679,
+                "lng": -76.77201
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 37 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "hurricane-bay",
+      "place": "hurricane-bay",
+      "name": "Hurricane Bay",
+      "venue": "six-flags-america",
+      "type": "attraction",
+      "at": {
+        "lat": 38.905161,
+        "lng": -76.774945
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 38.90495,
+            "lng": -76.77522
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 38.90495,
+                "lng": -76.77522
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 33 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "joker-s-jinx",
+      "place": "joker-s-jinx",
+      "name": "Joker's Jinx",
+      "venue": "six-flags-america",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 38.90986,
+        "lng": -76.77612
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 38.90978,
+            "lng": -76.77625
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 38.90978,
+                "lng": -76.77625
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 14 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "lazy-river",
+      "place": "lazy-river",
+      "name": "Lazy river",
+      "venue": "six-flags-america",
+      "type": "attraction",
+      "at": {
+        "lat": 38.904166,
+        "lng": -76.774464
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 38.90452,
+            "lng": -76.77453
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 38.90452,
+                "lng": -76.77453
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 40 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "mind-eraser",
+      "place": "mind-eraser",
+      "name": "Mind Eraser",
+      "venue": "six-flags-america",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 38.90632,
+        "lng": -76.7768
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 38.90658,
+            "lng": -76.77632
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 38.90658,
+                "lng": -76.77632
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 51 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "penguin-s-blizzard-river",
+      "place": "penguin-s-blizzard-river",
+      "name": "Penguin's Blizzard River",
+      "venue": "six-flags-america",
+      "type": "attraction",
+      "at": {
+        "lat": 38.91089,
+        "lng": -76.77565
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 38.91134,
+            "lng": -76.77546
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 38.91134,
+                "lng": -76.77546
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 52 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "professor-screamore-s-skywinder",
+      "place": "professor-screamore-s-skywinder",
+      "name": "Professor Screamore's Skywinder",
+      "venue": "six-flags-america",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 38.906115,
+        "lng": -76.775993
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 38.90657,
+            "lng": -76.77622
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 38.90657,
+                "lng": -76.77622
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 54 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "roar",
+      "place": "roar",
+      "name": "Roar",
+      "venue": "six-flags-america",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 38.90777,
+        "lng": -76.775382
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 38.90794,
+            "lng": -76.77502
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 38.90794,
+                "lng": -76.77502
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 37 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "superman-ride-of-steel",
+      "place": "superman-ride-of-steel",
+      "name": "Superman: Ride of Steel",
+      "venue": "six-flags-america",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 38.910233,
+        "lng": -76.777128
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 38.91029,
+            "lng": -76.77748
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 38.91029,
+                "lng": -76.77748
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 31 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "wild-one",
+      "place": "wild-one",
+      "name": "Wild One",
+      "venue": "six-flags-america",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 38.90928,
+        "lng": -76.772594
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 38.90931,
+            "lng": -76.77256
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 38.90931,
+                "lng": -76.77256
+              },
+              "date": "2026-08-27",
+              "note": "the walkable network at its closest, 4 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-27",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "venue": "six-flags-magic-mountain",
+  "_comment": "Source catalogue for Six Flags Magic Mountain. Wire datasets as they are surveyed; fetch official listings with npm run venues:research -- six-flags-magic-mountain --fetch. External adapters sync via npm run venues:sync-sources -- six-flags-magic-mountain. Offline scaffolds omit token-gated adapters; declare mapillary/a11y/ORS when bounds exist.",
+  "generated": "2026-08-27",
+  "sources": [
+    {
+      "id": "osm",
+      "kind": "openstreetmap",
+      "license": "ODbL",
+      "url": "https://www.openstreetmap.org",
+      "used_for": "Park geometry, paths, buildings, and the venue boundary."
+    },
+    {
+      "id": "six-flags-magic-mountain-site",
+      "kind": "official_site",
+      "url": "https://www.sixflags.com/magicmountain/attractions",
+      "used_for": "Height requirements and attraction names for the current season."
+    }
+  ],
+  "datasets": {
+    "external": [
+      "parks-api",
+      "queue-times",
+      "wikidata",
+      "rcdb",
+      "open-meteo",
+      "openhistoricalmap",
+      "project-sidewalk",
+      "esa-worldcover"
+    ]
+  },
+  "gaps": {
+    "adapters": {
+      "ropedrop": "RopeDrop open data covers Disney/Universal parks only — not applicable here."
+    }
+  },
+  "research": {
+    "official_pages": true,
+    "llm_open_research": true,
+    "llm_park_map_search": true,
+    "note": "LLM may propose aliases and height candidates from official HTML; code decides. LLM park-map search is required to locate guest-map image/PDF assets for tracing. Never invents coordinates."
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "_comment": "How this venue was built, so it can be built again. Written by scripts/build-venue.mjs on every build; replayed with \"npm run venues:rebuild -- six-flags-magic-mountain\". \"box\" is the bounding box before \"pad\" was applied to it, which is why a venue asked for by place name, by box or by a point and a radius all record the same field. Edit it by hand if you like — a rebuild reads whatever is here.",
+  "id": "six-flags-magic-mountain",
+  "name": "Six Flags Magic Mountain",
+  "place": {
+    "query": "Six Flags Magic Mountain, Valencia, California",
+    "resolved": "Six Flags Magic Mountain, 26101, Magic Mountain Parkway, Entrada South, Valencia, Los Angeles County, California, 91355, United States"
+  },
+  "box": {
+    "south": 34.420046,
+    "west": -118.60103,
+    "north": 34.429833,
+    "east": -118.590459
+  },
+  "options": {
+    "name": "Six Flags Magic Mountain",
+    "locality": "Valencia, California",
+    "kind": "theme-park",
+    "sources": "data/venues/six-flags-magic-mountain/sources.json",
+    "allow-no-heights": true
+  },
+  "built": {
+    "at": "2026-08-27",
+    "counts": {
+      "pois": 95,
+      "rides": 36,
+      "heights": 0,
+      "shapes": 883
+    }
+  }
+}

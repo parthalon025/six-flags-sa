@@ -1,0 +1,788 @@
+{
+  "fetched": "2026-08-27",
+  "parkId": "c6073ab0-83aa-4e25-8d60-12c8f25684bc",
+  "parkName": "Six Flags Magic Mountain",
+  "source": "api.themeparks.wiki",
+  "attractions": [
+    {
+      "id": "c140a33a-73ba-431a-ad0a-e7788912fbed",
+      "name": "Metro Vibes",
+      "entityType": "SHOW",
+      "externalId": "SHOW-906-00024",
+      "at": {
+        "lat": 34.423158,
+        "lng": -118.599528
+      }
+    },
+    {
+      "id": "758ed2ed-d299-4eaa-84f7-bf699e0d6997",
+      "name": "Songs of the Summer",
+      "entityType": "SHOW",
+      "externalId": "SHOW-906-00023",
+      "at": {
+        "lat": 34.42274,
+        "lng": -118.595986
+      }
+    },
+    {
+      "id": "c2d0b88a-2f05-4470-86b0-6b068192f377",
+      "name": "Drivin' Mama Crazy",
+      "entityType": "SHOW",
+      "externalId": "SHOW-906-00007",
+      "at": {
+        "lat": 34.421402,
+        "lng": -118.597087
+      }
+    },
+    {
+      "id": "6060e1e8-0c38-4fc7-a79c-225efc13ae32",
+      "name": "JUSTICE LEAGUE Meet & Greets",
+      "entityType": "SHOW",
+      "externalId": "SHOW-906-00016",
+      "at": {
+        "lat": 34.426186,
+        "lng": -118.598631
+      }
+    },
+    {
+      "id": "def41ee7-2937-4a94-a9c8-377bf0084fea",
+      "name": "Superhero Smackdown",
+      "entityType": "SHOW",
+      "externalId": "SHOW-906-00020",
+      "at": {
+        "lat": 34.426072,
+        "lng": -118.598918
+      }
+    },
+    {
+      "id": "d5aacbf7-0929-4980-877c-b4ee458396c7",
+      "name": "Rapids Camp Selection",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00364",
+      "at": {
+        "lat": 34.42128,
+        "lng": -118.59681
+      }
+    },
+    {
+      "id": "5214af40-5933-41e0-aa01-d27c6d9bfcaa",
+      "name": "Main Gate Churro",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00360",
+      "at": {
+        "lat": 34.4231,
+        "lng": -118.59578
+      }
+    },
+    {
+      "id": "067001fe-6ccd-4c78-a086-2dd0c5326aec",
+      "name": "Jammin' Bumpers",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00014",
+      "at": {
+        "lat": 34.42443,
+        "lng": -118.59884
+      }
+    },
+    {
+      "id": "50abfc9e-99a8-4fd6-83f4-32d22b0d861e",
+      "name": "TEEN TITANS™ Turbo Spin",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00034",
+      "at": {
+        "lat": 34.42624,
+        "lng": -118.59919
+      }
+    },
+    {
+      "id": "7b2d1041-5354-418a-bd1a-dd35ad6e0536",
+      "name": "Tatsu",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00032",
+      "at": {
+        "lat": 34.421468,
+        "lng": -118.597455
+      }
+    },
+    {
+      "id": "5ac04909-2d8a-48ff-af4d-cc928467d800",
+      "name": "Goliath",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00012",
+      "at": {
+        "lat": 34.426449,
+        "lng": -118.597099
+      }
+    },
+    {
+      "id": "efb22a90-010e-4cb4-b200-15b98122d902",
+      "name": "Grand American Carousel",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00013",
+      "at": {
+        "lat": 34.42246,
+        "lng": -118.59608
+      }
+    },
+    {
+      "id": "8344e098-2092-44cb-a1eb-fedf93ded988",
+      "name": "Jet Stream",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00015",
+      "at": {
+        "lat": 34.422976,
+        "lng": -118.599254
+      }
+    },
+    {
+      "id": "6910bf9e-6699-4f4f-932f-4487477dcea3",
+      "name": "JUSTICE LEAGUE™: Battle for Metropolis",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00016",
+      "at": {
+        "lat": 34.4239,
+        "lng": -118.59962
+      }
+    },
+    {
+      "id": "7ac167da-22ac-45f9-b0c7-4836dd7d8573",
+      "name": "X2",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00043",
+      "at": {
+        "lat": 34.421653,
+        "lng": -118.594327
+      }
+    },
+    {
+      "id": "1b99e316-0285-4669-9670-86f15ff5e46e",
+      "name": "Dive Devil",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00008",
+      "at": {
+        "lat": 34.422866,
+        "lng": -118.599968
+      }
+    },
+    {
+      "id": "355a929f-eadd-4a97-9b68-27150d2e358e",
+      "name": "Full Throttle",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00010",
+      "at": {
+        "lat": 34.423859,
+        "lng": -118.596419
+      }
+    },
+    {
+      "id": "b3256214-96b2-4d4f-9cf6-ad82fec451c7",
+      "name": "SCREAM",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00027",
+      "at": {
+        "lat": 34.428034,
+        "lng": -118.598206
+      }
+    },
+    {
+      "id": "29767806-af6f-4c97-b7f3-5459e6fa1a97",
+      "name": "Apocalypse",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00001",
+      "at": {
+        "lat": 34.42141,
+        "lng": -118.599748
+      }
+    },
+    {
+      "id": "9c2dd888-9673-49ab-bc95-4c7025d0c248",
+      "name": "Twisted Colossus",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00038",
+      "at": {
+        "lat": 34.42736,
+        "lng": -118.598251
+      }
+    },
+    {
+      "id": "5b45bfd9-0624-4557-9bab-85aa0068dd72",
+      "name": "Magic Mover",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00022",
+      "at": {
+        "lat": 34.422647,
+        "lng": -118.596324
+      }
+    },
+    {
+      "id": "87c55076-dc32-440a-b5d9-be7cc6afcf68",
+      "name": "Viper",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00039",
+      "at": {
+        "lat": 34.421044,
+        "lng": -118.595555
+      }
+    },
+    {
+      "id": "5635ec24-3007-4c28-a0f2-3e97086d0db0",
+      "name": "West Coast Racers",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00040",
+      "at": {
+        "lat": 34.42217,
+        "lng": -118.59972
+      }
+    },
+    {
+      "id": "23e361c9-751a-4652-8aa6-24efaed5f1ff",
+      "name": "LEX LUTHOR™: Drop of Doom",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00017",
+      "at": {
+        "lat": 34.426306,
+        "lng": -118.598526
+      }
+    },
+    {
+      "id": "c2eedda9-7ab6-4b01-90e9-a51f3932f77f",
+      "name": "Roaring Rapids",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00025",
+      "at": {
+        "lat": 34.42131,
+        "lng": -118.59737
+      }
+    },
+    {
+      "id": "8750565b-7fa5-4c19-938b-00e21d629d42",
+      "name": "Sylvester’s Pounce and Bounce",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00031",
+      "at": {
+        "lat": 34.42516,
+        "lng": -118.595997
+      }
+    },
+    {
+      "id": "2a72cfbb-a653-4797-a5e6-87d2c31fac64",
+      "name": "Food Etc.",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00348",
+      "at": {
+        "lat": 34.42625,
+        "lng": -118.59742
+      }
+    },
+    {
+      "id": "4c87d176-d5b5-451a-9639-baa151d587ad",
+      "name": "MUNCHOPOLIS™ Snacks",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00368",
+      "at": {
+        "lat": 34.42351,
+        "lng": -118.59923
+      }
+    },
+    {
+      "id": "e889de6b-a137-41a2-a295-16603e8596ec",
+      "name": "Cheetos® Shack",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00369",
+      "at": {
+        "lat": 34.42315,
+        "lng": -118.59902
+      }
+    },
+    {
+      "id": "c3cff0a7-3d29-4bfd-a0fa-413332cb2ccd",
+      "name": "Soda Springs",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00370",
+      "at": {
+        "lat": 34.42146,
+        "lng": -118.59746
+      }
+    },
+    {
+      "id": "ea021a7c-6e96-49f9-b8c1-20782264827b",
+      "name": "Snack Shack",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00345",
+      "at": {
+        "lat": 34.425098,
+        "lng": -118.596705
+      }
+    },
+    {
+      "id": "c9650892-d920-4ed0-a77b-df093ae922e7",
+      "name": "Wascal’s",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00346",
+      "at": {
+        "lat": 34.42553,
+        "lng": -118.59661
+      }
+    },
+    {
+      "id": "79178879-3a1d-4f4d-bb9a-8f46abca1ffb",
+      "name": "Johnny Rockets",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00352",
+      "at": {
+        "lat": 34.425486,
+        "lng": -118.598788
+      }
+    },
+    {
+      "id": "f2f3a9ec-d4d3-4a72-bc17-b91dc4f97de2",
+      "name": "Plaza Café",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00340",
+      "at": {
+        "lat": 34.42282,
+        "lng": -118.59612
+      }
+    },
+    {
+      "id": "52b0db32-35f3-4d93-a2eb-1535a87e0b15",
+      "name": "THE RIDDLER™’s Revenge",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00036",
+      "at": {
+        "lat": 34.42429,
+        "lng": -118.5999
+      }
+    },
+    {
+      "id": "a8474562-bc2c-42a9-9ab0-e0588fbc9ced",
+      "name": "CraZanity",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00006",
+      "at": {
+        "lat": 34.424862,
+        "lng": -118.598639
+      }
+    },
+    {
+      "id": "0b85d8b2-75f6-49d5-a3c9-6aaef1ab13cb",
+      "name": "Gold Rusher",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00011",
+      "at": {
+        "lat": 34.423564,
+        "lng": -118.599001
+      }
+    },
+    {
+      "id": "9f7ac828-7d40-46b7-849b-841549db35c9",
+      "name": "Ninja",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00021",
+      "at": {
+        "lat": 34.421949,
+        "lng": -118.59827
+      }
+    },
+    {
+      "id": "70bea10a-2801-4328-9227-d44a53cf1fc9",
+      "name": "Road Runner Express",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00024",
+      "at": {
+        "lat": 34.425667,
+        "lng": -118.595736
+      }
+    },
+    {
+      "id": "50fad9f7-6b45-49ef-b6c0-4e45d9313860",
+      "name": "Full Throttle Restaurant",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00344",
+      "at": {
+        "lat": 34.4243,
+        "lng": -118.59645
+      }
+    },
+    {
+      "id": "0de530fa-9e25-40d4-831d-5947a0e8f0d8",
+      "name": "Frozen Delights",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00347",
+      "at": {
+        "lat": 34.42625,
+        "lng": -118.59742
+      }
+    },
+    {
+      "id": "e58f2d3b-e984-435f-887c-9df521c912d3",
+      "name": "Snack Trax",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00357",
+      "at": {
+        "lat": 34.42138,
+        "lng": -118.5993
+      }
+    },
+    {
+      "id": "976aa02e-574d-4cdd-bb40-b2e8a23dded5",
+      "name": "Primo's Pizzeria",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00359",
+      "at": {
+        "lat": 34.42131,
+        "lng": -118.59564
+      }
+    },
+    {
+      "id": "16ec736e-95d5-4ef0-a6d4-6e24a64fc018",
+      "name": "Chicken Coupe",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00355",
+      "at": {
+        "lat": 34.42229,
+        "lng": -118.60007
+      }
+    },
+    {
+      "id": "94901d44-525a-4070-8107-bfc93d3b762e",
+      "name": "Twisted 'Wiches",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00350",
+      "at": {
+        "lat": 34.42707,
+        "lng": -118.59854
+      }
+    },
+    {
+      "id": "99910903-44cb-4e3e-9943-c925a31e5cf0",
+      "name": "Katy’s Kettle",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00358",
+      "at": {
+        "lat": 34.42128,
+        "lng": -118.59704
+      }
+    },
+    {
+      "id": "904c6b89-a0d9-4622-8e5e-316305936837",
+      "name": "Carlini's Pizzeria",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00367",
+      "at": {
+        "lat": 34.42374,
+        "lng": -118.59923
+      }
+    },
+    {
+      "id": "e0ed62a8-09d5-451b-bd59-ba2ee23955e4",
+      "name": "METRO PARK™ Pub",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00372",
+      "at": {
+        "lat": 34.42336,
+        "lng": -118.59941
+      }
+    },
+    {
+      "id": "89c09403-6b4d-4dfd-b023-fca39345ef4a",
+      "name": "Munchiez",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00349",
+      "at": {
+        "lat": 34.426166,
+        "lng": -118.597658
+      }
+    },
+    {
+      "id": "1790e922-7786-482c-b6e6-9c2551ed30f7",
+      "name": "BIG BELLY BURGER™",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00354",
+      "at": {
+        "lat": 34.4236,
+        "lng": -118.59924
+      }
+    },
+    {
+      "id": "4d24658e-b7a1-4eb5-9d3f-9484b8314fdc",
+      "name": "Twin Charged Tacos",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00356",
+      "at": {
+        "lat": 34.42179,
+        "lng": -118.59973
+      }
+    },
+    {
+      "id": "3ca501ce-0d33-4b4f-9695-d360b438d8b2",
+      "name": "Max'd Out Mac & Screaming Spuds",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00343",
+      "at": {
+        "lat": 34.42376,
+        "lng": -118.59612
+      }
+    },
+    {
+      "id": "b72a9ef4-82a1-4eb2-b813-cf57b9a17b87",
+      "name": "Boardwalk Brews",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00351",
+      "at": {
+        "lat": 34.425763,
+        "lng": -118.59874
+      }
+    },
+    {
+      "id": "0b685970-4c5f-42f5-9ba9-192888dad6c7",
+      "name": "Plaza Ice Cream & Shakes",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00339",
+      "at": {
+        "lat": 34.42311,
+        "lng": -118.59521
+      }
+    },
+    {
+      "id": "e42c124e-ac73-42f8-8d05-114f3a857cb6",
+      "name": "Funnel Cake Factory",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00338",
+      "at": {
+        "lat": 34.423182,
+        "lng": -118.595431
+      }
+    },
+    {
+      "id": "cce8410c-5ccf-4097-931e-810ba2046a9b",
+      "name": "DC Heroes & Villains Fest Cavalcade",
+      "entityType": "SHOW",
+      "externalId": "SHOW-906-00018",
+      "at": {
+        "lat": 34.425774,
+        "lng": -118.596109
+      }
+    },
+    {
+      "id": "f7ddbb75-7817-4a7d-b896-ef6acb5b6c2c",
+      "name": "Harley Quinn and the Hyena’s",
+      "entityType": "SHOW",
+      "externalId": "SHOW-906-00021",
+      "at": {
+        "lat": 34.426072,
+        "lng": -118.598918
+      }
+    },
+    {
+      "id": "9148ed9b-9d68-46e1-9414-a43252e8a629",
+      "name": "Catwoman's Purr-purtrators",
+      "entityType": "SHOW",
+      "externalId": "SHOW-906-00022",
+      "at": {
+        "lat": 34.426072,
+        "lng": -118.598918
+      }
+    },
+    {
+      "id": "392a15db-711b-4f8d-b5af-6a93ea03d7bf",
+      "name": "Vacation Mayhem Mix-Up",
+      "entityType": "SHOW",
+      "externalId": "SHOW-906-00017",
+      "at": {
+        "lat": 34.425412,
+        "lng": -118.596096
+      }
+    },
+    {
+      "id": "69e09215-d8c8-4f25-ae8d-5d87f51d2e3d",
+      "name": "DC Heroes & Villains Fest",
+      "entityType": "SHOW",
+      "externalId": "SHOW-906-00019",
+      "at": {
+        "lat": 34.42609,
+        "lng": -118.598782
+      }
+    },
+    {
+      "id": "9e59b9e6-8610-4a36-8cc6-5df48b4dbc6b",
+      "name": "Taz’s Tazmanian Train Tours",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00041",
+      "at": {
+        "lat": 34.42604,
+        "lng": -118.5965
+      }
+    },
+    {
+      "id": "caa9058f-b273-4fda-ab21-28bc03d0466d",
+      "name": "The Great American Revolution",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00035",
+      "at": {
+        "lat": 34.421694,
+        "lng": -118.596226
+      }
+    },
+    {
+      "id": "0ec65538-8b4a-4295-8697-21b0f32f6fa5",
+      "name": "Canyon Cruiser",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00004",
+      "at": {
+        "lat": 34.424972,
+        "lng": -118.596034
+      }
+    },
+    {
+      "id": "96bedfae-8c9a-4718-adb9-3230f9f2a1bb",
+      "name": "Looney Ballooneys",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00009",
+      "at": {
+        "lat": 34.42526,
+        "lng": -118.59613
+      }
+    },
+    {
+      "id": "49dfe200-1143-48da-89e9-bf26973d494e",
+      "name": "Camp Bus",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00007",
+      "at": {
+        "lat": 34.424642,
+        "lng": -118.596417
+      }
+    },
+    {
+      "id": "18dc58d5-8f52-43ea-8ffe-833ddc9d03f0",
+      "name": "Camp Duck Amuck Fun Fort",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00018",
+      "at": {
+        "lat": 34.42478,
+        "lng": -118.59619
+      }
+    },
+    {
+      "id": "94939158-989a-460b-a3d2-669123cff17f",
+      "name": "Funny Flyers",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00044",
+      "at": {
+        "lat": 34.425085,
+        "lng": -118.596253
+      }
+    },
+    {
+      "id": "b9562f0c-257c-41a2-a677-86cb8ef7ebb5",
+      "name": "Merrie Melodies Merrie Go Round",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00020",
+      "at": {
+        "lat": 34.42522,
+        "lng": -118.59631
+      }
+    },
+    {
+      "id": "381d26ec-255e-4b0f-b607-85700c558682",
+      "name": "Swashbuckler",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00030",
+      "at": {
+        "lat": 34.425948,
+        "lng": -118.597305
+      }
+    },
+    {
+      "id": "0aaa6dd1-8e47-4e89-a8aa-4183a4d58eb9",
+      "name": "WONDER WOMAN™ Flight of Courage",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00042",
+      "at": {
+        "lat": 34.425646,
+        "lng": -118.599893
+      }
+    },
+    {
+      "id": "5e6ae811-7f2c-438a-8c11-c288652b5094",
+      "name": "Circuit Breaker Grand Prix",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00005",
+      "at": {
+        "lat": 34.422767,
+        "lng": -118.600066
+      }
+    },
+    {
+      "id": "2d591137-9aaf-47f8-9c30-ac7f062f2896",
+      "name": "BATMAN™ The Ride",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00002",
+      "at": {
+        "lat": 34.426047,
+        "lng": -118.600055
+      }
+    },
+    {
+      "id": "c0310696-bb07-4c5c-9f40-82b06ebd76ed",
+      "name": "Buccaneer",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00003",
+      "at": {
+        "lat": 34.425934,
+        "lng": -118.597215
+      }
+    },
+    {
+      "id": "c13fe30f-8dbf-4a7e-9a05-4e6419641cd0",
+      "name": "Looney Tunes Meet & Greets",
+      "entityType": "SHOW",
+      "externalId": "SHOW-906-00015",
+      "at": {
+        "lat": 34.425079,
+        "lng": -118.596472
+      }
+    },
+    {
+      "id": "17b543ee-1425-4dfe-8ac1-dc0a649e2fd5",
+      "name": "Coca-Cola® Refill Station",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00341",
+      "at": {
+        "lat": 34.42382,
+        "lng": -118.59611
+      }
+    },
+    {
+      "id": "a6fb2d33-2044-4a00-ab01-a7f54c947e12",
+      "name": "Daffy’s Forest Four-Wheelers",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-906-00033",
+      "at": {
+        "lat": 34.424794,
+        "lng": -118.596422
+      }
+    },
+    {
+      "id": "9e7b054e-9471-4b79-9f32-284ae6417247",
+      "name": "High Octane Wings",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00342",
+      "at": {
+        "lat": 34.4239,
+        "lng": -118.59609
+      }
+    },
+    {
+      "id": "7d017cff-a093-4c78-a6a1-99074bb16c7c",
+      "name": "ACE O' CLUBS™",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-906-00353",
+      "at": {
+        "lat": 34.42446,
+        "lng": -118.59931
+      }
+    }
+  ]
+}

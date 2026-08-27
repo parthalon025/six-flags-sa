@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "_comment": "Height rules beside the venue bundle. Re-applied on every build after overrides. A below-floor rule publishes as reported, not confirmed — never dropped.",
+  "venue": "six-flags-magic-mountain",
+  "generated": "2026-08-27",
+  "publish_at": "moderate",
+  "rules": {}
+}
