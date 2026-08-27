@@ -18,6 +18,9 @@
 // transforms `data`.
 
 import { MEMBER_TTL_MS, PARTY_TTL_MS, evict } from './core/state.js';
+import { redisCredentialsConfigured } from '../../../scripts/lib/production-redis-guard.mjs';
+
+export { redisCredentialsConfigured };
 
 const PARTY_TTL_S = Math.round(PARTY_TTL_MS / 1000);
 export const MAILBOX_TTL_MS = 5 * 60 * 1000;
@@ -29,7 +32,7 @@ const URL_BASE =
   process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || '';
 const TOKEN =
   process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || '';
-export const usingRedis = Boolean(URL_BASE && TOKEN);
+export const usingRedis = redisCredentialsConfigured();
 
 /* --------------------------------------------------------------- counters */
 

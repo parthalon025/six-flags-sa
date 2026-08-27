@@ -257,6 +257,9 @@ jobs:
       - name: Builder unit + compare
         run: npm run test:builder
 
+      - name: Fleet certification (offline)
+        run: npm run venues:certify -- --all --regression-only --no-write
+
   map-factory:
     name: Map factory
     needs: select

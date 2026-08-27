@@ -20,6 +20,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/bump-version.test.mjs',
   'test/scripts/version-stamp.test.mjs',
   'test/scripts/vercel-ignore.test.mjs',
+  'test/scripts/production-redis-guard.test.mjs',
   'test/scripts/vercel-deploy-gate.test.mjs',
   'test/scripts/store-release-plan.test.mjs',
   'test/scripts/app-store-connect-pack.test.mjs',
@@ -66,6 +67,13 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/app-store-connect.test.mjs',
   'test/scripts/store-screenshot-compose.test.mjs',
   'test/scripts/app-test-origin.test.mjs',
+  'test/scripts/builder-certify-ci.test.mjs',
+  'test/scripts/build-venue-workflow.test.mjs',
+  'test/scripts/builder-app-contract.test.mjs',
+  'test/scripts/compare-cert-freshness.test.mjs',
+  'test/scripts/neon-runbook.test.mjs',
+  'test/scripts/post-deploy-check.test.mjs',
+  'test/scripts/integrate-test-estate.test.mjs',
 ];
 
 /**

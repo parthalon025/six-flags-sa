@@ -246,6 +246,8 @@ jobs:
           for id in $VENUE_IDS; do
             node packages/venue-builder/bin/display-bake.mjs "$id" \
               --kit island-brochure --kit rpg-overworld --kit blueprint-survey --kit midnight-carnival --ldtk
+            node packages/venue-builder/bin/display-bake.mjs "$id" \
+              --kit rpg-overworld --target iso --rotation 0
             node packages/venue-builder/bin/display-pack.mjs "$id" --tiles --bake --no-mesh
           done
           node packages/venue-builder/bin/display-contact-sheet.mjs
