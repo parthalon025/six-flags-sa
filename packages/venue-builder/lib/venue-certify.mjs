@@ -18,12 +18,11 @@ import { VENUE_DIR, readJson, writeJson, venueSidecar, resolveBuilderPath } from
 import { qaVenueRouting, MAX_ROUTING_ISLANDS, MAX_RIDE_SNAP_METRES } from './venue-route-qa-core.mjs';
 import { readSources, externalAdaptersFromCatalog, adapterGapNotes, TOKEN_GATED_ADAPTERS } from './venue-sources.mjs';
 import { adapterCacheFile } from './adapters/_cache.mjs';
-import {
-  inventoryAsksFromAdapters,
-  inventoryAsksForBrief,
-} from './inventory-gaps.mjs';
+import { compareParksApiToBundle } from './adapters/parks-api.mjs';
+import { compareQueueTimesToBundle } from './adapters/queue-times.mjs';
 import { collectExternalClaims } from './external-claims.mjs';
 import { venueImageryCoverage } from './imagery-ledger.mjs';
+import { isRideable } from '@party-tracker/shared/ontology.js';
 import { looksLikeFalseRide } from './non-ride-names.mjs';
 
 export const CERT_VERSION = 1;
@@ -352,15 +351,32 @@ export function certifyVenue(id, opts = {}) {
   }
 
   /* Inventory compare — ask when ParksAPI / Queue-Times under-cover published rides. */
+  const inventoryAsks = [];
+  const rideables = pois.filter(isRideable);
   const parksApiCache = readJson(adapterCacheFile(id, 'parks-api'), null);
+  if (parksApiCache?.attractions?.length && !gapNotes['parks-api']) {
+    const cmp = compareParksApiToBundle({ parksApi: parksApiCache, pois });
+    const coverage = rideables.length ? cmp.matched / rideables.length : 1;
+    if (coverage < 0.5) {
+      inventoryAsks.push({
+        key: 'parks-api-inventory',
+        need: `ParksAPI matched ${cmp.matched}/${rideables.length} rides — declare gaps or improve aliases`,
+        blocking: false,
+      });
+    }
+  }
   const qtCache = readJson(adapterCacheFile(id, 'queue-times'), null);
-  const { asks: inventoryAsksFull } = inventoryAsksFromAdapters({
-    pois,
-    parksApiCache,
-    qtCache,
-    gapNotes,
-  });
-  const inventoryAsks = inventoryAsksForBrief(inventoryAsksFull);
+  if (qtCache?.rides?.length && !gapNotes['queue-times']) {
+    const cmp = compareQueueTimesToBundle({ queueTimes: qtCache, pois });
+    const coverage = rideables.length ? cmp.matched / rideables.length : 1;
+    if (coverage < 0.5) {
+      inventoryAsks.push({
+        key: 'queue-times-inventory',
+        need: `Queue-Times matched ${cmp.matched}/${rideables.length} rides — builder QA only, never wait minutes in pois`,
+        blocking: false,
+      });
+    }
+  }
 
   /* ---- official park map acquisition (LLM search required when declared) ---- */
   const wantsParkMapSearch = catalog?.research?.llm_park_map_search !== false
@@ -398,9 +414,15 @@ export function certifyVenue(id, opts = {}) {
   }
 
   const certified = checks.every((c) => c.pass);
-  let askBrief = certified && !inventoryAsks.length ? null : briefJson(venue, reqs, { inventoryAsks: inventoryAsksFull });
+  const attractionsSidecar = readJson(venueSidecar(id, 'attractions.json'), null);
+  const adapterCaches = {};
+  for (const adapterId of declared) {
+    adapterCaches[adapterId] = readJson(adapterCacheFile(id, adapterId), null);
+  }
+  const briefExtras = { attractions: attractionsSidecar, adapterCaches, gapNotes };
+  let askBrief = certified && !inventoryAsks.length ? null : briefJson(venue, reqs, briefExtras);
   if (inventoryAsks.length) {
-    askBrief = askBrief || briefJson(venue, reqs, { inventoryAsks: inventoryAsksFull }) || { venue: venue.id, requests: [] };
+    askBrief = askBrief || briefJson(venue, reqs, briefExtras) || { venue: venue.id, requests: [] };
     askBrief.inventory = inventoryAsks;
   }
 

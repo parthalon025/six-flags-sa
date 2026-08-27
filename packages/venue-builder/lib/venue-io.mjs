@@ -40,7 +40,7 @@ import { shippedGapsForVenue } from './ship-gaps.mjs';
 import { routeImageryExtractions } from './imagery-claims.mjs';
 import { writeBundleManifest } from './venue-bundle.mjs';
 import { writeRoutingCoverage } from '../src/routing-coverage.mjs';
-import { readSources, adapterGapNotes } from './venue-sources.mjs';
+import { readSources, adapterGapNotes, externalAdaptersFromCatalog } from './venue-sources.mjs';
 import { adapterCacheFile } from './adapters/_cache.mjs';
 
 export { APP_ROOT, BUILDER_ROOT, INDEX_FILE, MANIFEST_FILE, MONO_ROOT, OVERRIDE_DIR, VENUE_DIR };
@@ -122,9 +122,14 @@ export function gapsDocumentFor({ meta, pois, map, extractions } = {}) {
     : Array.isArray(loaded?.extractions) ? loaded.extractions : [];
   const imagery = routeImageryExtractions(list, { map: map || {} });
   const catalog = id ? readSources(id) : null;
-  const gapNotes = catalog ? adapterGapNotes(catalog) : {};
-  const parksApiCache = id ? readJson(adapterCacheFile(id, 'parks-api'), null) : null;
-  const qtCache = id ? readJson(adapterCacheFile(id, 'queue-times'), null) : null;
+  const gapNotes = catalog?.data ? adapterGapNotes(catalog.data) : {};
+  const adapterIds = catalog?.data ? externalAdaptersFromCatalog(catalog.data) : [];
+  const adapterCaches = {};
+  if (id) {
+    for (const adapterId of adapterIds) {
+      adapterCaches[adapterId] = readJson(adapterCacheFile(id, adapterId), null);
+    }
+  }
   return shippedGapsForVenue({
     venueId: id,
     meta,
@@ -132,8 +137,7 @@ export function gapsDocumentFor({ meta, pois, map, extractions } = {}) {
     map: map || {},
     attractions,
     imageryGaps: imagery.gaps,
-    parksApiCache,
-    qtCache,
+    adapterCaches,
     gapNotes,
   });
 }
@@ -190,18 +194,11 @@ export function reindex({ preferredDefault } = {}) {
     // bytes this reindex just shipped. It lists the truth trio plus whatever
     // display files have been published under public/venues/<id>/display/ —
     // the download manager's one trusted entry point per venue (ADR-0018).
-    const generated = map.meta?.generated ?? null;
-    const existingBundle = readJson(path.join(VENUE_DIR, `${id}.bundle.json`));
-    const revisionId =
-      existingBundle?.basedOn?.revisionId && existingBundle?.basedOn?.map === generated
-        ? existingBundle.basedOn.revisionId
-        : null;
     writeBundleManifest(id, {
       venueDir: VENUE_DIR,
       displayDir: path.join(VENUE_DIR, id, 'display'),
       outFile: path.join(VENUE_DIR, `${id}.bundle.json`),
-      generated,
-      revisionId,
+      generated: map.meta?.generated ?? null,
     });
     venues.push({
       ...map.meta,

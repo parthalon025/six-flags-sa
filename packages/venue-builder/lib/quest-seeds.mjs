@@ -17,7 +17,7 @@
  */
 
 import { PUBLISH_AT, atLeast } from './evidence.mjs';
-import { questSeedsFromInventory } from './inventory-gaps.mjs';
+import { ambientSignalShipArtifacts } from './ambient-signal-seeds.mjs';
 
 /** Builder ask key → contribution quest type (design taxonomy). */
 export const REQUEST_TO_QUEST = {
@@ -163,13 +163,23 @@ export function questSeedsForVenue({
   venueId,
   reqs = [],
   attractions = null,
-  inventoryAsks = [],
   includeAmbient = true,
+  signalSeeds = null,
+  adapterCaches = null,
+  gapNotes = {},
+  asOf,
 } = {}) {
+  const derivedSignals = signalSeeds ?? ambientSignalShipArtifacts({
+    venueId,
+    adapterCaches: adapterCaches || {},
+    attractions,
+    gapNotes,
+    asOf,
+  }).seeds;
   const durable = [
     ...questSeedsFromRequests(venueId, reqs),
     ...questSeedsFromEntrances(venueId, attractions),
-    ...questSeedsFromInventory(venueId, inventoryAsks),
+    ...derivedSignals,
   ];
   const ambient = includeAmbient
     ? TIER1_AMBIENT.map((a) => ({

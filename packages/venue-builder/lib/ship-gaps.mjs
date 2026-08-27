@@ -3,8 +3,9 @@
  *
  * Builder ask seeds and low-confidence queue evidence stay in certification
  * sidecars. This module is the seam that ships what guests can settle:
- * height, queue, path, restroom, food, gate, camping. Credits, aliases,
- * locality, and live ops never go in `*.gaps.json`.
+ * height, queue, path, path_disputed, restroom, food, gate, camping, verify
+ * (stale adapter cache). Credits, aliases, locality, and live ops never go
+ * in `*.gaps.json`.
  *
  * Place keys `i` are unique. Invent one Gap per `i`. A display name is only
  * a fallback when exactly one Place has that title; an ambiguous title is
@@ -14,7 +15,7 @@
  */
 
 import { questSeedsFromEntrances } from './quest-seeds.mjs';
-import { inventoryShipArtifacts } from './inventory-gaps.mjs';
+import { ambientSignalShipArtifacts } from './ambient-signal-seeds.mjs';
 
 export const SHIPPED_GAP_TYPES = Object.freeze([
   'height',
@@ -25,7 +26,7 @@ export const SHIPPED_GAP_TYPES = Object.freeze([
   'food',
   'gate',
   'camping',
-  'inventory',
+  'verify',
 ]);
 
 /** Rides farther than this from walkable geometry get a targeted path Gap. */
@@ -44,9 +45,8 @@ const RIDE = (p) => p && (p.c === 'coaster' || p.c === 'ride');
  */
 export function shippedTypeForSeed(seed) {
   if (!seed) return null;
-  if (seed.sourceGap === 'parks-api-inventory' || seed.sourceGap === 'queue-times-inventory') {
-    return 'inventory';
-  }
+  if (seed.sourceGap === 'adapter_stale') return 'verify';
+  if (seed.sourceGap === 'evidence_conflict') return 'path_disputed';
   if (DROP_SEED_TYPES.has(seed.type)) return null;
   if (seed.sourceGap === 'credits' || seed.sourceGap === 'locality') return null;
   if (seed.sourceGap === 'ambient_ops') return null;
@@ -197,13 +197,7 @@ function presenceAndCampingSeeds(meta, pois) {
  * @param {{ venueId: string, seeds?: object[], pois?: object[], map?: object | null }} opts
  * @returns {{ version: number, venue: string, gaps: { type: string, target: string | null }[] }}
  */
-export function shippedGapsDocument({
-  venueId,
-  seeds = [],
-  pois = [],
-  map = null,
-  inventoryGaps = [],
-} = {}) {
+export function shippedGapsDocument({ venueId, seeds = [], pois = [], map = null } = {}) {
   const seen = new Set();
   const gaps = [];
   const add = (type, target) => {
@@ -218,21 +212,19 @@ export function shippedGapsDocument({
   for (const seed of seeds) {
     const type = shippedTypeForSeed(seed);
     if (!type) continue;
-    if (type === 'height' || type === 'queue') {
+    if (type === 'height' || type === 'queue' || type === 'path_disputed') {
       const target = resolveGapTarget(pois, seed.target);
       if (target) add(type, target);
       continue;
     }
-    if (type === 'inventory') {
-      add(type, seed.target ?? null);
+    if (type === 'verify') {
+      add(type, seed.adapterId || null);
       continue;
     }
     add(type, null);
   }
 
   for (const gap of pathGapsFromMap(pois, map)) add(gap.type, gap.target);
-
-  for (const gap of inventoryGaps) add(gap.type, gap.target);
 
   gaps.sort((a, b) => {
     const tr = (TYPE_RANK[a.type] ?? 99) - (TYPE_RANK[b.type] ?? 99);
@@ -259,28 +251,22 @@ export function shippedGapsForVenue({
   map = {},
   attractions = null,
   imageryGaps = [],
-  parksApiCache = null,
-  qtCache = null,
+  adapterCaches = null,
   gapNotes = {},
+  asOf,
 } = {}) {
-  const inventory = inventoryShipArtifacts({
+  const signals = ambientSignalShipArtifacts({
     venueId,
-    pois,
-    parksApiCache,
-    qtCache,
+    adapterCaches: adapterCaches || {},
+    attractions,
     gapNotes,
+    asOf,
   });
   const seeds = [
     ...questSeedsFromEntrances(venueId, attractions),
     ...presenceAndCampingSeeds(meta, pois),
     ...imageryGaps,
-    ...inventory.seeds,
+    ...signals.seeds,
   ];
-  return shippedGapsDocument({
-    venueId,
-    seeds,
-    pois,
-    map: map ?? {},
-    inventoryGaps: inventory.gaps,
-  });
+  return shippedGapsDocument({ venueId, seeds, pois, map: map ?? {} });
 }

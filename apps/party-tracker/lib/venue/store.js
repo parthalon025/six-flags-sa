@@ -347,7 +347,7 @@ async function fetchOptionalJson(url, { refresh = false } = {}) {
   }
 }
 
-export const SHIPPED_GAP_TYPES = new Set(['height', 'queue', 'path', 'path_disputed', 'restroom', 'food', 'gate', 'camping', 'inventory']);
+export const SHIPPED_GAP_TYPES = new Set(['height', 'queue', 'path', 'path_disputed', 'restroom', 'food', 'gate', 'camping', 'verify']);
 
 export function gapsUrlFor(venue) {
   if (venue?.gaps) return venue.gaps;
