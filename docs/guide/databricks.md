@@ -22,7 +22,7 @@ Keep spend at **$0** until you have real data:
 | Phone runtime | Precached venue JSON — no cloud reads at walk time |
 | Local dev | `npm run dev` without `DATABASE_URL` (in-memory contributions) |
 | Local Postgres | `docker compose up -d db` — free on your machine |
-| Vercel | Hobby plan + [Neon free](https://neon.com/docs/introduction/plans) via Marketplace — see [Neon pooling runbook](./neon.md) |
+| Vercel | Hobby plan + [Neon free](https://neon.com/docs/introduction/plans) via Marketplace — see [Neon runbook](./neon.md) for preview DB strategy and pooling |
 | Redis | [Upstash free](https://upstash.com/pricing/redis) (optional; skip if single Node process) |
 | Databricks | OAuth CLI + MCP; **dev job schedules PAUSED**; no App deploy |
 | LLM | `VENUE_LLM_PROVIDER=openai` or skip — not Databricks Model Serving |

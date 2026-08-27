@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Neon runbook (#440) — docs seam: guide page exists, is linked, covers pool tuning.
+ * Neon runbook (#439 branching, #440 pool tuning) — docs seam: guide exists, linked, covers policy.
  *
  *   node test/scripts/neon-runbook.test.mjs
  */
@@ -25,6 +25,14 @@ const required = [
   'pingPostgres',
   '@neondatabase/serverless',
   'docker compose',
+  'branch-per-preview',
+  'shared dev',
+  'production',
+  'preview',
+  'development',
+  'postdb:migrate',
+  'memory',
+  'production guard',
 ];
 
 for (const phrase of required) {
@@ -32,5 +40,6 @@ for (const phrase of required) {
 }
 
 assert.match(text, /default.*4|4.*default/i, 'documents PG_POOL_MAX default of 4');
+assert.match(text, /recommend/i, 'states a recommended preview database strategy');
 
 console.log('neon-runbook.test.mjs: ok');
