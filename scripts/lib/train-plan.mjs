@@ -216,11 +216,17 @@ export const SLICES = Object.freeze([
     size: 'L',
     title: 'MapLibre renderer and overlay ported, behind the renderer switch',
     needs: ['h7'],
+    //  The overlay clause used to read ParkMap.jsx (the SVG component). h18's
+    //  retirement moved the live overlay into the GL renderer — it is
+    //  mapViewMaplibre.js, ParkMapGl.jsx's own MapLibre adapter, that now
+    //  wires lib/overlayGeo.js in (OVERLAY_LAYERS feeds its setData loop) —
+    //  so that is the reachability this clause has to prove, not a string
+    //  living wherever the overlay used to be read from.
     probe: (t) =>
       t.read('apps/party-tracker/package.json').includes('maplibre')
-      && t.read('apps/party-tracker/components/ParkMap.jsx').includes('overlayGeo')
       && t.has('apps/party-tracker/components/ParkMapGl.jsx')
-      && t.read('apps/party-tracker/lib/mapLibreConfigured.js').includes('parkMapRenderer'),
+      && t.read('apps/party-tracker/lib/mapLibreConfigured.js').includes('parkMapRenderer')
+      && t.wiredInto('apps/party-tracker/lib/overlayGeo.js', 'apps/party-tracker/lib/mapViewMaplibre.js'),
   },
   {
     // Split out of h11, because h11's title bundled two jobs with different
@@ -257,7 +263,22 @@ export const SLICES = Object.freeze([
     title: 'pixel-tycoon converts; iso retires; three Skins ship',
     needs: ['h5'],
     blocked: 'a',
-    probe: (t) => t.has('packages/venue-builder/data/display/kits/pixel-tycoon.json'),
+    //  Used to read BUILT off a kit file on disk — nothing about conversion,
+    //  iso retiring, or a Skin the app can actually resolve. skins.json is
+    //  the one ledger the app reads to turn a worn Skin into a bakeKit
+    //  binding (test/app/custom-map.test.mjs), so a kit with no row there is
+    //  unreachable: this probe now demands the row, not just the file it
+    //  would point at.
+    probe: (t) => {
+      if (!t.has('packages/venue-builder/data/display/kits/pixel-tycoon.json')) return false;
+      let skins;
+      try {
+        skins = JSON.parse(t.read('packages/venue-builder/data/display/skins.json'))?.skins;
+      } catch {
+        return false;
+      }
+      return Boolean(skins?.['pixel-tycoon']?.bakeKit);
+    },
   },
   {
     id: 'h15',
