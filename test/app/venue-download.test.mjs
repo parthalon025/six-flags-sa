@@ -28,10 +28,19 @@ process.emitWarning = (warning, ...rest) => {
 
 const {
   VENUE_BUNDLE_CACHE,
+  BUNDLE_SINCE_QUERY,
   bundleUrlFor,
+  bundleSyncUrl,
   hashedUrlFor,
   bundleIndexOf,
+  mergeManifestDelta,
   planBundleSync,
+  pyramidBandIdFromPath,
+  isOptionalPyramidEntry,
+  pyramidBandEntries,
+  estimatePyramidBytes,
+  formatBundleBytes,
+  manifestFilesForScope,
   sha256Hex,
   contentTypeFor,
   syncVenueBundle,
@@ -189,6 +198,244 @@ await check('planBundleSync: changed fetches, unchanged keeps, removed drops', (
   const cold = planBundleSync(MANIFEST, bundleIndexOf(null));
   assert.equal(cold.fetch.length, 3);
   assert.deepEqual(cold.drop, []);
+});
+
+const PYRAMID_MANIFEST = {
+  ...MANIFEST,
+  files: [
+    ...MANIFEST.files,
+    {
+      path: '/venues/p/display/overview.pmtiles',
+      bytes: 1_500_000,
+      sha256: sha('overview-tiles'),
+    },
+    {
+      path: '/venues/p/display/close.pmtiles',
+      bytes: 2_500_000,
+      sha256: sha('close-tiles'),
+    },
+    {
+      path: '/venues/p/display/mid.pmtiles',
+      bytes: 800_000,
+      sha256: sha('mid-tiles'),
+    },
+  ],
+};
+
+await check('pyramid helpers identify overview and close, not mid', () => {
+  assert.equal(pyramidBandIdFromPath('/venues/p/display/overview.pmtiles'), 'overview');
+  assert.equal(pyramidBandIdFromPath('/venues/p/display/close.pmtiles'), 'close');
+  assert.equal(pyramidBandIdFromPath('/venues/p/display/mid.pmtiles'), null);
+  assert.equal(isOptionalPyramidEntry(PYRAMID_MANIFEST.files.at(-2)), true);
+  assert.equal(isOptionalPyramidEntry(PYRAMID_MANIFEST.files.at(-1)), false);
+  assert.deepEqual(
+    pyramidBandEntries(PYRAMID_MANIFEST).map((f) => f.path),
+    ['/venues/p/display/overview.pmtiles', '/venues/p/display/close.pmtiles'],
+  );
+  assert.equal(estimatePyramidBytes(PYRAMID_MANIFEST), 4_000_000);
+  assert.equal(formatBundleBytes(4_000_000), '3.8 MB');
+});
+
+await check('manifestFilesForScope splits floor from guest opt-in pyramid bands', () => {
+  const floor = manifestFilesForScope(PYRAMID_MANIFEST, 'floor');
+  const pyramid = manifestFilesForScope(PYRAMID_MANIFEST, 'pyramid');
+  assert.ok(floor.some((f) => f.path.endsWith('mid.pmtiles')));
+  assert.ok(!floor.some((f) => f.path.endsWith('overview.pmtiles')));
+  assert.deepEqual(
+    pyramid.map((f) => f.path),
+    ['/venues/p/display/overview.pmtiles', '/venues/p/display/close.pmtiles'],
+  );
+});
+
+await check('floor sync never fetches optional pyramid bands', async () => {
+  const caches = fakeCaches();
+  const extendedBodies = {
+    ...BODIES,
+    '/venues/p/display/overview.pmtiles': 'overview-bytes',
+    '/venues/p/display/close.pmtiles': 'close-bytes',
+  };
+  const manifestWithPyramid = {
+    ...MANIFEST,
+    files: [
+      ...MANIFEST.files,
+      {
+        path: '/venues/p/display/overview.pmtiles',
+        bytes: extendedBodies['/venues/p/display/overview.pmtiles'].length,
+        sha256: sha(extendedBodies['/venues/p/display/overview.pmtiles']),
+      },
+      {
+        path: '/venues/p/display/close.pmtiles',
+        bytes: extendedBodies['/venues/p/display/close.pmtiles'].length,
+        sha256: sha(extendedBodies['/venues/p/display/close.pmtiles']),
+      },
+    ],
+  };
+  const fetchImpl = async (input) => {
+    const raw = typeof input === 'string' ? input : input.url;
+    const url = raw.startsWith('http') ? new URL(raw).pathname + new URL(raw).search : raw;
+    fetchImpl.calls.push(url);
+    if (url === MANIFEST_URL) {
+      return new Response(JSON.stringify(manifestWithPyramid), { status: 200 });
+    }
+    const clean = url.split('?')[0];
+    if (clean in extendedBodies) return new Response(extendedBodies[clean], { status: 200 });
+    return new Response('', { status: 404 });
+  };
+  fetchImpl.calls = [];
+  const result = await syncVenueBundle(VENUE, { fetchImpl, cacheStorage: caches, scope: 'floor' });
+  assert.equal(result.ok, true);
+  assert.equal(
+    fetchImpl.calls.filter((u) => u.includes('overview.pmtiles') || u.includes('close.pmtiles')).length,
+    0,
+    'floor scope must not touch guest opt-in pyramid bands',
+  );
+});
+
+await check('pyramid sync fetches only overview and close, and never drops the floor', async () => {
+  const caches = fakeCaches();
+  const extendedBodies = {
+    ...BODIES,
+    '/venues/p/display/overview.pmtiles': 'overview-bytes',
+    '/venues/p/display/close.pmtiles': 'close-bytes',
+  };
+  const manifestWithPyramid = {
+    ...MANIFEST,
+    files: [
+      ...MANIFEST.files,
+      {
+        path: '/venues/p/display/overview.pmtiles',
+        bytes: extendedBodies['/venues/p/display/overview.pmtiles'].length,
+        sha256: sha(extendedBodies['/venues/p/display/overview.pmtiles']),
+      },
+      {
+        path: '/venues/p/display/close.pmtiles',
+        bytes: extendedBodies['/venues/p/display/close.pmtiles'].length,
+        sha256: sha(extendedBodies['/venues/p/display/close.pmtiles']),
+      },
+    ],
+  };
+  const makeFetch = (manifest) => {
+    const calls = [];
+    const impl = async (input) => {
+      const raw = typeof input === 'string' ? input : input.url;
+      const url = raw.startsWith('http') ? new URL(raw).pathname + new URL(raw).search : raw;
+      calls.push(url);
+      if (url === MANIFEST_URL) return new Response(JSON.stringify(manifest), { status: 200 });
+      const clean = url.split('?')[0];
+      if (clean in extendedBodies) return new Response(extendedBodies[clean], { status: 200 });
+      return new Response('', { status: 404 });
+    };
+    impl.calls = calls;
+    return impl;
+  };
+  await syncVenueBundle(VENUE, {
+    fetchImpl: makeFetch(MANIFEST),
+    cacheStorage: caches,
+    scope: 'floor',
+  });
+  const fetchImpl = makeFetch(manifestWithPyramid);
+  const result = await syncVenueBundle(VENUE, { fetchImpl, cacheStorage: caches, scope: 'pyramid' });
+  assert.equal(result.ok, true);
+  assert.equal(result.fetched, 2);
+  assert.equal(await textOf(caches, '/venues/p.map.json'), BODIES['/venues/p.map.json']);
+  assert.equal(
+    await textOf(caches, '/venues/p/display/overview.pmtiles'),
+    extendedBodies['/venues/p/display/overview.pmtiles'],
+  );
+});
+
+await check('bundleSyncUrl: delta API when a revision cursor exists, static path otherwise', () => {
+  assert.equal(bundleSyncUrl({ id: 'p', bundle: MANIFEST_URL }, null), MANIFEST_URL);
+  const delta = bundleSyncUrl({ id: 'p', bundle: MANIFEST_URL }, 'rev-a');
+  assert.match(delta, /^\/api\/venues\/p\/bundle\?/);
+  assert.equal(new URLSearchParams(delta.split('?')[1]).get(BUNDLE_SINCE_QUERY), 'rev-a');
+});
+
+await check('mergeManifestDelta: overlay changed entries onto the cached full manifest', () => {
+  const cached = manifestFor(['/venues/p.map.json', '/venues/p.pois.json']);
+  const incoming = {
+    ...cached,
+    basedOn: { map: '2026-08-16', revisionId: 'rev-b' },
+    files: [{ path: '/venues/p.map.json', bytes: 9, sha256: sha('{"meta":{"id":"p","v":2}}') }],
+  };
+  const merged = mergeManifestDelta(cached, incoming);
+  assert.equal(merged.files.length, 2);
+  assert.equal(merged.files.find((f) => f.path.endsWith('.map.json')).sha256, incoming.files[0].sha256);
+  assert.equal(merged.files.find((f) => f.path.endsWith('.pois.json')).sha256, cached.files[1].sha256);
+  assert.equal(mergeManifestDelta(null, incoming), incoming);
+});
+
+const REV_A = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+const REV_B = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+const MAP_V1 = '{"meta":{"id":"p","generated":"2026-08-15"}}';
+const MAP_V2 = '{"meta":{"id":"p","generated":"2026-08-16"}}';
+const DELTA_BODIES = {
+  '/venues/p.map.json': MAP_V2,
+  '/venues/p.pois.json': BODIES['/venues/p.pois.json'],
+  '/venues/p/display/trail.style.json': BODIES['/venues/p/display/trail.style.json'],
+};
+const manifestV1 = {
+  version: 1,
+  venue: 'p',
+  basedOn: { map: '2026-08-15', revisionId: REV_A },
+  files: Object.keys(BODIES).map((p) => ({ path: p, bytes: BODIES[p].length, sha256: sha(BODIES[p]) })),
+};
+const manifestV2Full = {
+  version: 1,
+  venue: 'p',
+  basedOn: { map: '2026-08-16', revisionId: REV_B },
+  files: Object.keys(DELTA_BODIES).map((p) => ({
+    path: p,
+    bytes: DELTA_BODIES[p].length,
+    sha256: sha(DELTA_BODIES[p]),
+  })),
+};
+const manifestV2Delta = {
+  ...manifestV2Full,
+  files: manifestV2Full.files.filter((f) => f.path.endsWith('.map.json')),
+};
+
+function fakeFetchDelta({ deltaManifest = manifestV2Delta } = {}) {
+  const calls = [];
+  const impl = async (input) => {
+    const raw = typeof input === 'string' ? input : input.url;
+    const url = raw.startsWith('http') ? new URL(raw).pathname + new URL(raw).search : raw;
+    calls.push(url);
+    if (url.startsWith('/api/venues/p/bundle')) {
+      return new Response(JSON.stringify(deltaManifest), { status: 200 });
+    }
+    if (url === MANIFEST_URL) {
+      return new Response(JSON.stringify(manifestV1), { status: 200 });
+    }
+    const clean = url.split('?')[0];
+    const body = DELTA_BODIES[clean];
+    if (!body) return new Response('', { status: 404 });
+    return new Response(body, { status: 200 });
+  };
+  impl.calls = calls;
+  return impl;
+}
+
+await check('revision-cursor sync: delta manifest merges and only changed hashes are fetched', async () => {
+  const caches = fakeCaches();
+  const bundleCache = await caches.open(VENUE_BUNDLE_CACHE);
+  await bundleCache.put(
+    MANIFEST_URL,
+    new Response(JSON.stringify(manifestV1), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+  );
+  for (const [path, body] of Object.entries(BODIES)) {
+    await bundleCache.put(path, new Response(body));
+  }
+  const fetchImpl = fakeFetchDelta();
+  const result = await syncVenueBundle(VENUE, { fetchImpl, cacheStorage: caches });
+  assert.equal(result.ok, true);
+  assert.equal(result.fetched, 1, 'only the changed map file is re-downloaded');
+  assert.equal(result.kept, 2, 'pois and display bytes already match');
+  assert.match(fetchImpl.calls[0], /\/api\/venues\/p\/bundle\?since=/, 'delta API used when cache carries revisionId');
+  assert.equal(await textOf(caches, '/venues/p.map.json'), MAP_V2);
+  const committed = JSON.parse(await textOf(caches, MANIFEST_URL));
+  assert.equal(committed.basedOn.revisionId, REV_B);
+  assert.equal(committed.files.length, 3);
 });
 
 /* ----------------------------------------------------------------- sync -- */

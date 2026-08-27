@@ -4,15 +4,15 @@
 
 **Blocked by:** 16
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Acceptance
 
-- [ ] Functional or browser test: cached bundle with `revisionId` A → head advances to B → sync fetches delta manifest → only changed file hashes re-fetched (`planBundleSync` keeps unchanged bytes)
-- [ ] API route `GET /api/venues/[venueId]/bundle?since=` returns `mode: delta` with fewer files when PostDB head advanced (integration test exists in `delivery-delta.mjs`; app vertical must mirror)
-- [ ] `test/app/venue-download.test.mjs` covers `mergeManifestDelta` + `bundleSyncUrl` (extend if gaps)
-- [ ] Documented in spec: phone contract unchanged; only transport uses revision cursor
-- [ ] `npm run test:pre-merge-vertical` includes the new assertion for app-touching diffs
+- [x] Functional or browser test: cached bundle with `revisionId` A → head advances to B → sync fetches delta manifest → only changed file hashes re-fetched (`planBundleSync` keeps unchanged bytes)
+- [x] API route `GET /api/venues/[venueId]/bundle?since=` returns `mode: delta` with fewer files when PostDB head advanced (integration test exists in `delivery-delta.mjs`; app vertical must mirror)
+- [x] `test/app/venue-download.test.mjs` covers `mergeManifestDelta` + `bundleSyncUrl` (extend if gaps)
+- [x] Documented in spec: phone contract unchanged; only transport uses revision cursor
+- [x] `npm run test:pre-merge-vertical` includes the new assertion for app-touching diffs
 
 ## Notes
 

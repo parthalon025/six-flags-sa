@@ -29,8 +29,14 @@
    copies together. */
 export const VENUE_BUNDLE_CACHE = 'tracker-venue-bundles-v1';
 
+/** Bands a guest opts into offline — overview and close, never mid (ADR-0021 §5). */
+export const OPTIONAL_PYRAMID_BANDS = Object.freeze(['overview', 'close']);
+
 /** Query param for revision-cursor sync (ticket 17). */
 export const BUNDLE_SINCE_QUERY = 'since';
+
+/** `floor` — truth trio + display floor, no optional pyramid bands. `pyramid` — guest opt-in bands only. */
+export const BUNDLE_SYNC_SCOPES = Object.freeze(['floor', 'pyramid', 'all']);
 
 /** The one URL the app trusts for a venue's bundle. */
 export function bundleUrlFor(venue) {
@@ -102,6 +108,87 @@ export function planBundleSync(manifest, previousIndex = new Map()) {
   };
 }
 
+/** Which optional pyramid band a manifest path names, or null. */
+export function pyramidBandIdFromPath(filePath) {
+  const m = String(filePath || '').match(/\/display\/(overview|close)\.pmtiles$/);
+  return m ? m[1] : null;
+}
+
+/** True when a manifest row is an overview or close pyramid archive. */
+export function isOptionalPyramidEntry(entry) {
+  return Boolean(pyramidBandIdFromPath(entry?.path));
+}
+
+/** Manifest rows for guest opt-in pyramid bands (overview + close). */
+export function pyramidBandEntries(manifest) {
+  return (manifest?.files || []).filter((f) => f?.path && f?.sha256 && isOptionalPyramidEntry(f));
+}
+
+/** Total bytes the guest would download for overview + close bands. */
+export function estimatePyramidBytes(manifest) {
+  return pyramidBandEntries(manifest).reduce((sum, f) => sum + (Number(f.bytes) || 0), 0);
+}
+
+/** Human-readable size for the offline affordance. */
+export function formatBundleBytes(bytes) {
+  const n = Number(bytes) || 0;
+  if (n < 1) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let value = n;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  if (unit === 0) return `${value} ${units[unit]}`;
+  const rounded = value < 10 ? value.toFixed(1) : String(Math.round(value));
+  return `${rounded} ${units[unit]}`;
+}
+
+/** Filter a manifest's file list to the sync scope. */
+export function manifestFilesForScope(manifest, scope = 'floor') {
+  const files = (manifest?.files || []).filter((f) => f?.path && f?.sha256);
+  if (scope === 'all') return files;
+  if (scope === 'pyramid') return files.filter(isOptionalPyramidEntry);
+  return files.filter((f) => !isOptionalPyramidEntry(f));
+}
+
+/**
+ * Read the held or deployed bundle manifest without downloading pyramid bytes.
+ *
+ * @param {{ id?: string, bundle?: string } | null} venue
+ * @param {{ fetchImpl?: typeof fetch, cacheStorage?: CacheStorage }} [deps]
+ */
+export async function readBundleManifest(venue, deps = {}) {
+  const {
+    fetchImpl = typeof fetch === 'function' ? fetch : null,
+    cacheStorage = typeof caches !== 'undefined' ? caches : null,
+  } = deps;
+  const url = bundleUrlFor(venue);
+  if (!url) return null;
+  let cached = null;
+  if (cacheStorage) {
+    try {
+      const cache = await cacheStorage.open(VENUE_BUNDLE_CACHE);
+      const hit = await cache.match(url);
+      if (hit) cached = await hit.clone().json();
+    } catch {
+      /* fall through to network */
+    }
+  }
+  if (!fetchImpl) return cached;
+  try {
+    const res = await fetchImpl(url, { cache: 'no-store' });
+    if (!res?.ok) return cached;
+    const network = await res.json();
+    if (!cached) return network;
+    if (estimatePyramidBytes(network) > estimatePyramidBytes(cached)) return network;
+    return cached;
+  } catch {
+    return cached;
+  }
+}
+
 /** Lowercase hex sha256, or null where WebCrypto is unavailable. */
 export async function sha256Hex(bytes, cryptoImpl = globalThis.crypto) {
   if (!cryptoImpl?.subtle) return null;
@@ -135,7 +222,7 @@ async function verifiedLocalBytes(entry, cacheStorage, cryptoImpl) {
   try {
     const hit = await cacheStorage.match(entry.path);
     if (!hit) return null;
-    const bytes = await hit.arrayBuffer();
+    const bytes = await hit.clone().arrayBuffer();
     return (await sha256Hex(bytes, cryptoImpl)) === entry.sha256 ? bytes : null;
   } catch {
     return null;
@@ -161,7 +248,8 @@ function responseFor(entry, bytes) {
  *
  * @param {{ id?: string, bundle?: string } | null} venue a manifest row
  * @param {{ fetchImpl?: typeof fetch, cacheStorage?: CacheStorage,
- *           cryptoImpl?: Crypto, online?: boolean }} [deps] injected for tests
+ *           cryptoImpl?: Crypto, online?: boolean,
+ *           scope?: 'floor' | 'pyramid' | 'all' }} [deps] injected for tests
  */
 export async function syncVenueBundle(venue, deps = {}) {
   const {
@@ -169,6 +257,7 @@ export async function syncVenueBundle(venue, deps = {}) {
     cacheStorage = typeof caches !== 'undefined' ? caches : null,
     cryptoImpl = globalThis.crypto,
     online = typeof navigator === 'undefined' || navigator.onLine !== false,
+    scope = 'floor',
   } = deps;
   const url = bundleUrlFor(venue);
   if (!url) return { ok: false, reason: 'no-venue' };
@@ -196,9 +285,22 @@ export async function syncVenueBundle(venue, deps = {}) {
   }
   if (!Array.isArray(manifest?.files)) return { ok: false, reason: 'no-manifest' };
 
+  const scopedManifest = { ...manifest, files: manifestFilesForScope(manifest, scope) };
+
   try {
     const cache = await cacheStorage.open(VENUE_BUNDLE_CACHE);
-    const plan = planBundleSync(manifest, bundleIndexOf(previous));
+    const previousIndex = bundleIndexOf(previous);
+    // Manifest pins are not possession — a row in the cached manifest does not
+    // mean the bytes landed (floor scope commits pyramid metadata for the UI
+    // without downloading optional bands). Drop index rows with no verified
+    // bytes so pyramid opt-in still fetches.
+    for (const path of [...previousIndex.keys()]) {
+      const entry = { path, sha256: previousIndex.get(path) };
+      const local = await verifiedLocalBytes(entry, cacheStorage, cryptoImpl);
+      if (!local) previousIndex.delete(path);
+    }
+    const plan = planBundleSync(scopedManifest, previousIndex);
+    const drops = scope === 'pyramid' ? [] : plan.drop;
     let fetched = 0;
     let reused = 0;
     const failed = [];
@@ -229,7 +331,7 @@ export async function syncVenueBundle(venue, deps = {}) {
       }
     }
 
-    for (const stale of plan.drop) await cache.delete(stale);
+    for (const stale of drops) await cache.delete(stale);
 
     if (!failed.length) {
       await cache.put(
@@ -246,7 +348,7 @@ export async function syncVenueBundle(venue, deps = {}) {
       fetched,
       reused,
       kept: plan.keep.length,
-      dropped: plan.drop.length,
+      dropped: drops.length,
       failed,
     };
   } catch {

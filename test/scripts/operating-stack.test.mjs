@@ -25,18 +25,20 @@ assert.equal(spec.effort, 'factories-to-app');
 assert.equal(spec.adr, 'docs/adr/0024-postdb-factory-bus.md');
 
 const now = factoryEpicNow(spec);
-assert.equal(now.ticket, '16');
+assert.equal(now.ticket, '21');
 assert.equal(now.stackedOn, '15');
-assert.deepEqual(now.then, ['17']);
+assert.deepEqual(now.then, []);
+assert.equal(now.status, 'resolved');
+assert.deepEqual(now.mergePending, ['711', '712', '714', '716']);
 assert.ok(now.doNotStart.includes('train-h'));
 assert.ok(now.doNotStart.includes('train-i'));
-assert.match(epicNowLine(spec), /ticket 16/);
-assert.match(epicNowLine(spec), /17/);
+assert.match(epicNowLine(spec), /ticket 21/);
+assert.match(epicNowLine(spec), /711/);
 
 assert.equal(shouldPrintEpicNow('factories-to-app', spec), true);
 assert.equal(shouldPrintEpicNow(null, spec), true);
 assert.equal(shouldPrintEpicNow('other-effort', spec), false);
-assert.match(epicNowCli(spec), /^epic:    ticket 16/);
+assert.match(epicNowCli(spec), /^epic:    ticket 21/);
 assert.match(epicNowCli(spec), /operating-stack\.json/);
 
 const parked = parkedIds(spec);
@@ -67,7 +69,7 @@ writeFileSync(
 `,
 );
 const brief = sessionBrief({ cwd: root, effort: 'factories-to-app' });
-assert.match(brief, /ticket 16/);
+assert.match(brief, /ticket 21/);
 assert.match(brief, /operating-stack\.json/);
 assert.match(brief, /Do not start Trains H\/I/);
 
@@ -88,7 +90,7 @@ assert.doesNotMatch(other, /operating-stack\.json/);
 const emptyRoot = join(scratch, 'empty');
 mkdirSync(emptyRoot, { recursive: true });
 const emptyBrief = sessionBrief({ cwd: emptyRoot });
-assert.match(emptyBrief, /ticket 16/);
+assert.match(emptyBrief, /ticket 21/);
 assert.match(emptyBrief, /operating-stack\.json/);
 
 rmSync(scratch, { recursive: true, force: true });

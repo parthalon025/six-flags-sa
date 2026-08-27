@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import InstallCard from '@/components/InstallCard';
+import OfflineParkDownload from '@/components/OfflineParkDownload';
 import BrandMark from '@/components/BrandMark';
 import NameOnFinds from '@/components/NameOnFinds';
 import SignInCard from '@/components/SignInCard';
@@ -36,6 +37,7 @@ export default function SettingsPanel({
   categoryCount,
   categoryTotal,
   venueName,
+  venue = null,
   onPush,
   pushKinds = null,
   pushPrefs = null,
@@ -205,6 +207,7 @@ export default function SettingsPanel({
               <span className="rowValue">Builder compare</span>
             </a>
           </div>
+          <OfflineParkDownload venue={venue} />
         </>
       )}
 

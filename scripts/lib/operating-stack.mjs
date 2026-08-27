@@ -37,6 +37,12 @@ export function doNotAddIds(spec = loadOperatingStack()) {
 /** One line for workflow:next / session brief. */
 export function epicNowLine(spec = loadOperatingStack()) {
   const now = factoryEpicNow(spec);
+  if (!now.then?.length) {
+    const merge = now.mergePending?.length ? ` Merge ${now.mergePending.join(' → ')}.` : '';
+    return (
+      `**Epic NOW:** ticket ${now.ticket} (${now.title}). Tickets 16–21 resolved.${merge} Do not start Trains H/I.`
+    );
+  }
   const then = now.then.join(', then ');
   return (
     `**Epic NOW:** ticket ${now.ticket} (${now.title}), stacked on ${now.stackedOn}. `
@@ -57,6 +63,13 @@ export function shouldPrintEpicNow(slug, spec = loadOperatingStack()) {
 /** Flat two-line banner for `npm run workflow:next`. */
 export function epicNowCli(spec = loadOperatingStack()) {
   const now = factoryEpicNow(spec);
+  if (!now.then?.length) {
+    const merge = now.mergePending?.length ? ` Merge ${now.mergePending.join(' → ')}.` : '';
+    return [
+      `epic:    ticket ${now.ticket} (${now.title}). Tickets 16–21 resolved.${merge} Do not start Trains H/I.`,
+      'stack:   scripts/lib/operating-stack.json',
+    ].join('\n');
+  }
   const then = now.then.join(', then ');
   return [
     `epic:    ticket ${now.ticket} (${now.title}), stacked on ${now.stackedOn}. Then ${then}. Do not start Trains H/I.`,

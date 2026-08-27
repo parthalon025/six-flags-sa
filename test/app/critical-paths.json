@@ -305,22 +305,28 @@
       "user_action": "Wear the Watercolor quest Skin and see its baked world drawn on truth bounds",
       "suite": "functional",
       "check": "wearing Watercolor quest draws the baked world image under the overlay"
-    }
-  ],
-  "upcoming": [
+    },
+    {
+      "id": "delivery-delta-sync",
+      "slice": "Navigate",
+      "user_action": "Update a cached World bundle using the revision cursor so only changed files download",
+      "suite": "functional",
+      "check": "revision-cursor bundle sync returns a delta manifest with fewer files when since lags head"
+    },
     {
       "id": "train-h-zoom-bands",
       "slice": "Navigate",
       "user_action": "Pinch from park overview in to one ride and see detail emerge, never a hard band cut or a tilt and restyle in the same instant",
       "suite": "functional",
-      "check": "TODO (Train H, ADR-0021 clauses 2/4): crossing each band boundary keeps a parent placeholder drawn, ramps added content across the crossfade, and holds the pitch ease off the boundary"
+      "check": "crossing each band boundary keeps a parent placeholder drawn, ramps added content across the crossfade, and holds the pitch ease off the boundary"
     },
     {
       "id": "train-h-offline-download",
       "slice": "Navigate",
       "user_action": "Choose 'make this park available offline' and see the download size stated before it runs",
       "suite": "functional",
-      "check": "TODO (Train H, ADR-0021 clause 5): the offline action states its size, runs only on the guest's choice, and no pyramid downloads on Skin wear"
+      "check": "the offline action states its size, runs only on the guest's choice, and no pyramid downloads on Skin wear"
     }
-  ]
+  ],
+  "upcoming": []
 }
