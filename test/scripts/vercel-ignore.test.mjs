@@ -29,7 +29,13 @@ import {
 
 assert.equal(isProductionRuntime({ NODE_ENV: 'production' }), true);
 assert.equal(isProductionRuntime({ VERCEL_ENV: 'production' }), true);
+assert.equal(
+  isProductionRuntime({ NODE_ENV: 'production', VERCEL_ENV: 'preview' }),
+  false,
+  'Vercel preview is not production for the postgres guard',
+);
 assert.equal(isProductionRuntime({ NODE_ENV: 'development' }), false);
+assert.equal(isProductionRuntime({ NODE_ENV: 'test' }), false);
 assert.equal(postgresCredentialsConfigured({ DATABASE_URL: 'postgresql://u:p@host/db' }), true);
 assert.equal(
   checkProductionPostgresGuard({ NODE_ENV: 'production', DATABASE_URL: '' }).reason,

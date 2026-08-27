@@ -8,7 +8,10 @@ export const PRODUCTION_POSTGRES_GUARD_MESSAGE =
 
 /** @param {NodeJS.ProcessEnv} runtimeEnv */
 export function isProductionRuntime(runtimeEnv = process.env) {
-  return runtimeEnv.NODE_ENV === 'production' || runtimeEnv.VERCEL_ENV === 'production';
+  const vercelEnv = runtimeEnv.VERCEL_ENV;
+  // Vercel preview builds use NODE_ENV=production but are not production deploy targets.
+  if (vercelEnv === 'preview' || vercelEnv === 'development') return false;
+  return runtimeEnv.NODE_ENV === 'production' || vercelEnv === 'production';
 }
 
 /** @param {NodeJS.ProcessEnv} runtimeEnv */

@@ -29,6 +29,19 @@ await withPingPostgres({ NODE_ENV: 'development' }, async (pingPostgres) => {
   assert.deepEqual(dev, { ok: true, backend: 'memory' });
 });
 
+await withPingPostgres({ NODE_ENV: 'test' }, async (pingPostgres) => {
+  const testEnv = await pingPostgres();
+  assert.deepEqual(testEnv, { ok: true, backend: 'memory' });
+});
+
+await withPingPostgres(
+  { NODE_ENV: 'production', VERCEL_ENV: 'preview' },
+  async (pingPostgres) => {
+    const preview = await pingPostgres();
+    assert.deepEqual(preview, { ok: true, backend: 'memory' });
+  },
+);
+
 await withPingPostgres({ NODE_ENV: 'production' }, async (pingPostgres) => {
   const prod = await pingPostgres();
   assert.equal(prod.ok, false);
@@ -44,6 +57,8 @@ await withPingPostgres(
   async (pingPostgres) => {
     const configured = await pingPostgres();
     assert.equal(configured.backend, 'postgres');
+    assert.equal(typeof configured.ok, 'boolean');
+    assert.ok('error' in configured || configured.ok === true);
   },
 );
 
