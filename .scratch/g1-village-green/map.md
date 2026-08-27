@@ -38,12 +38,18 @@ queued work:
 | 1 | **G1 village-green** | cozy 16-bit RPG village | new `village-green` kit on the tile-and-sprite bake | days (kit + sprite ledger rows) | closest to what exists; proves the sprite lane at reference quality |
 | 2 | **G5 pixel overworld** | SNES world map | pixel pass over the existing bake — quantize (image-q), Sobel outlines, DEM terrace cliffs, path-dot nodes | small–moderate | converts shipped `pixel-tycoon` from live SVG to a certified baked world; retires the last color-swap-era renderer |
 | 3 | **G4 surveyor's sketch** | sepia ink hex-map | NPR lane — hachure fills, stroke displacement, parchment ground, vignette sprites, optional hex overlay | moderate | proves NPR generalizes past watercolor; mostly re-points `layered-atlas` line-work machinery |
-| 4 | **G2 quest atlas** | painted adventure world-map | painted lane pushed to gouache + relief shading, **plus a quest-node overlay renderer** | largest procedural build | the node-path overlay is a *feature*, not a style — the map draws the XP ladder; schedule when the reward loop needs its showcase |
+| 4 | **G2 quest atlas** | painted adventure world-map | painted lane pushed to gouache + relief shading | largest procedural build | the painted pole of the Skin range |
 | 5 | **G3 masterplan** | 3D aerial park render | **Blender tier (E.1)** — truth-extruded massing, bpypolyskel roofs, scattered canopies, baked AO | the Blender stage itself | store-listing-grade imagery; flagship-only economics |
 
-Shared machinery worth noting: **G5 and G2 share the node-path overlay renderer**, so whichever
-ships first pays for both. G3 is the only goal that needs a new tier (E.1 Blender,
-`operating-stack.json` `local-blender`, "$0 software").
+**The quest-node overlay is not on this list** — owner decision 2026-08-27 split it out of G2.
+Drawing Side Quests and Gaps as numbered nodes on dotted paths is a *product feature*, not a look:
+it is a live overlay layer that composes over whatever Skin the guest is wearing. Binding it to G2
+would have made a feature earnable and left four of the five goals unable to show the quest loop
+at all. It is scheduled against the **reward loop**, not the Skin queue; each Skin then needs only
+node and path token values in its style contract, not a renderer of its own.
+
+G3 is the only goal that needs a new tier (E.1 Blender, `operating-stack.json` `local-blender`,
+"$0 software").
 
 Acceptance is identical per goal: full certification including geo-fidelity and beyond-palette
 distinctness vs every shipped look, the 20-point matrix extended with per-goal treatment
