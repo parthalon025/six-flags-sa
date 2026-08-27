@@ -31,7 +31,7 @@ export function resolveEvidenceReviewPath(venueId, opts = {}) {
  * @param {{ overrideDir?: string }} [opts]
  */
 export function evidenceReviewPath(venueId, opts = {}) {
-  return resolveEvidenceReviewPath(venueId, opts) || path.join(opts.overrideDir || OVERRIDE_DIR, venueId, 'evidence.html');
+  return resolveEvidenceReviewPath(venueId, opts);
 }
 
 /**

@@ -107,6 +107,7 @@ async function markEvidenceLinks(grid) {
       const venueId = link.dataset.venue;
       try {
         const res = await fetch(`/api/evidence/${encodeURIComponent(venueId)}`);
+        if (!res.ok) throw new Error(`evidence status ${res.status}`);
         const data = await res.json();
         if (!data.available) {
           link.classList.add('missing');
