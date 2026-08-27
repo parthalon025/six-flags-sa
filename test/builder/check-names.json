@@ -1,5 +1,6 @@
 {
   "$note": "Pinned section :: check names produced by the suites in `sources`. test/builder/check-names.mjs runs them and fails when the set moves. This exists so test/builder/unit.mjs can be split across files without silently losing a check: a split changes `sources`, never `checks`.",
+  "$rename-2026-08-27": "commit 5e2cebc (Visual factory owns Zone tone) renamed two 'venue selection' checks in place. 'a district is tinted by its own venue, or by its own name' -> 'a Zone is painted by the Visual factory, or by its own name': same assertion (landTint honours a supplied per-name table over the generated fallback), updated for the new per-World pack argument, coverage widened (asserts stroke/label too, and the empty-pack case). 'every named district is one this venue actually has' -> 'map truth carries no Zone treatment': NOT the same assertion — the old check asserted no stray tint entries in the retired v.lands/meta.lands table; the new check asserts that retired table stays gone from the manifest and map.json. That table no longer exists, so the old assertion has no target left to check. The coverage it protected — a named land/Zone tone must name a Zone the venue actually has — is still enforced against the mechanism that replaced v.lands (the compiled Visual-factory spec) by the pre-existing, untouched check `display :: a land tone naming a land the venue does not have fails` (test/builder/display.mjs), which predates and postdates this commit unchanged and runs unconditionally in `npm run test:builder` ahead of check-names.mjs. No coverage was dropped.",
   "sources": [
     "test/builder/unit.mjs"
   ],
@@ -339,8 +340,8 @@
     "venue selection :: with no fix an unplaced visitor is asked to explore a park",
     "venue selection :: with no fix a confirmed visitor is not asked again",
     "venue selection :: with a fix intakeChoiceFor defers to venueChoiceFor",
-    "venue selection :: a district is tinted by its own venue, or by its own name",
-    "venue selection :: every named district is one this venue actually has",
+    "venue selection :: a Zone is painted by the Visual factory, or by its own name",
+    "venue selection :: map truth carries no Zone treatment",
     "venue geometry :: a shape wholly inside the box comes back untouched",
     "venue geometry :: a lake swallowing the venue is cut down to the venue",
     "venue geometry :: a shape straddling one edge keeps the half that is here",
