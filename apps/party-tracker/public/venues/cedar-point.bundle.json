@@ -3,9 +3,9 @@
   "venue": "cedar-point",
   "basedOn": {
     "map": "2026-08-09",
-    "revisionId": "2403c7b3-472d-4a0d-a673-cfd19f2074f3"
+    "revisionId": "760c590a-272b-4ea6-8e51-9dc63b439d73"
   },
-  "bytes": 612429,
+  "bytes": 612430,
   "files": [
     {
       "path": "/venues/cedar-point.gaps.json",
@@ -14,13 +14,13 @@
     },
     {
       "path": "/venues/cedar-point.map.json",
-      "bytes": 521644,
-      "sha256": "cf3299aa15a9eff1cbd0b96651ac777b681e65af93027683695b7af4e67ab155"
+      "bytes": 521645,
+      "sha256": "50cb73aca476fe57b851a35c968c67d566b0c0ed95f01cec73bb93a35b710fe6"
     },
     {
       "path": "/venues/cedar-point.pois.json",
       "bytes": 72727,
-      "sha256": "b7e2b79f3bc4c7883a06698ad07f5ae2734be0b1ee875e1381ea4320032914ba"
+      "sha256": "caea6a9a833bc28250fb833e29bbd468326a44224df86f1444e1066784f9af2b"
     },
     {
       "path": "/venues/cedar-point/display/layered-atlas.visual.json",

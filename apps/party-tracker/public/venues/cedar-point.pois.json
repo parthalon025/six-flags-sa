@@ -1,1230 +1,1234 @@
 [
   {
-    "a": "Kiddy Kingdom",
-    "c": "ride",
-    "h": {
-      "max": 54,
-      "min": null,
-      "alone": null
-    },
     "i": "4x4-s",
     "n": "4x4's",
     "lat": 41.48067,
-    "lng": -82.681151
+    "lng": -82.681151,
+    "c": "ride",
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 54
+    }
   },
   {
-    "a": "Main Midway",
-    "c": "shop",
     "i": "airbrush-t-shirts",
     "n": "Airbrush T-Shirts",
     "lat": 41.481701,
-    "lng": -82.682504
+    "lng": -82.682504,
+    "c": "shop",
+    "a": "Main Midway"
   },
   {
-    "a": "Main Midway",
-    "c": "shop",
     "i": "airbrush-tattoo",
     "n": "Airbrush Tattoo",
     "lat": 41.481295,
-    "lng": -82.682759
+    "lng": -82.682759,
+    "c": "shop",
+    "a": "Main Midway"
   },
   {
-    "a": "Millennium Midway",
-    "c": "landmark",
     "i": "albert",
     "n": "Albert",
     "lat": 41.482443,
-    "lng": -82.688297
+    "lng": -82.688297,
+    "c": "landmark",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Main Midway",
-    "c": "service",
     "i": "all-day-lockers",
     "n": "All Day Lockers",
     "lat": 41.478782,
-    "lng": -82.678904
+    "lng": -82.678904,
+    "c": "service",
+    "a": "Main Midway"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "service",
     "i": "all-day-lockers-2",
     "n": "All Day Lockers",
     "lat": 41.487006,
-    "lng": -82.686012
+    "lng": -82.686012,
+    "c": "service",
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Lakeside Midway",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 36,
-      "alone": 48
-    },
     "i": "atomic-scrambler",
     "n": "Atomic Scrambler",
     "lat": 41.482149,
-    "lng": -82.680887
+    "lng": -82.680887,
+    "c": "ride",
+    "h": {
+      "min": 36,
+      "alone": 48,
+      "max": null
+    },
+    "a": "Lakeside Midway"
   },
   {
-    "a": "Millennium Midway",
-    "c": "food",
     "i": "auntie-anne-s-and-cinnabon",
     "n": "Auntie Anne's and Cinnabon",
     "lat": 41.482065,
-    "lng": -82.6884
+    "lng": -82.6884,
+    "c": "food",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Main Midway",
-    "c": "food",
     "i": "auntie-annie-s",
     "n": "Auntie Annie's",
     "lat": 41.48174,
-    "lng": -82.682644
+    "lng": -82.682644,
+    "c": "food",
+    "a": "Main Midway"
   },
   {
-    "a": "Gemini Midway",
-    "c": "food",
     "i": "backbeatque",
     "n": "BackBeatQue",
     "lat": 41.485503,
-    "lng": -82.686797
+    "lng": -82.686797,
+    "c": "food",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Gemini Midway",
-    "c": "show",
     "i": "backbeatque-stage",
     "n": "BackBeatQue Stage",
     "lat": 41.485597,
-    "lng": -82.687257
+    "lng": -82.687257,
+    "c": "show",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Camp Snoopy",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 36,
-      "alone": null
-    },
     "i": "balloon-race",
     "n": "Balloon Race",
     "lat": 41.485084,
-    "lng": -82.687777
+    "lng": -82.687777,
+    "c": "ride",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    },
+    "a": "Camp Snoopy"
   },
   {
-    "a": "Cedar Point",
-    "c": "gate",
     "i": "bay-harbor",
     "n": "Bay Harbor",
     "lat": 41.478351,
-    "lng": -82.681713
+    "lng": -82.681713,
+    "c": "gate",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point",
-    "c": "food",
     "i": "bay-harbor-2",
     "n": "Bay Harbor",
     "lat": 41.478376,
     "lng": -82.682313,
-    "tel": "+1-419-625-6373"
+    "c": "food",
+    "tel": "+1-419-625-6373",
+    "a": "Cedar Point"
   },
   {
-    "a": "Main Midway",
-    "c": "food",
     "i": "bayou-refreshments",
     "n": "Bayou Refreshments",
     "lat": 41.478931,
-    "lng": -82.680202
+    "lng": -82.680202,
+    "c": "food",
+    "a": "Main Midway"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "food",
     "i": "beaches-cream",
     "n": "Beaches & Cream",
     "lat": 41.487306,
-    "lng": -82.685926
+    "lng": -82.685926,
+    "c": "food",
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Camp Snoopy",
-    "c": "shop",
     "i": "beagle-bay-outfitters",
     "n": "Beagle Bay Outfitters",
     "lat": 41.485686,
-    "lng": -82.688892
+    "lng": -82.688892,
+    "c": "shop",
+    "a": "Camp Snoopy"
   },
   {
-    "a": "Main Midway",
-    "c": "coaster",
-    "h": {
-      "max": null,
-      "min": 48,
-      "alone": null
-    },
     "i": "blue-streak",
     "n": "Blue Streak",
     "lat": 41.479864,
-    "lng": -82.68261
+    "lng": -82.68261,
+    "c": "coaster",
+    "a": "Main Midway",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
-    "a": "Cedar Point",
-    "c": "shop",
     "i": "breakers-boutique",
     "n": "Breakers Boutique",
     "lat": 41.4844,
-    "lng": -82.683785
+    "lng": -82.683785,
+    "c": "shop",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 42,
-      "alone": 52
-    },
     "i": "breakwater-bay",
     "n": "Breakwater Bay",
     "lat": 41.489013,
-    "lng": -82.686239
+    "lng": -82.686239,
+    "c": "ride",
+    "a": "Cedar Point Shores",
+    "h": {
+      "min": 42,
+      "alone": 52,
+      "max": null
+    }
   },
   {
-    "a": "Millennium Midway",
-    "c": "food",
     "i": "c-j-s-provisions",
     "n": "C.J.'s Provisions",
     "lat": 41.482106,
-    "lng": -82.688456
+    "lng": -82.688456,
+    "c": "food",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "parking",
     "i": "cabin-parking",
     "n": "Cabin Parking",
     "lat": 41.488375,
-    "lng": -82.690728
+    "lng": -82.690728,
+    "c": "parking",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Main Midway",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": null,
-      "alone": 48
-    },
     "i": "cadillac-cars",
     "n": "Cadillac Cars",
     "lat": 41.481059,
-    "lng": -82.682536
+    "lng": -82.682536,
+    "c": "ride",
+    "a": "Main Midway",
+    "h": {
+      "min": null,
+      "alone": 48,
+      "max": null
+    }
   },
   {
-    "a": "Camp Snoopy",
-    "c": "show",
     "i": "camp-snoopy-theatre",
     "n": "Camp Snoopy Theatre",
     "lat": 41.485456,
-    "lng": -82.688667
+    "lng": -82.688667,
+    "c": "show",
+    "a": "Camp Snoopy"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "gate",
     "i": "camper-village",
     "n": "Camper Village",
     "lat": 41.48862,
-    "lng": -82.689707
+    "lng": -82.689707,
+    "c": "gate",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Frontier Trail",
-    "c": "food",
     "i": "candy-shoppe",
     "n": "Candy Shoppe",
     "lat": 41.48289,
-    "lng": -82.69001
+    "lng": -82.69001,
+    "c": "food",
+    "a": "Frontier Trail"
   },
   {
-    "a": "Frontier Town",
-    "c": "coaster",
-    "h": {
-      "max": null,
-      "min": 48,
-      "alone": null
-    },
     "i": "cedar-creek-mine-ride",
     "n": "Cedar Creek Mine Ride",
     "lat": 41.484787,
-    "lng": -82.690393
+    "lng": -82.690393,
+    "c": "coaster",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "a": "Frontier Town"
   },
   {
-    "a": "Frontier Town",
-    "c": "shop",
     "i": "cedar-creek-trading-company",
     "n": "Cedar Creek Trading Company",
     "lat": 41.4858,
-    "lng": -82.691064
+    "lng": -82.691064,
+    "c": "shop",
+    "a": "Frontier Town"
   },
   {
-    "a": "Main Midway",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 48,
-      "alone": null
-    },
     "i": "cedar-downs-racing-derby",
     "n": "Cedar Downs Racing Derby",
     "lat": 41.480643,
-    "lng": -82.682288
+    "lng": -82.682288,
+    "c": "ride",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "a": "Main Midway"
   },
   {
-    "a": "Lakeside Midway",
-    "c": "food",
     "i": "cedar-point-grand-pavillion",
     "n": "Cedar Point Grand Pavillion",
     "lat": 41.481781,
-    "lng": -82.679553
+    "lng": -82.679553,
+    "c": "food",
+    "a": "Lakeside Midway"
   },
   {
-    "a": "Cedar Point",
-    "c": "ride",
     "i": "cedar-point-marina-pool",
     "n": "Cedar Point Marina Pool",
     "lat": 41.478132,
-    "lng": -82.681931
+    "lng": -82.681931,
+    "c": "ride",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point",
-    "c": "parking",
     "i": "cedar-point-shores-parking-lot",
     "n": "Cedar Point Shores Parking Lot",
     "lat": 41.487712,
-    "lng": -82.688728
+    "lng": -82.688728,
+    "c": "parking",
+    "a": "Cedar Point"
   },
   {
-    "a": "Camp Snoopy",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 36,
-      "alone": null
-    },
     "i": "charlie-brown-s-wind-up",
     "n": "Charlie Brown's Wind Up",
     "lat": 41.485281,
-    "lng": -82.687933
+    "lng": -82.687933,
+    "c": "ride",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    },
+    "a": "Camp Snoopy"
   },
   {
-    "a": "Frontier Town",
-    "c": "food",
     "i": "chick-fil-a",
     "n": "Chick-fil-A",
     "lat": 41.484849,
-    "lng": -82.692462
+    "lng": -82.692462,
+    "c": "food",
+    "a": "Frontier Town"
   },
   {
-    "a": "Main Midway",
-    "c": "food",
     "i": "chickie-s-and-pete-s",
     "n": "Chickie's and Pete's",
     "lat": 41.47987,
-    "lng": -82.681796
+    "lng": -82.681796,
+    "c": "food",
+    "a": "Main Midway"
   },
   {
-    "a": "Gemini Midway",
-    "c": "shop",
     "i": "coaster-coolers",
     "n": "Coaster Coolers",
     "lat": 41.485873,
-    "lng": -82.689663
+    "lng": -82.689663,
+    "c": "shop",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Main Midway",
-    "c": "food",
     "i": "coasters-drive-in",
     "n": "Coasters Drive-In",
     "lat": 41.48203,
-    "lng": -82.68396
+    "lng": -82.68396,
+    "c": "food",
+    "a": "Main Midway"
   },
   {
-    "a": "Frontier Town",
-    "c": "food",
     "i": "coca-cola-fountain-and-floats",
     "n": "Coca-Cola Fountain and Floats",
     "lat": 41.486021,
-    "lng": -82.691814
+    "lng": -82.691814,
+    "c": "food",
+    "a": "Frontier Town"
   },
   {
-    "a": "Main Midway",
-    "c": "shop",
     "i": "coca-cola-freestyle",
     "n": "Coca-Cola Freestyle",
     "lat": 41.479984,
-    "lng": -82.681317
+    "lng": -82.681317,
+    "c": "shop",
+    "a": "Main Midway"
   },
   {
-    "a": "Frontier Town",
-    "c": "shop",
     "i": "coca-cola-freestyle-2",
     "n": "Coca-Cola Freestyle",
     "lat": 41.485892,
-    "lng": -82.691893
+    "lng": -82.691893,
+    "c": "shop",
+    "a": "Frontier Town"
   },
   {
-    "a": "Lakeside Midway",
-    "c": "shop",
     "i": "coca-cola-freestyle-3",
     "n": "Coca-Cola Freestyle",
     "lat": 41.480627,
-    "lng": -82.679659
+    "lng": -82.679659,
+    "c": "shop",
+    "a": "Lakeside Midway"
   },
   {
-    "a": "Gemini Midway",
-    "c": "shop",
     "i": "coca-cola-freestyle-cafe",
     "n": "Coca-Cola Freestyle Cafe",
     "lat": 41.485396,
-    "lng": -82.687556
+    "lng": -82.687556,
+    "c": "shop",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Millennium Midway",
-    "c": "shop",
     "i": "coca-cola-marketplace",
     "n": "Coca-Cola Marketplace",
     "lat": 41.48235,
-    "lng": -82.68826
+    "lng": -82.68826,
+    "c": "shop",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "shop",
     "i": "coca-cola-refresh-station",
     "n": "Coca-Cola Refresh Station",
     "lat": 41.487563,
-    "lng": -82.68628
+    "lng": -82.68628,
+    "c": "shop",
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Main Midway",
-    "c": "shop",
     "i": "cold-drinks-refreshments",
     "n": "Cold Drinks Refreshments",
     "lat": 41.482017,
-    "lng": -82.682846
+    "lng": -82.682846,
+    "c": "shop",
+    "a": "Main Midway"
   },
   {
-    "a": "Lakeside Midway",
-    "c": "food",
     "i": "coral-dining-room",
     "n": "Coral Dining Room",
     "lat": 41.482487,
-    "lng": -82.681424
+    "lng": -82.681424,
+    "c": "food",
+    "a": "Lakeside Midway"
   },
   {
-    "a": "Gemini Midway",
-    "c": "coaster",
-    "h": {
-      "max": null,
-      "min": 48,
-      "alone": null
-    },
     "i": "corkscrew",
     "n": "Corkscrew",
     "lat": 41.48365,
-    "lng": -82.68532
+    "lng": -82.68532,
+    "c": "coaster",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "a": "Gemini Midway"
   },
   {
-    "a": "Main Midway",
-    "c": "food",
     "i": "corral",
     "n": "Corral",
     "lat": 41.480435,
-    "lng": -82.681934
+    "lng": -82.681934,
+    "c": "food",
+    "a": "Main Midway"
   },
   {
-    "a": "Main Midway",
-    "c": "shop",
     "i": "cp-shop",
     "n": "CP Shop",
     "lat": 41.479244,
-    "lng": -82.680118
+    "lng": -82.680118,
+    "c": "shop",
+    "a": "Main Midway"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "food",
     "i": "crystal-rock-cafe",
     "n": "Crystal Rock Cafe",
     "lat": 41.48754,
-    "lng": -82.686091
+    "lng": -82.686091,
+    "c": "food",
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "parking",
     "i": "departure-parking",
     "n": "Departure Parking",
     "lat": 41.487954,
-    "lng": -82.690254
+    "lng": -82.690254,
+    "c": "parking",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Main Midway",
-    "c": "food",
     "i": "derby-dogs",
     "n": "Derby Dogs",
     "lat": 41.480888,
-    "lng": -82.682351
+    "lng": -82.682351,
+    "c": "food",
+    "a": "Main Midway"
   },
   {
-    "a": "Lakeside Midway",
-    "c": "food",
     "i": "dippin-dots",
     "n": "Dippin' Dots",
     "lat": 41.48133,
-    "lng": -82.680018
+    "lng": -82.680018,
+    "c": "food",
+    "a": "Lakeside Midway"
   },
   {
-    "a": "Millennium Midway",
-    "c": "food",
     "i": "dippin-dots-2",
     "n": "Dippin' Dots",
     "lat": 41.48206,
-    "lng": -82.685395
+    "lng": -82.685395,
+    "c": "food",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Millennium Midway",
-    "c": "food",
     "i": "dippin-dots-3",
     "n": "Dippin' Dots",
     "lat": 41.48245,
-    "lng": -82.688375
+    "lng": -82.688375,
+    "c": "food",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Frontier Town",
-    "c": "food",
     "i": "dippin-dots-4",
     "n": "Dippin' Dots",
     "lat": 41.485098,
-    "lng": -82.691186
+    "lng": -82.691186,
+    "c": "food",
+    "a": "Frontier Town"
   },
   {
-    "a": "Gemini Midway",
-    "c": "food",
     "i": "dippin-dots-5",
     "n": "Dippin' Dots",
     "lat": 41.485866,
-    "lng": -82.688678
+    "lng": -82.688678,
+    "c": "food",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Gemini Midway",
-    "c": "food",
     "i": "dippin-dots-6",
     "n": "Dippin' Dots",
     "lat": 41.483858,
-    "lng": -82.685551
+    "lng": -82.685551,
+    "c": "food",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Main Midway",
-    "c": "food",
     "i": "dippin-dots-7",
     "n": "Dippin' Dots",
     "lat": 41.47968,
-    "lng": -82.68098
+    "lng": -82.68098,
+    "c": "food",
+    "a": "Main Midway"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "food",
     "i": "dippin-dots-8",
     "n": "Dippin' Dots",
     "lat": 41.487735,
-    "lng": -82.686758
+    "lng": -82.686758,
+    "c": "food",
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Cedar Point",
-    "c": "parking",
     "i": "disabled-parking",
     "n": "Disabled Parking",
     "lat": 41.477498,
-    "lng": -82.677866
+    "lng": -82.677866,
+    "c": "parking",
+    "a": "Cedar Point"
   },
   {
-    "a": "Millennium Midway",
-    "c": "food",
     "i": "dive-in",
     "n": "Dive In",
     "lat": 41.481693,
-    "lng": -82.683902
+    "lng": -82.683902,
+    "c": "food",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "food",
     "i": "dockside-grill",
     "n": "Dockside Grill",
     "lat": 41.487229,
-    "lng": -82.68557
+    "lng": -82.68557,
+    "c": "food",
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Lakeside Midway",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 42,
-      "alone": 48
-    },
     "i": "dodgem",
     "n": "Dodgem",
     "lat": 41.481183,
-    "lng": -82.680402
+    "lng": -82.680402,
+    "c": "ride",
+    "h": {
+      "min": 42,
+      "alone": 48,
+      "max": null
+    },
+    "a": "Lakeside Midway"
   },
   {
-    "a": "Millennium Midway",
-    "c": "food",
     "i": "dragon-s-inn",
     "n": "Dragon's Inn",
     "lat": 41.482185,
-    "lng": -82.685578
+    "lng": -82.685578,
+    "c": "food",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Cedar Point",
-    "c": "parking",
     "i": "drop-off-lot-reserved-parking",
     "n": "Drop Off Lot/Reserved Parking",
     "lat": 41.477713,
-    "lng": -82.680667
+    "lng": -82.680667,
+    "c": "parking",
+    "a": "Cedar Point"
   },
   {
-    "a": "Kiddy Kingdom",
-    "c": "ride",
-    "h": {
-      "max": 54,
-      "min": null,
-      "alone": null
-    },
     "i": "dune-buggies",
     "n": "Dune Buggies",
     "lat": 41.481118,
-    "lng": -82.680681
+    "lng": -82.680681,
+    "c": "ride",
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 54
+    }
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "service",
     "i": "east-lockers",
     "n": "East Lockers",
     "lat": 41.486517,
-    "lng": -82.684844
+    "lng": -82.684844,
+    "c": "service",
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Frontier Town",
-    "c": "food",
     "i": "engine-house-custard",
     "n": "Engine House Custard",
     "lat": 41.484462,
-    "lng": -82.691634
+    "lng": -82.691634,
+    "c": "food",
+    "a": "Frontier Town"
   },
   {
-    "a": "Cedar Point",
-    "c": "gate",
     "i": "entrance",
     "n": "Entrance",
     "lat": 41.486918,
-    "lng": -82.686281
+    "lng": -82.686281,
+    "c": "gate",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point",
-    "c": "gate",
     "i": "entrance-2",
     "n": "Entrance",
     "lat": 41.487162,
-    "lng": -82.687437
+    "lng": -82.687437,
+    "c": "gate",
+    "a": "Cedar Point"
   },
   {
-    "a": "Millennium Midway",
-    "c": "gate",
     "i": "entrance-3",
     "n": "Entrance",
     "lat": 41.482794,
-    "lng": -82.686754
+    "lng": -82.686754,
+    "c": "gate",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Gemini Midway",
-    "c": "gate",
     "i": "entrance-4",
     "n": "Entrance",
     "lat": 41.482796,
-    "lng": -82.685391
+    "lng": -82.685391,
+    "c": "gate",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Gemini Midway",
-    "c": "gate",
     "i": "entrance-5",
     "n": "Entrance",
     "lat": 41.485353,
-    "lng": -82.686702
+    "lng": -82.686702,
+    "c": "gate",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Frontier Trail",
-    "c": "shop",
     "i": "erie-county-custom-jewelers",
     "n": "Erie County Custom Jewelers",
     "lat": 41.482762,
-    "lng": -82.689937
+    "lng": -82.689937,
+    "c": "shop",
+    "a": "Frontier Trail"
   },
   {
-    "a": "Cedar Point",
-    "c": "food",
     "i": "famous-dave-s",
     "n": "Famous Dave's",
     "lat": 41.479757,
-    "lng": -82.685324
+    "lng": -82.685324,
+    "c": "food",
+    "a": "Cedar Point"
   },
   {
-    "a": "Frontier Town",
-    "c": "service",
     "i": "first-aid",
     "n": "First Aid",
     "lat": 41.486035,
-    "lng": -82.691501
+    "lng": -82.691501,
+    "c": "service",
+    "a": "Frontier Town"
   },
   {
-    "a": "Main Midway",
-    "c": "service",
     "i": "first-aid-2",
     "n": "First Aid",
     "lat": 41.481518,
-    "lng": -82.681901
+    "lng": -82.681901,
+    "c": "service",
+    "a": "Main Midway"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "service",
     "i": "first-aid-3",
     "n": "First Aid",
     "lat": 41.486416,
-    "lng": -82.68488
+    "lng": -82.68488,
+    "c": "service",
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Frontier Trail",
-    "c": "shop",
     "i": "fort-sandusky-leather-router-shop",
     "n": "Fort Sandusky Leather & Router Shop",
     "lat": 41.48294,
-    "lng": -82.689632
+    "lng": -82.689632,
+    "c": "shop",
+    "a": "Frontier Trail"
   },
   {
-    "a": "Frontier Trail",
-    "c": "shop",
     "i": "fort-sandusky-wood-carving-shop",
     "n": "Fort Sandusky Wood Carving Shop",
     "lat": 41.482806,
-    "lng": -82.689471
+    "lng": -82.689471,
+    "c": "shop",
+    "a": "Frontier Trail"
   },
   {
-    "a": "Main Midway",
-    "c": "food",
     "i": "fountain-custard",
     "n": "Fountain Custard",
     "lat": 41.480143,
-    "lng": -82.681154
+    "lng": -82.681154,
+    "c": "food",
+    "a": "Main Midway"
   },
   {
-    "a": "Frontier Town",
-    "c": "shop",
     "i": "frontiertown-emporium",
     "n": "Frontiertown Emporium",
     "lat": 41.486116,
-    "lng": -82.69265
+    "lng": -82.69265,
+    "c": "shop",
+    "a": "Frontier Town"
   },
   {
-    "a": "Lakeside Midway",
-    "c": "coaster",
-    "h": {
-      "max": 78,
-      "min": 52,
-      "alone": null
-    },
     "i": "gatekeeper",
     "n": "Gatekeeper",
     "lat": 41.480934,
-    "lng": -82.679178
+    "lng": -82.679178,
+    "c": "coaster",
+    "h": {
+      "min": 52,
+      "alone": null,
+      "max": 78
+    },
+    "a": "Lakeside Midway"
   },
   {
-    "a": "Lakeside Midway",
-    "c": "shop",
     "i": "gatekeeper-gift-shop",
     "n": "Gatekeeper Gift Shop",
     "lat": 41.480783,
-    "lng": -82.679283
+    "lng": -82.679283,
+    "c": "shop",
+    "a": "Lakeside Midway"
   },
   {
-    "a": "Lakeside Midway",
-    "c": "service",
     "i": "gatekeeper-lockers",
     "n": "Gatekeeper Lockers",
     "lat": 41.481305,
-    "lng": -82.67961
+    "lng": -82.67961,
+    "c": "service",
+    "a": "Lakeside Midway"
   },
   {
-    "a": "Gemini Midway",
+    "i": "gemini",
+    "n": "Gemini",
+    "lat": 41.486382,
+    "lng": -82.689591,
     "c": "coaster",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "a": "Gemini Midway",
     "e": [
       {
-        "n": "Gemini entrance",
         "lat": 41.486212,
         "lng": -82.689509,
+        "n": "Gemini entrance",
         "src": {
           "by": "fused",
           "feature": "queue_entrance",
+          "confidence": "moderate",
           "sources": [
             "geometry",
             "osm_named_queue",
             "osm_queue_name"
-          ],
-          "confidence": "moderate"
+          ]
         }
       },
       {
-        "n": "Gemini Standby Queue",
         "lat": 41.486212,
         "lng": -82.689509,
+        "n": "Gemini Standby Queue",
         "src": {
           "by": "osm_named_queue",
           "osm": "w857292933"
         }
       }
-    ],
-    "h": {
-      "max": null,
-      "min": 48,
-      "alone": null
-    },
-    "i": "gemini",
-    "n": "Gemini",
-    "lat": 41.486382,
-    "lng": -82.689591
+    ]
   },
   {
-    "a": "Lakeside Midway",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": null,
-      "alone": 48
-    },
     "i": "giant-wheel",
     "n": "Giant Wheel",
     "lat": 41.481592,
-    "lng": -82.679874
+    "lng": -82.679874,
+    "c": "ride",
+    "a": "Lakeside Midway",
+    "h": {
+      "min": null,
+      "alone": 48,
+      "max": null
+    }
   },
   {
-    "a": "Frontier Town",
-    "c": "show",
     "i": "gossip-gulch-stage",
     "n": "Gossip Gulch Stage",
     "lat": 41.485545,
-    "lng": -82.69189
+    "lng": -82.69189,
+    "c": "show",
+    "a": "Frontier Town"
   },
   {
-    "a": "Gemini Midway",
-    "c": "food",
     "i": "grandstand-refreshments",
     "n": "Grandstand Refreshments",
     "lat": 41.483512,
-    "lng": -82.6856
+    "lng": -82.6856,
+    "c": "food",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 46,
-      "alone": 52
-    },
     "i": "great-lakes-cove",
     "n": "Great Lakes Cove",
     "lat": 41.488202,
-    "lng": -82.686852
+    "lng": -82.686852,
+    "c": "ride",
+    "h": {
+      "min": 46,
+      "alone": 52,
+      "max": null
+    },
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Kiddy Kingdom",
-    "c": "landmark",
     "i": "guest-services",
     "n": "Guest Services",
     "lat": 41.480774,
-    "lng": -82.680676
+    "lng": -82.680676,
+    "c": "landmark",
+    "a": "Kiddy Kingdom"
   },
   {
-    "a": "Main Midway",
-    "c": "landmark",
     "i": "guest-services-2",
     "n": "Guest Services",
     "lat": 41.478568,
-    "lng": -82.679012
+    "lng": -82.679012,
+    "c": "landmark",
+    "a": "Main Midway"
   },
   {
-    "a": "Cedar Point",
-    "c": "shop",
     "i": "guests-laundry",
     "n": "Guests Laundry",
     "lat": 41.478611,
-    "lng": -82.682493
+    "lng": -82.682493,
+    "c": "shop",
+    "a": "Cedar Point"
   },
   {
-    "a": "Gemini Midway",
-    "c": "food",
     "i": "happy-friar",
     "n": "Happy Friar",
     "lat": 41.485775,
-    "lng": -82.689292
+    "lng": -82.689292,
+    "c": "food",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Main Midway",
-    "c": "shop",
     "i": "hat-rack",
     "n": "Hat Rack",
     "lat": 41.481665,
-    "lng": -82.682563
+    "lng": -82.682563,
+    "c": "shop",
+    "a": "Main Midway"
   },
   {
-    "a": "Kiddy Kingdom",
-    "c": "ride",
-    "h": {
-      "max": 54,
-      "min": null,
-      "alone": null
-    },
     "i": "helicopters",
     "n": "Helicopters",
     "lat": 41.480726,
-    "lng": -82.680862
+    "lng": -82.680862,
+    "c": "ride",
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 54
+    }
   },
   {
-    "a": "Frontier Town",
-    "c": "shop",
     "i": "hitchin-post-souvenirs",
     "n": "Hitchin' Post Souvenirs",
     "lat": 41.485092,
-    "lng": -82.692319
+    "lng": -82.692319,
+    "c": "shop",
+    "a": "Frontier Town"
   },
   {
-    "a": "Main Midway",
-    "c": "food",
     "i": "hot-potato",
     "n": "Hot Potato",
     "lat": 41.479894,
-    "lng": -82.681292
+    "lng": -82.681292,
+    "c": "food",
+    "a": "Main Midway"
   },
   {
-    "a": "Millennium Midway",
-    "c": "show",
     "i": "hot-spot-stage",
     "n": "Hot Spot Stage",
     "lat": 41.482017,
-    "lng": -82.68722
+    "lng": -82.68722,
+    "c": "show",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Main Midway",
-    "c": "food",
     "i": "hugo-s-italian-kitchen",
     "n": "Hugo's Italian Kitchen",
     "lat": 41.479147,
-    "lng": -82.680529
+    "lng": -82.680529,
+    "c": "food",
+    "a": "Main Midway"
   },
   {
-    "a": "Main Midway",
-    "c": "food",
     "i": "hurricane-hannah-s",
     "n": "Hurricane Hannah's",
     "lat": 41.478465,
-    "lng": -82.679724
+    "lng": -82.679724,
+    "c": "food",
+    "a": "Main Midway"
   },
   {
-    "a": "Millennium Midway",
-    "c": "coaster",
-    "h": {
-      "max": null,
-      "min": 42,
-      "alone": null
-    },
     "i": "iron-dragon",
     "n": "Iron Dragon",
     "lat": 41.48214,
-    "lng": -82.685184
+    "lng": -82.685184,
+    "c": "coaster",
+    "a": "Millennium Midway",
+    "h": {
+      "min": 42,
+      "alone": null,
+      "max": null
+    }
   },
   {
-    "a": "Main Midway",
-    "c": "show",
     "i": "jack-aldrich-theatre",
     "n": "Jack Aldrich Theatre",
     "lat": 41.478811,
-    "lng": -82.68019
+    "lng": -82.68019,
+    "c": "show",
+    "a": "Main Midway"
   },
   {
-    "a": "Gemini Midway",
-    "c": "shop",
     "i": "jewlry-cart",
     "n": "Jewlry Cart",
     "lat": 41.4824,
-    "lng": -82.684075
+    "lng": -82.684075,
+    "c": "shop",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Gemini Midway",
-    "c": "shop",
     "i": "joe-cool-s-corner-store",
     "n": "Joe Cool's Corner Store",
     "lat": 41.485386,
-    "lng": -82.687446
+    "lng": -82.687446,
+    "c": "shop",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Kiddy Kingdom",
-    "c": "shop",
     "i": "kiddieland-refreshments",
     "n": "Kiddieland Refreshments",
     "lat": 41.480868,
-    "lng": -82.680465
+    "lng": -82.680465,
+    "c": "shop",
+    "a": "Kiddy Kingdom"
   },
   {
-    "a": "Kiddy Kingdom",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": null,
-      "alone": 46
-    },
     "i": "kiddy-kingdom-carrousel",
     "n": "Kiddy Kingdom Carrousel",
     "lat": 41.480922,
-    "lng": -82.680852
+    "lng": -82.680852,
+    "c": "ride",
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": 46,
+      "max": null
+    }
   },
   {
-    "a": "Planet Snoopy",
-    "c": "ride",
-    "h": {
-      "max": 54,
-      "min": 36,
-      "alone": null
-    },
     "i": "kite-eating-tree",
     "n": "Kite Eating Tree",
     "lat": 41.481512,
-    "lng": -82.681588
+    "lng": -82.681588,
+    "c": "ride",
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": 54
+    }
   },
   {
-    "a": "Gemini Midway",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 36,
-      "alone": 44
-    },
     "i": "lake-erie-eagles",
     "n": "Lake Erie Eagles",
     "lat": 41.485888,
-    "lng": -82.687924
-  },
-  {
-    "a": "Cedar Point Shores",
+    "lng": -82.687924,
     "c": "ride",
     "h": {
-      "max": null,
-      "min": 48,
-      "alone": null
+      "min": 36,
+      "alone": 44,
+      "max": null
     },
+    "a": "Gemini Midway"
+  },
+  {
     "i": "lake-eerie-nor-easter",
     "n": "Lake Erie Nor'easter",
     "lat": 41.488522,
     "lng": -82.687185,
+    "c": "ride",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "a": "Cedar Point Shores",
     "note": "OpenStreetMap spells it “Lake Eerie”; the sign does not."
   },
   {
-    "a": "Lakeside Midway",
-    "c": "food",
     "i": "lakeside-express",
     "n": "Lakeside Express",
     "lat": 41.48059,
-    "lng": -82.679533
+    "lng": -82.679533,
+    "c": "food",
+    "a": "Lakeside Midway"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 36,
-      "alone": null
-    },
     "i": "lakeslide-landing",
     "n": "Lakeslide Landing",
     "lat": 41.487347,
-    "lng": -82.686762
+    "lng": -82.686762,
+    "c": "ride",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    },
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Frontier Town",
-    "c": "food",
     "i": "last-chance-saloon",
     "n": "Last Chance Saloon",
     "lat": 41.485917,
-    "lng": -82.692065
+    "lng": -82.692065,
+    "c": "food",
+    "a": "Frontier Town"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "ride",
-    "h": {
-      "max": 54,
-      "min": null,
-      "alone": null
-    },
     "i": "lemmy-s-lagoon",
     "n": "Lemmy's Lagoon",
     "lat": 41.48724,
-    "lng": -82.686544
+    "lng": -82.686544,
+    "c": "ride",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 54
+    },
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "gate",
     "i": "lighthouse-point",
     "n": "Lighthouse Point",
     "lat": 41.488043,
-    "lng": -82.693191
+    "lng": -82.693191,
+    "c": "gate",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "lighthouse-point-2",
     "n": "Lighthouse Point",
     "lat": 41.489483,
     "lng": -82.689833,
-    "tel": "+1-419-627-2106"
+    "c": "campsite",
+    "tel": "+1-419-627-2106",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 46,
-      "alone": 52
-    },
     "i": "lily-pad-walk",
     "n": "Lily Pad Walk",
     "lat": 41.488058,
-    "lng": -82.686919
+    "lng": -82.686919,
+    "c": "ride",
+    "h": {
+      "min": 46,
+      "alone": 52,
+      "max": null
+    },
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Main Midway",
-    "c": "food",
     "i": "mac-shack",
     "n": "Mac Shack",
     "lat": 41.479799,
-    "lng": -82.67986
+    "lng": -82.67986,
+    "c": "food",
+    "a": "Main Midway"
   },
   {
-    "a": "Gemini Midway",
-    "c": "coaster",
-    "h": {
-      "max": null,
-      "min": 48,
-      "alone": null
-    },
     "i": "magnum-xl-200",
     "n": "Magnum XL-200",
     "lat": 41.485405,
-    "lng": -82.686087
+    "lng": -82.686087,
+    "c": "coaster",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "a": "Gemini Midway"
   },
   {
-    "a": "Gemini Midway",
-    "c": "gate",
     "i": "magnum-xl-200-gate",
     "n": "Magnum XL-200 Gate",
     "lat": 41.48566,
-    "lng": -82.686255
+    "lng": -82.686255,
+    "c": "gate",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Gemini Midway",
-    "c": "service",
     "i": "magnum-xl-200-lockers",
     "n": "Magnum XL-200 Lockers",
     "lat": 41.484996,
-    "lng": -82.686284
+    "lng": -82.686284,
+    "c": "service",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Cedar Point",
-    "c": "gate",
     "i": "main-gate",
     "n": "Main Gate",
     "lat": 41.478314,
-    "lng": -82.67905
+    "lng": -82.67905,
+    "c": "gate",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point",
-    "c": "shop",
     "i": "marina-store",
     "n": "Marina Store",
     "lat": 41.479933,
-    "lng": -82.68508
+    "lng": -82.68508,
+    "c": "shop",
+    "a": "Cedar Point"
   },
   {
-    "a": "Lakeside Midway",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 42,
-      "alone": 46
-    },
     "i": "matterhorn",
     "n": "Matterhorn",
     "lat": 41.48192,
-    "lng": -82.680678
+    "lng": -82.680678,
+    "c": "ride",
+    "h": {
+      "min": 42,
+      "alone": 46,
+      "max": null
+    },
+    "a": "Lakeside Midway"
   },
   {
-    "a": "Frontier Town",
-    "c": "coaster",
-    "h": {
-      "max": 78,
-      "min": 52,
-      "alone": null
-    },
     "i": "maverick",
     "n": "Maverick",
     "lat": 41.485281,
-    "lng": -82.692555
+    "lng": -82.692555,
+    "c": "coaster",
+    "a": "Frontier Town",
+    "h": {
+      "min": 52,
+      "alone": null,
+      "max": 78
+    }
   },
   {
-    "a": "Lakeside Midway",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 52,
-      "alone": null
-    },
     "i": "maxair",
     "n": "maXair",
     "lat": 41.480855,
-    "lng": -82.680144
-  },
-  {
-    "a": "Main Midway",
+    "lng": -82.680144,
     "c": "ride",
     "h": {
-      "max": null,
-      "min": null,
-      "alone": 46
+      "min": 52,
+      "alone": null,
+      "max": null
     },
+    "a": "Lakeside Midway"
+  },
+  {
     "i": "midway-carousel",
     "n": "Midway Carousel",
     "lat": 41.47878,
-    "lng": -82.679598
+    "lng": -82.679598,
+    "c": "ride",
+    "a": "Main Midway",
+    "h": {
+      "min": null,
+      "alone": 46,
+      "max": null
+    }
   },
   {
-    "a": "Millennium Midway",
+    "i": "millennium-force",
+    "n": "Millennium Force",
+    "lat": 41.481656,
+    "lng": -82.688132,
     "c": "coaster",
+    "a": "Millennium Midway",
     "e": [
       {
-        "n": "Millennium Force entrance",
         "lat": 41.48195,
         "lng": -82.686529,
+        "n": "Millennium Force entrance",
         "src": {
           "by": "fused",
           "feature": "queue_entrance",
+          "confidence": "moderate",
           "sources": [
             "osm_named_queue",
             "osm_queue_name",
             "parks_api"
-          ],
-          "confidence": "moderate"
+          ]
         }
       },
       {
-        "n": "Millennium Force Standby Queue",
         "lat": 41.48195,
         "lng": -82.686529,
+        "n": "Millennium Force Standby Queue",
         "src": {
           "by": "osm_named_queue",
           "osm": "w845898705"
@@ -1232,680 +1236,680 @@
       }
     ],
     "h": {
-      "max": 78,
       "min": 48,
-      "alone": null
-    },
-    "i": "millennium-force",
-    "n": "Millennium Force",
-    "lat": 41.481656,
-    "lng": -82.688132
+      "alone": null,
+      "max": 78
+    }
   },
   {
-    "a": "Millennium Midway",
-    "c": "service",
     "i": "millennium-force-lockers",
     "n": "Millennium Force Lockers",
     "lat": 41.481905,
-    "lng": -82.686792
+    "lng": -82.686792,
+    "c": "service",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Millennium Midway",
-    "c": "shop",
     "i": "millennium-force-photo",
     "n": "Millennium Force Photo",
     "lat": 41.481772,
-    "lng": -82.687057
+    "lng": -82.687057,
+    "c": "shop",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Frontier Town",
-    "c": "food",
     "i": "miss-keat-s-smokehouse",
     "n": "Miss Keat's Smokehouse",
     "lat": 41.485982,
-    "lng": -82.691958
+    "lng": -82.691958,
+    "c": "food",
+    "a": "Frontier Town"
   },
   {
-    "a": "Gemini Midway",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 46,
-      "alone": null
-    },
     "i": "monster",
     "n": "Monster",
     "lat": 41.485731,
-    "lng": -82.687627
-  },
-  {
-    "a": "Kiddy Kingdom",
+    "lng": -82.687627,
     "c": "ride",
     "h": {
-      "max": 54,
-      "min": 39,
-      "alone": null
+      "min": 46,
+      "alone": null,
+      "max": null
     },
+    "a": "Gemini Midway"
+  },
+  {
     "i": "motorcycles",
     "n": "Motorcycles",
     "lat": 41.480591,
-    "lng": -82.680946
+    "lng": -82.680946,
+    "c": "ride",
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": 39,
+      "alone": null,
+      "max": 54
+    }
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "food",
     "i": "mufflehead-s-beach-bar",
     "n": "Mufflehead's Beach Bar",
     "lat": 41.488086,
-    "lng": -82.68493
+    "lng": -82.68493,
+    "c": "food",
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Kiddy Kingdom",
-    "c": "ride",
-    "h": {
-      "max": 54,
-      "min": null,
-      "alone": null
-    },
     "i": "mustangs",
     "n": "Mustangs",
     "lat": 41.4805,
-    "lng": -82.68108
+    "lng": -82.68108,
+    "c": "ride",
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 54
+    }
   },
   {
-    "a": "Main Midway",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 39,
-      "alone": 48
-    },
     "i": "ocean-motion",
     "n": "Ocean Motion",
     "lat": 41.479093,
-    "lng": -82.679126
+    "lng": -82.679126,
+    "c": "ride",
+    "h": {
+      "min": 39,
+      "alone": 48,
+      "max": null
+    },
+    "a": "Main Midway"
   },
   {
-    "a": "Main Midway",
-    "c": "shop",
     "i": "pagoda-gift-shop",
     "n": "Pagoda Gift Shop",
     "lat": 41.481543,
-    "lng": -82.682261
+    "lng": -82.682261,
+    "c": "shop",
+    "a": "Main Midway"
   },
   {
-    "a": "Frontier Town",
-    "c": "show",
     "i": "palace-theatre",
     "n": "Palace Theatre",
     "lat": 41.486058,
-    "lng": -82.692294
+    "lng": -82.692294,
+    "c": "show",
+    "a": "Frontier Town"
   },
   {
-    "a": "Millennium Midway",
-    "c": "food",
     "i": "panda-express",
     "n": "Panda Express",
     "lat": 41.481753,
-    "lng": -82.687579
+    "lng": -82.687579,
+    "c": "food",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "parking",
     "i": "parking",
     "n": "Parking",
     "lat": 41.489965,
-    "lng": -82.690475
+    "lng": -82.690475,
+    "c": "parking",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Cedar Point",
-    "c": "parking",
     "i": "parking-2",
     "n": "Parking",
     "lat": 41.476545,
-    "lng": -82.677425
+    "lng": -82.677425,
+    "c": "parking",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point",
-    "c": "parking",
     "i": "parking-3",
     "n": "Parking",
     "lat": 41.481143,
-    "lng": -82.687919
+    "lng": -82.687919,
+    "c": "parking",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point",
-    "c": "parking",
     "i": "parking-4",
     "n": "Parking",
     "lat": 41.483747,
-    "lng": -82.683026
+    "lng": -82.683026,
+    "c": "parking",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point",
-    "c": "parking",
     "i": "parking-5",
     "n": "Parking",
     "lat": 41.477766,
-    "lng": -82.681437
+    "lng": -82.681437,
+    "c": "parking",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point",
-    "c": "parking",
     "i": "parking-6",
     "n": "Parking",
     "lat": 41.480411,
-    "lng": -82.685299
+    "lng": -82.685299,
+    "c": "parking",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point",
-    "c": "parking",
     "i": "parking-7",
     "n": "Parking",
     "lat": 41.47952,
-    "lng": -82.683401
+    "lng": -82.683401,
+    "c": "parking",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point",
-    "c": "parking",
     "i": "parking-8",
     "n": "Parking",
     "lat": 41.48467,
-    "lng": -82.685074
+    "lng": -82.685074,
+    "c": "parking",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point",
-    "c": "parking",
     "i": "parking-9",
     "n": "Parking",
     "lat": 41.48572,
-    "lng": -82.684809
+    "lng": -82.684809,
+    "c": "parking",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point",
-    "c": "parking",
     "i": "parking-10",
     "n": "Parking",
     "lat": 41.486742,
-    "lng": -82.687129
+    "lng": -82.687129,
+    "c": "parking",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point",
-    "c": "parking",
     "i": "parking-11",
     "n": "Parking",
     "lat": 41.480847,
-    "lng": -82.684582
+    "lng": -82.684582,
+    "c": "parking",
+    "a": "Cedar Point"
   },
   {
-    "a": "Camp Snoopy",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 36,
-      "alone": null
-    },
     "i": "peanuts-500",
     "n": "Peanuts 500",
     "lat": 41.485715,
-    "lng": -82.689105
-  },
-  {
-    "a": "Cedar Point Shores",
+    "lng": -82.689105,
     "c": "ride",
     "h": {
-      "max": null,
-      "min": 48,
-      "alone": null
+      "min": 36,
+      "alone": null,
+      "max": null
     },
+    "a": "Camp Snoopy"
+  },
+  {
     "i": "perch-plunge",
     "n": "Perch Plunge",
     "lat": 41.487591,
-    "lng": -82.684741
+    "lng": -82.684741,
+    "c": "ride",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Cedar Point",
-    "c": "food",
     "i": "perkins-restaurant-and-bakery",
     "n": "Perkins Restaurant and Bakery",
     "lat": 41.484714,
-    "lng": -82.683472
+    "lng": -82.683472,
+    "c": "food",
+    "a": "Cedar Point"
   },
   {
-    "a": "Gemini Midway",
-    "c": "shop",
     "i": "photo-finish",
     "n": "Photo Finish",
     "lat": 41.482564,
-    "lng": -82.68497
+    "lng": -82.68497,
+    "c": "shop",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Gemini Midway",
-    "c": "coaster",
-    "h": {
-      "max": null,
-      "min": 42,
-      "alone": 48
-    },
     "i": "pipe-scream",
     "n": "Pipe Scream",
     "lat": 41.48554,
-    "lng": -82.688
+    "lng": -82.688,
+    "c": "coaster",
+    "h": {
+      "min": 42,
+      "alone": 48,
+      "max": null
+    },
+    "a": "Gemini Midway"
   },
   {
-    "a": "Main Midway",
-    "c": "shop",
     "i": "point-plaza",
     "n": "Point Plaza",
     "lat": 41.479164,
-    "lng": -82.679633
+    "lng": -82.679633,
+    "c": "shop",
+    "a": "Main Midway"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 48,
-      "alone": null
-    },
     "i": "point-plummet",
     "n": "Point Plummet",
     "lat": 41.48645,
-    "lng": -82.685865
-  },
-  {
-    "a": "Kiddy Kingdom",
+    "lng": -82.685865,
     "c": "ride",
     "h": {
-      "max": 54,
-      "min": null,
-      "alone": null
+      "min": 48,
+      "alone": null,
+      "max": null
     },
+    "a": "Cedar Point Shores"
+  },
+  {
     "i": "police-cars",
     "n": "Police Cars",
     "lat": 41.480831,
-    "lng": -82.681182
+    "lng": -82.681182,
+    "c": "ride",
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 54
+    }
   },
   {
-    "a": "Cedar Point",
-    "c": "food",
     "i": "poolside-parlor",
     "n": "Poolside Parlor",
     "lat": 41.484202,
-    "lng": -82.68254
+    "lng": -82.68254,
+    "c": "food",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 48,
-      "alone": null
-    },
     "i": "portside-plunge",
     "n": "Portside Plunge",
     "lat": 41.486371,
-    "lng": -82.68588
-  },
-  {
-    "a": "Gemini Midway",
+    "lng": -82.68588,
     "c": "ride",
     "h": {
-      "max": null,
       "min": 48,
-      "alone": null
+      "alone": null,
+      "max": null
     },
+    "a": "Cedar Point Shores"
+  },
+  {
     "i": "power-tower",
     "n": "Power Tower",
     "lat": 41.482825,
-    "lng": -82.684575
+    "lng": -82.684575,
+    "c": "ride",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "a": "Gemini Midway"
   },
   {
-    "a": "Cedar Point",
-    "c": "parking",
     "i": "preferred-parking",
     "n": "Preferred Parking",
     "lat": 41.477174,
-    "lng": -82.679578
+    "lng": -82.679578,
+    "c": "parking",
+    "a": "Cedar Point"
   },
   {
-    "a": "Gemini Midway",
-    "c": "food",
     "i": "pretzel-fillers",
     "n": "Pretzel Fillers",
     "lat": 41.4851,
-    "lng": -82.686355
+    "lng": -82.686355,
+    "c": "food",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Frontier Trail",
-    "c": "food",
     "i": "provisions",
     "n": "Provisions",
     "lat": 41.483823,
-    "lng": -82.6881
+    "lng": -82.6881,
+    "c": "food",
+    "a": "Frontier Trail"
   },
   {
-    "a": "Main Midway",
-    "c": "coaster",
-    "h": {
-      "max": null,
-      "min": 54,
-      "alone": null
-    },
     "i": "raptor",
     "n": "Raptor",
     "lat": 41.479188,
-    "lng": -82.681726
+    "lng": -82.681726,
+    "c": "coaster",
+    "h": {
+      "min": 54,
+      "alone": null,
+      "max": null
+    },
+    "a": "Main Midway"
   },
   {
-    "a": "Main Midway",
-    "c": "shop",
     "i": "raptor-hot-shots",
     "n": "Raptor Hot Shots",
     "lat": 41.479201,
-    "lng": -82.681164
+    "lng": -82.681164,
+    "c": "shop",
+    "a": "Main Midway"
   },
   {
-    "a": "Camp Snoopy",
-    "c": "ride",
-    "h": {
-      "max": 54,
-      "min": 36,
-      "alone": null
-    },
     "i": "red-baron",
     "n": "Red Baron",
     "lat": 41.485158,
-    "lng": -82.688533
+    "lng": -82.688533,
+    "c": "ride",
+    "a": "Camp Snoopy",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": 54
+    }
   },
   {
-    "a": "Millennium Midway",
-    "c": "show",
     "i": "red-garter-saloon",
     "n": "Red Garter Saloon",
     "lat": 41.482166,
-    "lng": -82.687658
+    "lng": -82.687658,
+    "c": "show",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "shop",
     "i": "registration-desk-and-store",
     "n": "Registration Desk and Store",
     "lat": 41.48832,
-    "lng": -82.689909
+    "lng": -82.689909,
+    "c": "shop",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "parking",
     "i": "registration-parking",
     "n": "Registration Parking",
     "lat": 41.488589,
-    "lng": -82.690425
+    "lng": -82.690425,
+    "c": "parking",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Main Midway",
-    "c": "restroom",
     "i": "restrooms",
     "n": "Restrooms",
     "lat": 41.480646,
-    "lng": -82.679876
+    "lng": -82.679876,
+    "c": "restroom",
+    "a": "Main Midway"
   },
   {
-    "a": "Main Midway",
-    "c": "restroom",
     "i": "restrooms-2",
     "n": "Restrooms",
     "lat": 41.478892,
-    "lng": -82.679018
+    "lng": -82.679018,
+    "c": "restroom",
+    "a": "Main Midway"
   },
   {
-    "a": "Cedar Point",
-    "c": "restroom",
     "i": "restrooms-3",
     "n": "Restrooms",
     "lat": 41.478687,
-    "lng": -82.682556
+    "lng": -82.682556,
+    "c": "restroom",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point",
-    "c": "restroom",
     "i": "restrooms-4",
     "n": "Restrooms",
     "lat": 41.480012,
-    "lng": -82.684946
+    "lng": -82.684946,
+    "c": "restroom",
+    "a": "Cedar Point"
   },
   {
-    "a": "Main Midway",
-    "c": "restroom",
     "i": "restrooms-5",
     "n": "Restrooms",
     "lat": 41.480816,
-    "lng": -82.681559
+    "lng": -82.681559,
+    "c": "restroom",
+    "a": "Main Midway"
   },
   {
-    "a": "Main Midway",
-    "c": "restroom",
     "i": "restrooms-6",
     "n": "Restrooms",
     "lat": 41.481094,
-    "lng": -82.681883
+    "lng": -82.681883,
+    "c": "restroom",
+    "a": "Main Midway"
   },
   {
-    "a": "Cedar Point",
-    "c": "restroom",
     "i": "restrooms-7",
     "n": "Restrooms",
     "lat": 41.477009,
-    "lng": -82.680863
+    "lng": -82.680863,
+    "c": "restroom",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "restroom",
     "i": "restrooms-8",
     "n": "Restrooms",
     "lat": 41.487041,
-    "lng": -82.685998
+    "lng": -82.685998,
+    "c": "restroom",
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "restroom",
     "i": "restrooms-9",
     "n": "Restrooms",
     "lat": 41.486477,
-    "lng": -82.685068
+    "lng": -82.685068,
+    "c": "restroom",
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "restroom",
     "i": "restrooms-10",
     "n": "Restrooms",
     "lat": 41.48962,
-    "lng": -82.689932
+    "lng": -82.689932,
+    "c": "restroom",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "restroom",
     "i": "restrooms-11",
     "n": "Restrooms",
     "lat": 41.488005,
-    "lng": -82.687707
+    "lng": -82.687707,
+    "c": "restroom",
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Main Midway",
-    "c": "restroom",
     "i": "restrooms-12",
     "n": "Restrooms",
     "lat": 41.482365,
-    "lng": -82.682977
+    "lng": -82.682977,
+    "c": "restroom",
+    "a": "Main Midway"
   },
   {
-    "a": "Gemini Midway",
-    "c": "restroom",
     "i": "restrooms-13",
     "n": "Restrooms",
     "lat": 41.484728,
-    "lng": -82.686097
+    "lng": -82.686097,
+    "c": "restroom",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Millennium Midway",
-    "c": "restroom",
     "i": "restrooms-14",
     "n": "Restrooms",
     "lat": 41.481592,
-    "lng": -82.685517
+    "lng": -82.685517,
+    "c": "restroom",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Cedar Point",
-    "c": "restroom",
     "i": "restrooms-15",
     "n": "Restrooms",
     "lat": 41.477809,
-    "lng": -82.679318
+    "lng": -82.679318,
+    "c": "restroom",
+    "a": "Cedar Point"
   },
   {
-    "a": "Main Midway",
-    "c": "restroom",
     "i": "restrooms-16",
     "n": "Restrooms",
     "lat": 41.479186,
-    "lng": -82.681016
+    "lng": -82.681016,
+    "c": "restroom",
+    "a": "Main Midway"
   },
   {
-    "a": "Gemini Midway",
-    "c": "restroom",
     "i": "restrooms-17",
     "n": "Restrooms",
     "lat": 41.486284,
-    "lng": -82.690272
+    "lng": -82.690272,
+    "c": "restroom",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Millennium Midway",
-    "c": "restroom",
     "i": "restrooms-18",
     "n": "Restrooms",
     "lat": 41.482261,
-    "lng": -82.687982
+    "lng": -82.687982,
+    "c": "restroom",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Frontier Town",
-    "c": "restroom",
     "i": "restrooms-19",
     "n": "Restrooms",
     "lat": 41.484686,
-    "lng": -82.690712
+    "lng": -82.690712,
+    "c": "restroom",
+    "a": "Frontier Town"
   },
   {
-    "a": "Frontier Town",
-    "c": "restroom",
     "i": "restrooms-20",
     "n": "Restrooms",
     "lat": 41.48614,
-    "lng": -82.691676
+    "lng": -82.691676,
+    "c": "restroom",
+    "a": "Frontier Town"
   },
   {
-    "a": "Frontier Trail",
-    "c": "restroom",
     "i": "restrooms-21",
     "n": "Restrooms",
     "lat": 41.483402,
-    "lng": -82.690495
+    "lng": -82.690495,
+    "c": "restroom",
+    "a": "Frontier Trail"
   },
   {
-    "a": "Camp Snoopy",
-    "c": "restroom",
     "i": "restrooms-22",
     "n": "Restrooms",
     "lat": 41.485319,
-    "lng": -82.687741
+    "lng": -82.687741,
+    "c": "restroom",
+    "a": "Camp Snoopy"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "restroom",
     "i": "restrooms-23",
     "n": "Restrooms",
     "lat": 41.488701,
-    "lng": -82.685547
+    "lng": -82.685547,
+    "c": "restroom",
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "restroom",
     "i": "restrooms-24",
     "n": "Restrooms",
     "lat": 41.490523,
-    "lng": -82.689638
+    "lng": -82.689638,
+    "c": "restroom",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Frontier Trail",
-    "c": "restroom",
     "i": "restrooms-25",
     "n": "Restrooms",
     "lat": 41.484381,
-    "lng": -82.688637
+    "lng": -82.688637,
+    "c": "restroom",
+    "a": "Frontier Trail"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "restroom",
     "i": "restrooms-26",
     "n": "Restrooms",
     "lat": 41.491475,
-    "lng": -82.68811
+    "lng": -82.68811,
+    "c": "restroom",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 42,
-      "alone": null
-    },
     "i": "riptide-raceway",
     "n": "Riptide Raceway",
     "lat": 41.487897,
-    "lng": -82.685108
-  },
-  {
-    "a": "Kiddy Kingdom",
+    "lng": -82.685108,
     "c": "ride",
     "h": {
-      "max": 54,
-      "min": null,
-      "alone": null
+      "min": 42,
+      "alone": null,
+      "max": null
     },
+    "a": "Cedar Point Shores"
+  },
+  {
     "i": "rock-spin-turn",
     "n": "Rock, Spin, & Turn",
     "lat": 41.480911,
-    "lng": -82.681086
+    "lng": -82.681086,
+    "c": "ride",
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 54
+    }
   },
   {
-    "a": "Kiddy Kingdom",
-    "c": "ride",
-    "h": {
-      "max": 54,
-      "min": null,
-      "alone": null
-    },
     "i": "roto-whip",
     "n": "Roto Whip",
     "lat": 41.481077,
-    "lng": -82.680819
+    "lng": -82.680819,
+    "c": "ride",
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 54
+    }
   },
   {
-    "a": "Millennium Midway",
+    "i": "rougarou",
+    "n": "Rougarou",
+    "lat": 41.482755,
+    "lng": -82.686793,
     "c": "coaster",
+    "a": "Millennium Midway",
     "e": [
       {
-        "n": "Rougarou Fastlane Queue",
         "lat": 41.482371,
         "lng": -82.68653,
+        "n": "Rougarou Fastlane Queue",
         "src": {
           "by": "osm_named_queue",
           "osm": "w849649249"
         }
       },
       {
-        "n": "Rougarou Standby Queue",
         "lat": 41.482338,
         "lng": -82.686767,
+        "n": "Rougarou Standby Queue",
         "src": {
           "by": "osm_named_queue",
           "osm": "w849650692"
@@ -1913,1561 +1917,1561 @@
       }
     ],
     "h": {
-      "max": 78,
       "min": 54,
-      "alone": null
-    },
-    "i": "rougarou",
-    "n": "Rougarou",
-    "lat": 41.482755,
-    "lng": -82.686793
+      "alone": null,
+      "max": 78
+    }
   },
   {
-    "a": "Millennium Midway",
-    "c": "service",
     "i": "rougarou-lockers",
     "n": "Rougarou Lockers",
     "lat": 41.48249,
-    "lng": -82.686535
+    "lng": -82.686535,
+    "c": "service",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Millennium Midway",
-    "c": "shop",
     "i": "rougarou-photos",
     "n": "Rougarou Photos",
     "lat": 41.482466,
-    "lng": -82.686709
+    "lng": -82.686709,
+    "c": "shop",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 42,
-      "alone": 48
-    },
     "i": "runaway-rapids",
     "n": "Runaway Rapids",
     "lat": 41.488126,
-    "lng": -82.685948
+    "lng": -82.685948,
+    "c": "ride",
+    "a": "Cedar Point Shores",
+    "h": {
+      "min": 42,
+      "alone": 48,
+      "max": null
+    }
   },
   {
-    "a": "Frontier Town",
-    "c": "food",
     "i": "sagebrush-sue-s-frontier-eats",
     "n": "Sagebrush Sue's Frontier Eats",
     "lat": 41.485926,
-    "lng": -82.692496
+    "lng": -82.692496,
+    "c": "food",
+    "a": "Frontier Town"
   },
   {
-    "a": "Cedar Point",
-    "c": "show",
     "i": "sand-bar-stage",
     "n": "Sand Bar Stage",
     "lat": 41.485107,
-    "lng": -82.682756
+    "lng": -82.682756,
+    "c": "show",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "shop",
     "i": "sandals-souvenirs-sundries",
     "n": "Sandals Souvenirs & Sundries",
     "lat": 41.487282,
-    "lng": -82.686198
+    "lng": -82.686198,
+    "c": "shop",
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Cedar Point",
-    "c": "food",
     "i": "sandbar",
     "n": "Sandbar",
     "lat": 41.485192,
-    "lng": -82.682895
+    "lng": -82.682895,
+    "c": "food",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "food",
     "i": "schooner-s-bayside-bar",
     "n": "Schooner's Bayside Bar",
     "lat": 41.488487,
-    "lng": -82.68623
+    "lng": -82.68623,
+    "c": "food",
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Main Midway",
-    "c": "service",
     "i": "services",
     "n": "Services",
     "lat": 41.481677,
-    "lng": -82.682624
+    "lng": -82.682624,
+    "c": "service",
+    "a": "Main Midway"
   },
   {
-    "a": "Cedar Point",
-    "c": "service",
     "i": "services-2",
     "n": "Services",
     "lat": 41.480128,
-    "lng": -82.685035
+    "lng": -82.685035,
+    "c": "service",
+    "a": "Cedar Point"
   },
   {
-    "a": "Cedar Point",
-    "c": "service",
     "i": "services-3",
     "n": "Services",
     "lat": 41.4783,
-    "lng": -82.678589
+    "lng": -82.678589,
+    "c": "service",
+    "a": "Cedar Point"
   },
   {
-    "a": "Gemini Midway",
-    "c": "service",
     "i": "services-4",
     "n": "Services",
     "lat": 41.484,
-    "lng": -82.686026
+    "lng": -82.686026,
+    "c": "service",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Millennium Midway",
-    "c": "service",
     "i": "services-5",
     "n": "Services",
     "lat": 41.482124,
-    "lng": -82.687778
+    "lng": -82.687778,
+    "c": "service",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Main Midway",
-    "c": "service",
     "i": "services-6",
     "n": "Services",
     "lat": 41.480178,
-    "lng": -82.680517
+    "lng": -82.680517,
+    "c": "service",
+    "a": "Main Midway"
   },
   {
-    "a": "Frontier Town",
-    "c": "service",
     "i": "services-7",
     "n": "Services",
     "lat": 41.484656,
-    "lng": -82.691353
+    "lng": -82.691353,
+    "c": "service",
+    "a": "Frontier Town"
   },
   {
-    "a": "Cedar Point",
-    "c": "service",
     "i": "services-8",
     "n": "Services",
     "lat": 41.484449,
-    "lng": -82.683217
+    "lng": -82.683217,
+    "c": "service",
+    "a": "Cedar Point"
   },
   {
-    "a": "Frontier Town",
-    "c": "service",
     "i": "services-9",
     "n": "Services",
     "lat": 41.486066,
-    "lng": -82.691758
+    "lng": -82.691758,
+    "c": "service",
+    "a": "Frontier Town"
   },
   {
-    "a": "Cedar Point",
-    "c": "service",
     "i": "services-10",
     "n": "Services",
     "lat": 41.485729,
-    "lng": -82.686283
+    "lng": -82.686283,
+    "c": "service",
+    "a": "Cedar Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "service",
     "i": "services-11",
     "n": "Services",
     "lat": 41.4883,
-    "lng": -82.689868
+    "lng": -82.689868,
+    "c": "service",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Main Midway",
-    "c": "service",
     "i": "services-12",
     "n": "Services",
     "lat": 41.478401,
-    "lng": -82.679664
+    "lng": -82.679664,
+    "c": "service",
+    "a": "Main Midway"
   },
   {
-    "a": "Millennium Midway",
-    "c": "coaster",
-    "h": {
-      "max": null,
-      "min": 48,
-      "alone": null
-    },
     "i": "siren-s-curse",
     "n": "Siren's Curse",
     "lat": 41.480929,
-    "lng": -82.685183
+    "lng": -82.685183,
+    "c": "coaster",
+    "a": "Millennium Midway",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-225",
     "n": "Site 225",
     "lat": 41.488945,
-    "lng": -82.690743
+    "lng": -82.690743,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-226",
     "n": "Site 226",
     "lat": 41.488881,
-    "lng": -82.690836
+    "lng": -82.690836,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-227",
     "n": "Site 227",
     "lat": 41.488831,
-    "lng": -82.690966
+    "lng": -82.690966,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-228",
     "n": "Site 228",
     "lat": 41.488773,
-    "lng": -82.69106
+    "lng": -82.69106,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-229",
     "n": "Site 229",
     "lat": 41.488688,
-    "lng": -82.691139
+    "lng": -82.691139,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-230",
     "n": "Site 230",
     "lat": 41.48862,
-    "lng": -82.691216
+    "lng": -82.691216,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-231",
     "n": "Site 231",
     "lat": 41.488554,
-    "lng": -82.691312
+    "lng": -82.691312,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-232",
     "n": "Site 232",
     "lat": 41.488494,
-    "lng": -82.691407
+    "lng": -82.691407,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-233",
     "n": "Site 233",
     "lat": 41.48845,
-    "lng": -82.691494
+    "lng": -82.691494,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-234",
     "n": "Site 234",
     "lat": 41.488408,
-    "lng": -82.691596
+    "lng": -82.691596,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-235",
     "n": "Site 235",
     "lat": 41.488367,
-    "lng": -82.691696
+    "lng": -82.691696,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-236",
     "n": "Site 236",
     "lat": 41.488331,
-    "lng": -82.691819
+    "lng": -82.691819,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-237",
     "n": "Site 237",
     "lat": 41.488306,
-    "lng": -82.691969
+    "lng": -82.691969,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-238",
     "n": "Site 238",
     "lat": 41.488277,
-    "lng": -82.692096
+    "lng": -82.692096,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-239",
     "n": "Site 239",
     "lat": 41.488257,
-    "lng": -82.69223
+    "lng": -82.69223,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-240",
     "n": "Site 240",
     "lat": 41.488246,
-    "lng": -82.692361
+    "lng": -82.692361,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-241",
     "n": "Site 241",
     "lat": 41.488235,
-    "lng": -82.692483
+    "lng": -82.692483,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-242",
     "n": "Site 242",
     "lat": 41.488224,
-    "lng": -82.692609
+    "lng": -82.692609,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-243",
     "n": "Site 243",
     "lat": 41.488208,
-    "lng": -82.692715
+    "lng": -82.692715,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-244",
     "n": "Site 244",
     "lat": 41.488191,
-    "lng": -82.692832
+    "lng": -82.692832,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-245",
     "n": "Site 245",
     "lat": 41.487667,
-    "lng": -82.693173
+    "lng": -82.693173,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-246",
     "n": "Site 246",
     "lat": 41.487648,
-    "lng": -82.693234
+    "lng": -82.693234,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-247",
     "n": "Site 247",
     "lat": 41.487615,
-    "lng": -82.693287
+    "lng": -82.693287,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-248",
     "n": "Site 248",
     "lat": 41.487574,
-    "lng": -82.69332
+    "lng": -82.69332,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-249",
     "n": "Site 249",
     "lat": 41.487522,
-    "lng": -82.693328
+    "lng": -82.693328,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-250",
     "n": "Site 250",
     "lat": 41.487476,
-    "lng": -82.693317
+    "lng": -82.693317,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-251",
     "n": "Site 251",
     "lat": 41.487431,
-    "lng": -82.693278
+    "lng": -82.693278,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-252",
     "n": "Site 252",
     "lat": 41.487403,
-    "lng": -82.693228
+    "lng": -82.693228,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-253",
     "n": "Site 253",
     "lat": 41.487386,
-    "lng": -82.693161
+    "lng": -82.693161,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-254",
     "n": "Site 254",
     "lat": 41.487396,
-    "lng": -82.693098
+    "lng": -82.693098,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-255",
     "n": "Site 255",
     "lat": 41.487415,
-    "lng": -82.693035
+    "lng": -82.693035,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-256",
     "n": "Site 256",
     "lat": 41.487454,
-    "lng": -82.692982
+    "lng": -82.692982,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-257",
     "n": "Site 257",
     "lat": 41.487502,
-    "lng": -82.692958
+    "lng": -82.692958,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-258",
     "n": "Site 258",
     "lat": 41.487552,
-    "lng": -82.692871
+    "lng": -82.692871,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-259",
     "n": "Site 259",
     "lat": 41.487752,
-    "lng": -82.692676
+    "lng": -82.692676,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-260",
     "n": "Site 260",
     "lat": 41.487849,
-    "lng": -82.692846
+    "lng": -82.692846,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-261",
     "n": "Site 261",
     "lat": 41.487804,
-    "lng": -82.692582
+    "lng": -82.692582,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-262",
     "n": "Site 262",
     "lat": 41.4879,
-    "lng": -82.692741
+    "lng": -82.692741,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-263",
     "n": "Site 263",
     "lat": 41.487845,
-    "lng": -82.692516
+    "lng": -82.692516,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-264",
     "n": "Site 264",
     "lat": 41.487959,
-    "lng": -82.692653
+    "lng": -82.692653,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-265",
     "n": "Site 265",
     "lat": 41.487901,
-    "lng": -82.692424
+    "lng": -82.692424,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-266",
     "n": "Site 266",
     "lat": 41.488005,
-    "lng": -82.692559
+    "lng": -82.692559,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-267",
     "n": "Site 267",
     "lat": 41.48794,
-    "lng": -82.692338
+    "lng": -82.692338,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-268",
     "n": "Site 268",
     "lat": 41.48806,
-    "lng": -82.692449
+    "lng": -82.692449,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-269",
     "n": "Site 269",
     "lat": 41.487978,
-    "lng": -82.692249
+    "lng": -82.692249,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-270",
     "n": "Site 270",
     "lat": 41.488105,
-    "lng": -82.69234
+    "lng": -82.69234,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-271",
     "n": "Site 271",
     "lat": 41.488025,
-    "lng": -82.69215
+    "lng": -82.69215,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-272",
     "n": "Site 272",
     "lat": 41.488054,
-    "lng": -82.692061
+    "lng": -82.692061,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-273",
     "n": "Site 273",
     "lat": 41.488082,
-    "lng": -82.691974
+    "lng": -82.691974,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-274",
     "n": "Site 274",
     "lat": 41.488107,
-    "lng": -82.691886
+    "lng": -82.691886,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-275",
     "n": "Site 275",
     "lat": 41.48813,
-    "lng": -82.691788
+    "lng": -82.691788,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-276",
     "n": "Site 276",
     "lat": 41.488149,
-    "lng": -82.691695
+    "lng": -82.691695,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-277",
     "n": "Site 277",
     "lat": 41.488167,
-    "lng": -82.691593
+    "lng": -82.691593,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-278",
     "n": "Site 278",
     "lat": 41.488182,
-    "lng": -82.691492
+    "lng": -82.691492,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-279",
     "n": "Site 279",
     "lat": 41.48822,
-    "lng": -82.691424
+    "lng": -82.691424,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-280",
     "n": "Site 280",
     "lat": 41.488259,
-    "lng": -82.691397
+    "lng": -82.691397,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-281",
     "n": "Site 281",
     "lat": 41.488344,
-    "lng": -82.691408
+    "lng": -82.691408,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-282",
     "n": "Site 282",
     "lat": 41.488385,
-    "lng": -82.691428
+    "lng": -82.691428,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-283",
     "n": "Site 283",
     "lat": 41.48841,
-    "lng": -82.691441
+    "lng": -82.691441,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-284",
     "n": "Site 284",
     "lat": 41.489058,
-    "lng": -82.689853
+    "lng": -82.689853,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-285",
     "n": "Site 285",
     "lat": 41.489057,
-    "lng": -82.689751
+    "lng": -82.689751,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-286",
     "n": "Site 286",
     "lat": 41.489069,
-    "lng": -82.68964
+    "lng": -82.68964,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-287",
     "n": "Site 287",
     "lat": 41.48909,
-    "lng": -82.689554
+    "lng": -82.689554,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-288",
     "n": "Site 288",
     "lat": 41.48913,
-    "lng": -82.689467
+    "lng": -82.689467,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-289",
     "n": "Site 289",
     "lat": 41.489166,
-    "lng": -82.689391
+    "lng": -82.689391,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-290",
     "n": "Site 290",
     "lat": 41.489223,
-    "lng": -82.689322
+    "lng": -82.689322,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-291",
     "n": "Site 291",
     "lat": 41.489274,
-    "lng": -82.689276
+    "lng": -82.689276,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-292",
     "n": "Site 292",
     "lat": 41.489332,
-    "lng": -82.689242
+    "lng": -82.689242,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-293",
     "n": "Site 293",
     "lat": 41.48939,
-    "lng": -82.68922
+    "lng": -82.68922,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-294",
     "n": "Site 294",
     "lat": 41.489464,
-    "lng": -82.689208
+    "lng": -82.689208,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-295",
     "n": "Site 295",
     "lat": 41.48954,
-    "lng": -82.689202
+    "lng": -82.689202,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-296",
     "n": "Site 296",
     "lat": 41.489621,
-    "lng": -82.689203
+    "lng": -82.689203,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-297",
     "n": "Site 297",
     "lat": 41.48971,
-    "lng": -82.689202
+    "lng": -82.689202,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-298",
     "n": "Site 298",
     "lat": 41.489784,
-    "lng": -82.689201
+    "lng": -82.689201,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-299",
     "n": "Site 299",
     "lat": 41.489868,
-    "lng": -82.689199
+    "lng": -82.689199,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-300",
     "n": "Site 300",
     "lat": 41.489931,
-    "lng": -82.689199
+    "lng": -82.689199,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-301",
     "n": "Site 301",
     "lat": 41.489989,
-    "lng": -82.689228
+    "lng": -82.689228,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-302",
     "n": "Site 302",
     "lat": 41.490021,
-    "lng": -82.689276
+    "lng": -82.689276,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-303",
     "n": "Site 303",
     "lat": 41.490036,
-    "lng": -82.689308
+    "lng": -82.689308,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-304",
     "n": "Site 304",
     "lat": 41.490047,
-    "lng": -82.689356
+    "lng": -82.689356,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-307",
     "n": "Site 307",
     "lat": 41.489058,
-    "lng": -82.689737
+    "lng": -82.689737,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-308",
     "n": "Site 308",
     "lat": 41.489077,
-    "lng": -82.689609
+    "lng": -82.689609,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-309",
     "n": "Site 309",
     "lat": 41.489145,
-    "lng": -82.689435
+    "lng": -82.689435,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-310",
     "n": "Site 310",
     "lat": 41.489249,
-    "lng": -82.689291
+    "lng": -82.689291,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-311",
     "n": "Site 311",
     "lat": 41.489376,
-    "lng": -82.689222
+    "lng": -82.689222,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-312",
     "n": "Site 312",
     "lat": 41.489579,
-    "lng": -82.689202
+    "lng": -82.689202,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-313",
     "n": "Site 313",
     "lat": 41.489665,
-    "lng": -82.689202
+    "lng": -82.689202,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-314",
     "n": "Site 314",
     "lat": 41.489743,
-    "lng": -82.689201
+    "lng": -82.689201,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-315",
     "n": "Site 315",
     "lat": 41.489824,
-    "lng": -82.6892
+    "lng": -82.6892,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-316",
     "n": "Site 316",
     "lat": 41.489933,
-    "lng": -82.689571
+    "lng": -82.689571,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-317",
     "n": "Site 317",
     "lat": 41.489884,
-    "lng": -82.689612
+    "lng": -82.689612,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-318",
     "n": "Site 318",
     "lat": 41.489837,
-    "lng": -82.68969
+    "lng": -82.68969,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-319",
     "n": "Site 319",
     "lat": 41.489804,
-    "lng": -82.689815
+    "lng": -82.689815,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-320",
     "n": "Site 320",
     "lat": 41.489306,
-    "lng": -82.690065
+    "lng": -82.690065,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-321",
     "n": "Site 321",
     "lat": 41.489332,
-    "lng": -82.689843
+    "lng": -82.689843,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-401",
     "n": "Site 401",
     "lat": 41.4905,
-    "lng": -82.688991
+    "lng": -82.688991,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-402",
     "n": "Site 402",
     "lat": 41.490575,
-    "lng": -82.688944
+    "lng": -82.688944,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-403",
     "n": "Site 403",
     "lat": 41.490678,
-    "lng": -82.688891
+    "lng": -82.688891,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-404",
     "n": "Site 404",
     "lat": 41.490779,
-    "lng": -82.688848
+    "lng": -82.688848,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-405",
     "n": "Site 405",
     "lat": 41.490884,
-    "lng": -82.688818
+    "lng": -82.688818,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-406",
     "n": "Site 406",
     "lat": 41.491,
-    "lng": -82.688785
+    "lng": -82.688785,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-407",
     "n": "Site 407",
     "lat": 41.491113,
-    "lng": -82.688753
+    "lng": -82.688753,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-408",
     "n": "Site 408",
     "lat": 41.491234,
-    "lng": -82.688712
+    "lng": -82.688712,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-409",
     "n": "Site 409",
     "lat": 41.490629,
-    "lng": -82.688917
+    "lng": -82.688917,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-410",
     "n": "Site 410",
     "lat": 41.490726,
-    "lng": -82.688867
+    "lng": -82.688867,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-411",
     "n": "Site 411",
     "lat": 41.490819,
-    "lng": -82.688837
+    "lng": -82.688837,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-412",
     "n": "Site 412",
     "lat": 41.49093,
-    "lng": -82.688805
+    "lng": -82.688805,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-413",
     "n": "Site 413",
     "lat": 41.491063,
-    "lng": -82.688767
+    "lng": -82.688767,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-414",
     "n": "Site 414",
     "lat": 41.491157,
-    "lng": -82.688739
+    "lng": -82.688739,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-415",
     "n": "Site 415",
     "lat": 41.491161,
-    "lng": -82.689091
+    "lng": -82.689091,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-416",
     "n": "Site 416",
     "lat": 41.49127,
-    "lng": -82.689059
+    "lng": -82.689059,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-417",
     "n": "Site 417",
     "lat": 41.490668,
-    "lng": -82.68927
+    "lng": -82.68927,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-418",
     "n": "Site 418",
     "lat": 41.490787,
-    "lng": -82.689217
+    "lng": -82.689217,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-419",
     "n": "Site 419",
     "lat": 41.490918,
-    "lng": -82.689164
+    "lng": -82.689164,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-420",
     "n": "Site 420",
     "lat": 41.491048,
-    "lng": -82.689117
+    "lng": -82.689117,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-421",
     "n": "Site 421",
     "lat": 41.491152,
-    "lng": -82.689093
+    "lng": -82.689093,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-422",
     "n": "Site 422",
     "lat": 41.49127,
-    "lng": -82.689059
+    "lng": -82.689059,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-423",
     "n": "Site 423",
     "lat": 41.491344,
-    "lng": -82.689037
+    "lng": -82.689037,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-424",
     "n": "Site 424",
     "lat": 41.491389,
-    "lng": -82.688999
+    "lng": -82.688999,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-425",
     "n": "Site 425",
     "lat": 41.49144,
-    "lng": -82.688904
+    "lng": -82.688904,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-501",
     "n": "Site 501",
     "lat": 41.490773,
-    "lng": -82.688449
+    "lng": -82.688449,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-502",
     "n": "Site 502",
     "lat": 41.490887,
-    "lng": -82.688416
+    "lng": -82.688416,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-503",
     "n": "Site 503",
     "lat": 41.490995,
-    "lng": -82.688384
+    "lng": -82.688384,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-504",
     "n": "Site 504",
     "lat": 41.491106,
-    "lng": -82.68835
+    "lng": -82.68835,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-505",
     "n": "Site 505",
     "lat": 41.491189,
-    "lng": -82.688311
+    "lng": -82.688311,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-506",
     "n": "Site 506",
     "lat": 41.491436,
-    "lng": -82.688264
+    "lng": -82.688264,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-507",
     "n": "Site 507",
     "lat": 41.490509,
-    "lng": -82.688202
+    "lng": -82.688202,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-508",
     "n": "Site 508",
     "lat": 41.490509,
-    "lng": -82.688019
+    "lng": -82.688019,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-509",
     "n": "Site 509",
     "lat": 41.490501,
-    "lng": -82.687875
+    "lng": -82.687875,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-510",
     "n": "Site 510",
     "lat": 41.490495,
-    "lng": -82.687753
+    "lng": -82.687753,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-511",
     "n": "Site 511",
     "lat": 41.490511,
-    "lng": -82.687597
+    "lng": -82.687597,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-512",
     "n": "Site 512",
     "lat": 41.490542,
-    "lng": -82.687482
+    "lng": -82.687482,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-513",
     "n": "Site 513",
     "lat": 41.490595,
-    "lng": -82.687368
+    "lng": -82.687368,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-514",
     "n": "Site 514",
     "lat": 41.490664,
-    "lng": -82.687265
+    "lng": -82.687265,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-515",
     "n": "Site 515",
     "lat": 41.490777,
-    "lng": -82.687548
+    "lng": -82.687548,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-516",
     "n": "Site 516",
     "lat": 41.490962,
-    "lng": -82.687543
+    "lng": -82.687543,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-517",
     "n": "Site 517",
     "lat": 41.491066,
-    "lng": -82.687561
+    "lng": -82.687561,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-518",
     "n": "Site 518",
     "lat": 41.49128,
-    "lng": -82.687605
+    "lng": -82.687605,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-519",
     "n": "Site 519",
     "lat": 41.491405,
-    "lng": -82.687684
+    "lng": -82.687684,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-520",
     "n": "Site 520",
     "lat": 41.490924,
-    "lng": -82.68754
+    "lng": -82.68754,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-521",
     "n": "Site 521",
     "lat": 41.491017,
-    "lng": -82.687547
+    "lng": -82.687547,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-522",
     "n": "Site 522",
     "lat": 41.491115,
-    "lng": -82.687576
+    "lng": -82.687576,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-523",
     "n": "Site 523",
     "lat": 41.491212,
-    "lng": -82.687579
+    "lng": -82.687579,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-524",
     "n": "Site 524",
     "lat": 41.49133,
-    "lng": -82.687634
+    "lng": -82.687634,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "campsite",
     "i": "site-525",
     "n": "Site 525",
     "lat": 41.491446,
-    "lng": -82.687694
+    "lng": -82.687694,
+    "c": "campsite",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Kiddy Kingdom",
-    "c": "ride",
-    "h": {
-      "max": 54,
-      "min": null,
-      "alone": null
-    },
     "i": "sky-fighters",
     "n": "Sky Fighters",
     "lat": 41.481011,
-    "lng": -82.680616
+    "lng": -82.680616,
+    "c": "ride",
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 54
+    }
   },
   {
-    "a": "Main Midway",
-    "c": "food",
     "i": "sky-ride-refreshments",
     "n": "Sky Ride Refreshments",
     "lat": 41.481954,
-    "lng": -82.683156
+    "lng": -82.683156,
+    "c": "food",
+    "a": "Main Midway"
   },
   {
-    "a": "Frontier Town",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 48,
-      "alone": null
-    },
     "i": "skyhawk",
     "n": "Skyhawk",
     "lat": 41.484388,
-    "lng": -82.690788
+    "lng": -82.690788,
+    "c": "ride",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "a": "Frontier Town"
   },
   {
-    "a": "Frontier Town",
-    "c": "service",
     "i": "skyhawk-lockers",
     "n": "Skyhawk Lockers",
     "lat": 41.484673,
-    "lng": -82.690739
+    "lng": -82.690739,
+    "c": "service",
+    "a": "Frontier Town"
   },
   {
-    "a": "Gemini Midway",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 44,
-      "alone": null
-    },
     "i": "slingshot",
     "n": "SlingShot",
     "lat": 41.486255,
-    "lng": -82.689952
+    "lng": -82.689952,
+    "c": "ride",
+    "a": "Gemini Midway",
+    "h": {
+      "min": 44,
+      "alone": null,
+      "max": null
+    }
   },
   {
-    "a": "Frontier Town",
+    "i": "snake-river-falls",
+    "n": "Snake River Falls",
+    "lat": 41.484121,
+    "lng": -82.691042,
     "c": "ride",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "a": "Frontier Town",
     "e": [
       {
-        "n": "Snake River Falls Fastlane Queue / Snake River Falls Standby Queue",
         "lat": 41.484261,
         "lng": -82.691029,
+        "n": "Snake River Falls Fastlane Queue / Snake River Falls Standby Queue",
         "src": {
           "by": "osm_named_queue",
           "osm": "w844461872"
         }
       }
     ],
-    "h": {
-      "max": null,
-      "min": 48,
-      "alone": null
-    },
-    "i": "snake-river-falls",
-    "n": "Snake River Falls",
-    "lat": 41.484121,
-    "lng": -82.691042,
     "note": "Closed for good at the end of the 2024 season — still on the OpenStreetMap drawing."
   },
   {
-    "a": "Camp Snoopy",
-    "c": "ride",
-    "h": {
-      "max": 54,
-      "min": 36,
-      "alone": null
-    },
     "i": "snoopy-bounce",
     "n": "Snoopy Bounce",
     "lat": 41.485817,
-    "lng": -82.688798
+    "lng": -82.688798,
+    "c": "ride",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": 54
+    },
+    "a": "Camp Snoopy"
   },
   {
-    "a": "Main Midway",
-    "c": "shop",
     "i": "snoopy-boutique",
     "n": "Snoopy Boutique",
     "lat": 41.481262,
-    "lng": -82.682006
+    "lng": -82.682006,
+    "c": "shop",
+    "a": "Main Midway"
   },
   {
-    "a": "Planet Snoopy",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 36,
-      "alone": null
-    },
     "i": "snoopy-s-deep-sea-divers",
     "n": "Snoopy's Deep Sea Divers",
     "lat": 41.481838,
-    "lng": -82.681277
-  },
-  {
-    "a": "Planet Snoopy",
+    "lng": -82.681277,
     "c": "ride",
     "h": {
-      "max": null,
       "min": 36,
-      "alone": null
+      "alone": null,
+      "max": null
     },
+    "a": "Planet Snoopy"
+  },
+  {
     "i": "snoopy-s-express-railroad",
     "n": "Snoopy's Express Railroad",
     "lat": 41.481655,
-    "lng": -82.681335
+    "lng": -82.681335,
+    "c": "ride",
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    }
   },
   {
-    "a": "Planet Snoopy",
-    "c": "ride",
-    "h": {
-      "max": 54,
-      "min": 36,
-      "alone": null
-    },
     "i": "snoopy-s-space-race",
     "n": "Snoopy's Space Race",
     "lat": 41.482053,
-    "lng": -82.681261
+    "lng": -82.681261,
+    "c": "ride",
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": 54
+    }
   },
   {
-    "a": "Kiddy Kingdom",
-    "c": "ride",
-    "h": {
-      "max": 54,
-      "min": null,
-      "alone": null
-    },
     "i": "space-age",
     "n": "Space Age",
     "lat": 41.480762,
-    "lng": -82.681364
+    "lng": -82.681364,
+    "c": "ride",
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 54
+    }
   },
   {
-    "a": "Gemini Midway",
-    "c": "shop",
     "i": "speed-freaks",
     "n": "Speed Freaks",
     "lat": 41.483963,
-    "lng": -82.685541
+    "lng": -82.685541,
+    "c": "shop",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Gemini Midway",
-    "c": "shop",
     "i": "speed-zone",
     "n": "Speed Zone",
     "lat": 41.482929,
-    "lng": -82.685011
+    "lng": -82.685011,
+    "c": "shop",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 36,
-      "alone": null
-    },
     "i": "splash2o",
     "n": "SplasH2O",
     "lat": 41.488399,
-    "lng": -82.687767
+    "lng": -82.687767,
+    "c": "ride",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    },
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Main Midway",
-    "c": "food",
     "i": "starbucks",
     "n": "Starbucks",
     "lat": 41.479315,
     "lng": -82.679831,
-    "tel": "+1 419-627-2106"
+    "c": "food",
+    "tel": "+1 419-627-2106",
+    "a": "Main Midway"
   },
   {
-    "a": "Frontier Town",
+    "i": "steel-vengeance",
+    "n": "Steel Vengeance",
+    "lat": 41.486115,
+    "lng": -82.693365,
     "c": "coaster",
+    "a": "Frontier Town",
     "e": [
       {
-        "n": "Steel Vengeance Queue",
         "lat": 41.486559,
         "lng": -82.692376,
+        "n": "Steel Vengeance Queue",
         "src": {
           "by": "osm_named_queue",
           "osm": "w853013784"
         }
       },
       {
-        "n": "Steel Vengeance Extended Queue",
         "lat": 41.486555,
         "lng": -82.691916,
+        "n": "Steel Vengeance Extended Queue",
         "src": {
           "by": "osm_named_queue",
           "osm": "w854077034"
@@ -3475,216 +3479,216 @@
       }
     ],
     "h": {
-      "max": null,
       "min": 52,
-      "alone": null
-    },
-    "i": "steel-vengeance",
-    "n": "Steel Vengeance",
-    "lat": 41.486115,
-    "lng": -82.693365
+      "alone": null,
+      "max": null
+    }
   },
   {
-    "a": "Frontier Town",
-    "c": "service",
     "i": "steel-vengeance-lockers",
     "n": "Steel Vengeance Lockers",
     "lat": 41.48652,
-    "lng": -82.69242
+    "lng": -82.69242,
+    "c": "service",
+    "a": "Frontier Town"
   },
   {
-    "a": "Frontier Town",
-    "c": "shop",
     "i": "steel-vengeance-photo-express",
     "n": "Steel Vengeance Photo Express",
     "lat": 41.48619,
-    "lng": -82.69304
+    "lng": -82.69304,
+    "c": "shop",
+    "a": "Frontier Town"
   },
   {
-    "a": "Frontier Town",
-    "c": "food",
     "i": "stockade-refreshments",
     "n": "Stockade Refreshments",
     "lat": 41.485961,
-    "lng": -82.690718
+    "lng": -82.690718,
+    "c": "food",
+    "a": "Frontier Town"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 46,
-      "alone": null
-    },
     "i": "storm-surge",
     "n": "Storm Surge",
     "lat": 41.487502,
-    "lng": -82.687199
+    "lng": -82.687199,
+    "c": "ride",
+    "h": {
+      "min": 46,
+      "alone": null,
+      "max": null
+    },
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "food",
     "i": "subway",
     "n": "Subway",
     "lat": 41.48668,
-    "lng": -82.685353
+    "lng": -82.685353,
+    "c": "food",
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Gemini Midway",
-    "c": "food",
     "i": "summer-brews",
     "n": "Summer Brews",
     "lat": 41.486009,
-    "lng": -82.689312
+    "lng": -82.689312,
+    "c": "food",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Cedar Point",
-    "c": "food",
     "i": "surf-lounge",
     "n": "Surf Lounge",
     "lat": 41.484469,
-    "lng": -82.683365
+    "lng": -82.683365,
+    "c": "food",
+    "a": "Cedar Point"
   },
   {
-    "a": "Main Midway",
-    "c": "food",
     "i": "sweet-shop",
     "n": "Sweet Shop",
     "lat": 41.481373,
-    "lng": -82.682154
+    "lng": -82.682154,
+    "c": "food",
+    "a": "Main Midway"
   },
   {
-    "a": "Main Midway",
-    "c": "food",
     "i": "sweets-n-treats",
     "n": "Sweets 'n Treats",
     "lat": 41.47875,
-    "lng": -82.679906
+    "lng": -82.679906,
+    "c": "food",
+    "a": "Main Midway"
   },
   {
-    "a": "Cedar Point",
-    "c": "food",
     "i": "tgi-friday-s",
     "n": "TGI Friday's",
     "lat": 41.48515,
-    "lng": -82.683507
+    "lng": -82.683507,
+    "c": "food",
+    "a": "Cedar Point"
   },
   {
-    "a": "Frontier Town",
-    "c": "shop",
     "i": "the-general-store",
     "n": "The General Store",
     "lat": 41.485765,
-    "lng": -82.691215
+    "lng": -82.691215,
+    "c": "shop",
+    "a": "Frontier Town"
   },
   {
-    "a": "Frontier Trail",
-    "c": "shop",
     "i": "the-glass-academy-glass-blowing-experience",
     "n": "The Glass Academy Glass Blowing Experience",
     "lat": 41.483609,
-    "lng": -82.691622
+    "lng": -82.691622,
+    "c": "shop",
+    "a": "Frontier Trail"
   },
   {
-    "a": "Lakeside Midway",
-    "c": "food",
     "i": "the-roost",
     "n": "The Roost",
     "lat": 41.481987,
-    "lng": -82.681162
+    "lng": -82.681162,
+    "c": "food",
+    "a": "Lakeside Midway"
   },
   {
-    "a": "Frontier Town",
-    "c": "food",
     "i": "the-roundup",
     "n": "The Roundup",
     "lat": 41.485588,
-    "lng": -82.692023
+    "lng": -82.692023,
+    "c": "food",
+    "a": "Frontier Town"
   },
   {
-    "a": "Frontier Trail",
-    "c": "food",
     "i": "the-wild-trunip",
     "n": "The Wild Trunip",
     "lat": 41.483689,
-    "lng": -82.69117
+    "lng": -82.69117,
+    "c": "food",
+    "a": "Frontier Trail"
   },
   {
-    "a": "Frontier Trail",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 46,
-      "alone": null
-    },
     "i": "thunder-canyon",
     "n": "Thunder Canyon",
     "lat": 41.483808,
-    "lng": -82.692503
+    "lng": -82.692503,
+    "c": "ride",
+    "h": {
+      "min": 46,
+      "alone": null,
+      "max": null
+    },
+    "a": "Frontier Trail"
   },
   {
-    "a": "Frontier Trail",
-    "c": "shop",
     "i": "thunder-canyon-dry-goods",
     "n": "Thunder Canyon Dry Goods",
     "lat": 41.483815,
-    "lng": -82.691632
+    "lng": -82.691632,
+    "c": "shop",
+    "a": "Frontier Trail"
   },
   {
-    "a": "Frontier Trail",
-    "c": "service",
     "i": "thunder-canyon-lockers",
     "n": "Thunder Canyon Lockers",
     "lat": 41.483235,
-    "lng": -82.690859
+    "lng": -82.690859,
+    "c": "service",
+    "a": "Frontier Trail"
   },
   {
-    "a": "Main Midway",
-    "c": "food",
     "i": "toft-s-ice-cream-parlor",
     "n": "Toft's Ice Cream Parlor",
     "lat": 41.479453,
-    "lng": -82.679932
+    "lng": -82.679932,
+    "c": "food",
+    "a": "Main Midway"
   },
   {
-    "a": "Cedar Point",
-    "c": "food",
     "i": "tomo-sushi-and-hibachi",
     "n": "Tomo Sushi and Hibachi",
     "lat": 41.484664,
-    "lng": -82.683582
+    "lng": -82.683582,
+    "c": "food",
+    "a": "Cedar Point"
   },
   {
-    "a": "Millennium Midway",
-    "c": "food",
     "i": "toot-sweets",
     "n": "Toot Sweets",
     "lat": 41.482137,
-    "lng": -82.688494
+    "lng": -82.688494,
+    "c": "food",
+    "a": "Millennium Midway"
   },
   {
-    "a": "Gemini Midway",
+    "i": "top-thrill-2",
+    "n": "Top Thrill 2",
+    "lat": 41.48283,
+    "lng": -82.685335,
     "c": "coaster",
+    "a": "Gemini Midway",
     "e": [
       {
-        "n": "Top Thrill 2 entrance",
         "lat": 41.484023,
         "lng": -82.686051,
+        "n": "Top Thrill 2 entrance",
         "src": {
           "by": "fused",
           "feature": "queue_entrance",
+          "confidence": "moderate",
           "sources": [
             "osm_named_queue",
             "osm_queue_name",
             "parks_api"
-          ],
-          "confidence": "moderate"
+          ]
         }
       },
       {
-        "n": "Top Thrill 2 Fastlane Queue / Top Thrill 2 Standby Queue",
         "lat": 41.484023,
         "lng": -82.686051,
+        "n": "Top Thrill 2 Fastlane Queue / Top Thrill 2 Standby Queue",
         "src": {
           "by": "osm_named_queue",
           "osm": "w106607194"
@@ -3692,240 +3696,236 @@
       }
     ],
     "h": {
-      "max": null,
       "min": 52,
-      "alone": null
-    },
-    "i": "top-thrill-2",
-    "n": "Top Thrill 2",
-    "lat": 41.48283,
-    "lng": -82.685335
+      "alone": null,
+      "max": null
+    }
   },
   {
-    "a": "Gemini Midway",
-    "c": "service",
     "i": "top-thrill-2-lockers",
     "n": "Top Thrill 2 Lockers",
     "lat": 41.48414,
-    "lng": -82.68605
+    "lng": -82.68605,
+    "c": "service",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Gemini Midway",
-    "c": "landmark",
     "i": "top-thrill-dragster-grandstand",
     "n": "Top Thrill Dragster Grandstand",
     "lat": 41.483493,
-    "lng": -82.685639
+    "lng": -82.685639,
+    "c": "landmark",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Frontier Town",
-    "c": "landmark",
     "i": "town-hall-museum",
     "n": "Town Hall Museum",
     "lat": 41.484506,
-    "lng": -82.691384
+    "lng": -82.691384,
+    "c": "landmark",
+    "a": "Frontier Town"
   },
   {
-    "a": "Frontier Town",
-    "c": "landmark",
     "i": "town-hall-guests-services",
     "n": "Town Hall- Guests Services",
     "lat": 41.484595,
-    "lng": -82.691338
+    "lng": -82.691338,
+    "c": "landmark",
+    "a": "Frontier Town"
   },
   {
-    "a": "Frontier Trail",
-    "c": "food",
     "i": "trail-tavern",
     "n": "Trail Tavern",
     "lat": 41.482391,
-    "lng": -82.689361
+    "lng": -82.689361,
+    "c": "food",
+    "a": "Frontier Trail"
   },
   {
-    "a": "Lighthouse Point",
-    "c": "landmark",
     "i": "u-s-coast-guard-station-historical",
     "n": "U.S. Coast Guard Station (Historical)",
     "lat": 41.488227,
-    "lng": -82.693401
+    "lng": -82.693401,
+    "c": "landmark",
+    "a": "Lighthouse Point"
   },
   {
-    "a": "Main Midway",
-    "c": "coaster",
-    "h": {
-      "max": null,
-      "min": 52,
-      "alone": null
-    },
     "i": "valravn",
     "n": "Valravn",
     "lat": 41.480269,
-    "lng": -82.683282
+    "lng": -82.683282,
+    "c": "coaster",
+    "a": "Main Midway",
+    "h": {
+      "min": 52,
+      "alone": null,
+      "max": null
+    }
   },
   {
-    "a": "Main Midway",
-    "c": "gate",
     "i": "valravn-gate",
     "n": "Valravn Gate",
     "lat": 41.48091,
-    "lng": -82.683633
+    "lng": -82.683633,
+    "c": "gate",
+    "a": "Main Midway"
   },
   {
-    "a": "Main Midway",
-    "c": "shop",
     "i": "valravn-gifts",
     "n": "Valravn Gifts",
     "lat": 41.480052,
-    "lng": -82.683011
+    "lng": -82.683011,
+    "c": "shop",
+    "a": "Main Midway"
   },
   {
-    "a": "Frontier Town",
-    "c": "food",
     "i": "wagon-wheel-pizza",
     "n": "Wagon Wheel Pizza",
     "lat": 41.484501,
-    "lng": -82.691535
+    "lng": -82.691535,
+    "c": "food",
+    "a": "Frontier Town"
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "ride",
-    "h": {
-      "max": 52,
-      "min": null,
-      "alone": null
-    },
     "i": "watterin-hole",
     "n": "Waterin' Hole",
     "lat": 41.487096,
     "lng": -82.684437,
+    "c": "ride",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 52
+    },
+    "a": "Cedar Point Shores",
     "note": "OpenStreetMap doubles the t; the sign does not."
   },
   {
-    "a": "Frontier Town",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 48,
-      "alone": null
-    },
     "i": "wave-swinger",
     "n": "Wave Swinger",
     "lat": 41.484403,
-    "lng": -82.692129
+    "lng": -82.692129,
+    "c": "ride",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "a": "Frontier Town"
   },
   {
-    "a": "Lakeside Midway",
-    "c": "coaster",
-    "h": {
-      "max": null,
-      "min": 42,
-      "alone": 48
-    },
     "i": "wild-mouse",
     "n": "Wild Mouse",
     "lat": 41.482065,
-    "lng": -82.680455
+    "lng": -82.680455,
+    "c": "coaster",
+    "a": "Lakeside Midway",
+    "h": {
+      "min": 42,
+      "alone": 48,
+      "max": null
+    }
   },
   {
-    "a": "Cedar Point Shores",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 48,
-      "alone": null
-    },
     "i": "wild-walleye",
     "n": "Wild Walleye",
     "lat": 41.487347,
-    "lng": -82.685017
+    "lng": -82.685017,
+    "c": "ride",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "a": "Cedar Point Shores"
   },
   {
-    "a": "Camp Snoopy",
-    "c": "coaster",
-    "h": {
-      "max": null,
-      "min": 36,
-      "alone": 45
-    },
     "i": "wilderness-run",
     "n": "Wilderness Run",
     "lat": 41.485632,
-    "lng": -82.688568
+    "lng": -82.688568,
+    "c": "coaster",
+    "h": {
+      "min": 36,
+      "alone": 45,
+      "max": null
+    },
+    "a": "Camp Snoopy"
   },
   {
-    "a": "Lakeside Midway",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 52,
-      "alone": null
-    },
     "i": "windseeker",
     "n": "WindSeeker",
     "lat": 41.482798,
-    "lng": -82.680689
+    "lng": -82.680689,
+    "c": "ride",
+    "h": {
+      "min": 52,
+      "alone": null,
+      "max": null
+    },
+    "a": "Lakeside Midway"
   },
   {
-    "a": "Lakeside Midway",
-    "c": "gate",
     "i": "windseeker-gate",
     "n": "Windseeker Gate",
     "lat": 41.482853,
-    "lng": -82.680903
+    "lng": -82.680903,
+    "c": "gate",
+    "a": "Lakeside Midway"
   },
   {
-    "a": "Camp Snoopy",
-    "c": "coaster",
-    "h": {
-      "max": null,
-      "min": 36,
-      "alone": 48
-    },
     "i": "woodstock-express",
     "n": "Woodstock Express",
     "lat": 41.485339,
-    "lng": -82.689132
+    "lng": -82.689132,
+    "c": "coaster",
+    "h": {
+      "min": 36,
+      "alone": 48,
+      "max": null
+    },
+    "a": "Camp Snoopy"
   },
   {
-    "a": "Camp Snoopy",
-    "c": "ride",
-    "h": {
-      "max": 54,
-      "min": 36,
-      "alone": null
-    },
     "i": "woodstock-s-airmail",
     "n": "Woodstock's Airmail",
     "lat": 41.485305,
-    "lng": -82.68817
+    "lng": -82.68817,
+    "c": "ride",
+    "a": "Camp Snoopy",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": 54
+    }
   },
   {
-    "a": "Planet Snoopy",
-    "c": "ride",
-    "h": {
-      "max": null,
-      "min": 36,
-      "alone": null
-    },
     "i": "woodstock-s-whirlybirds",
     "n": "Woodstock's Whirlybirds",
     "lat": 41.481691,
-    "lng": -82.681918
+    "lng": -82.681918,
+    "c": "ride",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    },
+    "a": "Planet Snoopy"
   },
   {
-    "a": "Gemini Midway",
-    "c": "food",
     "i": "yogurt-plus",
     "n": "Yogurt Plus",
     "lat": 41.485398,
-    "lng": -82.687656
+    "lng": -82.687656,
+    "c": "food",
+    "a": "Gemini Midway"
   },
   {
-    "a": "Lakeside Midway",
-    "c": "food",
     "i": "yogurt-plus-2",
     "n": "Yogurt Plus",
     "lat": 41.480648,
-    "lng": -82.679734
+    "lng": -82.679734,
+    "c": "food",
+    "a": "Lakeside Midway"
   }
 ]

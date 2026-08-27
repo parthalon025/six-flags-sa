@@ -3,9 +3,9 @@
   "venue": "big-kahunas",
   "basedOn": {
     "map": "2026-08-10",
-    "revisionId": "7255ab56-f013-4399-b8fe-195209a56eb2"
+    "revisionId": "c084f90e-0458-4211-a309-297f48345960"
   },
-  "bytes": 62095,
+  "bytes": 62096,
   "files": [
     {
       "path": "/venues/big-kahunas.gaps.json",
@@ -14,13 +14,13 @@
     },
     {
       "path": "/venues/big-kahunas.map.json",
-      "bytes": 39484,
-      "sha256": "36b67d5c6672c4af273d0f884054de590837d508c26f883f8e162a2341f0feac"
+      "bytes": 39485,
+      "sha256": "3e6cbd364ef4d8bbf730387833be4bd95735699099f0fdc1a1587243010eb87c"
     },
     {
       "path": "/venues/big-kahunas.pois.json",
       "bytes": 12171,
-      "sha256": "744c4ddc965455995f9441f9a0bfc8b6f42f49d392a4735c69ec0d1f72d9c98f"
+      "sha256": "93930e5483181c4afb2041f9e8f52df8dfc4e790332719f11c0d1731ac108ee7"
     },
     {
       "path": "/venues/big-kahunas/display/layered-atlas.visual.json",

@@ -4,32 +4,32 @@
   "venues": [
     {
       "id": "big-kahunas",
-      "kind": "theme-park",
       "name": "Big Kahuna's",
-      "bounds": {
-        "east": -86.46936,
-        "west": -86.47545,
-        "north": 30.39219,
-        "south": 30.38621
-      },
+      "locality": "Destin, Florida",
+      "kind": "theme-park",
       "center": {
         "lat": 30.3883,
         "lng": -86.473
       },
+      "bounds": {
+        "north": 30.39219,
+        "south": 30.38621,
+        "east": -86.46936,
+        "west": -86.47545
+      },
       "source": "OpenStreetMap contributors, ODbL",
       "credits": "Height requirements were compiled from Big Kahuna's own 2026 attraction pages. Ride and amenity positions combine OpenStreetMap (ODbL), Okaloosa County orthophotos of 1 March 2025 via Esri World Imagery, and the park's 2026 illustrated map.",
+      "generated": "2026-08-10",
       "coverage": {
         "ways": 173,
-        "layer": 4,
         "steps": 3,
         "bridge": 4,
-        "oneway": 38,
         "tunnel": 1,
+        "layer": 4,
+        "oneway": 38,
         "restricted": 0,
         "walkable_km": 23.7
       },
-      "locality": "Destin, Florida",
-      "generated": "2026-08-10",
       "map": "/venues/big-kahunas.map.json",
       "pois": "/venues/big-kahunas.pois.json",
       "gaps": "/venues/big-kahunas.gaps.json",
@@ -43,47 +43,47 @@
     },
     {
       "id": "cedar-point",
-      "kind": "theme-park",
       "name": "Cedar Point",
-      "bounds": {
-        "east": -82.67521,
-        "west": -82.69661,
-        "north": 41.4926,
-        "south": 41.4753
-      },
+      "locality": "Sandusky, Ohio",
+      "kind": "theme-park",
       "center": {
         "lat": 41.482602,
         "lng": -82.686185
       },
+      "bounds": {
+        "north": 41.4926,
+        "south": 41.4753,
+        "east": -82.67521,
+        "west": -82.69661
+      },
       "source": "OpenStreetMap contributors, ODbL",
+      "credits": "Height requirements were compiled from published 2026 Cedar Point height charts.",
       "camping": {
+        "hookup": "full",
+        "power": true,
         "amps": [
           30,
           50
         ],
-        "wifi": true,
-        "cable": true,
-        "power": true,
-        "sewer": true,
-        "tents": false,
         "water": true,
-        "hookup": "full",
+        "sewer": true,
+        "cable": true,
+        "wifi": true,
         "surface": "concrete",
-        "caravans": true
+        "caravans": true,
+        "tents": false
       },
-      "credits": "Height requirements were compiled from published 2026 Cedar Point height charts.",
+      "generated": "2026-08-09",
       "coverage": {
         "ways": 1125,
-        "layer": 37,
         "steps": 71,
         "bridge": 67,
-        "oneway": 248,
         "tunnel": 2,
+        "layer": 37,
+        "oneway": 248,
         "restricted": 135,
         "walkable_km": 88.3
       },
-      "locality": "Sandusky, Ohio",
-      "generated": "2026-08-09",
       "map": "/venues/cedar-point.map.json",
       "pois": "/venues/cedar-point.pois.json",
       "gaps": "/venues/cedar-point.gaps.json",
@@ -97,128 +97,128 @@
     },
     {
       "id": "kings-island",
-      "kind": "theme-park",
       "name": "Kings Island",
-      "lands": {
-        "day": {
-          "Area 72": {
-            "fill": "#EAE4F1",
-            "label": "#5C447E",
-            "stroke": "#D5CCE0"
-          },
-          "Rivertown": {
-            "fill": "#E4F1E4",
-            "label": "#447E44",
-            "stroke": "#CCE0CC"
-          },
-          "Soak City": {
-            "fill": "#E4EEF1",
-            "label": "#446F7E",
-            "stroke": "#CCDBE0"
-          },
-          "Coney Mall": {
-            "fill": "#F1EAE4",
-            "label": "#7E5C44",
-            "stroke": "#E0D5CC"
-          },
-          "Action Zone": {
-            "fill": "#E4ECF1",
-            "label": "#44667E",
-            "stroke": "#CCD8E0"
-          },
-          "Camp Snoopy": {
-            "fill": "#ECF1E4",
-            "label": "#667E44",
-            "stroke": "#D8E0CC"
-          },
-          "Planet Snoopy": {
-            "fill": "#F1EFE4",
-            "label": "#7E7644",
-            "stroke": "#E0DECC"
-          },
-          "Adventure Port": {
-            "fill": "#E4F1EF",
-            "label": "#447E76",
-            "stroke": "#CCE0DE"
-          },
-          "International Street": {
-            "fill": "#F1EEE4",
-            "label": "#7E6F44",
-            "stroke": "#E0DBCC"
-          }
-        },
-        "night": {
-          "Area 72": {
-            "fill": "#231D2A",
-            "label": "#9981BB",
-            "stroke": "#312A3C"
-          },
-          "Rivertown": {
-            "fill": "#1D2A1D",
-            "label": "#81BB81",
-            "stroke": "#2A3C2A"
-          },
-          "Soak City": {
-            "fill": "#1D272A",
-            "label": "#81ADBB",
-            "stroke": "#2A383C"
-          },
-          "Coney Mall": {
-            "fill": "#2A231D",
-            "label": "#BB9981",
-            "stroke": "#3C312A"
-          },
-          "Action Zone": {
-            "fill": "#1D252A",
-            "label": "#81A3BB",
-            "stroke": "#2A353C"
-          },
-          "Camp Snoopy": {
-            "fill": "#252A1D",
-            "label": "#A3BB81",
-            "stroke": "#353C2A"
-          },
-          "Planet Snoopy": {
-            "fill": "#2A281D",
-            "label": "#BBB381",
-            "stroke": "#3C3A2A"
-          },
-          "Adventure Port": {
-            "fill": "#1D2A28",
-            "label": "#81BBB3",
-            "stroke": "#2A3C3A"
-          },
-          "International Street": {
-            "fill": "#2A271D",
-            "label": "#BBAD81",
-            "stroke": "#3C382A"
-          }
-        }
-      },
-      "bounds": {
-        "east": -84.2595,
-        "west": -84.2775,
-        "north": 39.348,
-        "south": 39.3365
-      },
+      "locality": "Mason, Ohio",
+      "kind": "theme-park",
       "center": {
         "lat": 39.343828,
         "lng": -84.265811
       },
+      "bounds": {
+        "north": 39.348,
+        "south": 39.3365,
+        "east": -84.2595,
+        "west": -84.2775
+      },
       "source": "OpenStreetMap contributors, ODbL",
       "credits": "Height requirements were compiled from Kings Island Central and Theme Park Insider for the 2026 season.",
+      "lands": {
+        "night": {
+          "International Street": {
+            "fill": "#2A271D",
+            "stroke": "#3C382A",
+            "label": "#BBAD81"
+          },
+          "Coney Mall": {
+            "fill": "#2A231D",
+            "stroke": "#3C312A",
+            "label": "#BB9981"
+          },
+          "Rivertown": {
+            "fill": "#1D2A1D",
+            "stroke": "#2A3C2A",
+            "label": "#81BB81"
+          },
+          "Action Zone": {
+            "fill": "#1D252A",
+            "stroke": "#2A353C",
+            "label": "#81A3BB"
+          },
+          "Area 72": {
+            "fill": "#231D2A",
+            "stroke": "#312A3C",
+            "label": "#9981BB"
+          },
+          "Planet Snoopy": {
+            "fill": "#2A281D",
+            "stroke": "#3C3A2A",
+            "label": "#BBB381"
+          },
+          "Camp Snoopy": {
+            "fill": "#252A1D",
+            "stroke": "#353C2A",
+            "label": "#A3BB81"
+          },
+          "Adventure Port": {
+            "fill": "#1D2A28",
+            "stroke": "#2A3C3A",
+            "label": "#81BBB3"
+          },
+          "Soak City": {
+            "fill": "#1D272A",
+            "stroke": "#2A383C",
+            "label": "#81ADBB"
+          }
+        },
+        "day": {
+          "International Street": {
+            "fill": "#F1EEE4",
+            "stroke": "#E0DBCC",
+            "label": "#7E6F44"
+          },
+          "Coney Mall": {
+            "fill": "#F1EAE4",
+            "stroke": "#E0D5CC",
+            "label": "#7E5C44"
+          },
+          "Rivertown": {
+            "fill": "#E4F1E4",
+            "stroke": "#CCE0CC",
+            "label": "#447E44"
+          },
+          "Action Zone": {
+            "fill": "#E4ECF1",
+            "stroke": "#CCD8E0",
+            "label": "#44667E"
+          },
+          "Area 72": {
+            "fill": "#EAE4F1",
+            "stroke": "#D5CCE0",
+            "label": "#5C447E"
+          },
+          "Planet Snoopy": {
+            "fill": "#F1EFE4",
+            "stroke": "#E0DECC",
+            "label": "#7E7644"
+          },
+          "Camp Snoopy": {
+            "fill": "#ECF1E4",
+            "stroke": "#D8E0CC",
+            "label": "#667E44"
+          },
+          "Adventure Port": {
+            "fill": "#E4F1EF",
+            "stroke": "#CCE0DE",
+            "label": "#447E76"
+          },
+          "Soak City": {
+            "fill": "#E4EEF1",
+            "stroke": "#CCDBE0",
+            "label": "#446F7E"
+          }
+        }
+      },
+      "generated": "2026-08-09",
       "coverage": {
         "ways": 764,
-        "layer": 39,
         "steps": 2,
         "bridge": 36,
-        "oneway": 144,
         "tunnel": 3,
+        "layer": 39,
+        "oneway": 144,
         "restricted": 34,
         "walkable_km": 95.6
       },
-      "locality": "Mason, Ohio",
-      "generated": "2026-08-09",
       "map": "/venues/kings-island.map.json",
       "pois": "/venues/kings-island.pois.json",
       "gaps": "/venues/kings-island.gaps.json",
@@ -232,32 +232,32 @@
     },
     {
       "id": "six-flags-fiesta-texas",
-      "kind": "theme-park",
       "name": "Six Flags Fiesta Texas",
-      "bounds": {
-        "east": -98.60144,
-        "west": -98.61789,
-        "north": 29.60751,
-        "south": 29.59224
-      },
+      "locality": "San Antonio, Texas",
+      "kind": "theme-park",
       "center": {
         "lat": 29.599789,
         "lng": -98.608872
       },
+      "bounds": {
+        "north": 29.60751,
+        "south": 29.59224,
+        "east": -98.60144,
+        "west": -98.61789
+      },
       "source": "OpenStreetMap contributors, ODbL",
       "credits": "Height requirements were compiled from the park's own Guest Safety and Accessibility Guide and from published 2026 height charts.",
+      "generated": "2026-08-09",
       "coverage": {
         "ways": 975,
-        "layer": 44,
         "steps": 34,
         "bridge": 27,
-        "oneway": 137,
         "tunnel": 30,
+        "layer": 44,
+        "oneway": 137,
         "restricted": 52,
         "walkable_km": 116.1
       },
-      "locality": "San Antonio, Texas",
-      "generated": "2026-08-09",
       "map": "/venues/six-flags-fiesta-texas.map.json",
       "pois": "/venues/six-flags-fiesta-texas.pois.json",
       "gaps": "/venues/six-flags-fiesta-texas.gaps.json",
