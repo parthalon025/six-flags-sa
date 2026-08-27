@@ -142,6 +142,7 @@ function guestLibPatterns(manifest = loadModulesManifest()) {
 
 function isGuestBrowserPath(file, manifest = loadModulesManifest()) {
   const f = normalize(file);
+  if (!pathMatchesAny(f, ['apps/party-tracker/**', 'test/app/**'])) return false;
   if (pathMatchesAny(f, ['apps/party-tracker/app/api/**'])) return false;
   if (pathMatchesAny(f, ['packages/**'])) return false;
   if (pathMatchesAny(f, ['apps/party-tracker/lib/**'])) {
