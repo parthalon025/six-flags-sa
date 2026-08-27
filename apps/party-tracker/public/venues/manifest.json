@@ -176,7 +176,7 @@
   ],
   "generatedBinding": {
     "algorithm": "sha256-aggregate-v1",
-    "sha256": "5337cdf5554ff734a0eb85563dc6988d8714714bfed6c223dfeb5b23c3756cc3",
+    "sha256": "440a15c367bfb74f2b862c79c3c0c241fe696fe6bc82ef1ef7f1accbedac64a0",
     "files": [
       {
         "path": "apps/party-tracker/lib/venueIndex.js",
@@ -204,7 +204,7 @@
       },
       {
         "path": "apps/party-tracker/public/venues/cedar-point.pois.json",
-        "sha256": "99ab28c4bdd69f85a2624f86e4fae30ad34310f0e494dc48366119cb4290673a"
+        "sha256": "cfb7fd820dce8efacfc5906a46ad832c2669785c88e94d966e7436646616d75d"
       },
       {
         "path": "apps/party-tracker/public/venues/kings-island.gaps.json",

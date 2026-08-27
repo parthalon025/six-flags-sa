@@ -5,7 +5,7 @@ actually survived deduplication — at the cause, not by renaming the override k
 
 **Blocked by:** None
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Evidence
 
@@ -62,3 +62,41 @@ test that already covers the intended behaviour.
 - [ ] A test covers whichever cause was found (survivor id assignment, or override key resolution
       across dedup suffixes) and fails on its own message first
 - [ ] `npm run test:pre-merge-vertical` green
+
+## Root cause (answered 2026-08-27)
+
+The `-2` suffix is **not** a bug. `assignKeys` treats issued keys as permanent —
+*"Every key this venue has ever issued, live or retired… A number leaves this set never."*
+The ledger confirms two records per ride at identical coordinates:
+
+| key | name | osm | state |
+|---|---|---|---|
+| `lake-eerie-nor-easter` | `Lake Erie Nor'easter` (**corrected**) | — | retired |
+| `lake-eerie-nor-easter-2` | `Lake Eerie Nor'easter` (**raw OSM**) | `w106356823` | live |
+
+What happened: the override used to work, and the ledger recorded the **post-override** name.
+On a later rebuild the incoming OSM POI carried the **raw** name again. `assignKeys` step 1
+(match by OSM element) could not help — the old record had no `osm` field — so it fell through to
+step 2, which compares `baseKeyFor(rec.n)`. Ledger held `lake-erie-nor-easter`; the incoming POI
+hashed to `lake-eerie-nor-easter`. **The bases did not match**, so the key was retired, a fresh
+`-2` was issued, and the override — filed under the retired slug — became an orphan. The
+correction stopped applying and the park started shipping the misspelling.
+
+## Fix
+
+Re-keyed both overrides to the live ledger keys (`lake-eerie-nor-easter-2`, `watterin-hole-2`) and
+re-applied. This is the documented pattern, not a workaround — the adjacent suite already asserts
+it: *"slug-key overrides resolve via addressBook, not display name"* and *"KI Xtreme Skyflyer
+override is ledger-keyed and survives rename"*.
+
+Keying by **display name** cannot work for a rename override: `test/builder/unit.mjs` builds its
+address book from the *published* (post-override) pois, so an override naming the old spelling
+orphans itself the moment it succeeds. The ledger key is the only stable address across a rename.
+
+It is durable going forward because the live record now carries `osm: w106356823`, so step 1
+rematches on the OSM element and the key never rotates again.
+
+**Result:** Cedar Point ships `Lake Erie Nor'easter` and `Waterin' Hole`.
+`test/builder/unit.mjs` — 576 passed, 0 failed.
+
+Follow-on filed as ticket 27 (`--reapply` strips ledger `osm` provenance).
