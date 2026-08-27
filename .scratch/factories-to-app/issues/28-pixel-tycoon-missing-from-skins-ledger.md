@@ -5,7 +5,7 @@ strengthen `h14`'s probe so a skin cannot read BUILT while the app cannot resolv
 
 **Blocked by:** None
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Evidence
 
@@ -61,3 +61,7 @@ conversion h14 claims to have made.
 
 Check whether registering the skin changes what an existing venue's display pack compiles to
 before committing — this is a shipped-Skin ledger, not a config file.
+
+## Resolution
+
+Fixed in `40cc22f`. Registered in skins.json with a verified bakeKit; h14's probe now requires ledger resolution. custom-map ok.

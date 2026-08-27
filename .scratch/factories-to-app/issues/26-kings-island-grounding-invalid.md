@@ -6,7 +6,7 @@ object it reads.
 
 **Blocked by:** None
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Evidence
 
@@ -62,3 +62,7 @@ Until this closes, `npm run test:pre-merge-vertical` cannot stamp on any branch 
 Find out **why** the committed record drifted from what `validateGrounding` expects before
 regenerating it — a record that was written by a pipeline the validator no longer agrees with is a
 contract break worth naming, not just a stale file to rebake.
+
+## Resolution
+
+Fixed in `d0b3b87`. Re-harvested onto the NAIP schema from a real pinned tile; display-grounding 38/0.

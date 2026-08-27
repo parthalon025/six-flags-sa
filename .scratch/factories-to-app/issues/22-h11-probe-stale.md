@@ -5,7 +5,7 @@ overlay port actually landed in, and move its fixtures in `test/scripts/train-pl
 
 **Blocked by:** None
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Evidence
 
@@ -53,3 +53,7 @@ right; the probe is wrong.
 
 Do not "fix" this by relaxing the probe to a clause that cannot go false — the suite checks that
 every probe is satisfiable, discriminating, and minimal. The port is real; point the probe at it.
+
+## Resolution
+
+Fixed in `40cc22f`. h11's probe now checks reachability via wiredInto(); train-plan reports 18/18 with h11 BUILT.
