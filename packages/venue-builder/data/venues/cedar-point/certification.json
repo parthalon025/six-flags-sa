@@ -7,6 +7,7 @@
   },
   "certified": false,
   "certifiedAt": null,
+  "bundleFingerprint": "0c1e21d958f768e584e89e2f5b8bad02012eae9a7da5f95b29513f458c5038e9",
   "checks": [
     {
       "key": "checklist",
@@ -30,8 +31,8 @@
         "denominator": 1,
         "detail": "manifest and disk agree",
         "counts": {
-          "pois": 429,
-          "rides": 76,
+          "pois": 428,
+          "rides": 75,
           "heights": 74,
           "campsites": 146,
           "paths": 1125,
@@ -47,8 +48,8 @@
       "claim": "Path graph has ≤2 islands and every ride snaps to the network",
       "pass": false,
       "evidence": {
-        "numerator": 75,
-        "denominator": 76,
+        "numerator": 74,
+        "denominator": 75,
         "detail": "1 component(s), 1 ride(s) >35 m from network",
         "components": 1,
         "largestComponent": 4,
@@ -69,13 +70,26 @@
       "pass": true,
       "evidence": {
         "numerator": 74,
-        "denominator": 76,
-        "detail": "74 of 76 rides carry height rules",
+        "denominator": 75,
+        "detail": "74 of 75 rides carry height rules",
         "declaredAbsent": false
       },
       "confidence": "moderate",
       "falsifier": "A park with rides ships without height filter coverage",
       "soWhat": "Guests cannot filter by rider height offline without these rules"
+    },
+    {
+      "key": "false-rides",
+      "claim": "No height-chart headers or arcades ship as Rideable",
+      "pass": true,
+      "evidence": {
+        "numerator": 75,
+        "denominator": 75,
+        "detail": "no false rides in bundle"
+      },
+      "confidence": "high",
+      "falsifier": "OSM or height-chart ingest files amenity names as rides",
+      "soWhat": "Families see \"Check at the ride\" for places they cannot queue for"
     },
     {
       "key": "entrances",
@@ -110,9 +124,9 @@
       "claim": "Declared external adapters have caches or an honest gap note",
       "pass": true,
       "evidence": {
-        "numerator": 10,
-        "denominator": 10,
-        "detail": "10/10 caches, 0 gap(s); claims=61+38; attached=82",
+        "numerator": 12,
+        "denominator": 12,
+        "detail": "12/12 caches, 0 gap(s); claims=61+38; attached=81",
         "declared": [
           "parks-api",
           "queue-times",
@@ -123,14 +137,17 @@
           "mapillary-api",
           "accessibility-cloud",
           "project-sidewalk",
-          "openrouteservice"
+          "openrouteservice",
+          "esa-worldcover",
+          "overture-buildings"
         ],
         "missingRequired": [],
         "bySource": {
           "parks_api": 61,
-          "queue_times": 35,
+          "queue_times": 34,
           "wikidata": 2,
-          "open_meteo": 1
+          "open_meteo": 1,
+          "aerial": 1
         }
       },
       "confidence": "high",
@@ -166,10 +183,9 @@
         "key": "heights",
         "need": "Ride height requirements",
         "blocking": false,
-        "why": "2 of 76 rides at Cedar Point (Sandusky, Ohio) carry no rule, so each of them reads \"check at the ride\" and none of them can be filtered out for a child who is too small.",
+        "why": "1 of 75 rides at Cedar Point (Sandusky, Ohio) carry no rule, so each of them reads \"check at the ride\" and none of them can be filtered out for a child who is too small.",
         "targets": [
-          "Cedar Point Marina Pool",
-          "Main Arcade"
+          "Cedar Point Marina Pool"
         ],
         "ask": [
           "Find the published height requirement for each ride listed below at Cedar Point (Sandusky, Ohio).",
@@ -178,7 +194,7 @@
           "Write down where each number came from. If a ride is not on the park's site, leave it out entirely and say so — an omission is recoverable and a guess is not.",
           "Some of the list will not be rides. A midway game, an arcade, a lounge and a splash pool all arrive tagged as attractions and none of them has a height on a sign. Say which ones those are rather than inventing a rule for them — that answer is a fix to the category rules in scripts/lib/osm-tags.mjs, which helps every venue, not just this one."
         ],
-        "schema": "{\n  \"credits\": \"Height requirements were compiled from … for the 2026 season.\",\n  \"pois\": {\n    \"Cedar Point Marina Pool\": { \"h\": { \"min\": 48, \"alone\": null, \"max\": null }, \"note\": \"300 lb maximum.\" },\n    \"Main Arcade\": { \"h\": { \"min\": 0, \"alone\": null, \"max\": null } }\n  }\n}",
+        "schema": "{\n  \"credits\": \"Height requirements were compiled from … for the 2026 season.\",\n  \"pois\": {\n    \"Cedar Point Marina Pool\": { \"h\": { \"min\": 48, \"alone\": null, \"max\": null }, \"note\": \"300 lb maximum.\" }\n  }\n}",
         "rules": [
           "`min` is the floor nobody rides under. `min: 0` is the park saying there is no floor, and the app reads that back as \"No minimum\" — that is the right answer for a lazy river, and it is not the same as `null`, which means nobody has looked yet.",
           "`alone` is the height below which a supervising rider has to come along. `max` is a ceiling, which most rides have none of.",
@@ -201,17 +217,6 @@
           "graduation": "overrides_heights",
           "sourceGap": "heights",
           "target": "Cedar Point Marina Pool",
-          "blocking": false,
-          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
-          "need": "Ride height requirements"
-        },
-        {
-          "venueId": "cedar-point",
-          "type": "height_rule",
-          "tier": 2,
-          "graduation": "overrides_heights",
-          "sourceGap": "heights",
-          "target": "Main Arcade",
           "blocking": false,
           "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
           "need": "Ride height requirements"
@@ -275,14 +280,14 @@
         }
       ],
       "counts": {
-        "durable": 2,
+        "durable": 1,
         "ambient": 5
       }
     },
     "inventory": [
       {
         "key": "parks-api-inventory",
-        "need": "ParksAPI matched 36/76 rides — declare gaps or improve aliases",
+        "need": "ParksAPI matched 36/75 rides — declare gaps or improve aliases",
         "blocking": false
       }
     ]

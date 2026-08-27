@@ -9,7 +9,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { compareVenue } from '../src/compare.mjs';
+import { bundleFingerprint, compareVenue } from '../src/compare.mjs';
 import { checklist, failures } from './venue-checklist.mjs';
 import { requests, briefJson } from './venue-requests.mjs';
 import { readRecipe } from './venue-recipe.mjs';
@@ -425,6 +425,7 @@ export function certifyVenue(id, opts = {}) {
     venue: { id: venue.id, name: venue.name, locality: venue.locality },
     certified,
     certifiedAt: certified ? new Date().toISOString() : null,
+    bundleFingerprint: bundleFingerprint(id),
     checks,
     ask: askBrief,
   };

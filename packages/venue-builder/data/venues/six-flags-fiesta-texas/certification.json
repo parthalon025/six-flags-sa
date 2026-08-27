@@ -7,6 +7,7 @@
   },
   "certified": false,
   "certifiedAt": null,
+  "bundleFingerprint": "a0950a3f4ed7994813034585977cbee55ed34a97c0d1056a5efc7c8dc17379a9",
   "checks": [
     {
       "key": "checklist",
@@ -30,8 +31,8 @@
         "denominator": 1,
         "detail": "manifest and disk agree",
         "counts": {
-          "pois": 161,
-          "rides": 71,
+          "pois": 160,
+          "rides": 70,
           "heights": 60,
           "campsites": 0,
           "paths": 975,
@@ -47,8 +48,8 @@
       "claim": "Path graph has ≤2 islands and every ride snaps to the network",
       "pass": true,
       "evidence": {
-        "numerator": 71,
-        "denominator": 71,
+        "numerator": 70,
+        "denominator": 70,
         "detail": "1 component(s), 0 ride(s) >35 m from network",
         "components": 1,
         "largestComponent": 4,
@@ -64,13 +65,26 @@
       "pass": true,
       "evidence": {
         "numerator": 60,
-        "denominator": 71,
-        "detail": "60 of 71 rides carry height rules",
+        "denominator": 70,
+        "detail": "60 of 70 rides carry height rules",
         "declaredAbsent": false
       },
       "confidence": "moderate",
       "falsifier": "A park with rides ships without height filter coverage",
       "soWhat": "Guests cannot filter by rider height offline without these rules"
+    },
+    {
+      "key": "false-rides",
+      "claim": "No height-chart headers or arcades ship as Rideable",
+      "pass": true,
+      "evidence": {
+        "numerator": 70,
+        "denominator": 70,
+        "detail": "no false rides in bundle"
+      },
+      "confidence": "high",
+      "falsifier": "OSM or height-chart ingest files amenity names as rides",
+      "soWhat": "Families see \"Check at the ride\" for places they cannot queue for"
     },
     {
       "key": "entrances",
@@ -107,7 +121,7 @@
       "evidence": {
         "numerator": 10,
         "denominator": 10,
-        "detail": "10/10 caches, 0 gap(s); claims=52+25; attached=68",
+        "detail": "10/10 caches, 0 gap(s); claims=52+24; attached=67",
         "declared": [
           "parks-api",
           "queue-times",
@@ -123,7 +137,7 @@
         "missingRequired": [],
         "bySource": {
           "parks_api": 52,
-          "queue_times": 22,
+          "queue_times": 21,
           "wikidata": 2,
           "open_meteo": 1
         }
@@ -161,14 +175,13 @@
         "key": "heights",
         "need": "Ride height requirements",
         "blocking": false,
-        "why": "11 of 71 rides at Six Flags Fiesta Texas (San Antonio, Texas) carry no rule, so each of them reads \"check at the ride\" and none of them can be filtered out for a child who is too small.",
+        "why": "10 of 70 rides at Six Flags Fiesta Texas (San Antonio, Texas) carry no rule, so each of them reads \"check at the ride\" and none of them can be filtered out for a child who is too small.",
         "targets": [
           "Coca-Cola VIP Lounge",
           "Coral Cove",
           "Cowabunga",
           "Paradise Cove",
           "RipQurl",
-          "Schi-Kugel Arcade",
           "Splash Water Springs",
           "Stingray Racer",
           "Tube Shoot",
@@ -249,17 +262,6 @@
           "graduation": "overrides_heights",
           "sourceGap": "heights",
           "target": "RipQurl",
-          "blocking": false,
-          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
-          "need": "Ride height requirements"
-        },
-        {
-          "venueId": "six-flags-fiesta-texas",
-          "type": "height_rule",
-          "tier": 2,
-          "graduation": "overrides_heights",
-          "sourceGap": "heights",
-          "target": "Schi-Kugel Arcade",
           "blocking": false,
           "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
           "need": "Ride height requirements"
@@ -378,7 +380,7 @@
         }
       ],
       "counts": {
-        "durable": 11,
+        "durable": 10,
         "ambient": 5
       }
     }

@@ -7,6 +7,7 @@
   },
   "certified": false,
   "certifiedAt": null,
+  "bundleFingerprint": "8fc4ef9b61b40b9252188a8f2acb7b6f9d7afdc13db9dc6761ea11d896e003ae",
   "checks": [
     {
       "key": "checklist",

@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 /** Builder compare suite — built bundles must match manifest. */
-import { compareAll, compareRoutingCoverage, summary } from '../../packages/venue-builder/src/compare.mjs';
+import {
+  compareAll,
+  compareCertificationFreshness,
+  compareRoutingCoverage,
+  summary,
+} from '../../packages/venue-builder/src/compare.mjs';
 
 const PASS = [];
 const FAIL = [];
@@ -20,6 +25,10 @@ for (const { stats, issues } of reports) {
 const coverage = compareRoutingCoverage();
 if (coverage.ok) ok('App Store routing coverage matches shipped venues');
 else bad('App Store routing coverage', coverage.issues.join('; ') || 'unknown');
+
+const certification = compareCertificationFreshness();
+if (certification.ok) ok('certification artifacts pin current bundles');
+else bad('certification freshness', certification.issues.join('; ') || 'unknown');
 
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed (${s.passed}/${s.total} venues) ====`);
 if (FAIL.length) {
