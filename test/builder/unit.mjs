@@ -191,10 +191,12 @@ const {
   SHEET_MAGNET_PX,
   SHEET_PEEK_PX,
   SHEET_PLACE_ACTIONS_PX,
+  SHEET_PLACE_ACTIONS_WRAP_PX,
   SHEET_PLACE_HEAD_PX,
   SHEET_PLACE_META_PX,
   SHEET_PLACE_PX,
   SHEET_PLACE_TITLE_PX,
+  sheetPlacePx,
   SHEET_SEARCH_PX,
   nextSheetStop,
   sheetCrowdsMap,
@@ -7257,6 +7259,16 @@ await check('a map-tapped place card stays leaner than peek and half', () => {
   return true;
 });
 
+await check('a narrow phone budgets two labelled action rows for place detail', () => {
+  // 390px fits one row; 375px wraps (globals.css). Budget must cover both rows
+  // so the sheet stop does not clip "Rally here" (#574).
+  const wide = sheetPlacePx(400);
+  const narrow = sheetPlacePx(375);
+  assert.equal(wide, SHEET_PLACE_PX);
+  assert.equal(narrow - wide, SHEET_PLACE_ACTIONS_WRAP_PX - SHEET_PLACE_ACTIONS_PX);
+  return true;
+});
+
 await check('a release away from every stop stays exactly where it was let go', () => {
   // The whole point of the rewrite: 360px is nowhere near a stop, so the sheet
   // is left at 360px rather than jumping to peek or half.
@@ -7446,7 +7458,7 @@ await check('a short phone still reaches the list', () => {
 
 /* ------------------------------------------------------------- first-run gate */
 
-const { firstRunOverlay, INTRO_KEY, INTRO_SEEN_BOOT_SCRIPT } = await import('../../apps/party-tracker/lib/introGate.js');
+const { firstRunOverlay, INTRO_KEY, INTRO_SEEN_BOOT_SCRIPT, profileWelcomeName, welcomeEyebrow, planYourDayTitle } = await import('../../apps/party-tracker/lib/introGate.js');
 
 await check('unknown intro state covers the map instead of painting the live app', () => {
   assert.equal(firstRunOverlay({ introSeen: null, logoSplashDismissed: false }), 'hold');
@@ -7461,6 +7473,17 @@ await check('a returning phone skips the first-run overlay', () => {
 await check('a first visit opens the logo splash, then the welcome gate, without a hold in between', () => {
   assert.equal(firstRunOverlay({ introSeen: false, logoSplashDismissed: false }), 'splash');
   assert.equal(firstRunOverlay({ introSeen: false, logoSplashDismissed: true }), 'welcome');
+  return true;
+});
+
+await check('signed-in welcome copy uses the Profile display name when we have one', () => {
+  assert.equal(profileWelcomeName(null), null);
+  assert.equal(profileWelcomeName({ userId: 'usr_x', displayName: 'Guest' }), null);
+  assert.equal(profileWelcomeName({ userId: 'usr_x', displayName: 'Ava' }), 'Ava');
+  assert.equal(welcomeEyebrow(null), 'Welcome');
+  assert.equal(welcomeEyebrow('Ava'), 'Welcome, Ava');
+  assert.equal(planYourDayTitle(null), 'Plan your day');
+  assert.equal(planYourDayTitle('Ava'), 'Plan your day, Ava');
   return true;
 });
 

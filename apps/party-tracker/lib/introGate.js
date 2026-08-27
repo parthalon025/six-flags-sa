@@ -26,3 +26,31 @@ export const INTRO_KEY = 'tracker-intro-seen';
  * map through a streaming sheet.
  */
 export const INTRO_SEEN_BOOT_SCRIPT = `(function(){try{var k=${JSON.stringify(INTRO_KEY)};document.documentElement.setAttribute("data-intro",localStorage.getItem(k)==="1"?"seen":"new");}catch(e){document.documentElement.setAttribute("data-intro","new");}})();`;
+
+/**
+ * Display name for a signed-in Profile on the welcome intro — null when anonymous
+ * or the account has no real name yet.
+ *
+ * @param {{ userId?: string, displayName?: string } | null} session
+ * @returns {string | null}
+ */
+export function profileWelcomeName(session) {
+  if (!session?.userId) return null;
+  const name = String(session.displayName || '').trim();
+  if (!name || name === 'Guest') return null;
+  return name;
+}
+
+/** @param {string | null | undefined} visitorName */
+export function welcomeEyebrow(visitorName) {
+  const name = String(visitorName || '').trim();
+  if (!name) return 'Welcome';
+  return `Welcome, ${name}`;
+}
+
+/** @param {string | null | undefined} visitorName */
+export function planYourDayTitle(visitorName) {
+  const name = String(visitorName || '').trim();
+  if (!name) return 'Plan your day';
+  return `Plan your day, ${name}`;
+}

@@ -19,6 +19,7 @@
  */
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
+import { appOrigin } from '../../scripts/lib/app-test-origin.mjs';
 
 const executablePath = process.env.CHROMIUM_PATH || undefined;
 const APP_VERSION = JSON.parse(readFileSync(new URL('../../apps/party-tracker/package.json', import.meta.url))).version;
@@ -26,7 +27,7 @@ const APP_VERSION = JSON.parse(readFileSync(new URL('../../apps/party-tracker/pa
 export const launch = (opts = {}) =>
   chromium.launch({ ...opts, ...(executablePath ? { executablePath } : {}) });
 
-export const BASE = (process.env.BASE_URL || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+export const BASE = (process.env.BASE_URL || appOrigin()).replace(/\/+$/, '');
 
 /** Local TLS stand-in for the production host (Clerk live FAPI rejects localhost). */
 export const ignoreHTTPSErrors = BASE.startsWith('https://') || process.env.CLERK_E2E_TLS === '1';
