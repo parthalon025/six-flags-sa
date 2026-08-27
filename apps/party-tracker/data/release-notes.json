@@ -600,5 +600,11 @@
     "items": [
       "feat(agents): durable #643 pointer for cloud resume:start (#668)"
     ]
+  },
+  "1.35.1": {
+    "title": "What's new",
+    "items": [
+      "chore(consolidation): mega PR — app, API probes, contributions, guest map"
+    ]
   }
 }
