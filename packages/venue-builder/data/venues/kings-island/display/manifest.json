@@ -2,71 +2,85 @@
   "version": 1,
   "tiers": {
     "vector": {
-      "file": "base.pmtiles",
-      "bytes": 102234
+      "gap": true,
+      "reason": "base.pmtiles not built"
+    },
+    "world:blueprint-survey": {
+      "file": "blueprint-survey.world.png",
+      "bytes": 5377015,
+      "kit": "blueprint-survey",
+      "projection": "top-down",
+      "certified": true
     },
     "world:layered-atlas": {
       "file": "layered-atlas.world.png",
-      "bytes": 4675648,
+      "bytes": 6728509,
       "kit": "layered-atlas",
+      "projection": "top-down",
+      "certified": true
+    },
+    "world:midnight-carnival": {
+      "file": "midnight-carnival.world.png",
+      "bytes": 7288341,
+      "kit": "midnight-carnival",
       "projection": "top-down",
       "certified": true
     },
     "world:park-midnight": {
       "file": "park-midnight.world.png",
-      "bytes": 4415441,
+      "bytes": 6337580,
       "kit": "rpg-overworld",
       "projection": "top-down",
       "certified": true
     },
     "world:trail": {
       "file": "trail.world.png",
-      "bytes": 4474685,
+      "bytes": 6431331,
       "kit": "island-brochure",
       "projection": "top-down",
       "certified": true
     },
     "world:watercolor-quest": {
       "file": "watercolor-quest.world.png",
-      "bytes": 6659690,
+      "bytes": 10186070,
       "kit": "watercolor-quest",
       "projection": "top-down",
       "certified": true
     },
     "bake:blueprint-survey": {
       "file": "kings-island--blueprint-survey.png",
-      "bytes": 3763859,
+      "bytes": 5377015,
       "kit": "blueprint-survey"
     },
     "bake:island-brochure": {
       "file": "kings-island--island-brochure.png",
-      "bytes": 4474685,
+      "bytes": 6431331,
       "kit": "island-brochure"
     },
     "bake:layered-atlas": {
       "file": "kings-island--layered-atlas.png",
-      "bytes": 4675648,
+      "bytes": 6728509,
       "kit": "layered-atlas"
     },
     "bake:midnight-carnival": {
       "file": "kings-island--midnight-carnival.png",
-      "bytes": 5141016,
+      "bytes": 7288341,
       "kit": "midnight-carnival"
     },
     "bake:rpg-overworld": {
       "file": "kings-island--rpg-overworld.png",
-      "bytes": 4415441,
+      "bytes": 6337580,
       "kit": "rpg-overworld"
     },
     "bake:watercolor-quest": {
       "file": "kings-island--watercolor-quest.png",
-      "bytes": 6659690,
+      "bytes": 10186070,
       "kit": "watercolor-quest"
     },
     "credits": {
-      "file": "kings-island--layered-atlas.credits.json",
-      "bytes": 1906,
-      "kit": "layered-atlas"
+      "file": "kings-island--blueprint-survey.credits.json",
+      "bytes": 1545,
+      "kit": "blueprint-survey"
     }
   }
 }

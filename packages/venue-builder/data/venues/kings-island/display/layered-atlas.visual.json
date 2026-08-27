@@ -9,6 +9,12 @@
     "contrastFloor": 4.5,
     "labelHalo": true,
     "mode": "day",
+    "landTones": {
+      "cover": 0.34,
+      "lean": 0.55,
+      "spread": 0.14,
+      "steps": 7
+    },
     "colors": {
       "path": "#3F6570",
       "ground": "#C9D6C0",
@@ -89,45 +95,75 @@
     }
   },
   "landTones": {
-    "Soak City": {
-      "day": "#E4EEF1",
-      "night": "#1D272A"
-    },
-    "Coney Mall": {
-      "day": "#F1EAE4",
-      "night": "#2A231D"
-    },
-    "International Street": {
-      "day": "#F1EEE4",
-      "night": "#2A271D"
-    },
-    "Rivertown": {
-      "day": "#E4F1E4",
-      "night": "#1D2A1D"
-    },
-    "Planet Snoopy": {
-      "day": "#F1EFE4",
-      "night": "#2A281D"
-    },
     "Action Zone": {
-      "day": "#E4ECF1",
-      "night": "#1D252A"
-    },
-    "Camp Snoopy": {
-      "day": "#ECF1E4",
-      "night": "#252A1D"
-    },
-    "Oktoberfest": {
-      "day": "#C9B79E",
-      "night": "#39323F"
+      "day": {
+        "fill": "#817968",
+        "stroke": "#7A7F6D",
+        "label": "#243B45"
+      }
     },
     "Adventure Port": {
-      "day": "#E4F1EF",
-      "night": "#1D2A28"
+      "day": {
+        "fill": "#97BCB8",
+        "stroke": "#89AAA1",
+        "label": "#243B45"
+      }
     },
     "Area 72": {
-      "day": "#EAE4F1",
-      "night": "#231D2A"
+      "day": {
+        "fill": "#A59D8C",
+        "stroke": "#929684",
+        "label": "#243B45"
+      }
+    },
+    "Camp Snoopy": {
+      "day": {
+        "fill": "#BACAA6",
+        "stroke": "#9FB395",
+        "label": "#243B45"
+      }
+    },
+    "Coney Mall": {
+      "day": {
+        "fill": "#657975",
+        "stroke": "#687F75",
+        "label": "#243B45"
+      }
+    },
+    "International Street": {
+      "day": {
+        "fill": "#677670",
+        "stroke": "#697D72",
+        "label": "#243B45"
+      }
+    },
+    "Oktoberfest": {
+      "day": {
+        "fill": "#B9BDA5",
+        "stroke": "#9FAB94",
+        "label": "#243B45"
+      }
+    },
+    "Planet Snoopy": {
+      "day": {
+        "fill": "#899D99",
+        "stroke": "#80968C",
+        "label": "#243B45"
+      }
+    },
+    "Rivertown": {
+      "day": {
+        "fill": "#97A683",
+        "stroke": "#899C7E",
+        "label": "#243B45"
+      }
+    },
+    "Soak City": {
+      "day": {
+        "fill": "#739895",
+        "stroke": "#71938A",
+        "label": "#243B45"
+      }
     }
   },
   "fallback": {

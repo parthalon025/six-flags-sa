@@ -1,6 +1,6 @@
 # Display pipeline — builder-owned map beauty, phone-owned overlay
 
-**Status:** Accepted — amended 2026-08-19 (item 4, real-time PBR tier) · Amended by [ADR-0021](./0021-zoomable-worlds-revised.md) (visual-spec step 3)  
+**Status:** Accepted — amended 2026-08-19 (item 4, real-time PBR tier) · Amended by [ADR-0021](./0021-zoomable-worlds-revised.md) (visual-spec step 3) · Amended 2026-08-21 (visual-spec step 3 direction, skin templates, Non-goals — Zone tone leaves map truth)  
 **Date:** 2026-08-17  
 **Depends on:** [ADR-0002 dual-layer park truth](./0002-dual-layer-park-truth.md), [ADR-0005 store Capacitor shell](./0005-store-capacitor-shell.md)  
 **Extended by:** [ADR-0015 terrain in display](./0015-terrain-in-display.md)  
@@ -36,9 +36,18 @@ Extend `runVenuePipeline` after `certify`:
 
 1. **tiles-export** — GeoJSON layers (`packages/venue-builder/lib/tiles-export.mjs`, existing)
 2. **tiles-build** — Tippecanoe → `display/base.pmtiles`
-3. **visual-spec** — merge `visual.json` (land tones, labels, landmark refs, quest-linked skin overrides)
+3. **visual-spec** — compile `visual.json` (Zone tones, labels, landmark refs, quest-linked skin overrides)
    *Amended 2026-08-20 by [ADR-0021](./0021-zoomable-worlds-revised.md) (clause 1):* `visual.json`
    carries label *styling* only. Label strings come from `pois.json`.
+   *Amended 2026-08-21:* the verb is **compile**, not merge, and the direction is one-way. The
+   Visual factory **derives** Zone tone from the **Skin template**'s palette and the World's
+   *relationships* — its land-cover classification and its grounding harvest
+   (`data/venues/<id>/display/grounding.json`, ADR-0020 clauses 1 and 4). `map.json` contributes
+   **no treatment** to the compile. The unqualified "merge" here was the loophole: the code merged
+   a hand-tint table out of `map.json`'s `meta.lands` *over* the factory's own derivation, so every
+   **Skin** of a World emitted a byte-identical `landTones` block and no Skin could restyle a
+   **Zone**. Each Skin's spec now carries only the half its own `tokens.mode` paints, and every
+   colour in it must be one that Skin's declared palette can make (`palette_derives_tones`).
 4. **skin-bake** — optional per-(Venue × **Skin**) raster or vector variants when parametric templates are insufficient
 5. **display-certify** — automated visual matrix (fixed camera points); fail build on drift
 6. **manifest** — hashes, sizes, versions for phone download manager
@@ -48,6 +57,18 @@ Batch runs (`venues:build-top100`) emit the same contract for every catalog park
 ### Skin templates (global)
 
 **Skin** ids stay in `world.js` / earn ladders. Each **Skin** resolves to a **skin template** — MapLibre `style.json`, iso template id, and optional baked tile variant — not ad hoc CSS per park. Venue-specific reward art lives in the Venue **display pack** (`visual.json`, optional `display/skins/<skinId>.pmtiles`), referenced when a **Side Quest** at that Venue grants that **Skin**.
+
+*Amended 2026-08-21:* a skin template resolves to the MapLibre style, its **bake kit** binding, its
+iso recipe id, and its **Zone-tone rule** — how this Skin turns a World's relationships into Zone
+treatment (`tokens.landTones`: how far a wash travels from the Skin's own ground toward its land
+cover, how far it leans toward the token a Zone's declared character names, and the bounded ramp
+that separates Zones sharing both). Making the rule a declared part of the template is what makes
+"this Skin restyles a Zone" a property of the ledger rather than of a merge order. The iso recipe
+id stays real and is now read — `bin/display-bake.mjs` resolves it from the ledger, so
+`layered-atlas` gets the `frisco-fields` geometry it declares instead of silently getting
+`rct-classic`. Iso is retired from the *map* path by [ADR-0019](./0019-zoomable-worlds.md) clause 6
+and [ADR-0021](./0021-zoomable-worlds-revised.md) clause 6; the id survives for the iso **bake**
+target, which still runs.
 
 **Trail** / **Park Midnight** remain always-on **Palettes**. **Skins** never move **Places**.
 
@@ -77,6 +98,10 @@ Target: **MapLibre GL JS** in the Capacitor WebView reading local PMTiles. SVG `
 - Databricks or Postgres serving map tiles to phones
 - Per-Venue React/CSS forks (E14.3)
 - **Skin** or display changes that reposition **Places** or rewrite routing truth
+- Map truth carrying per-World **treatment** — tints, tones, materials, palettes. `map.json` carries
+  geometry, **Places** and **Gaps**; treatment lives in the **display pack**. *(Added 2026-08-21.
+  This ADR banned the Display→Truth direction for geometry and was silent on the inverse, which is
+  how `meta.lands` became an unremarked feature rather than a policy violation.)*
 
 ## Open implementation order
 

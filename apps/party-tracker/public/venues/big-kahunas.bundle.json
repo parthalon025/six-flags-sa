@@ -2,10 +2,9 @@
   "version": 1,
   "venue": "big-kahunas",
   "basedOn": {
-    "map": "2026-08-10",
-    "revisionId": "c084f90e-0458-4211-a309-297f48345960"
+    "map": "2026-08-10"
   },
-  "bytes": 62096,
+  "bytes": 67196,
   "files": [
     {
       "path": "/venues/big-kahunas.gaps.json",
@@ -14,8 +13,8 @@
     },
     {
       "path": "/venues/big-kahunas.map.json",
-      "bytes": 39485,
-      "sha256": "3e6cbd364ef4d8bbf730387833be4bd95735699099f0fdc1a1587243010eb87c"
+      "bytes": 39484,
+      "sha256": "dad70e6da0aca7863dcfbf6c6b4d216ff2b8066ea61c0805d050e7945e2258ab"
     },
     {
       "path": "/venues/big-kahunas.pois.json",
@@ -23,24 +22,34 @@
       "sha256": "93930e5483181c4afb2041f9e8f52df8dfc4e790332719f11c0d1731ac108ee7"
     },
     {
+      "path": "/venues/big-kahunas/display/blueprint-survey.visual.json",
+      "bytes": 2339,
+      "sha256": "3edab83d7f58d836c0a0c9e7fd674e6f287e38e494e1b4e302091db3fcd60564"
+    },
+    {
       "path": "/venues/big-kahunas/display/layered-atlas.visual.json",
-      "bytes": 2230,
-      "sha256": "07772e66cbac26dc6cc4895104cb685685506700050da8372ee65bf7576eccfd"
+      "bytes": 2336,
+      "sha256": "ec7481d9254655e110aa34b648b59649b5048f722339931fa95c32f0569900c2"
+    },
+    {
+      "path": "/venues/big-kahunas/display/midnight-carnival.visual.json",
+      "bytes": 2341,
+      "sha256": "ba4cd4ae723614ad5b35feed87e0a905e6c9fc3f4a39149ec1edb7fece6b57bf"
     },
     {
       "path": "/venues/big-kahunas/display/park-midnight.visual.json",
-      "bytes": 2136,
-      "sha256": "b82f582adf654a4148c177c231d678fd074cd9326e6523a09f66965b7e54bf0d"
+      "bytes": 2241,
+      "sha256": "44b44717327a6d666d8cbfe6300742c16c8f1fe4b07b387ec29154887dfe6aed"
     },
     {
       "path": "/venues/big-kahunas/display/trail.visual.json",
-      "bytes": 2126,
-      "sha256": "dd3290bf71a592eb839231e12ddb5b22dc51a7df6f074f3d43cb91c1494f5ac6"
+      "bytes": 2232,
+      "sha256": "74c84091ad567d1b627e7da5f3c3a43499b97e31406740810895150391691e78"
     },
     {
       "path": "/venues/big-kahunas/display/watercolor-quest.visual.json",
-      "bytes": 2233,
-      "sha256": "59a81d2a9219f9d9e2c995fe646663b849fc18d54d856e473b46613e9094e594"
+      "bytes": 2337,
+      "sha256": "3efa41bacfcf462e8e0b462c2ceec17a4eb29f3441c11950bc491eeed82a9e58"
     }
   ]
 }

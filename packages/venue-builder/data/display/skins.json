@@ -11,6 +11,12 @@
         "contrastFloor": 4.5,
         "labelHalo": true,
         "mode": "day",
+        "landTones": {
+          "cover": 0.18,
+          "lean": 0.26,
+          "spread": 0.05,
+          "steps": 5
+        },
         "colors": {
           "path": "#8B7355",
           "ground": "#F5F0E8",
@@ -42,6 +48,12 @@
         "contrastFloor": 4.5,
         "labelHalo": true,
         "mode": "night",
+        "landTones": {
+          "cover": 0.3,
+          "lean": 0.34,
+          "spread": 0.07,
+          "steps": 5
+        },
         "colors": {
           "path": "#C4A882",
           "ground": "#1A1520",
@@ -73,6 +85,12 @@
         "contrastFloor": 4.5,
         "labelHalo": true,
         "mode": "day",
+        "landTones": {
+          "cover": 0.34,
+          "lean": 0.55,
+          "spread": 0.14,
+          "steps": 7
+        },
         "colors": {
           "path": "#3F6570",
           "ground": "#C9D6C0",
@@ -107,6 +125,12 @@
         "contrastFloor": 4.5,
         "labelHalo": true,
         "mode": "day",
+        "landTones": {
+          "cover": 0.24,
+          "lean": 0.4,
+          "spread": 0.1,
+          "steps": 5
+        },
         "colors": {
           "path": "#756276",
           "ground": "#F4EFDF",
@@ -132,20 +156,31 @@
       },
       "bakeKit": "watercolor-quest"
     },
-    "pixel-tycoon": {
-      "label": "Pixel tycoon",
+    "midnight-carnival": {
+      "label": "Midnight carnival",
       "status": "active",
+      "harvestedFrom": "data/display/kits/midnight-carnival.json — palette quoted from the kit that bakes its world",
+      "isoTemplate": "rct-classic",
       "tokens": {
         "contrastFloor": 4.5,
         "labelHalo": true,
-        "mode": "day",
+        "mode": "night",
+        "landTones": {
+          "cover": 0.36,
+          "lean": 0.5,
+          "spread": 0.12,
+          "steps": 5
+        },
         "colors": {
-          "path": "#E8D49C",
-          "ground": "#C4A46C",
-          "water": "#3C7CBC",
-          "grass": "#5C9C4C",
-          "building": "#B45C4C",
-          "label": "#1C140C"
+          "path": "#C98A3B",
+          "ground": "#2A2140",
+          "water": "#101C2E",
+          "grass": "#1E3328",
+          "building": "#241F33",
+          "label": "#F5D9A0",
+          "structureEdge": "#3E6B9E",
+          "groundEdge": "#352A52",
+          "pathCasing": "#241833"
         }
       },
       "surfaces": {
@@ -159,7 +194,47 @@
         "structure": "roofing--shingle",
         "lot": "concrete--lot"
       },
-      "bakeKit": "pixel-tycoon"
+      "bakeKit": "midnight-carnival"
+    },
+    "blueprint-survey": {
+      "label": "Blueprint survey",
+      "status": "active",
+      "harvestedFrom": "data/display/kits/blueprint-survey.json — palette quoted from the kit that bakes its world",
+      "isoTemplate": "rct-classic",
+      "tokens": {
+        "contrastFloor": 4.5,
+        "labelHalo": true,
+        "mode": "day",
+        "landTones": {
+          "cover": 0.12,
+          "lean": 0.18,
+          "spread": 0.04,
+          "steps": 3
+        },
+        "colors": {
+          "path": "#39567E",
+          "ground": "#FBF7EC",
+          "water": "#E3EDF6",
+          "grass": "#F0F3E2",
+          "building": "#FBF7EC",
+          "label": "#39567E",
+          "structureEdge": "#39567E",
+          "groundEdge": "#C9D4A8",
+          "pathCasing": "#FBF7EC"
+        }
+      },
+      "surfaces": {
+        "walkway": "paving-stones--warm",
+        "service-road": "asphalt--worn",
+        "vegetation": "grass--meadow",
+        "water": "water--calm",
+        "pool": "water--pool",
+        "coaster-track": "steel--track",
+        "slide": "fiberglass--flume",
+        "structure": "roofing--shingle",
+        "lot": "concrete--lot"
+      },
+      "bakeKit": "blueprint-survey"
     }
   }
 }

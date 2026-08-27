@@ -9,6 +9,12 @@
     "contrastFloor": 4.5,
     "labelHalo": true,
     "mode": "night",
+    "landTones": {
+      "cover": 0.3,
+      "lean": 0.34,
+      "spread": 0.07,
+      "steps": 5
+    },
     "colors": {
       "path": "#C4A882",
       "ground": "#1A1520",
@@ -86,29 +92,47 @@
     }
   },
   "landTones": {
-    "Rockville": {
-      "day": "#C9B79E",
-      "night": "#39323F"
-    },
     "DC Universe": {
-      "day": "#C9B79E",
-      "night": "#39323F"
-    },
-    "Spassburg": {
-      "day": "#C9B79E",
-      "night": "#39323F"
-    },
-    "Los Festivales": {
-      "day": "#C9B79E",
-      "night": "#39323F"
+      "night": {
+        "fill": "#241F29",
+        "stroke": "#6B6568",
+        "label": "#F0E8DC"
+      }
     },
     "Fiesta Bay Boardwalk": {
-      "day": "#C9B79E",
-      "night": "#39323F"
+      "night": {
+        "fill": "#2C2730",
+        "stroke": "#716B6C",
+        "label": "#F0E8DC"
+      }
+    },
+    "Los Festivales": {
+      "night": {
+        "fill": "#231E28",
+        "stroke": "#6B6567",
+        "label": "#F0E8DC"
+      }
+    },
+    "Rockville": {
+      "night": {
+        "fill": "#211D26",
+        "stroke": "#696466",
+        "label": "#F0E8DC"
+      }
+    },
+    "Spassburg": {
+      "night": {
+        "fill": "#241F29",
+        "stroke": "#6B6568",
+        "label": "#F0E8DC"
+      }
     },
     "Texas State Square": {
-      "day": "#C9B79E",
-      "night": "#39323F"
+      "night": {
+        "fill": "#332F38",
+        "stroke": "#757071",
+        "label": "#F0E8DC"
+      }
     }
   },
   "fallback": {

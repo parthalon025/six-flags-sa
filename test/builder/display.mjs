@@ -31,7 +31,10 @@ console.log('\ndisplay factory\n');
 const {
   SURFACE_CLASSES,
   ALLOWED_LICENSES,
+  LAND_CHARACTERS,
   LAND_COVER_STYLE,
+  allowedLandTones,
+  landToneRamp,
   readSkinTemplates,
   readMaterials,
   compileVisualSpec,
@@ -77,13 +80,33 @@ await check('no map layer is claimed by two surface classes', () => {
 
 /* -------------------------------------------------- land-cover materials -- */
 
-await check('every WorldCover class binds a real ledger material', () => {
+await check('every WorldCover class binds a real ledger material and carries no colour', () => {
   const materials = readMaterials();
   assert.ok(Object.keys(LAND_COVER_STYLE).length >= 4, 'expected built-up/tree-cover/water/grassland at least');
   for (const [cls, row] of Object.entries(LAND_COVER_STYLE)) {
     assert.match(cls, /^[a-z][a-z_]*$/, `class key "${cls}" is not a WorldCover class name`);
     assert.ok(materials[row.material], `${cls} binds unknown material "${row.material}"`);
-    assert.ok(row.tone.day && row.tone.night, `${cls} is missing a day/night tone`);
+    assert.ok(SURFACE_CLASSES[row.surface], `${cls} names unknown surface class "${row.surface}"`);
+    // A cover row says what a Zone IS. The moment it says what colour a Zone
+    // is, treatment has moved out of the Skin and every Skin paints alike.
+    assert.ok(!/#[0-9a-f]{3,8}/i.test(JSON.stringify(row)), `${cls} carries a colour — cover states relationships, Skins state treatment`);
+  }
+  return true;
+});
+
+await check('every Skin character token resolves, and the ramp is a finite palette', () => {
+  const materials = readMaterials();
+  const skins = readSkinTemplates();
+  for (const [id, template] of Object.entries(skins)) {
+    const ramp = landToneRamp(template);
+    assert.ok(ramp.steps >= 1 && ramp.steps <= 9, `${id} ramp steps out of range`);
+    const allowed = allowedLandTones(template, materials);
+    assert.ok(allowed.size > 0, `${id} can paint no Zone at all`);
+    for (const hex of allowed) assert.match(hex, /^#[0-9A-F]{6}$/i, `${id} emits a non-hex tone ${hex}`);
+  }
+  for (const [name, row] of Object.entries(LAND_CHARACTERS)) {
+    assert.match(name, /^[a-z]+$/, `character "${name}" is not a plain word`);
+    assert.ok(typeof row.token === 'string' && row.token, `${name} names no Skin token`);
   }
   return true;
 });
@@ -119,12 +142,14 @@ await check('every skin template binding resolves to a ledger material', () => {
 
 /* ------------------------------------------------- compile, no positions -- */
 
+/* Truth carries a Zone's name and shape and nothing about how it is painted.
+   `meta.lands` used to sit here with a hand tint per Zone, and the whole
+   point of this change is that it cannot come back. */
 const FIXTURE_MAP = {
   meta: {
     id: 'test-park',
     name: 'Test Park',
     generated: '2026-08-01',
-    lands: { day: { Midway: '#f2e8d0' }, night: { Midway: '#1a2233' } },
   },
   lands: [{ n: 'Midway', r: [[0, 0], [1, 0], [1, 1]] }],
   path: [{ r: [[0, 0], [1, 1]] }],
@@ -137,13 +162,19 @@ const FIXTURE_POIS = [
   { i: 'orion', n: 'Orion', c: 'coaster', lat: 0.4, lng: 0.6 },
 ];
 
-function compiled(skinId = 'trail') {
+const FIXTURE_COVER = { Midway: { code: 50, name: 'built_up', count: 400 } };
+const FIXTURE_GROUNDING = { zones: { Midway: { character: 'midway' } } };
+
+function compiled(skinId = 'trail', over = {}) {
   const skins = readSkinTemplates();
   return compileVisualSpec({
     map: FIXTURE_MAP,
     pois: FIXTURE_POIS,
     template: skins[skinId],
     materials: readMaterials(),
+    landCover: FIXTURE_COVER,
+    grounding: FIXTURE_GROUNDING,
+    ...over,
   });
 }
 
@@ -155,11 +186,59 @@ await check('compiled spec binds only surfaces the venue actually has', () => {
   return true;
 });
 
-await check('compiled spec preserves hand land tints and invents none', () => {
+await check('a Zone tone is the Skin\'s own paint, and only the half it paints', () => {
   const spec = compiled();
-  assert.equal(spec.landTones.Midway.day, '#f2e8d0');
-  assert.equal(spec.landTones.Midway.night, '#1a2233');
   assert.equal(Object.keys(spec.landTones).length, 1);
+  const tone = spec.landTones.Midway;
+  assert.deepEqual(Object.keys(tone), ['day'], 'a day Skin must not ship a night hex it can never draw');
+  for (const key of ['fill', 'stroke', 'label']) {
+    assert.match(tone.day[key], /^#[0-9A-F]{6}$/, `Midway.day.${key} is not a hex the Skin made`);
+  }
+  const allowed = allowedLandTones(readSkinTemplates().trail, readMaterials());
+  for (const hex of Object.values(tone.day)) {
+    assert.ok(allowed.has(hex), `${hex} is not reachable from trail's own palette`);
+  }
+  return true;
+});
+
+/* THE acceptance test for "the Visual factory is the only thing for map
+   Skins". Before this change every Skin of a World emitted a byte-identical
+   landTones block, because the block came from that World's hand tints and
+   `template` was not an input at all. A Skin that cannot restyle a Zone is the
+   colour-only look ADR-0017 declares invalid. */
+await check('two Skins over one World paint its Zones differently', () => {
+  const ids = Object.keys(readSkinTemplates());
+  assert.ok(ids.length >= 2, 'need at least two Skins to compare');
+  const seen = new Map();
+  for (const id of ids) {
+    const block = JSON.stringify(compiled(id).landTones);
+    const twin = seen.get(block);
+    assert.equal(twin, undefined, `${id} and ${twin} emit an identical landTones block`);
+    seen.set(block, id);
+  }
+  // and the difference is the Skin's palette, not an accident of ordering
+  const trail = compiled('trail').landTones.Midway.day.fill;
+  const midnight = compiled('park-midnight').landTones.Midway.night.fill;
+  assert.notEqual(trail, midnight);
+  return true;
+});
+
+await check('map.meta cannot repaint a Zone — truth carries no treatment', () => {
+  const skins = readSkinTemplates();
+  const smuggled = {
+    ...FIXTURE_MAP,
+    meta: { ...FIXTURE_MAP.meta, lands: { day: { Midway: '#F2E8D0' }, night: { Midway: '#1A2233' } } },
+  };
+  const spec = compileVisualSpec({
+    map: smuggled,
+    pois: FIXTURE_POIS,
+    template: skins.trail,
+    materials: readMaterials(),
+    landCover: FIXTURE_COVER,
+    grounding: FIXTURE_GROUNDING,
+  });
+  assert.notEqual(spec.landTones.Midway.day.fill, '#F2E8D0', 'a hand tint in truth reached the spec');
+  assert.deepEqual(spec.landTones, compiled().landTones, 'meta.lands changed the compile at all');
   return true;
 });
 
@@ -179,31 +258,38 @@ await check('compiling twice is byte-identical (deterministic)', () => {
 
 const FIXTURE_MAP_TWO_LANDS = {
   ...FIXTURE_MAP,
-  meta: { ...FIXTURE_MAP.meta, lands: { day: {}, night: {} } }, // no hand tints
   lands: [
     { n: 'Midway', r: [[0, 0], [1, 0], [1, 1]] },
     { n: 'Backwoods', r: [[2, 2], [3, 2], [3, 3]] },
   ],
 };
 
-function compiledWithCover(landCover) {
+function compiledWithCover(landCover, grounding = null, skinId = 'trail') {
   const skins = readSkinTemplates();
   return compileVisualSpec({
     map: FIXTURE_MAP_TWO_LANDS,
     pois: FIXTURE_POIS,
-    template: skins.trail,
+    template: skins[skinId],
     materials: readMaterials(),
     landCover,
+    grounding,
   });
 }
 
-await check('WorldCover classification picks a land tone when there is no hand tint', () => {
+await check('WorldCover classification separates Zones that sit on different ground', () => {
   const spec = compiledWithCover({
-    Midway: { code: 50, name: 'built_up' },
-    Backwoods: { code: 10, name: 'tree_cover' },
+    Midway: { code: 50, name: 'built_up', count: 400 },
+    Backwoods: { code: 10, name: 'tree_cover', count: 250 },
   });
-  assert.equal(spec.landTones.Midway.day, LAND_COVER_STYLE.built_up.tone.day);
-  assert.equal(spec.landTones.Backwoods.night, LAND_COVER_STYLE.tree_cover.tone.night);
+  const allowed = allowedLandTones(readSkinTemplates().trail, readMaterials());
+  for (const zone of ['Midway', 'Backwoods']) {
+    assert.ok(allowed.has(spec.landTones[zone].day.fill), `${zone} is not on trail's palette`);
+  }
+  assert.notEqual(
+    spec.landTones.Midway.day.fill,
+    spec.landTones.Backwoods.day.fill,
+    'built-up ground and tree cover must not read the same',
+  );
   return true;
 });
 
@@ -213,24 +299,43 @@ await check('an unmapped WorldCover class invents no tone — falls to name-hue'
   return true;
 });
 
-await check('a hand tint always wins over an inferred WorldCover tone', () => {
-  const skins = readSkinTemplates();
-  const handTinted = {
-    ...FIXTURE_MAP_TWO_LANDS,
-    meta: { ...FIXTURE_MAP_TWO_LANDS.meta, lands: { day: { Midway: '#f2e8d0' }, night: { Midway: '#1a2233' } } },
+await check('two Zones on the same ground separate by size, biggest first, name as tie-break', () => {
+  const cover = {
+    Midway: { code: 50, name: 'built_up', count: 400 },
+    Backwoods: { code: 50, name: 'built_up', count: 90 },
   };
-  const spec = compileVisualSpec({
-    map: handTinted,
-    pois: FIXTURE_POIS,
-    template: skins.trail,
-    materials: readMaterials(),
-    landCover: { Midway: { code: 50, name: 'built_up' } },
-  });
-  assert.equal(spec.landTones.Midway.day, '#f2e8d0', 'the curated hand tint must not be overwritten');
+  const spec = compiledWithCover(cover);
+  assert.notEqual(
+    spec.landTones.Midway.day.fill,
+    spec.landTones.Backwoods.day.fill,
+    'ten same-class Zones must not be ten identical washes',
+  );
+  // The ORDER comes from the World (WorldCover's own sample count), so the
+  // answer must not depend on which key the cache happens to list first.
+  const flipped = compiledWithCover({ Backwoods: cover.Backwoods, Midway: cover.Midway });
+  assert.deepEqual(flipped.landTones, spec.landTones, 'Zone order changed the answer');
   return true;
 });
 
-await check('omitting landCover behaves exactly as before (no WorldCover data)', () => {
+await check("a Zone's declared character leans it toward that token of each Skin", () => {
+  const cover = {
+    Midway: { code: 50, name: 'built_up', count: 400 },
+    Backwoods: { code: 50, name: 'built_up', count: 400 },
+  };
+  const grounding = { zones: { Backwoods: { character: 'woodland' } } };
+  const spec = compiledWithCover(cover, grounding);
+  assert.notEqual(
+    spec.landTones.Backwoods.day.fill,
+    spec.landTones.Midway.day.fill,
+    'a declared character must change how a Zone reads',
+  );
+  // The same relationship, re-expressed by a different Skin, is a different colour.
+  const atlas = compiledWithCover(cover, grounding, 'layered-atlas');
+  assert.notEqual(atlas.landTones.Backwoods.day.fill, spec.landTones.Backwoods.day.fill);
+  return true;
+});
+
+await check('omitting every World input invents no tone at all', () => {
   const spec = compiledWithCover(undefined);
   assert.equal(Object.keys(spec.landTones).length, 0);
   return true;
@@ -291,10 +396,39 @@ await check('a disallowed license fails the license gate', () => {
 await check('a land tone naming a land the venue does not have fails', () => {
   const cert = certified((spec) => ({
     ...spec,
-    landTones: { ...spec.landTones, Atlantis: { day: '#fff', night: '#000' } },
+    landTones: { ...spec.landTones, Atlantis: { day: { fill: '#FFFFFF', stroke: '#000000', label: '#000000' } } },
   }));
   assert.equal(cert.certified, false);
   assert.ok(cert.checks.find((c) => c.key === 'references_resolve' && !c.pass));
+  return true;
+});
+
+/* The palette sibling of no_repositioning, and the mechanical half of the
+   approved principle: a hex the Skin's own palette cannot make must fail the
+   same way a coordinate truth never published fails. The literal below is
+   Kings Island's old hand tint for International Street — the exact value
+   that used to outrank the factory. */
+await check("a hex from outside the Skin's palette fails certification", () => {
+  const cert = certified((spec) => ({
+    ...spec,
+    landTones: { Midway: { day: { fill: '#2A271D', stroke: '#3C382A', label: '#BBAD81' } } },
+  }));
+  assert.equal(cert.certified, false);
+  const row = cert.checks.find((c) => c.key === 'palette_derives_tones');
+  assert.ok(row && !row.pass, 'the palette gate let a foreign hex through');
+  assert.match(row.evidence, /#2A271D/);
+  return true;
+});
+
+await check('the palette gate is total — every shipped Skin certifies its own tones', () => {
+  const materials = readMaterials();
+  const skins = readSkinTemplates();
+  for (const [id, template] of Object.entries(skins)) {
+    const spec = compiled(id);
+    const cert = certifyDisplayPack({ spec, map: FIXTURE_MAP, template, materials });
+    const row = cert.checks.find((c) => c.key === 'palette_derives_tones');
+    assert.ok(row.pass, `${id}: ${row.evidence}`);
+  }
   return true;
 });
 
@@ -306,15 +440,19 @@ await check('styleFromSpec paints from tokens and carries no coordinates', () =>
   assert.equal(style.layers[0].type, 'background');
   assert.equal(style.layers[0].paint['background-color'], '#F5F0E8');
   const lands = style.layers.find((l) => l.id === 'lands');
-  assert.ok(JSON.stringify(lands.paint['fill-color']).includes('#f2e8d0'), 'day land tint missing');
+  const dayFill = compiled().landTones.Midway.day.fill;
+  assert.ok(JSON.stringify(lands.paint['fill-color']).includes(dayFill), 'day Zone wash missing');
   assert.ok(!/"lat"|"lng"|"center"|"bounds"/.test(JSON.stringify(style)), 'style carries a position');
   return true;
 });
 
 await check('park-midnight style picks the night side of land tones', () => {
-  const style = styleFromSpec(compiled('park-midnight'));
+  const spec = compiled('park-midnight');
+  const style = styleFromSpec(spec);
   const lands = style.layers.find((l) => l.id === 'lands');
-  assert.ok(JSON.stringify(lands.paint['fill-color']).includes('#1a2233'));
+  assert.ok(JSON.stringify(lands.paint['fill-color']).includes(spec.landTones.Midway.night.fill));
+  // and never the other Skin's half
+  assert.ok(!JSON.stringify(lands.paint['fill-color']).includes(compiled('trail').landTones.Midway.day.fill));
   return true;
 });
 
@@ -845,7 +983,9 @@ await check('runDisplayStage threads injected landCover into every skin spec', (
     landCover: { Midway: { code: 50, name: 'built_up' } },
   });
   assert.equal(result.certified, true);
-  assert.equal(result.packs.trail.spec.landTones.Midway.day, LAND_COVER_STYLE.built_up.tone.day);
+  const { fill } = result.packs.trail.spec.landTones.Midway.day;
+  assert.ok(allowedLandTones(readSkinTemplates().trail, readMaterials()).has(fill), fill);
+  assert.notEqual(fill, result.packs['park-midnight'].spec.landTones.Midway.night.fill);
   return true;
 });
 

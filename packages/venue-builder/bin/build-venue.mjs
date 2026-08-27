@@ -992,8 +992,17 @@ async function reapply(only, { strict = true } = {}) {
     // has to move it too — otherwise correcting a hookup would need a full
     // rebuild, which is the thing this mode exists to avoid.
     if (overrides.camping?.defaults) next = { ...next, camping: overrides.camping.defaults };
-    const tints = landTints(overrides);
-    if (tints) next = { ...next, lands: tints };
+    warnLegacyLandTints(id, overrides);
+    /* Treatment leaving truth is a migration, not just a stopped write: a
+       venue built before this change still carries `meta.lands` on disk, and
+       --reapply exists precisely to move a correction with no network round
+       trip. Dropping it here is what makes the removal reach the shipped
+       map.json and the manifest row the phone reads. */
+    if (next?.lands) {
+      const { lands: _dropped, ...withoutTints } = next;
+      next = withoutTints;
+      console.error(`  · ${id}: dropped meta.lands — Zone tone is the Visual factory's (display/grounding.json)`);
+    }
     writeVenue({ meta: next, map, pois });
     const postdb = await mirrorTruthToPostdb(id, {
       map: { meta: next, ...map },
@@ -1203,15 +1212,21 @@ function splitCsv(line) {
   return out;
 }
 
-/** The hand-picked district tints out of an overrides file, minus its notes. */
-function landTints(overrides) {
-  const lands = overrides?.lands;
-  if (!lands) return null;
-  const out = {};
-  for (const theme of ['night', 'day']) {
-    if (lands[theme] && Object.keys(lands[theme]).length) out[theme] = lands[theme];
-  }
-  return Object.keys(out).length ? out : null;
+/**
+ * Zone tints used to be copied out of an overrides file into `map.meta.lands`
+ * — treatment written into truth by the Map factory, which the Visual factory
+ * then had to obey. The Visual factory owns Zone tone now (ADR-0013, ADR-0020
+ * grounding rule), so this build writes none. A World whose overrides file
+ * still carries the old block is told where the relationship goes instead,
+ * rather than having it silently ignored.
+ */
+function warnLegacyLandTints(id, overrides) {
+  if (!overrides?.lands) return;
+  console.error(
+    `! ${id}: overrides.json still carries \`lands\` — map truth no longer carries treatment. `
+    + `Move each Zone's character to data/venues/${id}/display/grounding.json `
+    + '(see docs/adr/0020-imagery-ground-truth.md); the tints here are ignored.',
+  );
 }
 
 /* --------------------------------------------------------------- rebuild - */
@@ -1814,6 +1829,7 @@ async function buildOne(args, { previous = null } = {}) {
   const drawn = Object.values(layers).reduce((n, l) => n + l.length, 0);
   if (!drawn) throw new Error('OpenStreetMap has nothing mapped in that box — check the coordinates.');
 
+  warnLegacyLandTints(id, overrides);
   const meta = {
     id,
     name,
@@ -1849,10 +1865,13 @@ async function buildOne(args, { previous = null } = {}) {
        campground is full hookup, a pitch is not individually full hookup. The
        app reads a pitch's own details over this. */
     ...(camping?.defaults ? { camping: camping.defaults } : existingMeta?.camping ? { camping: existingMeta.camping } : {}),
-    /* This venue's own district tints, where somebody has hand-picked any. The
-       renderer generates a colour for every district that is not named here, so
-       a venue built from OpenStreetMap alone needs none of it. */
-    ...(landTints(overrides) ? { lands: landTints(overrides) } : existingMeta?.lands ? { lands: existingMeta.lands } : {}),
+    /* No Zone tints here. `meta.lands` carried a per-Zone {fill, stroke, label}
+       table for day and night — pure treatment, written by the Map factory into
+       the artifact that is supposed to hold only geometry, Places and Gaps, and
+       then given precedence over the Visual factory's own derivation. Zone tone
+       is a Skin's job; the World states relationships (its WorldCover cache and
+       display/grounding.json) and every Skin re-expresses them in its own
+       palette. */
     generated: new Date().toISOString().slice(0, 10),
   };
 

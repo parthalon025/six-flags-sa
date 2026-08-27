@@ -88,22 +88,29 @@ export const paletteFor = (theme) => {
   return DAY_TONES.has(theme) ? THEMES.day : THEMES.night;
 };
 
-/* District tints.
+/* Zone tints.
  *
- * A hand-picked table used to live here, holding one park's themed areas — and
- * it was wrong in two ways at once. It was a fact about Kings Island sitting in
- * the renderer, which is the module that is supposed not to know which place it
- * is drawing; and it was keyed on a bare district name, which two parks can
- * share. Cedar Point's water park was called Soak City until 2017, and so is
- * Kings Island's, so one table in shared code would have painted one park's
- * district in the other's colours.
+ * A hand-picked table used to live here, holding one park's themed areas, and
+ * a second table held per-Skin district washes for the reference Skins. Both
+ * were wrong the same way: they were treatment — a Skin's job — decided in the
+ * renderer, which is the module that is supposed not to know which place it is
+ * drawing or which Skin is worn. A third copy lived in `map.meta.lands`, so a
+ * park's tints were facts in map truth, which the Visual factory then had to
+ * obey; every Skin ended up emitting the same tones and no Skin could restyle
+ * a Zone.
  *
- * So a venue brings its own, in `meta.lands`, and every district it has not
- * named gets a colour derived from that name: stable between sessions and
- * between phones, distinct from its neighbours, and inside the same lightness
- * band as any curated one so the map still reads as one drawing rather than a
- * bag of highlighter pens. A venue that names none — which is every venue built
- * from OpenStreetMap alone — is generated end to end and looks it on purpose. */
+ * The Visual factory owns it now. It compiles one `<skin>.visual.json` per
+ * World × Skin, re-expressing that World's relationships — its land cover and
+ * its grounding harvest — inside that Skin's own declared palette, and
+ * certifies that every colour in it is one that palette can make. The phone
+ * reads the answer (`lib/zoneTones.js`) and paints it.
+ *
+ * A Zone the factory says nothing about — every Zone of a World nobody has
+ * harvested, and every World whose pack is not published — gets a colour
+ * derived from its own name: stable between sessions and between phones,
+ * distinct from its neighbours, and inside the same lightness band as any
+ * derived one so the map still reads as one drawing rather than a bag of
+ * highlighter pens. */
 function hueOf(name) {
   let h = 0;
   for (const ch of String(name)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
@@ -123,47 +130,22 @@ const GENERATED = {
   }),
 };
 
-/* Reference-inspired map Skins carry their own district washes: the whole
-   point of the Skin is its plate of tones, so it wins even over venue-authored
-   lands (unlike every other Skin, which defers to them). */
-const REFERENCE_LAND_TONES = {
-  'layered-atlas': [
-    ['#A6D979', '#5D914F'],
-    ['#E5D84B', '#A39A2E'],
-    ['#E97A72', '#A84D4D'],
-    ['#55C8C1', '#2D8F8B'],
-    ['#7B94E8', '#4B5EA8'],
-    ['#C98CE0', '#86539B'],
-    ['#F2A24D', '#AD6E32'],
-  ],
-  'watercolor-quest': [
-    ['#D8E5CB', '#A2B89B'],
-    ['#EAD6E3', '#BCA2B6'],
-    ['#D8C9E9', '#A89ABB'],
-    ['#D9E0E8', '#A7B4C3'],
-    ['#E9DCC5', '#BDAF93'],
-  ],
-};
-
 /**
- * The fill, stroke and label colour for a named district under a theme.
+ * The fill, stroke and label colour for a named Zone under a theme.
  *
- * @param venue the active venue's manifest row, whose `lands` may name some of
- *   its districts. Optional: without it every district is generated, which is
- *   what a venue nobody has hand-tuned looks like and is fine.
+ * @param {string} name the Zone's name in truth geometry
+ * @param {string} theme the worn Skin or Palette id
+ * @param {object|null} zoneTones the active World × Skin tone table from that
+ *   World's display pack (`lib/zoneTones.js`). Optional: without it every Zone
+ *   is generated, which is what an unharvested World looks like and is fine.
  */
-export function landTint(name, theme, venue = null) {
-  const referenceTones = REFERENCE_LAND_TONES[theme];
-  if (referenceTones) {
-    const [fill, stroke] = referenceTones[hueOf(name || 'land') % referenceTones.length];
-    return {
-      fill,
-      stroke,
-      label: theme === 'layered-atlas' ? '#243B45' : '#57485C',
-    };
-  }
-  const named = venue?.lands?.[theme] || venue?.lands?.night || venue?.lands?.day || null;
-  if (name && named && named[name] && theme !== 'pixel-tycoon') return named[name];
+export function landTint(name, theme, zoneTones = null) {
+  const derived = name ? zoneTones?.[name] : null;
+  if (derived?.fill) return derived;
+  /* pixel-tycoon has no skins.json row yet, so the factory compiles no spec
+     for it and there is nothing to read — its hue stays here until its design
+     request is expanded into the three ledger artifacts ADR-0017 clause 2
+     requires. It is the last Skin whose treatment lives in app code. */
   if (theme === 'pixel-tycoon') {
     const h = 95 + (hueOf(name || 'land') % 28);
     return {

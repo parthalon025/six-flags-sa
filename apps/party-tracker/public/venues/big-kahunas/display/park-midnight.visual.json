@@ -1,112 +1,118 @@
 {
-  "skin": "park-midnight",
+  "version": 1,
   "venue": "big-kahunas",
-  "tokens": {
-    "mode": "night",
-    "colors": {
-      "path": "#C4A882",
-      "grass": "#1E3020",
-      "label": "#F0E8DC",
-      "water": "#1E4A5C",
-      "ground": "#1A1520",
-      "building": "#2A2438"
-    },
-    "labelHalo": true,
-    "contrastFloor": 4.5
-  },
+  "skin": "park-midnight",
   "basedOn": {
     "map": "2026-08-10"
   },
-  "terrain": {
-    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n31w087/USGS_13_n31w087.tif",
-    "grid": {
-      "cols": 240,
-      "rows": 271
+  "tokens": {
+    "contrastFloor": 4.5,
+    "labelHalo": true,
+    "mode": "night",
+    "landTones": {
+      "cover": 0.3,
+      "lean": 0.34,
+      "spread": 0.07,
+      "steps": 5
     },
-    "bounds": {
-      "east": -86.46936,
-      "west": -86.47545,
-      "north": 30.39219,
-      "south": 30.38621
-    },
-    "relief": {
-      "max": 17.6,
-      "min": 2.1
-    },
-    "source": "usgs-3dep",
-    "fitness": "coarse",
-    "hillshade": {
-      "file": "hillshade.png",
-      "azimuth": 315,
-      "altitude": 45
-    },
-    "cellMetres": 2.44,
-    "resolution": 10,
-    "constrained": {
-      "pads": 69,
-      "nodes": 95619,
-      "paths": 173,
-      "water": 4
-    },
-    "steepDegrees": 18,
-    "surfaceModel": false
-  },
-  "version": 1,
-  "fallback": {
-    "landTone": "name-hue"
+    "colors": {
+      "path": "#C4A882",
+      "ground": "#1A1520",
+      "water": "#1E4A5C",
+      "grass": "#1E3020",
+      "building": "#2A2438",
+      "label": "#F0E8DC"
+    }
   },
   "surfaces": {
-    "pool": {
-      "color": "#327A94",
-      "layers": [
-        "pool"
-      ],
-      "material": "water--pool"
-    },
-    "slide": {
-      "color": "#D2996C",
-      "layers": [
-        "slide"
-      ],
-      "material": "fiberglass--flume"
-    },
-    "water": {
-      "color": "#35728F",
-      "layers": [
-        "water"
-      ],
-      "material": "water--calm"
-    },
     "walkway": {
-      "color": "#A9987D",
+      "material": "paving-stones--warm",
       "layers": [
         "path"
       ],
-      "material": "paving-stones--warm"
+      "color": "#A9987D"
     },
-    "structure": {
-      "color": "#3A363F",
+    "service-road": {
+      "material": "asphalt--worn",
       "layers": [
-        "building"
+        "service"
       ],
-      "material": "roofing--shingle"
+      "color": "#8C7B62"
     },
     "vegetation": {
-      "color": "#334126",
+      "material": "grass--meadow",
       "layers": [
         "grass",
         "wood",
         "park"
       ],
-      "material": "grass--meadow"
+      "color": "#334126"
     },
-    "service-road": {
-      "color": "#8C7B62",
+    "water": {
+      "material": "water--calm",
       "layers": [
-        "service"
+        "water"
       ],
-      "material": "asphalt--worn"
+      "color": "#35728F"
+    },
+    "pool": {
+      "material": "water--pool",
+      "layers": [
+        "pool"
+      ],
+      "color": "#327A94"
+    },
+    "slide": {
+      "material": "fiberglass--flume",
+      "layers": [
+        "slide"
+      ],
+      "color": "#D2996C"
+    },
+    "structure": {
+      "material": "roofing--shingle",
+      "layers": [
+        "building"
+      ],
+      "color": "#3A363F"
     }
   },
-  "landTones": {}
+  "landTones": {},
+  "fallback": {
+    "landTone": "name-hue"
+  },
+  "terrain": {
+    "source": "usgs-3dep",
+    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n31w087/USGS_13_n31w087.tif",
+    "resolution": 10,
+    "surfaceModel": false,
+    "cellMetres": 2.44,
+    "fitness": "coarse",
+    "relief": {
+      "min": 2.1,
+      "max": 17.6
+    },
+    "grid": {
+      "cols": 240,
+      "rows": 271
+    },
+    "hillshade": {
+      "file": "hillshade.png",
+      "azimuth": 315,
+      "altitude": 45
+    },
+    "bounds": {
+      "north": 30.39219,
+      "south": 30.38621,
+      "east": -86.46936,
+      "west": -86.47545
+    },
+    "steepDegrees": 18,
+    "constrained": {
+      "paths": 173,
+      "water": 4,
+      "pads": 69,
+      "nodes": 95619
+    }
+  }
 }
