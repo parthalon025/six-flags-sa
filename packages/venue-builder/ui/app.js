@@ -110,7 +110,7 @@ async function load() {
       card.appendChild(blockers);
     }
 
-    if (cert?.available && cert.blockingAsks?.length) {
+    if (cert?.available && !cert.certified && cert.blockingAsks?.length) {
       const asks = document.createElement('ul');
       asks.className = 'asks';
       for (const ask of cert.blockingAsks) {
