@@ -181,11 +181,18 @@ export function reindex({ preferredDefault } = {}) {
     // bytes this reindex just shipped. It lists the truth trio plus whatever
     // display files have been published under public/venues/<id>/display/ —
     // the download manager's one trusted entry point per venue (ADR-0018).
+    const generated = map.meta?.generated ?? null;
+    const existingBundle = readJson(path.join(VENUE_DIR, `${id}.bundle.json`));
+    const revisionId =
+      existingBundle?.basedOn?.revisionId && existingBundle?.basedOn?.map === generated
+        ? existingBundle.basedOn.revisionId
+        : null;
     writeBundleManifest(id, {
       venueDir: VENUE_DIR,
       displayDir: path.join(VENUE_DIR, id, 'display'),
       outFile: path.join(VENUE_DIR, `${id}.bundle.json`),
-      generated: map.meta?.generated ?? null,
+      generated,
+      revisionId,
     });
     venues.push({
       ...map.meta,

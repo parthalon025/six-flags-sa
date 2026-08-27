@@ -64,9 +64,9 @@ assert.deepEqual(plan.drop, []);
 if (!process.env.DATABASE_URL) {
   assert.equal(await exportFromPostdb(VENUE), null, 'no DATABASE_URL → no export');
   const filePublish = await publishBundle('kings-island', { skipReindex: true, filesOnly: true });
-  assert.equal(filePublish.revisionId, null);
+  assert.equal(filePublish.revisionId, filePublish.bundle.basedOn.revisionId);
   assert.ok(filePublish.bundle?.files?.length, 'file fallback still reads the seed bundle');
-  assert.equal(filePublish.bundle.basedOn.revisionId, undefined);
+  assert.ok(filePublish.bundle.basedOn.revisionId, 'seed bundle pins basedOn.revisionId');
   assert.equal(SINCE_QUERY, 'since');
   assert.deepEqual(parseSinceParam(new URLSearchParams('')), { since: null, mode: 'full' });
   console.log('delivery-export: ok (pure + file fallback; integration skipped)');
@@ -74,9 +74,9 @@ if (!process.env.DATABASE_URL) {
 }
 
 const filePublish = await publishBundle('kings-island', { skipReindex: true, filesOnly: true });
-assert.equal(filePublish.revisionId, null);
+assert.equal(filePublish.revisionId, filePublish.bundle.basedOn.revisionId);
 assert.ok(filePublish.bundle?.files?.length, 'file fallback still reads the seed bundle');
-assert.equal(filePublish.bundle.basedOn.revisionId, undefined);
+assert.ok(filePublish.bundle.basedOn.revisionId, 'seed bundle pins basedOn.revisionId');
 
 assert.equal(SINCE_QUERY, 'since');
 assert.deepEqual(parseSinceParam(new URLSearchParams('')), { since: null, mode: 'full' });

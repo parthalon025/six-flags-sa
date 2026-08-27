@@ -138,6 +138,24 @@ export async function getHeadRevisionId(venueId) {
 }
 
 /**
+ * Content hash of the venue's published truth head, or null when no head exists.
+ * @param {string} venueId
+ * @returns {Promise<string|null>}
+ */
+export async function getHeadOutputsHash(venueId) {
+  requirePostdb();
+  const pool = await getPool();
+  const { rows } = await pool.query(
+    `SELECT tr.outputs_hash
+     FROM venue_heads vh
+     JOIN truth_revisions tr ON tr.revision_id = vh.truth_revision_id
+     WHERE vh.venue_id = $1`,
+    [venueId],
+  );
+  return rows[0]?.outputs_hash ?? null;
+}
+
+/**
  * @param {string} venueId
  * @param {string} skinId
  * @returns {Promise<{ body: object, packId: string, basedOnRevisionId: string }|null>}
