@@ -186,6 +186,7 @@ export const TEST_ESTATE = {
   'test/scripts/postdb-migrate.test.mjs': ['ci-gate', 'test:unit'],
   'test/scripts/databricks-auth.test.mjs': ['ci-gate', 'test:unit'],
   'test/scripts/bump-version.test.mjs': ['ci-gate'],
+  'test/scripts/app-test-origin.test.mjs': ['ci-gate'],
   'test/scripts/ci-module.test.mjs': ['ci-gate'],
   'test/scripts/clerk-apple-prod.test.mjs': ['ci-gate'],
   'test/scripts/clerk-e2e.test.mjs': ['ci-gate'],
