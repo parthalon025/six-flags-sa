@@ -55,7 +55,12 @@
         "apps/party-tracker/public/venues/**",
         "apps/party-tracker/lib/venueIndex.js",
         "data/venues/**",
-        "fastlane/metadata/ios/routing_app_coverage.geojson"
+        "fastlane/metadata/ios/routing_app_coverage.geojson",
+        "apps/party-tracker/lib/contributions/**",
+        "apps/party-tracker/app/api/contributions/**",
+        "test/app/contributions-postgres.test.mjs",
+        "db/migrations/001_profiles_contributions.sql",
+        "db/migrations/003_contribution_thanks.sql"
       ],
       "pulls": ["venues"]
     },
