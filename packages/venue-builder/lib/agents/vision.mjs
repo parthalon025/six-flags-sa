@@ -5,47 +5,19 @@
  * via the evidence graph. SAM 2 / Mapillary remain deferred external workers.
  */
 
-import { existsSync } from 'node:fs';
 import { runAdapter } from '../adapters/runner.mjs';
 import { agentReview } from '../venue-llm.mjs';
 import { getAdapter } from '../adapters/index.mjs';
-import { readSources } from '../venue-sources.mjs';
-import { readJson, resolveBuilderPath } from '../venue-io.mjs';
+import { enqueueVisionTraceClaims } from '../vision-trace-claims.mjs';
 
 export async function runVisionAgent(venueId, opts = {}) {
   const yolo = getAdapter('ultralytics-yolo');
   const adapterRuns = [await runAdapter('evidence-graph', { venueId })];
 
-  const { data: catalog } = readSources(venueId);
-  const traceDatasets = catalog?.datasets?.trace || [];
-  const imageryDatasets = catalog?.datasets?.imagery || [];
-  const traceProposals = [];
-
-  for (const ds of traceDatasets) {
-    const rel = typeof ds === 'string' ? ds : ds?.path;
-    const file = resolveBuilderPath(rel);
-    if (file && existsSync(file)) {
-      traceProposals.push({
-        source: 'traced',
-        file: rel,
-        featureCount: (readJson(file)?.features || []).length,
-        note: 'Traced orthophoto — proposals only until human review',
-      });
-    }
-  }
-
-  for (const ds of imageryDatasets) {
-    const rel = typeof ds === 'string' ? ds : ds?.path;
-    const file = resolveBuilderPath(rel);
-    if (file && existsSync(file)) {
-      traceProposals.push({
-        source: 'imagery',
-        file: rel,
-        featureCount: (readJson(file)?.features || []).length,
-        note: 'Hand-surveyed imagery — proposals only until human review',
-      });
-    }
-  }
+  const persisted = enqueueVisionTraceClaims(venueId, {
+    dryRun: opts.dryRun,
+  });
+  const traceProposals = persisted.traceProposals || [];
 
   let llm = null;
   if (opts.ai) {
@@ -63,6 +35,7 @@ export async function runVisionAgent(venueId, opts = {}) {
     ok: true,
     adapterRuns,
     traceProposals,
+    persisted,
     llm,
     deferred: ['sam2', 'mapillary-tools', 'opensfm'],
   };
