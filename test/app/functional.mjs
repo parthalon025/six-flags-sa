@@ -3293,6 +3293,119 @@ await check('cedar point lists numbered campsite pitches', async () => {
 
 await CP.context.close();
 
+console.log('\n--- zoom band crossfade ---');
+
+await check('crossing each band boundary keeps a parent placeholder drawn, ramps added content across the crossfade, and holds the pitch ease off the boundary', async () => {
+  const P = await openPhone(browser, {
+    lat: 39.34395,
+    lng: -84.2673,
+    name: 'Bands',
+    label: 'ZB',
+    venue: 'kings-island',
+  });
+  const p = P.page;
+  try {
+    await p.evaluate(() => localStorage.setItem('parkbound-demo-skins', '1'));
+    await p.reload({ waitUntil: 'domcontentloaded' });
+    await p.waitForFunction(() => Boolean(document.querySelector('[data-testid="park-map-gl"] canvas')), null, {
+      timeout: 40000,
+    });
+    await closeGate(p);
+    await go(p, 'Collection');
+    const row = p.locator('.worldSkinRow .row', { hasText: 'Watercolor quest' }).first();
+    await row.scrollIntoViewIfNeeded();
+    if (/Locked|Out of season|This World/.test(await row.innerText())) {
+      throw new Error('Watercolor quest still locked after demo grant');
+    }
+    await row.click();
+    await p.waitForTimeout(500);
+    await p.waitForSelector('[data-testid="park-map-gl"][data-map-ready="1"]', { timeout: 20000 });
+    await until(async () => {
+      const ready = await p.evaluate(() => typeof globalThis.__parkMapView?.state === 'function');
+      return ready ? true : false;
+    }, { timeout: 15000, label: 'map view seam ready' });
+
+    const staged = await p.evaluate(() => {
+      const view = globalThis.__parkMapView;
+      const map = globalThis.__parkMapLibre;
+      if (!view?.setCamera || !view?.setAvailableBands || !map) {
+        return { error: 'map view or MapLibre missing' };
+      }
+      const centre = map.getCenter();
+      const lat = (39.3364963 + 39.348) / 2;
+      const handoffs = [14.622402608729475, 16.622402608729477];
+      const ease = { startZoom: 15.022402608729475, endZoom: 16.222402608729478 };
+
+      view.setCamera({ center: { lng: centre.lng, lat: centre.lat }, zoom: 17, bearing: 0 });
+      const beforeClose = view.state().plan;
+      const midVisibleBefore = map.getLayer('band-mid')
+        ? map.getLayoutProperty('band-mid', 'visibility')
+        : null;
+
+      view.setAvailableBands(['mid', 'close']);
+      const afterClose = view.state().plan;
+      const midVisibleAfter = map.getLayer('band-mid')
+        ? map.getLayoutProperty('band-mid', 'visibility')
+        : null;
+
+      view.setCamera({ center: { lng: centre.lng, lat: centre.lat }, zoom: 15, bearing: 0 });
+      const midPitch = view.state().camera.pitch;
+      view.setCamera({ center: { lng: centre.lng, lat: centre.lat }, zoom: 17, bearing: 0 });
+      const closePitch = view.state().camera.pitch;
+
+      return {
+        lat,
+        handoffs,
+        ease,
+        beforeClose,
+        midVisibleBefore,
+        afterClose,
+        midVisibleAfter,
+        midPitch,
+        closePitch,
+      };
+    });
+    if (staged.error) throw new Error(staged.error);
+
+    if (staged.beforeClose.primary !== 'close') {
+      throw new Error(`expected close band at z17, got ${staged.beforeClose.primary}`);
+    }
+    if (staged.beforeClose.placeholder !== 'mid') {
+      throw new Error(`expected mid placeholder before close streams, got ${staged.beforeClose.placeholder}`);
+    }
+    if (!staged.beforeClose.draw.includes('mid')) {
+      throw new Error(`mid must stay drawn as placeholder: ${staged.beforeClose.draw.join(',')}`);
+    }
+    if (staged.beforeClose.primaryReady) {
+      throw new Error('close band must not be ready before it streams in');
+    }
+    if (staged.midVisibleBefore !== 'visible') {
+      throw new Error(`band-mid must be visible during placeholder crossfade, got ${staged.midVisibleBefore}`);
+    }
+
+    if (!staged.afterClose.draw.includes('mid') || !staged.afterClose.draw.includes('close')) {
+      throw new Error(`crossfade draws parent + child: ${staged.afterClose.draw.join(',')}`);
+    }
+    if (staged.midVisibleAfter !== 'visible') {
+      throw new Error(`band-mid must stay visible under close: ${staged.midVisibleAfter}`);
+    }
+
+    const gap = staged.handoffs[1] - staged.ease.endZoom;
+    if (!(gap > 0.35)) {
+      throw new Error(`pitch ease must finish before the mid→close handoff (gap ${gap})`);
+    }
+    if (!(staged.ease.startZoom > staged.handoffs[0])) {
+      throw new Error('pitch ease must start after the overview→mid handoff');
+    }
+    if (!(staged.closePitch > staged.midPitch)) {
+      throw new Error(`pitch must ease up into close band (${staged.midPitch}° → ${staged.closePitch}°)`);
+    }
+  } finally {
+    await P.context.close();
+  }
+  return true;
+});
+
 console.log('\n--- delivery delta sync ---');
 
 await check('revision-cursor bundle sync returns a delta manifest with fewer files when since lags head', async () => {

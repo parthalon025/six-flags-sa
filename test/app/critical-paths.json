@@ -312,16 +312,16 @@
       "user_action": "Update a cached World bundle using the revision cursor so only changed files download",
       "suite": "functional",
       "check": "revision-cursor bundle sync returns a delta manifest with fewer files when since lags head"
-    }
-  ],
-  "upcoming": [
+    },
     {
       "id": "train-h-zoom-bands",
       "slice": "Navigate",
       "user_action": "Pinch from park overview in to one ride and see detail emerge, never a hard band cut or a tilt and restyle in the same instant",
       "suite": "functional",
-      "check": "TODO (Train H, ADR-0021 clauses 2/4): crossing each band boundary keeps a parent placeholder drawn, ramps added content across the crossfade, and holds the pitch ease off the boundary"
-    },
+      "check": "crossing each band boundary keeps a parent placeholder drawn, ramps added content across the crossfade, and holds the pitch ease off the boundary"
+    }
+  ],
+  "upcoming": [
     {
       "id": "train-h-offline-download",
       "slice": "Navigate",
