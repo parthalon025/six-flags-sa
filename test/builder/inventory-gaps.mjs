@@ -122,7 +122,10 @@ await check('shipped gaps document adds inventory rows without changing height g
   const pois = [{ n: 'The Beast', i: 'the-beast', c: 'coaster' }];
   const inventoryGaps = [{ type: 'inventory', target: 'Mystery Ride' }];
   const doc = shippedGapsDocument({ venueId: 'park', seeds: [], pois, inventoryGaps });
-  assert.ok(doc.gaps.some((g) => g.type === 'inventory' && g.target === 'Mystery Ride'));
+  assert.ok(
+    doc.gaps.some((g) => g.type === 'inventory' && g.target === 'Mystery Ride'),
+    'shippedGapsDocument should fold the inventoryGaps option into doc.gaps as a type:inventory row',
+  );
   assert.deepEqual(doc.gaps.filter((g) => g.type === 'height'), [{ type: 'height', target: 'the-beast' }]);
   return true;
 });
@@ -146,8 +149,14 @@ await check('above-threshold ship artifacts leave gaps document identical to no-
 });
 
 await check('inventory is on the builder and phone shipped-gap allowlists', () => {
-  assert.ok(SHIPPED_GAP_TYPES.includes('inventory'));
-  assert.ok(PHONE_GAP_TYPES.has('inventory'));
+  assert.ok(
+    SHIPPED_GAP_TYPES.includes('inventory'),
+    'builder allowlist (packages/venue-builder/lib/ship-gaps.mjs SHIPPED_GAP_TYPES) is missing "inventory"',
+  );
+  assert.ok(
+    PHONE_GAP_TYPES.has('inventory'),
+    'phone allowlist (apps/party-tracker/lib/venue/store.js SHIPPED_GAP_TYPES) is missing "inventory"',
+  );
   assert.equal(INVENTORY_COVERAGE_THRESHOLD, 0.5);
   return true;
 });
