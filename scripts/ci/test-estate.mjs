@@ -134,6 +134,7 @@ export const TEST_ESTATE = {
   'test/app/venue-store.test.mjs': ['test:unit'],
   'test/app/visual.mjs': ['visual-job'],
   'test/app/weather-route.test.mjs': ['test:unit'],
+  'test/app/ready-route.test.mjs': ['test:unit'],
   'test/app/zoom-bands.test.mjs': ['test:unit'],
 
   // --- test/builder: assertions over generated venue output ----------------
