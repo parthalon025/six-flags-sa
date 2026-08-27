@@ -25,11 +25,22 @@ const MAILBOX_TTL_S = Math.round(MAILBOX_TTL_MS / 1000);
 /** Deepest a single party's mailbox goes before the oldest messages fall off. */
 const MAILBOX_DEPTH = 500;
 
+/** @param {NodeJS.ProcessEnv} [env] */
+export function redisCredentialsConfigured(env = process.env) {
+  const url = String(
+    env.UPSTASH_REDIS_REST_URL || env.KV_REST_API_URL || '',
+  ).trim();
+  const token = String(
+    env.UPSTASH_REDIS_REST_TOKEN || env.KV_REST_API_TOKEN || '',
+  ).trim();
+  return Boolean(url && token);
+}
+
 const URL_BASE =
   process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || '';
 const TOKEN =
   process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || '';
-export const usingRedis = Boolean(URL_BASE && TOKEN);
+export const usingRedis = redisCredentialsConfigured();
 
 /* --------------------------------------------------------------- counters */
 

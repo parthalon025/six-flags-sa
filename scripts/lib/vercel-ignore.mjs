@@ -26,7 +26,7 @@ import {
 } from './vercel-budget.mjs';
 import { isVersionStampOnlyChange } from './version-stamp.mjs';
 import { checkLiveAutomationGate } from './vercel-deploy-gate.mjs';
-import { checkProductionPostgresGuard } from '../../apps/party-tracker/lib/productionPostgresGuard.js';
+import { checkProductionRedisGuard } from './production-redis-guard.mjs';
 
 /** Agent / worktree branches — never preview unless the user directed it. */
 const AGENT_PREVIEW_BRANCH = /^(worktree-|cursor\/)/;
@@ -139,17 +139,14 @@ export async function applyLiveAutomationGate(decision, liveGateOptions = {}) {
   };
 }
 
-export function applyProductionPostgresGuard(
-  decision,
-  { vercelEnv = process.env.VERCEL_ENV, runtimeEnv = process.env } = {},
-) {
-  if (!decision.build || vercelEnv !== 'production') return decision;
-  const guard = checkProductionPostgresGuard(runtimeEnv);
+export function applyProductionRedisGuard(decision, env = process.env.VERCEL_ENV, runtimeEnv = process.env) {
+  if (!decision.build || env !== 'production') return decision;
+  const guard = checkProductionRedisGuard(runtimeEnv);
   if (guard.ok) return decision;
   return {
     ...decision,
     build: false,
-    category: 'production-postgres-missing',
+    category: 'production-redis-missing',
     reason: guard.reason,
   };
 }
@@ -202,7 +199,7 @@ export async function runIgnoreCli({
       );
     }
   }
-  decision = applyProductionPostgresGuard(decision, { vercelEnv: env, runtimeEnv: process.env });
+  decision = applyProductionRedisGuard(decision, env, process.env);
   log(decision.reason);
   return decision.build ? 1 : 0;
 }

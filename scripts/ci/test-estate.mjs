@@ -224,6 +224,7 @@ export const TEST_ESTATE = {
   'test/scripts/venues-env-file.test.mjs': ['ci-gate'],
   'test/scripts/vercel-deploy-gate.test.mjs': ['ci-gate'],
   'test/scripts/vercel-ignore.test.mjs': ['ci-gate'],
+  'test/scripts/production-redis-guard.test.mjs': ['ci-gate'],
   'test/scripts/version-stamp.test.mjs': ['ci-gate'],
   'test/scripts/vertical-e2e.test.mjs': ['ci-gate'],
   'test/scripts/factory-legs.test.mjs': ['ci-gate'],

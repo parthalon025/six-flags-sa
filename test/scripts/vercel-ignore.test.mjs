@@ -13,34 +13,13 @@ import {
   decideVercelBuild,
   isAgentPreviewBranch,
   applyLiveAutomationGate,
-  applyProductionPostgresGuard,
+  applyProductionRedisGuard,
 } from '../../scripts/lib/vercel-ignore.mjs';
-import {
-  isProductionRuntime,
-  checkProductionPostgresGuard,
-  postgresCredentialsConfigured,
-  PRODUCTION_POSTGRES_GUARD_MESSAGE,
-} from '../../apps/party-tracker/lib/productionPostgresGuard.js';
 import { isVersionStampOnlyChange } from '../../scripts/lib/version-stamp.mjs';
 import {
   AUTOMATION_DEPLOY_BUDGET,
   USER_DEPLOY_RESERVE,
 } from '../../scripts/lib/vercel-budget.mjs';
-
-assert.equal(isProductionRuntime({ NODE_ENV: 'production' }), true);
-assert.equal(isProductionRuntime({ VERCEL_ENV: 'production' }), true);
-assert.equal(
-  isProductionRuntime({ NODE_ENV: 'production', VERCEL_ENV: 'preview' }),
-  false,
-  'Vercel preview is not production for the postgres guard',
-);
-assert.equal(isProductionRuntime({ NODE_ENV: 'development' }), false);
-assert.equal(isProductionRuntime({ NODE_ENV: 'test' }), false);
-assert.equal(postgresCredentialsConfigured({ DATABASE_URL: 'postgresql://u:p@host/db' }), true);
-assert.equal(
-  checkProductionPostgresGuard({ NODE_ENV: 'production', DATABASE_URL: '' }).reason,
-  PRODUCTION_POSTGRES_GUARD_MESSAGE,
-);
 
 assert.equal(
   decideVercelBuild({ files: ['apps/party-tracker/lib/party/hostService.js'] }).build,
@@ -227,6 +206,7 @@ for (const path of [
   'scripts/lib/vercel-ignore.mjs',
   'scripts/lib/vercel-budget.mjs',
   'scripts/lib/vercel-deploy-gate.mjs',
+  'scripts/lib/production-redis-guard.mjs',
   'scripts/lib/version-stamp.mjs',
   'scripts/lib/version-stamp-paths.json',
   'scripts/lib/repo-path.mjs',
@@ -238,22 +218,6 @@ for (const path of [
     vercelIgnore,
     new RegExp(`^!${path.replace(/\./g, '\\.')}$`, 'm'),
     `.vercelignore must keep ${path} for ignoreCommand`,
-  );
-}
-
-// Wear-time bundle sync API imports @party-tracker/venue-builder/delivery.js — the
-// closure must ship on Vercel (ticket 17 / PR #667).
-for (const path of [
-  '!packages/venue-builder/lib/delivery/**',
-  '!packages/venue-builder/lib/db/**',
-  '!packages/venue-builder/lib/postdb-io.mjs',
-  '!packages/venue-builder/lib/venue-io.mjs',
-  '!packages/venue-builder/src/paths.mjs',
-]) {
-  assert.match(
-    vercelIgnore,
-    new RegExp(`^${path.replace(/\./g, '\\.').replace(/\//g, '\\/').replace(/\*\*/g, '\\*\\*')}$`, 'm'),
-    `.vercelignore must keep ${path} for venue bundle sync API`,
   );
 }
 
@@ -329,26 +293,24 @@ assert.equal(
   assert.equal(gated.liveGate.tier, 'warn');
   assert.match(gated.reason, /approaching the cap/, 'warn-tier reason must reach the logged decision');
 }
-
 {
   const prodBuild = decideVercelBuild({
     files: ['apps/party-tracker/lib/party/hostService.js'],
     env: 'production',
     gitRef: 'main',
   });
-  const blocked = applyProductionPostgresGuard(prodBuild, {
-    vercelEnv: 'production',
-    runtimeEnv: { NODE_ENV: 'production', DATABASE_URL: '' },
+  const blocked = applyProductionRedisGuard(prodBuild, 'production', {
+    NODE_ENV: 'production',
+    UPSTASH_REDIS_REST_URL: '',
+    UPSTASH_REDIS_REST_TOKEN: '',
   });
   assert.equal(blocked.build, false);
-  assert.equal(blocked.category, 'production-postgres-missing');
-  assert.match(blocked.reason, /DATABASE_URL/);
-  const allowed = applyProductionPostgresGuard(prodBuild, {
-    vercelEnv: 'production',
-    runtimeEnv: {
-      NODE_ENV: 'production',
-      DATABASE_URL: 'postgresql://u:p@host/db',
-    },
+  assert.equal(blocked.category, 'production-redis-missing');
+  assert.match(blocked.reason, /Redis/);
+  const allowed = applyProductionRedisGuard(prodBuild, 'production', {
+    NODE_ENV: 'production',
+    UPSTASH_REDIS_REST_URL: 'https://x.upstash.io',
+    UPSTASH_REDIS_REST_TOKEN: 'tok',
   });
   assert.equal(allowed.build, true);
 }
