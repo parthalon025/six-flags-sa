@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "_comment": "Contract fixture for attractions evidence sidecar (#433). Minimal producer shape the attractions stage writes.",
+  "venue": "fixture-park",
+  "generated": "2026-08-26",
+  "publish_at": "moderate",
+  "attractions": [
+    {
+      "id": "sample-ride",
+      "name": "Sample Ride",
+      "venue": "fixture-park",
+      "type": "attraction",
+      "at": { "lat": 41.48067, "lng": -82.681151 },
+      "features": {
+        "queue_entrance": {
+          "at": { "lat": 41.48066, "lng": -82.68099 },
+          "confidence": "moderate",
+          "score": 5,
+          "sources": ["osm_named_queue"],
+          "evidence": [
+            {
+              "source": "osm_named_queue",
+              "at": { "lat": 41.48066, "lng": -82.68099 },
+              "date": "2026-01-01",
+              "note": "named queue tagged one-way towards the ride"
+            }
+          ],
+          "conflict": false
+        },
+        "ride_exit": {
+          "at": { "lat": 41.4808, "lng": -82.6812 },
+          "confidence": "low",
+          "score": 3,
+          "sources": ["geometry"],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": { "lat": 41.4808, "lng": -82.6812 },
+              "date": "2026-01-15",
+              "note": "walkable network at its closest"
+            }
+          ],
+          "conflict": false
+        }
+      },
+      "last_verified": null,
+      "place": "sample-ride"
+    }
+  ]
+}

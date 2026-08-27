@@ -1,5 +1,13 @@
 [
   {
+    "i": "21-and-colder",
+    "n": "21° and Colder",
+    "lat": 41.482185,
+    "lng": -82.685578,
+    "c": "food",
+    "a": "Millennium Midway"
+  },
+  {
     "i": "4x4-s",
     "n": "4x4's",
     "lat": 41.48067,
@@ -196,8 +204,8 @@
   {
     "i": "cabin-parking",
     "n": "Cabin Parking",
-    "lat": 41.488375,
-    "lng": -82.690728,
+    "lat": 41.488376,
+    "lng": -82.690745,
     "c": "parking",
     "a": "Lighthouse Point"
   },
@@ -292,7 +300,7 @@
     "i": "cedar-point-shores-parking-lot",
     "n": "Cedar Point Shores Parking Lot",
     "lat": 41.487712,
-    "lng": -82.688728,
+    "lng": -82.688738,
     "c": "parking",
     "a": "Cedar Point"
   },
@@ -454,7 +462,7 @@
     "i": "departure-parking",
     "n": "Departure Parking",
     "lat": 41.487954,
-    "lng": -82.690254,
+    "lng": -82.690255,
     "c": "parking",
     "a": "Lighthouse Point"
   },
@@ -568,18 +576,10 @@
     "a": "Lakeside Midway"
   },
   {
-    "i": "dragon-s-inn",
-    "n": "Dragon's Inn",
-    "lat": 41.482185,
-    "lng": -82.685578,
-    "c": "food",
-    "a": "Millennium Midway"
-  },
-  {
     "i": "drop-off-lot-reserved-parking",
     "n": "Drop Off Lot/Reserved Parking",
-    "lat": 41.477713,
-    "lng": -82.680667,
+    "lat": 41.477714,
+    "lng": -82.680677,
     "c": "parking",
     "a": "Cedar Point"
   },
@@ -999,6 +999,20 @@
     }
   },
   {
+    "i": "lake-eerie-nor-easter-2",
+    "n": "Lake Eerie Nor'easter",
+    "lat": 41.488522,
+    "lng": -82.687185,
+    "c": "ride",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "a": "Cedar Point Shores",
+    "note": "OpenStreetMap spells it “Lake Eerie”; the sign does not."
+  },
+  {
     "i": "lake-erie-eagles",
     "n": "Lake Erie Eagles",
     "lat": 41.485888,
@@ -1010,20 +1024,6 @@
       "max": null
     },
     "a": "Gemini Midway"
-  },
-  {
-    "i": "lake-eerie-nor-easter",
-    "n": "Lake Erie Nor'easter",
-    "lat": 41.488522,
-    "lng": -82.687185,
-    "c": "ride",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    },
-    "a": "Cedar Point Shores",
-    "note": "OpenStreetMap spells it “Lake Eerie”; the sign does not."
   },
   {
     "i": "lakeside-express",
@@ -1352,32 +1352,32 @@
   {
     "i": "parking",
     "n": "Parking",
-    "lat": 41.489965,
-    "lng": -82.690475,
+    "lat": 41.489991,
+    "lng": -82.690448,
     "c": "parking",
     "a": "Lighthouse Point"
   },
   {
     "i": "parking-2",
     "n": "Parking",
-    "lat": 41.476545,
-    "lng": -82.677425,
+    "lat": 41.476536,
+    "lng": -82.677424,
     "c": "parking",
     "a": "Cedar Point"
   },
   {
     "i": "parking-3",
     "n": "Parking",
-    "lat": 41.481143,
-    "lng": -82.687919,
+    "lat": 41.481141,
+    "lng": -82.687911,
     "c": "parking",
     "a": "Cedar Point"
   },
   {
     "i": "parking-4",
     "n": "Parking",
-    "lat": 41.483747,
-    "lng": -82.683026,
+    "lat": 41.483752,
+    "lng": -82.683032,
     "c": "parking",
     "a": "Cedar Point"
   },
@@ -1385,47 +1385,47 @@
     "i": "parking-5",
     "n": "Parking",
     "lat": 41.477766,
-    "lng": -82.681437,
+    "lng": -82.681439,
     "c": "parking",
     "a": "Cedar Point"
   },
   {
     "i": "parking-6",
     "n": "Parking",
-    "lat": 41.480411,
-    "lng": -82.685299,
+    "lat": 41.480429,
+    "lng": -82.685328,
     "c": "parking",
     "a": "Cedar Point"
   },
   {
     "i": "parking-7",
     "n": "Parking",
-    "lat": 41.47952,
-    "lng": -82.683401,
+    "lat": 41.479516,
+    "lng": -82.683395,
     "c": "parking",
     "a": "Cedar Point"
   },
   {
     "i": "parking-8",
     "n": "Parking",
-    "lat": 41.48467,
-    "lng": -82.685074,
+    "lat": 41.484662,
+    "lng": -82.685079,
     "c": "parking",
     "a": "Cedar Point"
   },
   {
     "i": "parking-9",
     "n": "Parking",
-    "lat": 41.48572,
-    "lng": -82.684809,
+    "lat": 41.485713,
+    "lng": -82.68481,
     "c": "parking",
     "a": "Cedar Point"
   },
   {
     "i": "parking-10",
     "n": "Parking",
-    "lat": 41.486742,
-    "lng": -82.687129,
+    "lat": 41.48674,
+    "lng": -82.687126,
     "c": "parking",
     "a": "Cedar Point"
   },
@@ -1433,7 +1433,7 @@
     "i": "parking-11",
     "n": "Parking",
     "lat": 41.480847,
-    "lng": -82.684582,
+    "lng": -82.684589,
     "c": "parking",
     "a": "Cedar Point"
   },
@@ -1563,8 +1563,8 @@
   {
     "i": "preferred-parking",
     "n": "Preferred Parking",
-    "lat": 41.477174,
-    "lng": -82.679578,
+    "lat": 41.477173,
+    "lng": -82.679586,
     "c": "parking",
     "a": "Cedar Point"
   },
@@ -1637,8 +1637,8 @@
   {
     "i": "registration-parking",
     "n": "Registration Parking",
-    "lat": 41.488589,
-    "lng": -82.690425,
+    "lat": 41.488585,
+    "lng": -82.690427,
     "c": "parking",
     "a": "Lighthouse Point"
   },
@@ -3316,31 +3316,6 @@
     }
   },
   {
-    "i": "snake-river-falls",
-    "n": "Snake River Falls",
-    "lat": 41.484121,
-    "lng": -82.691042,
-    "c": "ride",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    },
-    "a": "Frontier Town",
-    "e": [
-      {
-        "lat": 41.484261,
-        "lng": -82.691029,
-        "n": "Snake River Falls Fastlane Queue / Snake River Falls Standby Queue",
-        "src": {
-          "by": "osm_named_queue",
-          "osm": "w844461872"
-        }
-      }
-    ],
-    "note": "Closed for good at the end of the 2024 season — still on the OpenStreetMap drawing."
-  },
-  {
     "i": "snoopy-bounce",
     "n": "Snoopy Bounce",
     "lat": 41.485817,
@@ -3787,8 +3762,8 @@
     "a": "Frontier Town"
   },
   {
-    "i": "watterin-hole",
-    "n": "Waterin' Hole",
+    "i": "watterin-hole-2",
+    "n": "Watterin' Hole",
     "lat": 41.487096,
     "lng": -82.684437,
     "c": "ride",

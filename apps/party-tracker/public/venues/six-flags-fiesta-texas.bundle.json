@@ -2,45 +2,54 @@
   "version": 1,
   "venue": "six-flags-fiesta-texas",
   "basedOn": {
-    "map": "2026-08-09",
-    "revisionId": "73f043f2-a932-4181-b930-31a7152dd402"
+    "map": "2026-08-09"
   },
-  "bytes": 376272,
+  "bytes": 385093,
   "files": [
     {
       "path": "/venues/six-flags-fiesta-texas.gaps.json",
-      "bytes": 5085,
-      "sha256": "b92f965146bd3c4f36e6fcc83c017839d6cf65da80b9ea29625ef2b63a736040"
+      "bytes": 5216,
+      "sha256": "308e00a39db0f38c342dcfeb9f96c6b8424a0e98f73e9b94af50e55eb627ed1a"
     },
     {
       "path": "/venues/six-flags-fiesta-texas.map.json",
-      "bytes": 328051,
-      "sha256": "3b22005806e90e87fc252ba486c41e1dddaaee7ab15aff8ed8e7541d40aeea1f"
+      "bytes": 328050,
+      "sha256": "673813295b34c5e5985bc268e69d12ec5ba7517631cddb5e42368d2b83147cea"
     },
     {
       "path": "/venues/six-flags-fiesta-texas.pois.json",
       "bytes": 31383,
-      "sha256": "be3aeeade159d133ada37adab359d70cd17487d0bc28ec41b16d42493f7c6cae"
+      "sha256": "d6ac73fe1416c528824066abe464a3b4e27523d45fdc9076985b35bca94b50d8"
+    },
+    {
+      "path": "/venues/six-flags-fiesta-texas/display/blueprint-survey.visual.json",
+      "bytes": 3438,
+      "sha256": "55335def63d5d99e4728cab3d958fed470689b886fcd2d6730653db6128db2f1"
     },
     {
       "path": "/venues/six-flags-fiesta-texas/display/layered-atlas.visual.json",
-      "bytes": 2987,
-      "sha256": "a55c075fcc6a9b560456c97a4114a4daba2bcd4386ed4507da1a377fc38d2f5a"
+      "bytes": 3435,
+      "sha256": "8b15028ed17f00fd6c0a03408a394209d9c9a2150ae0ed6cedef291a827643a2"
+    },
+    {
+      "path": "/venues/six-flags-fiesta-texas/display/midnight-carnival.visual.json",
+      "bytes": 3452,
+      "sha256": "48874aa9723ace61f8d172ad0c9914f2ecd87681fecb76bfa9690c729b8031cf"
     },
     {
       "path": "/venues/six-flags-fiesta-texas/display/park-midnight.visual.json",
-      "bytes": 2893,
-      "sha256": "0cdee607e7e4770a8ff0170791702aa8e11148993ad152b6c6922094b00cd214"
+      "bytes": 3352,
+      "sha256": "8a3f5bbc554136fccf4c12b8da44049ef5253b5adcbb6857e42564e6ad1914f0"
     },
     {
       "path": "/venues/six-flags-fiesta-texas/display/trail.visual.json",
-      "bytes": 2883,
-      "sha256": "7ba19dfe27b2bfac5d4e713872e81bb67d71c906058459a1336dc9ae20bcea40"
+      "bytes": 3331,
+      "sha256": "1fd062f7c1609b1d135fd3c1122be377ea5bdb8f855e7212ad711f760a2b9387"
     },
     {
       "path": "/venues/six-flags-fiesta-texas/display/watercolor-quest.visual.json",
-      "bytes": 2990,
-      "sha256": "3d6bd8b4e318889465ee647c04d0b72c45d43fae945528ff49eaf8177d1fe128"
+      "bytes": 3436,
+      "sha256": "990b6d7d2fa08b87dad4830399cc4c013aa318450419ea9a567bd33b20c9e212"
     }
   ]
 }

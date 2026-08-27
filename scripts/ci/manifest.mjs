@@ -57,6 +57,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/map-performance-contract.test.mjs',
   'test/scripts/venues-env-file.test.mjs',
   'test/scripts/venue-freshness.test.mjs',
+  'test/scripts/venue-report-gate.test.mjs',
   'test/scripts/drift-watch.test.mjs',
   'test/scripts/bake-drift-watch.test.mjs',
   'test/scripts/billing-sync-check.test.mjs',
@@ -85,4 +86,8 @@ export const GATE_EXCLUDED_TESTS = {
     'needs ffmpeg on PATH — runs via npm run test:unit where the toolchain has it (#474)',
   'test/scripts/design-bundle.test.mjs':
     'reaches app source — the bundle calls mapPaint() for its skin swatches rather than copying hexes, so it imports lib/world.js and on into @party-tracker/shared, which the Gate job runs too early to resolve. Runs via npm run test:unit where the workspace is installed.',
+  'test/scripts/venues-report-cli.test.mjs':
+    'spawns npm run venues:report, which loads external-claims and @party-tracker/shared — unresolvable before workspace install. Checklist + expect locks run in venue-report-gate.test.mjs at the gate; CLI exit code runs via npm run test:unit (#366).',
+  'test/scripts/venue-builder-guide.test.mjs':
+    'imports packages/venue-builder/lib/build-pipeline.mjs for STAGES — unresolvable before workspace install. Runs via npm run test:builder (#431).',
 };

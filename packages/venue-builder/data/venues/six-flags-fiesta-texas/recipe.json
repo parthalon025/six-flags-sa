@@ -15,20 +15,16 @@
     "locality": "San Antonio, Texas",
     "kind": "theme-park",
     "pad": 0,
-    "decorativeTolerance": 3
+    "decorativeTolerance": 3,
+    "sources": "data/venues/six-flags-fiesta-texas/sources.json"
   },
   "built": {
-    "at": "2026-08-09",
+    "at": "2026-08-26",
     "counts": {
-      "pois": 161,
-      "rides": 71,
+      "pois": 160,
+      "rides": 70,
       "heights": 60,
       "shapes": 1990
     }
-  },
-  "consolidate": {
-    "cadence": "weekly",
-    "lastAt": null,
-    "_comment": "E0.6 cadence — consolidate graduates accepted edits into this package; never public/venues"
   }
 }

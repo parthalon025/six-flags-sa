@@ -97,20 +97,272 @@ export function readSkinTemplates() {
 }
 
 /**
- * ESA WorldCover class → land tone. The land-cover analogue of
- * SURFACE_CLASSES: ties each classified district to the ledger material a
- * guest would actually see underfoot there, plus the day/night wash that
- * paints it before a texture ever loads. Classes with no real analogue
- * among shipped materials (bare/sparse, snow/ice, cropland, …) are
- * deliberately absent — an unmapped class invents no tone, see
- * `landTonesFromCover`.
+ * Kit id → the iso recipe the Skin bound to that kit declared.
+ *
+ * `isoTemplate` sat on every skins.json row with no reader for its whole
+ * life: the bake took its recipe from `display-iso.mjs`'s own default chain,
+ * so layered-atlas asked for `frisco-fields` and silently got `rct-classic`
+ * geometry. A declaration nothing reads is worse than no declaration, so the
+ * bake reads it here — and an id no recipe answers to throws, because the
+ * shared renderer's tolerant fallback (`resolveIsoMapTemplate`) is the right
+ * behaviour for a phone handed an unknown Skin and the wrong behaviour for a
+ * committed ledger row.
+ *
+ * @param {object} templates the SkinTemplate ledger
+ * @param {string} kitId
+ * @param {object} recipes registered iso recipes, keyed by id (ISO_MAP_TEMPLATES)
+ * @returns {string|null} the declared recipe id, or null when no Skin binds the kit
+ */
+export function isoTemplateForKit(templates, kitId, recipes) {
+  const known = new Set(Object.keys(recipes || {}));
+  for (const skinId of Object.keys(templates).sort()) {
+    const skin = templates[skinId];
+    if (skin.bakeKit !== kitId || !skin.isoTemplate) continue;
+    if (!known.has(skin.isoTemplate)) {
+      throw new Error(
+        `Skin "${skinId}" declares iso template "${skin.isoTemplate}", which is not a registered recipe `
+        + `(known: ${[...known].sort().join(', ')})`,
+      );
+    }
+    return skin.isoTemplate;
+  }
+  return null;
+}
+
+/**
+ * ESA WorldCover class → the relationship a Zone has with the ground.
+ *
+ * The land-cover analogue of SURFACE_CLASSES, and deliberately hex-free: a
+ * row says what a Zone IS — the ledger material a guest actually stands on
+ * there, and the surface class whose token the Skin already owns — never
+ * what colour it should be. Treatment is the Skin's (ADR-0020 grounding
+ * rule: design owns treatment, the venue owns relationships).
+ *
+ * Classes with no real analogue among shipped materials (bare/sparse,
+ * snow/ice, cropland, …) are deliberately absent — an unmapped class
+ * invents no tone, see `zoneToneTable`.
  */
 export const LAND_COVER_STYLE = {
-  built_up: { material: 'roofing--shingle', tone: { day: '#C9B79E', night: '#39323F' } },
-  tree_cover: { material: 'grass--meadow', tone: { day: '#7CA35E', night: '#1D3320' } },
-  grassland: { material: 'grass--meadow', tone: { day: '#BFD79A', night: '#2B4527' } },
-  permanent_water: { material: 'water--calm', tone: { day: '#6FB8D9', night: '#1C4A5C' } },
+  built_up: { material: 'roofing--shingle', surface: 'structure' },
+  tree_cover: { material: 'grass--meadow', surface: 'vegetation' },
+  grassland: { material: 'grass--meadow', surface: 'vegetation' },
+  permanent_water: { material: 'water--calm', surface: 'water' },
 };
+
+/**
+ * Zone character — the second relationship a World may state about a Zone,
+ * beside its land cover: what the place is *about*. Rivertown is the wooded
+ * one, Soak City is the water one, Action Zone is the steel one.
+ *
+ * A character never carries a colour. It names one of the Skin's OWN palette
+ * tokens for that Zone to lean toward, so the same relationship reads as a
+ * pale wash under Trail, a deep one under Park Midnight, and a saturated
+ * plate under Layered atlas. This is where hand-picked per-park tints go
+ * after they stop being treatment in truth: as the relationship they always
+ * really encoded.
+ *
+ * Closed vocabulary on purpose — an unknown character is a loud failure at
+ * the grounding seam, never a silent no-op.
+ */
+export const LAND_CHARACTERS = {
+  woodland: { token: 'grass' },
+  water: { token: 'water' },
+  steel: { token: 'structureEdge' },
+  midway: { token: 'path' },
+  built: { token: 'building' },
+  civic: { token: 'label' },
+  open: { token: 'ground' },
+};
+
+/**
+ * The Skin's Zone-wash recipe, declared under `tokens.landTones`.
+ *
+ *   cover   how far a Zone's wash travels from this Skin's own ground toward
+ *           what its land cover looks like here
+ *   lean    how far it then leans toward the token its character names
+ *   spread  how far the ramp separating same-character Zones may travel
+ *   steps   how many rungs that ramp has — what makes the emittable palette
+ *           finite, and therefore checkable (see `allowedLandTones`)
+ *
+ * All four are treatment, so all four belong to the Skin. The defaults are
+ * deliberately timid: a ledger row that says nothing still gets Zones a guest
+ * can tell apart, and says so quietly.
+ */
+export const DEFAULT_LAND_TONES = { cover: 0.25, lean: 0, spread: 0.08, steps: 5 };
+
+/** How far a Zone's stroke is pulled from its fill toward the Skin's edge ink. */
+export const ZONE_EDGE_MIX = 0.35;
+
+/** The Skin's declared Zone-tone ramp, clamped to a sane, finite envelope. */
+export function landToneRamp(template) {
+  const d = template?.tokens?.landTones || {};
+  const num = (v, fallback) => (Number.isFinite(v) ? v : fallback);
+  const unit = (v, fallback) => Math.max(0, Math.min(0.9, num(v, fallback)));
+  return {
+    cover: unit(d.cover, DEFAULT_LAND_TONES.cover),
+    lean: unit(d.lean, DEFAULT_LAND_TONES.lean),
+    spread: Math.max(0, Math.min(0.5, num(d.spread, DEFAULT_LAND_TONES.spread))),
+    steps: Math.max(1, Math.min(9, Math.round(num(d.steps, DEFAULT_LAND_TONES.steps)))),
+  };
+}
+
+/** Mix toward white (positive) or black (negative) — the ramp's one move. */
+function shadeHex(hex, delta) {
+  if (!delta) return hex;
+  return delta > 0 ? mixHex(hex, '#FFFFFF', delta) : mixHex(hex, '#000000', -delta);
+}
+
+/** Rung `step` of a `steps`-rung ramp, as a signed fraction of `spread`. */
+function rampDelta(step, { spread, steps }) {
+  if (steps <= 1 || !spread) return 0;
+  return spread * ((2 * step) / (steps - 1) - 1);
+}
+
+/** A Skin token, with the label ink as the one always-present fallback. */
+const tokenColor = (template, token) => template?.tokens?.colors?.[token]
+  ?? template?.tokens?.colors?.label
+  ?? null;
+
+/**
+ * One Zone tone, entirely from this Skin's own palette.
+ *
+ * A Zone wash is ground — the paper the whole map is drawn on — so it starts
+ * at this Skin's `ground` token and never at the token for whatever is built
+ * on top. From there:
+ *
+ * cover  toward what this Zone's land cover looks like in this Skin: the
+ *        Skin's token for that surface class, pulled toward the bound
+ *        material's measured average by exactly the mix surfaces already use
+ * lean   toward the Skin's token for the Zone's declared character
+ * step   a rung on the Skin's declared ramp, so Zones that share a class and
+ *        a character still read apart
+ *
+ * Returns null when the World says nothing about this Zone — the renderer's
+ * deterministic name-hue takes over, which is what an un-harvested World is
+ * supposed to look like.
+ */
+function zoneTone({ template, materials, cover, character, step, ramp }) {
+  const ground = tokenColor(template, 'ground');
+  if (!ground) return null;
+  const style = cover ? LAND_COVER_STYLE[cover] : null;
+  let base = null;
+  if (style && materials[style.material]) {
+    const authored = tokenColor(template, SURFACE_CLASSES[style.surface]?.token);
+    const avg = materials[style.material].avgColor;
+    const mix = template.materialMix ?? DEFAULT_MATERIAL_MIX;
+    const coverColor = authored && avg ? mixHex(authored, avg, mix) : authored;
+    base = coverColor ? mixHex(ground, coverColor, ramp.cover) : ground;
+  } else if (character) {
+    // No usable cover class, but the World still stated what this Zone is
+    // about: the Skin's own ground is the honest base to lean off.
+    base = ground;
+  }
+  if (!base) return null;
+  const leanToken = character ? LAND_CHARACTERS[character]?.token : null;
+  const leaned = leanToken && ramp.lean
+    ? mixHex(base, tokenColor(template, leanToken), ramp.lean)
+    : base;
+  const fill = shadeHex(leaned, rampDelta(step, ramp));
+  const edge = template?.tokens?.colors?.groundEdge
+    ?? template?.tokens?.colors?.structureEdge
+    ?? template?.tokens?.colors?.label;
+  return {
+    fill,
+    stroke: edge ? mixHex(fill, edge, ZONE_EDGE_MIX) : fill,
+    label: template?.tokens?.colors?.label || fill,
+  };
+}
+
+/**
+ * Pure: (World relationships × Skin palette) → one tone per Zone.
+ *
+ * The World contributes which Zones group together (same cover class, same
+ * declared character) and which of a group is the biggest — WorldCover's own
+ * sample `count`, with the Zone name as the tie-break so the answer never
+ * depends on object order. The Skin contributes every colour and the size of
+ * the visual gap between neighbours. Neither invents a Zone the other did
+ * not name.
+ *
+ * @param {{ landCover?: object, grounding?: object, materials: object, template: object }} deps
+ * @returns {Record<string, {fill: string, stroke: string, label: string}>}
+ */
+export function zoneToneTable({ landCover, grounding, materials, template }) {
+  const ramp = landToneRamp(template);
+  const zones = grounding?.zones || {};
+  const names = [...new Set([...Object.keys(landCover || {}), ...Object.keys(zones)])].sort();
+  const rows = names.map((name) => ({
+    name,
+    cover: LAND_COVER_STYLE[landCover?.[name]?.name] ? landCover[name].name : null,
+    character: LAND_CHARACTERS[zones[name]?.character] ? zones[name].character : null,
+    count: Number.isFinite(landCover?.[name]?.count) ? landCover[name].count : 0,
+  }));
+  // Rank inside the bucket that would otherwise collide: same cover class,
+  // same character. Biggest Zone first, name as the deterministic tie-break.
+  const buckets = new Map();
+  for (const row of rows) {
+    const key = `${row.cover || '-'}|${row.character || '-'}`;
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(row);
+  }
+  const stepOf = new Map();
+  for (const bucket of buckets.values()) {
+    const ordered = [...bucket].sort((a, b) => (b.count - a.count) || (a.name < b.name ? -1 : 1));
+    for (let i = 0; i < ordered.length; i += 1) {
+      const step = ordered.length > 1
+        ? Math.round((i * (ramp.steps - 1)) / (ordered.length - 1))
+        : Math.floor((ramp.steps - 1) / 2);
+      stepOf.set(ordered[i].name, step);
+    }
+  }
+  const tones = {};
+  for (const row of rows) {
+    const tone = zoneTone({
+      template,
+      materials,
+      cover: row.cover,
+      character: row.character,
+      step: stepOf.get(row.name) || 0,
+      ramp,
+    });
+    if (tone) tones[row.name] = tone;
+  }
+  return tones;
+}
+
+/**
+ * Every colour this Skin can put on a Zone — the palette sibling of
+ * `allowedCoordinates`.
+ *
+ * `allowedCoordinates` works because the set of positions a display file may
+ * repeat is finite and published by truth. The same argument holds for
+ * colour once a Skin's ramp has a declared number of rungs: cover classes ×
+ * characters × rungs is a finite, enumerable palette, so "this hex came from
+ * this Skin" stops being a promise and becomes a membership test. A hand hex
+ * smuggled in from a World then fails exactly the way a smuggled coordinate
+ * does.
+ *
+ * @param {object} template SkinTemplate row
+ * @param {object} materials MaterialSet ledger
+ * @returns {Set<string>} every fill, stroke and label the Skin can emit
+ */
+export function allowedLandTones(template, materials) {
+  const ramp = landToneRamp(template);
+  const allowed = new Set();
+  const covers = [null, ...Object.keys(LAND_COVER_STYLE)];
+  const characters = [null, ...Object.keys(LAND_CHARACTERS)];
+  for (const cover of covers) {
+    for (const character of characters) {
+      for (let step = 0; step < ramp.steps; step += 1) {
+        const tone = zoneTone({ template, materials, cover, character, step, ramp });
+        if (!tone) continue;
+        allowed.add(tone.fill);
+        allowed.add(tone.stroke);
+        allowed.add(tone.label);
+      }
+    }
+  }
+  return allowed;
+}
 
 /** Per-venue land-patch classification cache written by `venues:worldcover-lands`. */
 export function readLandCover(id) {
@@ -118,50 +370,49 @@ export function readLandCover(id) {
 }
 
 /**
- * Pure: WorldCover-classified lands → land tones, gated the same way
- * `compileVisualSpec` gates surfaces — a class with no bound material (or no
- * WorldCover data at all) invents no tone; certification stays total.
+ * One World's grounding harvest — the Visual factory's per-World relationship
+ * input (ADR-0020 clauses 1 and 4), living beside the WorldCover cache in the
+ * World's own display pack rather than in `map.json`.
+ *
+ * It states what each Zone IS, never what colour it should be: this is where
+ * a park's hand-tuned character goes once treatment leaves truth. An unknown
+ * character throws here rather than resolving to nothing, so a typo in a
+ * committed harvest is a build failure and not a Zone that quietly stops
+ * looking like itself.
  */
-function landTonesFromCover(landCover, materials) {
-  const tones = {};
-  for (const [name, cls] of Object.entries(landCover || {})) {
-    const style = LAND_COVER_STYLE[cls?.name];
-    if (!style || !materials[style.material]) continue;
-    tones[name] = { ...style.tone };
-  }
-  return tones;
-}
-
-function landTonesFromMeta(meta) {
-  // Hand tints are either a fill string or a {fill, stroke, label} object
-  // (Kings Island); the spec carries the fill — the phone keeps the richer
-  // form from truth.
-  const fillOf = (tone) => (typeof tone === 'string' ? tone : tone?.fill);
-  const tones = {};
-  for (const mode of ['day', 'night']) {
-    for (const [land, tone] of Object.entries(meta?.lands?.[mode] || {})) {
-      const fill = fillOf(tone);
-      if (!fill) continue;
-      tones[land] = tones[land] || {};
-      tones[land][mode] = fill;
+export function readGrounding(id) {
+  const file = path.join(venueSidecar(id, 'display'), 'grounding.json');
+  const grounding = readJson(file, null);
+  if (!grounding) return null;
+  for (const [zone, row] of Object.entries(grounding.zones || {})) {
+    if (row?.character && !LAND_CHARACTERS[row.character]) {
+      throw new Error(
+        `${id}: Zone "${zone}" declares unknown character "${row.character}" — `
+        + `known: ${Object.keys(LAND_CHARACTERS).sort().join(', ')}`,
+      );
     }
   }
-  return tones;
+  return grounding;
 }
 
 /**
  * Compile one venue × Skin visual spec. Pure: no disk, no clock, no network.
- * Binds only surfaces whose layers the venue actually has. Land tones come
- * from two sources, curated over inferred: hand land tints pass through
- * unchanged, then real ESA WorldCover classification (`landCover`, per
- * district) fills in tones for every land a hand tint didn't already claim.
- * Neither source invents a tone for a land it doesn't cover — a district
- * with no hand tint and no (or unmapped) WorldCover class falls back to the
+ * Binds only surfaces whose layers the venue actually has.
+ *
+ * Zone tones are the Skin's, derived here and nowhere else. The World
+ * contributes relationships only — ESA WorldCover classification
+ * (`landCover`) and its grounding harvest (`grounding`, per-Zone character)
+ * — and every colour comes out of `template.tokens`. `map.meta` contributes
+ * nothing: truth carries geometry, Places and Gaps, never treatment. A Zone
+ * the World says nothing about gets no tone at all and falls back to the
  * renderer's deterministic name-hue, same as before this existed.
  *
- * @param {{ map: object, pois: object[], template: object, materials: object, landCover?: object }} deps
+ * @param {{ map: object, pois: object[], template: object, materials: object,
+ *           landCover?: object, grounding?: object }} deps
  */
-export function compileVisualSpec({ map, pois = [], template, materials, landCover, terrain = null }) {
+export function compileVisualSpec({
+  map, pois = [], template, materials, landCover, grounding = null, terrain = null,
+}) {
   const surfaces = {};
   for (const [surface, materialId] of Object.entries(template.surfaces || {})) {
     const layers = (SURFACE_CLASSES[surface]?.layers || []).filter((l) => map[l]?.length);
@@ -177,6 +428,7 @@ export function compileVisualSpec({ map, pois = [], template, materials, landCov
     const color = authored && avg ? mixHex(authored, avg, mix) : authored || null;
     surfaces[surface] = { material: materialId, layers, ...(color ? { color } : {}) };
   }
+  const mode = template.tokens?.mode === 'night' ? 'night' : 'day';
   return {
     version: DISPLAY_VERSION,
     venue: map.meta?.id,
@@ -184,7 +436,12 @@ export function compileVisualSpec({ map, pois = [], template, materials, landCov
     basedOn: { map: map.meta?.generated || null },
     tokens: template.tokens || {},
     surfaces,
-    landTones: { ...landTonesFromCover(landCover, materials), ...landTonesFromMeta(map.meta) },
+    // One half only: the half this Skin paints. A day Skin shipping a night
+    // hex it can never draw was how every Skin came to emit the same block.
+    landTones: Object.fromEntries(
+      Object.entries(zoneToneTable({ landCover, grounding, materials, template }))
+        .map(([zone, tone]) => [zone, { [mode]: tone }]),
+    ),
     fallback: { landTone: 'name-hue' },
     ...(terrain ? { terrain } : {}),
   };
@@ -212,8 +469,8 @@ const fill = (id, sourceLayer, color, opts = {}) => ({
 
 /**
  * Compile a spec into a MapLibre style. Colors come from the Skin's tokens
- * (palettes harvested from `world.js` and PR #447's reference skins); land
- * washes come from the spec's hand tints, matched by district name. The
+ * (palettes harvested from `world.js` and PR #447's reference skins); Zone
+ * washes come from the spec's own derived tones, matched by Zone name. The
  * style carries no coordinates — the renderer sets its own camera from truth.
  * Labels are deliberately absent: annotation is the phone's overlay layer.
  */
@@ -235,10 +492,10 @@ export function styleFromSpec(spec) {
     ? [[tb.west, tb.north], [tb.east, tb.north], [tb.east, tb.south], [tb.west, tb.south]]
     : null;
   const tones = Object.entries(spec.landTones || {})
-    .filter(([, t]) => t[mode])
+    .filter(([, t]) => t[mode]?.fill)
     .sort(([a], [b]) => (a < b ? -1 : 1));
   const landFill = tones.length
-    ? ['match', ['get', 'name'], ...tones.flatMap(([name, t]) => [name, t[mode]]), 'rgba(0,0,0,0)']
+    ? ['match', ['get', 'name'], ...tones.flatMap(([name, t]) => [name, t[mode].fill]), 'rgba(0,0,0,0)']
     : 'rgba(0,0,0,0)';
   return {
     version: 8,
@@ -505,6 +762,29 @@ export function certifyDisplayPack({ spec, map, template, materials, textures = 
     soWhat: 'a display file that can move a Place breaks the truth/display split',
   }));
 
+  // The palette sibling of no_repositioning. Same shape of argument, applied
+  // to colour: every value the display layer carries must already be one its
+  // own declared source publishes. A hex from a World's hand-tint table is
+  // not on this Skin's ramp, so it fails here exactly as a nudged coordinate
+  // fails above.
+  const allowedTones = allowedLandTones(template, materials);
+  const strayTone = Object.entries(spec.landTones || {}).flatMap(([zone, byMode]) => Object
+    .entries(byMode || {})
+    .flatMap(([mode, tone]) => Object.entries(tone || {})
+      .filter(([, hex]) => !allowedTones.has(hex))
+      .map(([key, hex]) => `${zone}.${mode}.${key} = ${hex}`)))[0] || null;
+  checks.push(check({
+    key: 'palette_derives_tones',
+    claim: "every Zone colour in the spec is one this Skin's own palette can make — Skins restyle from their own paint",
+    pass: !strayTone,
+    evidence: strayTone
+      ? `spec colour outside the Skin's declared palette: ${strayTone}`
+      : `${allowedTones.size} colour(s) reachable from ${spec.skin}'s tokens; every Zone tone is one of them`,
+    confidence: 'high',
+    falsifier: "a Zone tone carries a hex the Skin's tokens, bound materials and declared ramp cannot produce",
+    soWhat: 'a colour from outside the Skin is a World repainting a Skin — the inversion this gate exists to catch',
+  }));
+
   const landNames = new Set((map.lands || []).map((l) => l.n).filter(Boolean));
   const orphanTones = Object.keys(spec.landTones || {}).filter((name) => !landNames.has(name));
   checks.push(check({
@@ -659,6 +939,7 @@ export function runDisplayStage(id, opts = {}) {
   const materials = readMaterials();
   const templates = readSkinTemplates();
   const landCover = opts.landCover || readLandCover(id);
+  const grounding = opts.grounding !== undefined ? opts.grounding : readGrounding(id);
   const skinIds = opts.skinIds
     || Object.keys(templates).filter((skinId) => templates[skinId].status === 'active');
   const outDir = opts.outDir || venueSidecar(id, 'display');
@@ -671,7 +952,7 @@ export function runDisplayStage(id, opts = {}) {
     const template = templates[skinId];
     if (!template) throw new Error(`Unknown skin "${skinId}"`);
     const spec = compileVisualSpec({
-      map, pois, template, materials, landCover, terrain: opts.terrain || null,
+      map, pois, template, materials, landCover, grounding, terrain: opts.terrain || null,
     });
     const certification = certifyDisplayPack({ spec, map, template, materials, textures });
     const style = styleFromSpec(spec);

@@ -72,6 +72,14 @@ async function load() {
     pois.textContent = 'View POIs';
     actions.appendChild(pois);
 
+    const evidence = document.createElement('a');
+    evidence.href = `/evidence/${stats.id}`;
+    evidence.target = '_blank';
+    evidence.textContent = 'Evidence review';
+    evidence.dataset.venue = stats.id;
+    evidence.className = 'evidence-link';
+    actions.appendChild(evidence);
+
     const approve = document.createElement('button');
     approve.type = 'button';
     approve.className = `approve ${approvals[stats.id] ? 'on' : ''}`;
@@ -89,6 +97,29 @@ async function load() {
   }
 
   root.appendChild(grid);
+  await markEvidenceLinks(grid);
+}
+
+async function markEvidenceLinks(grid) {
+  const links = [...grid.querySelectorAll('a.evidence-link')];
+  await Promise.all(
+    links.map(async (link) => {
+      const venueId = link.dataset.venue;
+      try {
+        const res = await fetch(`/api/evidence/${encodeURIComponent(venueId)}`);
+        if (!res.ok) throw new Error(`evidence status ${res.status}`);
+        const data = await res.json();
+        if (!data.available) {
+          link.classList.add('missing');
+          link.textContent = 'Evidence not generated';
+          link.title = 'Evidence review map not generated for this venue';
+        }
+      } catch {
+        link.classList.add('missing');
+        link.title = 'Could not check evidence review status';
+      }
+    }),
+  );
 }
 
 load().catch((e) => {

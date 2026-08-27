@@ -482,6 +482,24 @@ export function campDetailsFromTags(tags) {
   return Object.keys(out).length ? out : null;
 }
 
+/**
+ * Optional POI fields read from OpenStreetMap tags at build time.
+ *
+ * Measured across the four shipped venues (Overpass, 2026-08-27):
+ *
+ *   opening_hours    0 nodes, 2 ways   sparse — campground offices and dining
+ *                               when a mapper tags them; raw OSM string
+ *
+ * Deliberately not carried on the routing map — hours belong on the place row,
+ * not on a walkable way. POIs without the tag are byte-identical to before.
+ */
+export function openingHoursFromTags(tags) {
+  const raw = tags.opening_hours;
+  if (raw == null) return null;
+  const s = String(raw).trim();
+  return s || null;
+}
+
 export function classify(rules, tags) {
   for (const [key, test] of rules) {
     try {

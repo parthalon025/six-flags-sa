@@ -96,12 +96,12 @@ Run `npm run venues:adapters -- matrix` for an up-to-date table. Snapshot:
 | Segmentation | facebookresearch/sam2 | VISION_SEGMENTER | defer | Apache-2.0 | Polygon geometry |
 | Park ops data | cubehouse/ParksAPI | VENUE_DATA_ADAPTER | wrap | MIT | Metadata, not live phone feed |
 | Legacy parks API | cubehouse/themeparks | LEGACY_REFERENCE | evaluate | MIT | Study successor model |
-| Evidence fusion | scripts/lib/evidence.mjs | EVIDENCE_ENGINE | adopt | project | Ahead of proposals |
+| Evidence fusion | packages/venue-builder/lib/evidence.mjs | EVIDENCE_ENGINE | adopt | project | Ahead of proposals |
 | Phone routing | lib/routing.js | PHONE_ROUTING | adopt | project | 1.8 ms; no Valhalla on phone |
 
 ## Evidence source weights (adapter outputs)
 
-Defined in `scripts/lib/evidence.mjs`. New adapter-facing keys:
+Defined in `packages/venue-builder/lib/evidence.mjs`. New adapter-facing keys:
 
 | Source | Weight | Typical adapter |
 | --- | ---: | --- |
@@ -116,7 +116,7 @@ Defined in `scripts/lib/evidence.mjs`. New adapter-facing keys:
 Every feature is a **node**; every observation is a **claim** with source, date, and URI.
 Fusion answers: *how many independent sources converge, and what band is publishable?*
 
-Implementation: `scripts/lib/evidence-graph.mjs`  
+Implementation: `packages/venue-builder/lib/evidence-graph.mjs`  
 Principle from architecture review: the app consumes **validated results**, not raw AI guesses.
 
 ```

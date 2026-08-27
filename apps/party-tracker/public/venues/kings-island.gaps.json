@@ -287,8 +287,16 @@
       "target": "the-zephyr"
     },
     {
+      "type": "queue",
+      "target": "total-wave-bay"
+    },
+    {
       "type": "path",
       "target": null
+    },
+    {
+      "type": "verify",
+      "target": "open-meteo"
     }
   ]
 }

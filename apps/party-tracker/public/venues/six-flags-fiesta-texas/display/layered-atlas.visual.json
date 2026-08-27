@@ -1,154 +1,178 @@
 {
-  "skin": "layered-atlas",
+  "version": 1,
   "venue": "six-flags-fiesta-texas",
-  "tokens": {
-    "mode": "day",
-    "colors": {
-      "path": "#3F6570",
-      "grass": "#A7C58E",
-      "label": "#243B45",
-      "water": "#5CA8B3",
-      "ground": "#C9D6C0",
-      "building": "#C9B58D",
-      "groundEdge": "#6E8975",
-      "pathCasing": "#C9D6C0",
-      "structureEdge": "#7A6655"
-    },
-    "labelHalo": true,
-    "contrastFloor": 4.5
-  },
+  "skin": "layered-atlas",
   "basedOn": {
     "map": "2026-08-09"
   },
-  "terrain": {
-    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n30w099/USGS_13_n30w099.tif",
-    "grid": {
-      "cols": 240,
-      "rows": 254
+  "tokens": {
+    "contrastFloor": 4.5,
+    "labelHalo": true,
+    "mode": "day",
+    "landTones": {
+      "cover": 0.34,
+      "lean": 0.55,
+      "spread": 0.14,
+      "steps": 7
     },
-    "bounds": {
-      "east": -98.60144,
-      "west": -98.61789,
-      "north": 29.60751,
-      "south": 29.59224
-    },
-    "relief": {
-      "max": 375.9,
-      "min": 295.8
-    },
-    "source": "usgs-3dep",
-    "fitness": "marginal",
-    "hillshade": {
-      "file": "hillshade.png",
-      "azimuth": 315,
-      "altitude": 45
-    },
-    "cellMetres": 6.64,
-    "resolution": 10,
-    "constrained": {
-      "pads": 268,
-      "nodes": 163785,
-      "paths": 938,
-      "water": 40
-    },
-    "steepDegrees": 18,
-    "surfaceModel": false
-  },
-  "version": 1,
-  "fallback": {
-    "landTone": "name-hue"
+    "colors": {
+      "path": "#3F6570",
+      "ground": "#C9D6C0",
+      "water": "#5CA8B3",
+      "grass": "#A7C58E",
+      "building": "#C9B58D",
+      "label": "#243B45",
+      "structureEdge": "#7A6655",
+      "groundEdge": "#6E8975",
+      "pathCasing": "#C9D6C0"
+    }
   },
   "surfaces": {
-    "lot": {
-      "color": "#BBAE95",
-      "layers": [
-        "parking"
-      ],
-      "material": "concrete--lot"
-    },
-    "pool": {
-      "color": "#57B3C8",
-      "layers": [
-        "pool"
-      ],
-      "material": "water--pool"
-    },
-    "slide": {
-      "color": "#837161",
-      "layers": [
-        "slide"
-      ],
-      "material": "fiberglass--flume"
-    },
-    "water": {
-      "color": "#5AAAC3",
-      "layers": [
-        "water"
-      ],
-      "material": "water--calm"
-    },
     "walkway": {
-      "color": "#596F72",
+      "material": "paving-stones--warm",
       "layers": [
         "path"
       ],
-      "material": "paving-stones--warm"
+      "color": "#596F72"
     },
-    "structure": {
-      "color": "#998D72",
+    "service-road": {
+      "material": "asphalt--worn",
       "layers": [
-        "building"
+        "service"
       ],
-      "material": "roofing--shingle"
+      "color": "#3C5358"
     },
     "vegetation": {
-      "color": "#859A68",
+      "material": "grass--meadow",
       "layers": [
         "grass",
         "wood",
         "park"
       ],
-      "material": "grass--meadow"
+      "color": "#859A68"
     },
-    "service-road": {
-      "color": "#3C5358",
+    "water": {
+      "material": "water--calm",
       "layers": [
-        "service"
+        "water"
       ],
-      "material": "asphalt--worn"
+      "color": "#5AAAC3"
+    },
+    "pool": {
+      "material": "water--pool",
+      "layers": [
+        "pool"
+      ],
+      "color": "#57B3C8"
     },
     "coaster-track": {
-      "color": "#3E5059",
+      "material": "steel--track",
       "layers": [
         "coaster"
       ],
-      "material": "steel--track"
+      "color": "#3E5059"
+    },
+    "slide": {
+      "material": "fiberglass--flume",
+      "layers": [
+        "slide"
+      ],
+      "color": "#837161"
+    },
+    "structure": {
+      "material": "roofing--shingle",
+      "layers": [
+        "building"
+      ],
+      "color": "#998D72"
+    },
+    "lot": {
+      "material": "concrete--lot",
+      "layers": [
+        "parking"
+      ],
+      "color": "#BBAE95"
     }
   },
   "landTones": {
-    "Rockville": {
-      "day": "#C9B79E",
-      "night": "#39323F"
-    },
-    "Spassburg": {
-      "day": "#C9B79E",
-      "night": "#39323F"
-    },
     "DC Universe": {
-      "day": "#C9B79E",
-      "night": "#39323F"
-    },
-    "Los Festivales": {
-      "day": "#C9B79E",
-      "night": "#39323F"
-    },
-    "Texas State Square": {
-      "day": "#C9B79E",
-      "night": "#39323F"
+      "day": {
+        "fill": "#B0B49D",
+        "stroke": "#99A58F",
+        "label": "#243B45"
+      }
     },
     "Fiesta Bay Boardwalk": {
-      "day": "#C9B79E",
-      "night": "#39323F"
+      "day": {
+        "fill": "#C0C3AD",
+        "stroke": "#A3AF99",
+        "label": "#243B45"
+      }
+    },
+    "Los Festivales": {
+      "day": {
+        "fill": "#A8AB96",
+        "stroke": "#949F8A",
+        "label": "#243B45"
+      }
+    },
+    "Rockville": {
+      "day": {
+        "fill": "#9FA38E",
+        "stroke": "#8E9A85",
+        "label": "#243B45"
+      }
+    },
+    "Spassburg": {
+      "day": {
+        "fill": "#BCC0A9",
+        "stroke": "#A1AD97",
+        "label": "#243B45"
+      }
+    },
+    "Texas State Square": {
+      "day": {
+        "fill": "#C3C6B2",
+        "stroke": "#A5B19D",
+        "label": "#243B45"
+      }
+    }
+  },
+  "fallback": {
+    "landTone": "name-hue"
+  },
+  "terrain": {
+    "source": "usgs-3dep",
+    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n30w099/USGS_13_n30w099.tif",
+    "resolution": 10,
+    "surfaceModel": false,
+    "cellMetres": 6.64,
+    "fitness": "marginal",
+    "relief": {
+      "min": 295.8,
+      "max": 375.9
+    },
+    "grid": {
+      "cols": 240,
+      "rows": 254
+    },
+    "hillshade": {
+      "file": "hillshade.png",
+      "azimuth": 315,
+      "altitude": 45
+    },
+    "bounds": {
+      "north": 29.60751,
+      "south": 29.59224,
+      "east": -98.60144,
+      "west": -98.61789
+    },
+    "steepDegrees": 18,
+    "constrained": {
+      "paths": 938,
+      "water": 40,
+      "pads": 268,
+      "nodes": 163785
     }
   }
 }

@@ -1,115 +1,121 @@
 {
-  "skin": "layered-atlas",
+  "version": 1,
   "venue": "big-kahunas",
-  "tokens": {
-    "mode": "day",
-    "colors": {
-      "path": "#3F6570",
-      "grass": "#A7C58E",
-      "label": "#243B45",
-      "water": "#5CA8B3",
-      "ground": "#C9D6C0",
-      "building": "#C9B58D",
-      "groundEdge": "#6E8975",
-      "pathCasing": "#C9D6C0",
-      "structureEdge": "#7A6655"
-    },
-    "labelHalo": true,
-    "contrastFloor": 4.5
-  },
+  "skin": "layered-atlas",
   "basedOn": {
     "map": "2026-08-10"
   },
-  "terrain": {
-    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n31w087/USGS_13_n31w087.tif",
-    "grid": {
-      "cols": 240,
-      "rows": 271
+  "tokens": {
+    "contrastFloor": 4.5,
+    "labelHalo": true,
+    "mode": "day",
+    "landTones": {
+      "cover": 0.34,
+      "lean": 0.55,
+      "spread": 0.14,
+      "steps": 7
     },
-    "bounds": {
-      "east": -86.46936,
-      "west": -86.47545,
-      "north": 30.39219,
-      "south": 30.38621
-    },
-    "relief": {
-      "max": 17.6,
-      "min": 2.1
-    },
-    "source": "usgs-3dep",
-    "fitness": "coarse",
-    "hillshade": {
-      "file": "hillshade.png",
-      "azimuth": 315,
-      "altitude": 45
-    },
-    "cellMetres": 2.44,
-    "resolution": 10,
-    "constrained": {
-      "pads": 69,
-      "nodes": 95619,
-      "paths": 173,
-      "water": 4
-    },
-    "steepDegrees": 18,
-    "surfaceModel": false
-  },
-  "version": 1,
-  "fallback": {
-    "landTone": "name-hue"
+    "colors": {
+      "path": "#3F6570",
+      "ground": "#C9D6C0",
+      "water": "#5CA8B3",
+      "grass": "#A7C58E",
+      "building": "#C9B58D",
+      "label": "#243B45",
+      "structureEdge": "#7A6655",
+      "groundEdge": "#6E8975",
+      "pathCasing": "#C9D6C0"
+    }
   },
   "surfaces": {
-    "pool": {
-      "color": "#57B3C8",
-      "layers": [
-        "pool"
-      ],
-      "material": "water--pool"
-    },
-    "slide": {
-      "color": "#837161",
-      "layers": [
-        "slide"
-      ],
-      "material": "fiberglass--flume"
-    },
-    "water": {
-      "color": "#5AAAC3",
-      "layers": [
-        "water"
-      ],
-      "material": "water--calm"
-    },
     "walkway": {
-      "color": "#596F72",
+      "material": "paving-stones--warm",
       "layers": [
         "path"
       ],
-      "material": "paving-stones--warm"
+      "color": "#596F72"
     },
-    "structure": {
-      "color": "#998D72",
+    "service-road": {
+      "material": "asphalt--worn",
       "layers": [
-        "building"
+        "service"
       ],
-      "material": "roofing--shingle"
+      "color": "#3C5358"
     },
     "vegetation": {
-      "color": "#859A68",
+      "material": "grass--meadow",
       "layers": [
         "grass",
         "wood",
         "park"
       ],
-      "material": "grass--meadow"
+      "color": "#859A68"
     },
-    "service-road": {
-      "color": "#3C5358",
+    "water": {
+      "material": "water--calm",
       "layers": [
-        "service"
+        "water"
       ],
-      "material": "asphalt--worn"
+      "color": "#5AAAC3"
+    },
+    "pool": {
+      "material": "water--pool",
+      "layers": [
+        "pool"
+      ],
+      "color": "#57B3C8"
+    },
+    "slide": {
+      "material": "fiberglass--flume",
+      "layers": [
+        "slide"
+      ],
+      "color": "#837161"
+    },
+    "structure": {
+      "material": "roofing--shingle",
+      "layers": [
+        "building"
+      ],
+      "color": "#998D72"
     }
   },
-  "landTones": {}
+  "landTones": {},
+  "fallback": {
+    "landTone": "name-hue"
+  },
+  "terrain": {
+    "source": "usgs-3dep",
+    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n31w087/USGS_13_n31w087.tif",
+    "resolution": 10,
+    "surfaceModel": false,
+    "cellMetres": 2.44,
+    "fitness": "coarse",
+    "relief": {
+      "min": 2.1,
+      "max": 17.6
+    },
+    "grid": {
+      "cols": 240,
+      "rows": 271
+    },
+    "hillshade": {
+      "file": "hillshade.png",
+      "azimuth": 315,
+      "altitude": 45
+    },
+    "bounds": {
+      "north": 30.39219,
+      "south": 30.38621,
+      "east": -86.46936,
+      "west": -86.47545
+    },
+    "steepDegrees": 18,
+    "constrained": {
+      "paths": 173,
+      "water": 4,
+      "pads": 69,
+      "nodes": 95619
+    }
+  }
 }

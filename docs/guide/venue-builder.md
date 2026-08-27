@@ -24,6 +24,53 @@ npm run venues:build -- --pipeline --place "Cedar Point, Sandusky, Ohio" --local
 routing coverage file (`fastlane/metadata/ios/routing_app_coverage.geojson`) from whatever
 venue bundles are already on disk. A new park is not done until that GeoJSON lists it.
 
+### Unified pipeline stages
+
+The ordered stage list lives in `packages/venue-builder/lib/build-pipeline.mjs` (`STAGES` /
+`runVenuePipeline`). Three entry points call it; a fourth workflow overlaps only part of it.
+
+| Stage | Purpose | Skip or alter with |
+| --- | --- | --- |
+| sources | Scaffold `data/venues/<id>.sources.json` with official URLs | always runs |
+| geometry | `build-venue` from OpenStreetMap (`--allow-no-heights` on the geometry call) | skipped when `--skip-existing` finds a recipe and `rebuildOnly` is set |
+| research | Official site + ParksAPI via the research agent | `--allow-no-heights`; `--no-browser` alters fetch, does not skip |
+| aliases | Pair official / ParksAPI names onto built POIs | `--allow-no-heights`; `--no-aliases` |
+| heights | Write `heights.json` from the official cache | `--allow-no-heights` |
+| rebuild | `build-venue --rebuild` (imagery, trace, merge from sources) | `--allow-no-heights` |
+| attractions | Entrance inventory + evidence sidecar (`attractions.mjs`) | `--no-attractions` |
+| agent | QA, GIS, vision, validation (`--apply` publishes entrances) | `--allow-no-heights`; `--no-agent` |
+| certify | Report + compare + route-qa + ask → `certification.json` | `--no-certify` |
+| display | Per-skin visual specs + display-certify (`compileDisplay`) | off unless `--display` or the venue is in `DISPLAY_DEFAULT_VENUES` (`big-kahunas` today); `--no-terrain`, `--no-constrain`, `--mesh` / `--no-mesh` alter the pack |
+
+`--allow-no-heights` is the big shortcut: it skips research, aliases, heights, rebuild, and
+agent, leaving sources → geometry → attractions → certify → (display if enabled). Geometry-only
+catalog runs use it for OSM shape without height rules.
+
+**`npm run venues:build-top100`** (`venues:pipeline`) — calls the same `runVenuePipeline` stages, but
+through the legacy `build-top-parks.mjs` CLI. Certify still runs (default); display still runs
+for `DISPLAY_DEFAULT_VENUES`. This entry point exposes fewer flags — no `--display`,
+`--no-certify`, `--pr`, or `--no-aliases` — and never opens draft PRs. Prefer
+`venues:build -- --catalog` when you need those switches or `--pr` per park.
+
+**`npm run venues:build -- --pipeline`** — one park through every stage above (`--place`
+required). Mesh export defaults **on** for a single venue. Not the same script as
+`build-top-parks`; `--pipeline` is a `build-venue.mjs` flag only.
+
+**`npm run venues:build -- --catalog`** — the same stages in a loop over the top-parks
+catalog (`--from` / `--to`, `--skip-existing`, `--delay`, `--pr`, `--dry-run`, `--retries`).
+Mesh defaults **off** in batch (a 10 MB OBJ per park × 100 parks is a gigabyte nothing reads).
+`--display` forces display on every selected park; otherwise only `DISPLAY_DEFAULT_VENUES` get
+the display stage. `--no-certify` and `--no-aliases` are available here but not on
+`build-top-parks`.
+
+**Actions → Build a venue** (`.github/workflows/build-venue.yml`) — not the unified pipeline.
+It runs `build-venue.mjs` once (fresh geometry or `--rebuild`), then `attractions.mjs`,
+`venue-report.mjs`, `--ask`, app lint/unit/build, `venue-certify.mjs`, and direct
+`display-bake` / `display-pack` bakes before opening a draft PR. It never runs sources,
+research, aliases, heights, the agent orchestrator, or `compileDisplay` — so a new venue from
+the form is OSM geometry plus inventory, certify, and game-tier bakes, not the full factory
+loop. Rebuild dispatch only replays the recipe through `build-venue --rebuild`.
+
 ### Building the same park again
 
 Every build writes `packages/venue-builder/data/venues/<id>/recipe.json` inside the venue package — the box,
@@ -93,11 +140,7 @@ available as the escape hatch for the entries a name cannot address on its own, 
 of twenty-six places called "Restrooms".
 
 Each build writes `apps/party-tracker/public/venues/<id>.map.json`, `apps/party-tracker/public/venues/<id>.pois.json`, and `apps/party-tracker/public/venues/<id>.gaps.json`, then
-rebuilds `apps/party-tracker/public/venues/manifest.json` and the generated `apps/party-tracker/lib/venueIndex.js`. Gaps are facts the builder cannot settle (height, queue, path, restroom, food, gate, camping); the phone ranks them by Location and does not invent them from POI fields.
-
-`venues:reindex` stamps `generatedBinding` on `manifest.json` — a sha256 aggregate of every generated file the app reads (truth trio, `venueIndex.js`, and the manifest body sans the binding itself). CI re-verifies that stamp offline; hand-editing any of those files without regenerating through the builder fails the gate. See `docs/agents/policies/builder-app-contract.md`.
-
-The client
+rebuilds `apps/party-tracker/public/venues/manifest.json` and the generated `apps/party-tracker/lib/venueIndex.js`. Gaps are facts the builder cannot settle (height, queue, path, path_disputed, restroom, food, gate, camping, verify); `verify` rows name a stale adapter id in `target`. The phone ranks them by Location and does not invent them from POI fields. The client
 *fetches* those files rather than importing them, which is the point: a venue added to the
 manifest reaches a phone that already has the app installed, and the service worker caches
 whichever one gets opened. A missing Gaps file is an empty list — it must not fail the park load.
@@ -118,10 +161,12 @@ moves the map. Waving the question away falls back to the automatic behaviour ab
 
 What the tag rules produce, in short: `path` and `service` from highways, `building`,
 `water`, `wood`, `grass`, `parking`, `pool`, `coaster` from `roller_coaster=track`, `slide`
-from `attraction=water_slide`, and `lands` — named districts, tinted and labelled — from
-named park sections, neighbourhoods and campuses. A venue with no coasters just has an
-empty coaster layer. Districts the day/night palettes have never heard of get a colour
-derived from their own name, so an unfamiliar venue is still legible.
+from `attraction=water_slide`, and `lands` — named Zones, labelled — from named park
+sections, neighbourhoods and campuses. A venue with no coasters just has an empty coaster
+layer. Truth carries a Zone's name and shape and nothing about how it is painted: Zone
+tone is the Visual factory's, compiled per Skin into that World's display pack. A Zone the
+factory says nothing about gets a colour derived from its own name, so an unfamiliar venue
+is still legible.
 
 The path layer is not only drawn. `lib/routing.js` welds it into the route graph, so a
 walkable way missing from it is not a faint line on a map — it is a route the app will not
@@ -210,9 +255,15 @@ fact about the place, not a hundred and forty-five facts about pitches, so it si
 venue and a pitch's own details are read *over* it. `rules` narrows it by name where a park
 does publish per-row detail.
 
-And `lands`, the hand-picked tints for a venue's districts. Every district not named there
-takes a colour derived from its own name, which is what a venue nobody has hand-tuned looks
-like and is fine.
+`lands` used to live here too — hand-picked `{fill, stroke, label}` tints per district, day
+and night, copied into `map.json`'s `meta.lands`. They are gone: that was treatment written
+into truth, and it outranked the Visual factory's own derivation, so every Skin painted a
+World's Zones identically. What a Zone *is* now lives in the World's grounding harvest,
+`data/venues/<id>/display/grounding.json` — `{"zones": {"Rivertown": {"character":
+"woodland"}}}` — and every Skin re-expresses that in its own palette. A Zone nobody has
+characterised takes a colour derived from its own name, which is what a venue nobody has
+harvested looks like and is fine. A build whose `overrides.json` still carries `lands`
+prints a warning and ignores it.
 
 Correcting a height does not need a rebuild — the geometry is not what changed:
 

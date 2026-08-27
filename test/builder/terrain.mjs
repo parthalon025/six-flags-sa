@@ -23,6 +23,7 @@ import { tileNameFor as tile3dep } from '../../packages/venue-builder/lib/adapte
 import { tileNameFor as tileCop } from '../../packages/venue-builder/lib/adapters/copernicus-dem.mjs';
 import {
   compileVisualSpec, certifyDisplayPack, readMaterials, readSkinTemplates,
+  readLandCover, readGrounding,
   styleFromSpec, mixHex, tilesGatePasses, DEFAULT_MATERIAL_MIX,
 } from '../../packages/venue-builder/lib/display-pack.mjs';
 import { crownStipple, seedFromString, resolveKit, TERRAIN_PIECES, bakeModel } from '../../packages/venue-builder/lib/display-bake.mjs';
@@ -456,12 +457,20 @@ await check('the style paints surface colours and falls back per layer', () => {
   const map = JSON.parse(readFileSync('apps/party-tracker/public/venues/kings-island.map.json', 'utf8'));
   const materials = readMaterials();
   const template = readSkinTemplates().trail;
-  const spec = compileVisualSpec({ map, template, materials });
+  // The Zone wash needs the World's relationships — its land cover and its
+  // grounding harvest. Truth no longer carries a tint to fall back on.
+  const spec = compileVisualSpec({
+    map,
+    template,
+    materials,
+    landCover: readLandCover('kings-island'),
+    grounding: readGrounding('kings-island'),
+  });
   const style = styleFromSpec(spec);
   const paintOf = (id) => style.layers.find((l) => l.id === id)?.paint;
   assert.equal(paintOf('grass')['fill-color'], spec.surfaces.vegetation.color);
   assert.equal(paintOf('water')['fill-color'], spec.surfaces.water.color);
-  // `lands` is a district wash, not a surface class — it keeps its own expression.
+  // `lands` is a Zone wash, not a surface class — it keeps its own expression.
   assert.ok(Array.isArray(paintOf('lands')['fill-color']));
   // background is a token, never a material.
   assert.equal(paintOf('background')['background-color'], template.tokens.colors.ground);

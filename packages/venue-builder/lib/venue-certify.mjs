@@ -414,9 +414,15 @@ export function certifyVenue(id, opts = {}) {
   }
 
   const certified = checks.every((c) => c.pass);
-  let askBrief = certified && !inventoryAsks.length ? null : briefJson(venue, reqs);
+  const attractionsSidecar = readJson(venueSidecar(id, 'attractions.json'), null);
+  const adapterCaches = {};
+  for (const adapterId of declared) {
+    adapterCaches[adapterId] = readJson(adapterCacheFile(id, adapterId), null);
+  }
+  const briefExtras = { attractions: attractionsSidecar, adapterCaches, gapNotes };
+  let askBrief = certified && !inventoryAsks.length ? null : briefJson(venue, reqs, briefExtras);
   if (inventoryAsks.length) {
-    askBrief = askBrief || briefJson(venue, reqs) || { venue: venue.id, requests: [] };
+    askBrief = askBrief || briefJson(venue, reqs, briefExtras) || { venue: venue.id, requests: [] };
     askBrief.inventory = inventoryAsks;
   }
 

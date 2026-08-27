@@ -4,7 +4,7 @@ The **party-tracker** application and Universal Venue Builder scripts are **MIT*
 (see `LICENSE`).
 
 External tools wrapped by the builder are **not** vendored into this repository.
-Each adapter documents its upstream license in `scripts/lib/adapters/registry.mjs`.
+Each adapter documents its upstream license in `packages/venue-builder/lib/adapters/registry.mjs`.
 
 ## Phone runtime (npm dependencies)
 

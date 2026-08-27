@@ -130,7 +130,7 @@ export function checklist(venue, map, pois, sizes = {}) {
             label,
             'none found',
             `The glance rail has a standing card for this and it will not render. Check the `
-              + `POI rules in scripts/lib/osm-tags.mjs against how this place is tagged.`,
+              + `POI rules in lib/osm-tags.mjs against how this place is tagged.`,
           ),
     );
   }

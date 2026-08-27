@@ -30,7 +30,7 @@
  * imagery, run computer vision over it, watch a ride walkthrough on YouTube or
  * fetch a park's PDF. Those are real sources and each one is a project. What is
  * here is the part that can be done from data already on disk, plus the door for
- * the rest — every one of those sources has a weight in scripts/lib/evidence.mjs
+ * the rest — every one of those sources has a weight in lib/evidence.mjs
  * and lands through the same `addEvidence` call the automatic ones use.
  */
 
