@@ -444,6 +444,30 @@ export function certifyAll(opts = {}) {
   return manifest.venues.map((v) => certifyVenue(v.id, opts));
 }
 
+/**
+ * Re-run fleet certification and fail only when a venue that was certified in
+ * the committed certification.json no longer certifies (#402).
+ *
+ * @param {{ write?: boolean }} opts
+ * @returns {{ ok: boolean, regressions: Array<{ id: string, name: string, failedChecks: string[] }> }}
+ */
+export function certifyFleetRegression(opts = {}) {
+  const manifest = readJson(path.join(VENUE_DIR, 'manifest.json'), { venues: [] });
+  const regressions = [];
+  for (const { id } of manifest.venues) {
+    const prior = readJson(certificationFile(id), null);
+    const now = certifyVenue(id, opts);
+    if (prior?.certified && !now.certified) {
+      regressions.push({
+        id,
+        name: now.venue.name,
+        failedChecks: now.checks.filter((c) => !c.pass).map((c) => c.key),
+      });
+    }
+  }
+  return { ok: regressions.length === 0, regressions };
+}
+
 export function certificationFile(id) {
   return venueSidecar(id, 'certification.json');
 }
