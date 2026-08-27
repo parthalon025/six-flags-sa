@@ -14,6 +14,7 @@
  */
 
 import { questSeedsFromEntrances } from './quest-seeds.mjs';
+import { ambientSignalShipArtifacts } from './ambient-signal-seeds.mjs';
 
 export const SHIPPED_GAP_TYPES = Object.freeze([
   'height',
@@ -24,6 +25,7 @@ export const SHIPPED_GAP_TYPES = Object.freeze([
   'food',
   'gate',
   'camping',
+  'verify',
 ]);
 
 /** Rides farther than this from walkable geometry get a targeted path Gap. */
@@ -42,6 +44,8 @@ const RIDE = (p) => p && (p.c === 'coaster' || p.c === 'ride');
  */
 export function shippedTypeForSeed(seed) {
   if (!seed) return null;
+  if (seed.sourceGap === 'adapter_stale') return 'verify';
+  if (seed.sourceGap === 'evidence_conflict') return 'path_disputed';
   if (DROP_SEED_TYPES.has(seed.type)) return null;
   if (seed.sourceGap === 'credits' || seed.sourceGap === 'locality') return null;
   if (seed.sourceGap === 'ambient_ops') return null;
@@ -207,9 +211,13 @@ export function shippedGapsDocument({ venueId, seeds = [], pois = [], map = null
   for (const seed of seeds) {
     const type = shippedTypeForSeed(seed);
     if (!type) continue;
-    if (type === 'height' || type === 'queue') {
+    if (type === 'height' || type === 'queue' || type === 'path_disputed') {
       const target = resolveGapTarget(pois, seed.target);
       if (target) add(type, target);
+      continue;
+    }
+    if (type === 'verify') {
+      add(type, null);
       continue;
     }
     add(type, null);
@@ -242,11 +250,22 @@ export function shippedGapsForVenue({
   map = {},
   attractions = null,
   imageryGaps = [],
+  adapterCaches = null,
+  gapNotes = {},
+  asOf,
 } = {}) {
+  const signals = ambientSignalShipArtifacts({
+    venueId,
+    adapterCaches: adapterCaches || {},
+    attractions,
+    gapNotes,
+    asOf,
+  });
   const seeds = [
     ...questSeedsFromEntrances(venueId, attractions),
     ...presenceAndCampingSeeds(meta, pois),
     ...imageryGaps,
+    ...signals.seeds,
   ];
   return shippedGapsDocument({ venueId, seeds, pois, map: map ?? {} });
 }

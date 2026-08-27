@@ -363,5 +363,8 @@ export const briefJson = (venue, reqs, extras = {}) => ({
       reqs,
       attractions: extras.attractions || null,
       includeAmbient: extras.includeAmbient !== false,
+      adapterCaches: extras.adapterCaches ?? null,
+      gapNotes: extras.gapNotes ?? {},
+      asOf: extras.asOf,
     }),
 });
