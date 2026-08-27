@@ -1,6 +1,6 @@
 # ADR-0023 — Visual factory: open-source assets follow the look
 
-**Status:** Accepted (owner-confirmed, 2026-08-24)
+**Status:** Accepted (owner-confirmed, 2026-08-24) · Amended 2026-08-25 (attribution-required OSS allowed with credits distro)
 **Depends on:** [ADR-0014](./0014-display-reference-contract.md) · [ADR-0016](./0016-custom-map-worlds.md) · [ADR-0017](./0017-visual-factory-request-contract.md) · [display factory design](../research/2026-08-18-custom-map-display-factory.md) · [visual factory tools](../visual-factory-tools.md)
 
 ## Context
@@ -25,10 +25,11 @@ The **Visual factory** must produce a highly detailed three-dimensional **World*
 
 3. **Sourcing ladder (license before embed, in order).** When the requested look needs art the ledgers do not yet contain, new rows enter in this order — never skip a rung without recording why:
    1. **CC0 libraries** — ambientCG, Poly Haven, Kenney, OpenGameArt (license-filtered); automated API or pinned mirror pull where available.
-   2. **Procedural** — Material Maker graphs committed to the repo (`original` license); deterministic, CI-friendly.
-   3. **Derived** — DeepBump (normals/height from albedo) where a CC0 set is incomplete.
-   4. **Generative** — seamless-tile SDXL / truth-conditioned ControlNet; outputs are `original`-class, owner eye-passed, provenance recorded (#630). Ubisoft CHORD and NC/revenue-cap weights stay rejected.
-   Every row records source, license, generator, and seed — provenance on assets matches provenance on coordinates.
+   2. **Attribution-required OSS** — CC-BY and similar, **allowed** when `scripts/lib/credits-registry.json` records the required distro (`on-map` | `credits-screen` | `placed-link:<where>`). Policy module: `scripts/lib/credits.mjs`. Do not reject a source only because it needs a credit line.
+   3. **Procedural** — Material Maker graphs committed to the repo (`original` license); deterministic, CI-friendly.
+   4. **Derived** — DeepBump (normals/height from albedo) where a CC0 set is incomplete.
+   5. **Generative** — seamless-tile SDXL / truth-conditioned ControlNet; outputs are `original`-class, owner eye-passed, provenance recorded (#630). Ubisoft CHORD and NC/revenue-cap weights stay rejected.
+   Every row records source, license, generator, and seed — provenance on assets matches provenance on coordinates. Ledger `license` values stay `CC0-1.0` | `original` | `licensed` (`packages/venue-builder/lib/display-pack.mjs` `ALLOWED_LICENSES`); attribution-required rows use `licensed` plus a registry source.
 
 4. **Kit briefs are menu-bound.** `display-kit-brief.mjs` exposes only ledger ids for the flat/top-down tier. An agent answer referencing art outside the menu, an unknown piece, or a palette-only change fails `resolveKit` before render — the hard gate that keeps OSS selection honest.
 
@@ -46,7 +47,7 @@ The **Visual factory** must produce a highly detailed three-dimensional **World*
 
 - Runtime OSS fetch on the phone (battery, license audit, non-deterministic).
 - Palette-only looks (invalid per ADR-0017; structural/signature distinctness required).
-- AGPL, GPL, NC, CC-BY-SA, and no-redistribution sources (textures.com, CraftPix) for shipped bytes.
+- AGPL, GPL, **NC**, **CC-BY-SA** (share-alike on shipped art), and no-redistribution sources (textures.com, CraftPix) for shipped bytes. **CC-BY and other attribution-only licenses are allowed** with the credits distro (owner, 2026-08-25). ODbL map data already ships with `on-map`.
 - Automated “search the internet for a coaster model matching this mood” without steward review — new ledger rows are PR releases, not silent imports.
 - Per-object 3D sprites with full runtime PBR as the *default* path — baked dimensional worlds remain the fleet bar (Q13=A); runtime PBR and glTF props are additive tiers.
 

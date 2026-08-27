@@ -11,6 +11,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { epicNowLine, loadOperatingStack, shouldPrintEpicNow } from './operating-stack.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const REPO = join(here, '../..');
@@ -502,6 +503,13 @@ export function sessionBrief({ cwd = REPO, effort, situation } = {}) {
     lines.push('');
   }
 
+  if (efforts.length === 0 && !effort) {
+    const stack = loadOperatingStack();
+    lines.push(epicNowLine(stack));
+    lines.push(`**Operating stack:** \`${stack.adr}\` · \`scripts/lib/operating-stack.json\``);
+    lines.push('');
+  }
+
   for (const slug of effort ? [effort] : efforts) {
     const state = effortPhase(slug, cwd);
     const meta = phaseMeta(state.phase);
@@ -513,6 +521,11 @@ export function sessionBrief({ cwd = REPO, effort, situation } = {}) {
     if (state.frontier) {
       lines.push(`**Frontier ticket:** ${state.frontier.id} — ${state.frontier.title} (${state.frontier.status})`);
       lines.push(`  file: ${state.frontier.path.replace(`${cwd}/`, '')}`);
+    }
+    const stack = loadOperatingStack();
+    if (shouldPrintEpicNow(slug, stack)) {
+      lines.push(epicNowLine(stack));
+      lines.push(`**Operating stack:** \`${stack.adr}\` · \`scripts/lib/operating-stack.json\``);
     }
     if (meta.forbid.length) {
       lines.push(`**Do NOT yet:** ${meta.forbid.map((f) => `/${f}`).join(', ')}`);

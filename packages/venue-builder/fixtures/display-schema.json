@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DisplayPackVisualSpec",
+  "description": "Tippecanoe / MapLibre display pack contract — visual factory CI gate (ticket 18)",
+  "type": "object",
+  "required": ["version", "venue", "skin", "basedOn", "tokens", "surfaces"],
+  "additionalProperties": true,
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "venue": { "type": "string", "minLength": 1 },
+    "skin": { "type": "string", "minLength": 1 },
+    "basedOn": {
+      "type": "object",
+      "required": ["map"],
+      "properties": {
+        "map": { "type": "string" },
+        "revisionId": { "type": "string" }
+      }
+    },
+    "tokens": { "type": "object" },
+    "surfaces": {
+      "type": "object",
+      "minProperties": 1
+    }
+  }
+}

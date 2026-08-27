@@ -1,10 +1,10 @@
 {
   "name": "@party-tracker/venue-builder",
-  "version": "1.33.2",
+  "version": "1.34.1",
   "private": true,
   "type": "module",
   "dependencies": {
-    "@party-tracker/shared": "1.33.2",
+    "@party-tracker/shared": "1.34.1",
     "sharp": "^0.35.3"
   },
   "exports": {

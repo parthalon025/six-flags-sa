@@ -19,7 +19,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { listEfforts, effortPhase } from './matt-workflow.mjs';
-import { sessionBrief as mattWorkflowBrief } from './matt-workflow.mjs';
+import { fillHumanBrief, gatherBriefFacts } from './executive-resume-brief.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const REPO = join(here, '../..');
@@ -70,6 +70,7 @@ export function emptyResume({ platform = detectPlatform() } = {}) {
       parkingLot: [],
       blockedOnMe: [],
       notes: '',
+      overview: '',
     },
     lastStop: {
       iWasDoing: '',
@@ -706,30 +707,34 @@ export function sessionStartBrief({ root = REPO, runner = execFileSync, situatio
   resume = saveLocal(refreshInventory(resume, { cwd: root, runner }), root);
   const drift = checkDrift(resume);
   const goal = createGoalObjective(resume);
+  const brief = fillHumanBrief(gatherBriefFacts({ resume, root, runner }));
   const lines = [
-    renderProse(resume),
+    brief,
     '---',
     '',
+    '## Session start ritual',
+    '1. **Platform** — executive brief above was regenerated from NOW, inventory, and wayfinder facts.',
   ];
   if (changed) {
-    lines.push(`Platform moved ${previous} → ${current}. Confirm NOW or say switch.`);
-    lines.push('');
+    lines.push(`2. ⚠️ **Platform changed:** \`${previous}\` → \`${current}\` — confirm NOW or say **switch**.`);
+  } else {
+    lines.push('2. Confirm NOW or say **switch**.');
   }
-  if (drift.warnings.length) {
-    lines.push('Drift: ' + drift.warnings.join('; '));
-    lines.push('');
-  }
-  lines.push(`CreateGoal: ${goal}`);
-  lines.push('');
   lines.push(
-    'Ritual: workflow:check before implement · end-turn with --next/--doing after code · do not edit parkingLot/blockedOnMe without asking.',
+    '3. Run `npm run workflow:check -- --intent implement` before coding.',
+    '4. **CreateGoal** (required):',
+    '```',
+    goal,
+    '```',
+    '5. Do not edit human.parkingLot or human.blockedOnMe.',
+    '6. **End of every turn** with code changes: `npm run resume:end-turn -- --next "..." --doing "..."`',
+    'Matt skill gate: `npm run workflow:next` (not duplicated here).',
   );
-  lines.push('');
-  const workflowLine = mattWorkflowBrief({ cwd: root, situation }).split('\n').find((l) => l.startsWith('**Invoke:**') || l.startsWith('## Situation'));
-  if (workflowLine) lines.push(`Matt: ${workflowLine.replace(/\*\*/g, '').trim()}`);
-  lines.push('');
-  lines.push('(Full inventory only if you ask: npm run resume:print -- --markdown)');
-  return `${lines.join('\n')}\n`;
+  if (drift.warnings.length) {
+    lines.push('', '⚠️ **Drift warnings:**', ...drift.warnings.map((w) => `- ${w}`), '', 'Still on NOW? Say yes or switch.');
+  }
+  void situation;
+  return lines.join('\n');
 }
 
 export function timerPrompt() {

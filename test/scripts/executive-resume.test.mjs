@@ -29,6 +29,7 @@ import {
   renderProse,
   resolvePointer,
   saveLocal,
+  sessionStartBrief,
   subscribeTimerInstructions,
   wrapJsonComment,
   initDashboardIssue,
@@ -66,9 +67,12 @@ assert.match(drift.warnings.join(' '), /branch/i);
 const remote = emptyResume();
 remote.now.task = 'From GitHub';
 remote.human.parkingLot = ['billing later'];
+remote.human.overview = 'Custom overview';
 const merged = mergeFromRemote(resume, remote);
 assert.equal(merged.now.task, 'From GitHub');
 assert.deepEqual(merged.human.parkingLot, ['billing later']);
+assert.equal(merged.human.overview, 'Custom overview');
+assert.equal(emptyResume().human.overview, '');
 
 const patched = agentPatch(merged, { nextStep: 'Run test', iWasDoing: 'Added case' });
 assert.equal(patched.now.nextStep, 'Run test');
@@ -230,6 +234,32 @@ const cli = join(fileURLToPath(new URL('../..', import.meta.url)), 'scripts/exec
 const missingIssue = spawnSync(process.execPath, [cli, 'link'], { encoding: 'utf8' });
 assert.equal(missingIssue.status, 1);
 assert.match(missingIssue.stderr, /requires --issue/);
+
+// sessionStartBrief prints one human brief, not full inventory/workflow dump
+const startScratch = mkdtempSync(join(tmpdir(), 'exec-resume-start-'));
+const startRoot = join(startScratch, 'repo');
+mkdirSync(join(startRoot, '.scratch'), { recursive: true });
+saveLocal({ ...emptyResume({ platform: 'cursor-cloud' }), now: { ...emptyResume().now, task: 'Wire human brief' } }, startRoot);
+
+const startRunner = (cmd, args) => {
+  if (cmd === 'gh' && args[0] === 'pr' && args[1] === 'list') return '[]';
+  if (cmd === 'gh' && args[0] === 'issue' && args[1] === 'list') return '[]';
+  if (cmd === 'git' && args[0] === 'worktree') return '';
+  if (cmd === 'node' && args[0]?.includes('train-plan')) return 'No startable slice.';
+  throw new Error(`unexpected ${cmd} ${args.join(' ')}`);
+};
+
+const start = sessionStartBrief({ root: startRoot, runner: startRunner });
+assert.match(start, /# Executive brief/);
+assert.match(start, /## Wayfinder/);
+assert.match(start, /## Hanging \/ waiting on you/);
+assert.match(start, /CreateGoal/);
+assert.match(start, /workflow:next/);
+assert.match(start, /executive brief above was regenerated from NOW, inventory, and wayfinder facts/);
+assert.doesNotMatch(start, /# Matt workflow session brief/);
+assert.doesNotMatch(start, /### Draft PRs/);
+
+rmSync(startScratch, { recursive: true, force: true });
 
 rmSync(scratch, { recursive: true, force: true });
 console.log('executive-resume tests ok');

@@ -4,13 +4,14 @@
  * Reads truth only through map-io; never writes coordinates.
  */
 
-import { readTruth } from '../map-factory/map-io.mjs';
+import { readTruthAsync } from '../map-factory/map-io.mjs';
 import {
   applyMidPyramidToManifest,
   bakeOptsForVenue,
   cutPackedMidPyramid,
   runDisplayStage,
 } from '../display-pack.mjs';
+import { mirrorDisplayPacksToPostdb } from './postdb-sync.mjs';
 import { displayDir } from './visual-io.mjs';
 
 /**
@@ -32,7 +33,7 @@ export async function compileDisplay(venueId, opts = {}) {
   let terrainResult = terrain;
   if (wantTerrain && !terrainResult) {
     const { prepareVenueTerrain } = await import('../terrain/venue-terrain.mjs');
-    const { map } = readTruth(venueId);
+    const { map } = await readTruthAsync(venueId);
     const outDir = displayDir(venueId);
     const prepared = await prepareVenueTerrain({
       id: venueId, map, outDir, constrain, mesh,
@@ -47,6 +48,8 @@ export async function compileDisplay(venueId, opts = {}) {
     ...bakeOptsForVenue(venueId),
     ...rest,
   });
+
+  await mirrorDisplayPacksToPostdb(venueId, disp.packs);
 
   if (disp.bakeCerts?.length) {
     const cut = await cutPackedMidPyramid({

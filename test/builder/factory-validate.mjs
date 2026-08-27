@@ -40,6 +40,7 @@ const {
 const {
   validateVenue,
   freshnessPin,
+  freshnessPinRevision,
 } = await import('../../packages/venue-builder/lib/factory-validate.mjs');
 const { MONO_ROOT } = await import('../../packages/venue-builder/src/paths.mjs');
 
@@ -110,10 +111,37 @@ await check('freshnessPin flags stale and unstamped packs', () => {
   return true;
 });
 
+await check('freshnessPinRevision flags stale revision ids', () => {
+  const id = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+  const other = '11111111-2222-3333-4444-555555555555';
+  assert.deepEqual(
+    freshnessPinRevision({ basedOnRevisionId: id, currentRevisionId: id }),
+    { fresh: true, reason: 'pins current truth revision' },
+  );
+  const stale = freshnessPinRevision({ basedOnRevisionId: id, currentRevisionId: other });
+  assert.equal(stale.fresh, false);
+  assert.match(stale.reason, /stale revision/);
+  const unstamped = freshnessPinRevision({ basedOnRevisionId: null, currentRevisionId: other });
+  assert.equal(unstamped.fresh, false);
+  assert.match(unstamped.reason, /missing basedOn revision/);
+  const noHead = freshnessPinRevision({ basedOnRevisionId: id, currentRevisionId: null });
+  assert.equal(noHead.fresh, true);
+  return true;
+});
+
+await check('freshnessPin delegates to revision pin when revision ids are present', () => {
+  const id = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+  assert.deepEqual(
+    freshnessPin({ basedOnRevisionId: id, currentRevisionId: id }),
+    { fresh: true, reason: 'pins current truth revision' },
+  );
+  return true;
+});
+
 /* ------------------------------------------------ kings-island happy path */
 
-await check('kings-island passes buildable factory stages (warn on incomplete cert + publish)', () => {
-  const doc = validateVenue('kings-island', { root: MONO_ROOT });
+await check('kings-island passes buildable factory stages (warn on incomplete cert + publish)', async () => {
+  const doc = await validateVenue('kings-island', { root: MONO_ROOT });
   assert.equal(doc.venue, 'kings-island');
   assert.ok(doc.truthStamp, 'KI carries a truth stamp');
   assert.equal(doc.summary.fail, 0, `unexpected failures: ${
@@ -128,12 +156,16 @@ await check('kings-island passes buildable factory stages (warn on incomplete ce
 
   const truth = doc.routes.find((r) => r.id === 'map.truth');
   assert.equal(truth.status, 'pass');
+
+  const delivery = doc.routes.find((r) => r.id === 'delivery.bundle');
+  assert.equal(delivery.status, 'pass', 'delivery.bundle must pass on KI');
+  assert.match(delivery.detail, /pins current truth/);
   return true;
 });
 
 /* ---------------------------------------------- stale basedOn failure -- */
 
-await check('stale basedOn on a visual spec is reported as a display-pack failure', () => {
+await check('stale basedOn on a visual spec is reported as a display-pack failure', async () => {
   const tmp = mkdtempSync(path.join(tmpdir(), 'factory-validate-'));
   const venueId = 'fixture-stale';
   const displayDir = path.join(tmp, 'packages', 'venue-builder', 'data', 'venues', venueId, 'display');
@@ -166,7 +198,7 @@ await check('stale basedOn on a visual spec is reported as a display-pack failur
   writeFileSync(path.join(displayDir, 'trail.style.json'), JSON.stringify({ version: 8, layers: [] }));
 
   const displayPack = getRoute('visual.display-pack');
-  const doc = validateVenue(venueId, { root: tmp, routes: [displayPack] });
+  const doc = await validateVenue(venueId, { root: tmp, routes: [displayPack] });
   const pack = doc.routes.find((r) => r.id === 'visual.display-pack');
   assert.equal(pack.status, 'fail', 'stale basedOn must fail the required display-pack route');
   assert.match(pack.detail, /stale basedOn/i);

@@ -1,8 +1,8 @@
 {
   "schema": 3,
-  "tag": "local-ci-verified",
-  "diffHash": "647e3f852e6e6dff",
-  "head": "8ecf427df4cce631fb36a23ae60e95684414cd42",
+  "tag": null,
+  "diffHash": "f05dea817b12bd70",
+  "head": "74f3c2c5a87933c592cbde0fe8c80c3e9d26bf3f",
   "mergeBase": "c4278015f508952d2c22b4e14c4aaf12bae49c04",
   "baseRef": "origin/main",
   "modules": [
@@ -19,11 +19,8 @@
     "venues",
     "walk"
   ],
-  "browserVertical": true,
-  "verticals": [
-    "app",
-    "automation"
-  ],
+  "browserVertical": false,
+  "verticals": [],
   "staticSteps": [
     "test:ci-gate",
     "test:unit",
@@ -31,7 +28,7 @@
     "test:module-select",
     "build"
   ],
-  "lockHash": "66c0579bad192c58",
-  "manifestHash": "5ab5e7a18fef87d7",
-  "recordedAt": "2026-08-25T15:42:12.421Z"
+  "lockHash": "e95b5fe9afa6dce8",
+  "manifestHash": "9a2f416a52221fc4",
+  "recordedAt": "2026-08-27T00:30:46.900Z"
 }

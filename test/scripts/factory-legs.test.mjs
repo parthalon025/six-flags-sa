@@ -30,12 +30,38 @@ import {
 }
 
 {
+  const legs = factoryLegsForFiles(['db/migrations/004_postdb_factory_artifacts.sql']);
+  assert.equal(legs.map, true);
+  assert.equal(legs.visual, true);
+  assert.equal(legs.delivery, true);
+}
+
+{
+  const legs = factoryLegsForFiles(['packages/venue-builder/lib/postdb-io.mjs']);
+  assert.equal(legs.map, true);
+  assert.equal(legs.visual, true);
+  assert.equal(legs.delivery, true);
+}
+
+{
   const outs = factoryLegGithubOutputs(['docs/adr/0025-factory-module-seams.md']);
   assert.deepEqual(outs, {
     map_factory: 'false',
     visual_factory: 'false',
     delivery_factory: 'false',
   });
+}
+
+{
+  const legs = factoryLegsForFiles(['packages/venue-builder/bin/export-bundle.mjs']);
+  assert.equal(legs.delivery, true);
+  assert.equal(legs.map, false);
+  assert.equal(legs.visual, false);
+}
+
+{
+  const legs = factoryLegsForFiles(['test/builder/delivery-export.mjs']);
+  assert.equal(legs.delivery, true);
 }
 
 assert.ok(FACTORY_LEG_PATHS.map.length >= 3);

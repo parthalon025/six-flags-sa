@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "decided": "2026-08-25",
+  "effort": "factories-to-app",
+  "research": "docs/research/2026-08-25-free-tier-databricks-vs-postgres.md",
+  "adr": "docs/adr/0024-postdb-factory-bus.md",
+  "epic": {
+    "now": {
+      "ticket": "16",
+      "title": "Delivery export closeout",
+      "stackedOn": "15",
+      "then": ["17"],
+      "parallelNotNow": ["18"],
+      "laterHuman": ["19"],
+      "doNotStart": ["train-h", "train-i"]
+    }
+  },
+  "operate": [
+    { "id": "docker-postgres", "job": "Factory PostDB + DuckDB batch", "cost": "$0" },
+    { "id": "github-actions", "job": "Code + CI postgres:16", "cost": "$0 public" },
+    { "id": "vercel-neon", "job": "App UI, E0 API, seed public/venues CDN", "cost": "Hobby $0 / Pro $20/mo commercial" },
+    { "id": "upstash", "job": "Party store across Vercel functions", "cost": "$0 Free", "skipIf": "Party never runs on Vercel" },
+    { "id": "cloudflare-dns", "job": "Domain / SSL", "cost": "$0", "note": "DNS only" },
+    { "id": "clerk-pro", "job": "Profile auth + Clerk-sent mail", "cost": "already paying" },
+    { "id": "cursor-claude-max", "job": "Code + factory briefs", "cost": "already paying" },
+    { "id": "google-ai", "job": "Vision, concept stills, Train I agent-vision", "cost": "already paying", "note": "Not Maps Platform" },
+    { "id": "apple-developer", "job": "App Store, SIWA", "cost": "$99/yr" },
+    { "id": "google-play", "job": "Play, App Signing", "cost": "$25 once" },
+    { "id": "local-blender", "job": "Flagship ortho bake when E.1 fires", "cost": "$0 software" }
+  ],
+  "attachOnce": [
+    { "id": "neon-marketplace", "where": "Vercel Marketplace", "sets": "DATABASE_URL" },
+    { "id": "upstash-marketplace", "where": "Vercel Marketplace", "sets": "UPSTASH_* or KV_REST_API_*", "skipIf": "Party never runs on Vercel" },
+    { "id": "ios-team-id", "where": "Vercel env", "sets": "IOS_TEAM_ID" },
+    { "id": "android-cert", "where": "Vercel env", "sets": "ANDROID_CERT_SHA256" }
+  ],
+  "park": [
+    { "id": "databricks", "why": "Spark at volume only. Jobs PAUSED. No Lakebase, no App." },
+    { "id": "cloudflare-r2", "why": "Only when Vercel Fast Data Transfer would bill." },
+    { "id": "cloudflare-workers", "why": "Workers Free is a 100k req/day trap." },
+    { "id": "cloudflare-d1", "why": "D1 is not PostDB." },
+    { "id": "higgsfield", "why": "Paid Gemini covers stills." },
+    { "id": "meshy", "why": "Mesh only if Blender-baked and ToS is attribution-not-NC." },
+    { "id": "workers-ai", "why": "Paid Gemini covers stills." },
+    { "id": "unity-unreal-godot", "why": "ADR-0016: not on phone or certification." }
+  ],
+  "doNotAdd": [
+    "openai-api",
+    "resend",
+    "sentry",
+    "uptimerobot",
+    "stripe",
+    "lakebase",
+    "motherduck",
+    "vercel-blob",
+    "google-maps-platform",
+    "jsdelivr-pipeline"
+  ],
+  "addVendorWhen": [
+    "Paid product ships → Vercel Hobby → Pro.",
+    "Neon Free suspends → Neon Launch (still Marketplace).",
+    "Vercel transfer would bill → Cloudflare R2 for heavy packs.",
+    "DuckDB/Postgres cannot finish the join → Databricks one paused job, run by hand."
+  ]
+}

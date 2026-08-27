@@ -7,8 +7,9 @@
  * pipeline is complete and certifiable.
  *
  * Interface:
- *   validateVenue(id, opts) → { ok, venue, truthStamp, routes, summary }
- *   validateAll(opts) → validateVenue[] 
+ *   validateVenueAsync(id, opts) → Promise<{ ok, venue, truthStamp, truthRevisionId, routes, summary }>
+ *   validateVenue(id, opts) → alias for validateVenueAsync
+ *   validateAll(opts) → Promise<validateVenue[]>
  *   renderValidationReport(doc) → markdown
  */
 
@@ -18,6 +19,7 @@ import { ROUTES, resolveOutputPath, factoryLabel } from './factory-types.mjs';
 import { qaVenueRouting } from './venue-route-qa-core.mjs';
 import { readSkinTemplates, tilesGatePasses } from './display-pack.mjs';
 import { MONO_ROOT } from '../src/paths.mjs';
+import { getHeadRevisionId, usingPostdb } from './postdb-io.mjs';
 
 const readJsonFile = (file) => {
   try {
@@ -32,18 +34,41 @@ const readJsonFile = (file) => {
 /**
  * Pure freshness pin check — mirrors scripts/lib/venue-freshness.mjs without
  * crossing the scripts↔venue-builder boundary.
+ * @param {{ basedOn?: string|null, current?: string|null, basedOnRevisionId?: string|null, currentRevisionId?: string|null }} pin
  */
-export function freshnessPin({ basedOn, current }) {
+export function freshnessPin(pin) {
+  const { basedOn, current, basedOnRevisionId, currentRevisionId } = pin;
+  if (basedOnRevisionId != null || currentRevisionId != null) {
+    return freshnessPinRevision({ basedOnRevisionId, currentRevisionId });
+  }
   if (!current) return { fresh: true, reason: 'venue not shipped' };
   if (!basedOn) return { fresh: false, reason: 'missing basedOn stamp' };
   if (basedOn !== current) return { fresh: false, reason: `stale: pinned ${basedOn}, current ${current}` };
   return { fresh: true, reason: 'pins current truth' };
 }
 
+/** Revision-id freshness (PostDB Slice 1+). */
+export function freshnessPinRevision({ basedOnRevisionId, currentRevisionId }) {
+  if (!currentRevisionId) return { fresh: true, reason: 'no postdb head' };
+  if (!basedOnRevisionId) return { fresh: false, reason: 'missing basedOn revision id' };
+  if (basedOnRevisionId !== currentRevisionId) {
+    return {
+      fresh: false,
+      reason: `stale revision: pinned ${basedOnRevisionId}, current ${currentRevisionId}`,
+    };
+  }
+  return { fresh: true, reason: 'pins current truth revision' };
+}
+
 function truthStampFor(venueId, root) {
   const manifest = readJsonFile(path.join(root, 'apps', 'party-tracker', 'public', 'venues', 'manifest.json'));
   const row = manifest?.venues?.find((v) => v.id === venueId);
   return row?.generated ?? null;
+}
+
+export async function truthRevisionFor(venueId) {
+  if (!usingPostdb()) return null;
+  return getHeadRevisionId(venueId);
 }
 
 function activeSkinIds() {
@@ -159,7 +184,7 @@ function validateVisualTerrain(venueId, route, root) {
   });
 }
 
-function validateVisualDisplayPack(venueId, route, root, truthStamp) {
+function validateVisualDisplayPack(venueId, route, root, truthStamp, truthRevisionId) {
   const skins = skinsForVenue(venueId, root);
   const outputs = [];
   const stale = [];
@@ -170,7 +195,12 @@ function validateVisualDisplayPack(venueId, route, root, truthStamp) {
       outputs.push({ id: `${skinId}.${template.id}`, path: file, exists });
       if (template.id === 'visual-spec' && exists) {
         const spec = readJsonFile(file);
-        const pin = freshnessPin({ basedOn: spec?.basedOn?.map ?? null, current: truthStamp });
+        const pin = truthRevisionId
+          ? freshnessPin({
+              basedOnRevisionId: spec?.basedOn?.revisionId ?? null,
+              currentRevisionId: truthRevisionId,
+            })
+          : freshnessPin({ basedOn: spec?.basedOn?.map ?? null, current: truthStamp });
         if (!pin.fresh) stale.push({ skinId, ...pin });
       }
     }
@@ -265,18 +295,31 @@ function validateVisualPublish(venueId, route, root) {
   });
 }
 
-function validateDeliveryBundle(venueId, route, root, truthStamp) {
+function validateDeliveryBundle(venueId, route, root, truthStamp, truthRevisionId) {
   const out = route.outputs[0];
   const file = resolveOutputPath(out, { venueId, root });
   const doc = readJsonFile(file);
   if (!doc) {
     return finalizeStatus(route, { pass: false, detail: 'bundle manifest missing', outputs: [{ id: out.id, exists: false }] });
   }
-  const pin = freshnessPin({ basedOn: doc?.basedOn?.map ?? null, current: truthStamp });
+  const pin = truthRevisionId
+    ? freshnessPin({
+        basedOnRevisionId: doc?.basedOn?.revisionId ?? null,
+        currentRevisionId: truthRevisionId,
+      })
+    : freshnessPin({ basedOn: doc?.basedOn?.map ?? null, current: truthStamp });
   return finalizeStatus(route, {
     pass: pin.fresh,
     detail: pin.reason,
-    outputs: [{ id: out.id, path: file, exists: true, basedOn: doc?.basedOn?.map ?? null }],
+    outputs: [
+      {
+        id: out.id,
+        path: file,
+        exists: true,
+        basedOn: doc?.basedOn?.map ?? null,
+        basedOnRevisionId: doc?.basedOn?.revisionId ?? null,
+      },
+    ],
   });
 }
 
@@ -299,9 +342,10 @@ const VALIDATORS = {
  * @param {string} venueId
  * @param {{ root?: string, routes?: import('./factory-types.mjs').RouteEntry[] }} [opts]
  */
-export function validateVenue(venueId, opts = {}) {
+export async function validateVenueAsync(venueId, opts = {}) {
   const root = opts.root || MONO_ROOT;
   const truthStamp = truthStampFor(venueId, root);
+  const truthRevisionId = await truthRevisionFor(venueId);
   const routes = (opts.routes || ROUTES).map((route) => {
     const fn = VALIDATORS[route.id];
     if (!fn) {
@@ -309,7 +353,7 @@ export function validateVenue(venueId, opts = {}) {
     }
     if (route.id === 'map.route-qa') return fn(venueId, route);
     if (route.id === 'visual.display-pack' || route.id === 'delivery.bundle') {
-      return fn(venueId, route, root, truthStamp);
+      return fn(venueId, route, root, truthStamp, truthRevisionId);
     }
     return fn(venueId, route, root);
   });
@@ -322,14 +366,22 @@ export function validateVenue(venueId, opts = {}) {
   };
   const ok = summary.fail === 0;
 
-  return { ok, venue: venueId, truthStamp, routes, summary };
+  return { ok, venue: venueId, truthStamp, truthRevisionId, routes, summary };
 }
 
+/** @deprecated alias — prefer validateVenueAsync */
+export const validateVenue = validateVenueAsync;
+
 /** Validate every venue in the shipped manifest. */
-export function validateAll(opts = {}) {
+export async function validateAll(opts = {}) {
   const root = opts.root || MONO_ROOT;
   const manifest = readJsonFile(path.join(root, 'apps', 'party-tracker', 'public', 'venues', 'manifest.json'));
-  return (manifest?.venues || []).map((v) => validateVenue(v.id, { ...opts, root }));
+  const venues = manifest?.venues || [];
+  const out = [];
+  for (const v of venues) {
+    out.push(await validateVenueAsync(v.id, { ...opts, root }));
+  }
+  return out;
 }
 
 export function renderValidationReport(doc) {
@@ -338,10 +390,15 @@ export function renderValidationReport(doc) {
     '',
     doc.ok ? '**Pass** (no required-stage failures)' : '**Fail**',
     `Truth stamp: \`${doc.truthStamp ?? '—'}\``,
+  ];
+  if (doc.truthRevisionId) {
+    lines.push(`Truth revision: \`${doc.truthRevisionId}\``);
+  }
+  lines.push(
     '',
     '| Route | Factory | Status | Detail |',
     '| --- | --- | :-: | --- |',
-  ];
+  );
   for (const r of doc.routes) {
     const mark = r.status === 'pass' ? '✅' : r.status === 'warn' ? '⚠️' : r.status === 'fail' ? '❌' : '⏭';
     lines.push(`| ${r.id} | ${r.factoryLabel ?? factoryLabel(r.factory)} | ${mark} | ${r.detail} |`);
