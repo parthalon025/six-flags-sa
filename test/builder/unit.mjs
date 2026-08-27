@@ -4945,6 +4945,30 @@ await check('when two POIs dedupe, the survivor keeps opening hours from either'
   return true;
 });
 
+await check('dedupe merges height and opening hours independently', () => {
+  const elements = [
+    {
+      type: 'node',
+      id: 5,
+      lat: 39.3441,
+      lon: -84.2681,
+      tags: { name: 'Gemini', attraction: 'roller_coaster', minimum_height_requirement: '48in (122cm)' },
+    },
+    {
+      type: 'node',
+      id: 6,
+      lat: 39.34415,
+      lon: -84.26815,
+      tags: { name: 'Gemini', attraction: 'roller_coaster', opening_hours: 'May-Sep 10:00-22:00' },
+    },
+  ];
+  const pois = buildPois(elements, [], { dedupeMetres: 35 });
+  assert.equal(pois.length, 1);
+  assert.equal(pois[0].h.min, 48);
+  assert.equal(pois[0].oh, 'May-Sep 10:00-22:00');
+  return true;
+});
+
 await check('a pitch says what it knows and inherits the rest', () => {
   const venue = { camping: { hookup: 'full', amps: [30, 50], water: true, surface: 'gravel' } };
   const pitch = { c: 'campsite', n: 'Site 5', camp: { surface: 'concrete', drive: 'pull-through' } };

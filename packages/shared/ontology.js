@@ -52,7 +52,6 @@ export const isQueueable = (poi) => implementsIface(poi, 'Queueable');
 export const isReportable = (poi) => implementsIface(poi, 'Reportable');
 export const isMeetCandidate = (poi) => implementsIface(poi, 'MeetCandidate');
 export const isSheltered = (poi) => implementsIface(poi, 'Sheltered');
-export const isSchedulable = (poi) => implementsIface(poi, 'Schedulable');
 export const isInert = (poi) => implementsIface(poi, 'Inert');
 
 export const rideable = isRideable;

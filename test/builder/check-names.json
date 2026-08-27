@@ -271,6 +271,7 @@
     "plan :: a tagged POI round-trips opening_hours through buildPois",
     "plan :: a POI with no opening_hours tag is unchanged apart from coordinates",
     "plan :: when two POIs dedupe, the survivor keeps opening hours from either",
+    "plan :: dedupe merges height and opening hours independently",
     "plan :: a pitch says what it knows and inherits the rest",
     "plan :: what is unknown is left unsaid",
     "plan :: a pitch is findable by what it offers, not just its number",

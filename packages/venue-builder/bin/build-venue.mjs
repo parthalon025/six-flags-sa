@@ -612,8 +612,10 @@ export function buildPois(elements, areaCandidates, opts) {
     if (!dupe) kept.push(poi);
     // The ride is mapped twice and only one of the pair carries the sign. Keep
     // the survey rather than whichever node happened to be read first.
-    else if (poi.h && !dupe.h) dupe.h = poi.h;
-    else if (poi.oh && !dupe.oh) dupe.oh = poi.oh;
+    else {
+      if (poi.h && !dupe.h) dupe.h = poi.h;
+      if (poi.oh && !dupe.oh) dupe.oh = poi.oh;
+    }
   }
   return kept;
 }
