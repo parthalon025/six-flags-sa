@@ -55,7 +55,12 @@
         "apps/party-tracker/public/venues/**",
         "apps/party-tracker/lib/venueIndex.js",
         "data/venues/**",
-        "fastlane/metadata/ios/routing_app_coverage.geojson"
+        "fastlane/metadata/ios/routing_app_coverage.geojson",
+        "apps/party-tracker/lib/contributions/**",
+        "apps/party-tracker/app/api/contributions/**",
+        "test/app/contributions-postgres.test.mjs",
+        "db/migrations/001_profiles_contributions.sql",
+        "db/migrations/003_contribution_thanks.sql"
       ],
       "pulls": ["venues"]
     },
@@ -143,7 +148,23 @@
         "apps/party-tracker/app/api/_lib/party.js",
         "apps/party-tracker/app/api/contributions/**"
       ],
-      "pulls": ["grandma"]
+      "pulls": ["grandma", "contribution-pipeline"]
+    },
+    {
+      "id": "contribution-pipeline",
+      "title": "Functional — submit → accept → consolidate dry-run",
+      "kind": "functional",
+      "paths": [
+        "apps/party-tracker/lib/contributions/**",
+        "apps/party-tracker/app/api/contributions/**",
+        "apps/party-tracker/app/api/admin/consolidate/**",
+        "apps/party-tracker/app/api/admin/contributions/**",
+        "packages/shared/consolidateExport.js",
+        "packages/venue-builder/lib/consolidate.mjs",
+        "packages/venue-builder/bin/consolidate.mjs",
+        "test/app/contribution-consolidate-vertical.test.mjs",
+        "test/app/lib/contribution-pipeline-vertical.mjs"
+      ]
     },
     {
       "id": "intake",

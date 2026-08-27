@@ -154,6 +154,13 @@
       "check": "Side Quest submit queues locally"
     },
     {
+      "id": "contribution-consolidate-pipeline",
+      "slice": "Adventure",
+      "user_action": "Steward accepts a durable contribution and consolidate dry-run names the venue action",
+      "suite": "functional",
+      "check": "POST → accept → consolidate dry-run names venue, action, and contribution id"
+    },
+    {
       "id": "e91-quest-sync",
       "slice": "Adventure",
       "user_action": "A queued Side Quest reaches the server once the network is back",

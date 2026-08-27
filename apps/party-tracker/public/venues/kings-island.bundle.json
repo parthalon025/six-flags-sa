@@ -4,7 +4,7 @@
   "basedOn": {
     "map": "2026-08-09"
   },
-  "bytes": 11677816,
+  "bytes": 15180670,
   "files": [
     {
       "path": "/venues/kings-island.gaps.json",
@@ -22,16 +22,6 @@
       "sha256": "fc53a7d72902333428f19575d39ead2810efbd3b85feb5d11223506afe9552ee"
     },
     {
-      "path": "/venues/kings-island/display/blueprint-survey.visual.json",
-      "bytes": 3949,
-      "sha256": "e2ceb9b7f18b29ce91914ba3a6fb9373664363df85f70294bec3900284861654"
-    },
-    {
-      "path": "/venues/kings-island/display/layered-atlas.visual.json",
-      "bytes": 3946,
-      "sha256": "8cebb043a9902a57a839c9e3151837976b8a1095a761535b1126d25be9a80a72"
-    },
-    {
       "path": "/venues/kings-island/display/layered-atlas.world.json",
       "bytes": 302,
       "sha256": "fec504ad6fc0a3a502b085cabf64a5f2302cac88f2897276a41955ca531e4e18"
@@ -42,34 +32,14 @@
       "sha256": "cfec49db950bb026a6940f901d923eda0381430ded640f84629e900d4ab946ed"
     },
     {
-      "path": "/venues/kings-island/display/midnight-carnival.visual.json",
-      "bytes": 3971,
-      "sha256": "de8cce45d81dc0253f09a80af3cebaa471ddb0b6d10d1918698517ba5ca7277b"
-    },
-    {
-      "path": "/venues/kings-island/display/park-midnight.visual.json",
-      "bytes": 3871,
-      "sha256": "c80f09601758b1a4c14ef0c3821299790df3e6246084f7feac3fd0f174714a7b"
-    },
-    {
-      "path": "/venues/kings-island/display/trail.visual.json",
-      "bytes": 3842,
-      "sha256": "062cb05b1af8281e336106ed530338b55733b0f90a8cddc8012d2b4bacbd5749"
-    },
-    {
-      "path": "/venues/kings-island/display/watercolor-quest.visual.json",
-      "bytes": 3947,
-      "sha256": "af42b3e00d14f562bf048188b90333aa55a0e377fa8c920937941d1ee7d9102d"
-    },
-    {
       "path": "/venues/kings-island/display/watercolor-quest.world.json",
       "bytes": 314,
       "sha256": "cba0a190d25c17ce82a721a73a669457878722d95f32cbca7dcb85c0e7d074b4"
     },
     {
       "path": "/venues/kings-island/display/watercolor-quest.world.png",
-      "bytes": 6659690,
-      "sha256": "a5afcc2e924f0681feff008965be968b47dd6ac9851b025bef620224d947ca85"
+      "bytes": 10186070,
+      "sha256": "43956e7bf906804cda5db720ce24a0c7bd7db1a86ea60951cd1cca8082de0ba1"
     }
   ]
 }
