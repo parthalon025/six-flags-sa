@@ -110,8 +110,8 @@ async function markEvidenceLinks(grid) {
         const data = await res.json();
         if (!data.available) {
           link.classList.add('missing');
+          link.textContent = 'Evidence not generated';
           link.title = 'Evidence review map not generated for this venue';
-          link.setAttribute('aria-disabled', 'true');
         }
       } catch {
         link.classList.add('missing');

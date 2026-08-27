@@ -42,6 +42,7 @@ const {
   evidenceReviewStatus,
   readEvidenceReviewHtml,
   renderEvidenceMissingPage,
+  resolveEvidenceReviewPath,
 } = await import('../../packages/venue-builder/lib/inspect-evidence.mjs');
 
 const { createInspectHandler } = await import('../../packages/venue-builder/lib/inspect-handlers.mjs');
@@ -130,6 +131,19 @@ await check('GET /evidence/:id serves the validation HTML file', async () => {
   return true;
 });
 
+await check('resolveEvidenceReviewPath rejects traversal outside overrideDir', () => {
+  const p = resolveEvidenceReviewPath('../../etc/passwd', { overrideDir: path.join(root, 'data', 'venues') });
+  assert.equal(p, null);
+  return true;
+});
+
+await check('renderEvidenceMissingPage escapes venueId in HTML', () => {
+  const page = renderEvidenceMissingPage('<script>alert(1)</script>');
+  assert.match(page, /&lt;script&gt;/);
+  assert.doesNotMatch(page, /<script>alert/);
+  return true;
+});
+
 await check('GET /evidence/:id without output returns not-generated page (not 404)', async () => {
   const handler = createInspectHandler({
     overrideDir: path.join(root, 'data', 'venues'),
@@ -148,6 +162,7 @@ await check('GET /evidence/:id without output returns not-generated page (not 40
   }
   return true;
 });
+
 
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);
 if (FAIL.length) {
