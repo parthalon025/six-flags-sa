@@ -110,6 +110,24 @@ export const writeJson = (file, value, pretty) => {
 };
 
 /**
+ * Declared adapters and on-disk caches for signal-derived quest seeds.
+ * @param {string} id venue id
+ */
+export function adapterSignalContext(id) {
+  if (!id) {
+    return { declaredAdapters: [], adapterCaches: null, catalog: null };
+  }
+  const { data: catalog } = readSources(id);
+  const declaredAdapters = externalAdaptersFromCatalog(catalog, { fallback: [] });
+  const adapterCaches = {};
+  for (const adapterId of declaredAdapters) {
+    const cache = readJson(adapterCacheFile(id, adapterId), null);
+    if (cache) adapterCaches[adapterId] = cache;
+  }
+  return { declaredAdapters, adapterCaches, catalog };
+}
+
+/**
  * Gaps this venue ships. Reads builder sidecars (attractions) and walkable
  * geometry; does not invent live ops. Phone-safe: one `{ type, target }` per fact.
  */
@@ -121,15 +139,9 @@ export function gapsDocumentFor({ meta, pois, map, extractions } = {}) {
     ? loaded
     : Array.isArray(loaded?.extractions) ? loaded.extractions : [];
   const imagery = routeImageryExtractions(list, { map: map || {} });
-  const { data: catalog } = id ? readSources(id) : { data: null };
-  const declaredAdapters = externalAdaptersFromCatalog(catalog, { fallback: [] });
-  const adapterCaches = {};
-  if (id) {
-    for (const adapterId of declaredAdapters) {
-      const cache = readJson(adapterCacheFile(id, adapterId), null);
-      if (cache) adapterCaches[adapterId] = cache;
-    }
-  }
+  const { declaredAdapters, adapterCaches, catalog } = id
+    ? adapterSignalContext(id)
+    : { declaredAdapters: [], adapterCaches: null, catalog: null };
   return shippedGapsForVenue({
     venueId: id,
     meta,
@@ -137,7 +149,7 @@ export function gapsDocumentFor({ meta, pois, map, extractions } = {}) {
     map: map || {},
     attractions,
     imageryGaps: imagery.gaps,
-    adapterCaches: id ? adapterCaches : null,
+    adapterCaches,
     declaredAdapters,
     catalog,
   });

@@ -17,7 +17,7 @@
  */
 
 import { PUBLISH_AT, atLeast } from './evidence.mjs';
-import { adapterCacheIsStale, freshnessDaysForAdapter } from './adapter-freshness.mjs';
+import { adapterCacheIsStale, freshnessDaysForAdapter, adapterFeatureClass } from './adapter-freshness.mjs';
 import { graphFromSidecar } from './evidence-graph.mjs';
 
 /** Builder ask key → contribution quest type (design taxonomy). */
@@ -159,11 +159,11 @@ export function questSeedsFromStaleAdapters(venueId, {
 } = {}) {
   const seeds = [];
   for (const adapterId of adapters) {
-    const cache = caches[adapterId];
-    if (!cache) continue;
+    const cache = caches[adapterId] ?? null;
     const freshnessDays = freshnessDaysForAdapter(adapterId, catalog);
     const { stale, fetched } = adapterCacheIsStale(cache, freshnessDays, asOf);
     if (!stale) continue;
+    const featureClass = adapterFeatureClass(adapterId);
     seeds.push({
       venueId,
       type: 'source_verify',
@@ -171,10 +171,11 @@ export function questSeedsFromStaleAdapters(venueId, {
       graduation: 'adapter_refresh',
       sourceGap: 'adapter_stale',
       target: adapterId,
+      featureClass,
       blocking: false,
       whyOpenSourceFails:
         'External research caches expire; stale adapter data cannot be trusted for fusion or QA.',
-      need: `Refresh ${adapterId} research cache (last fetched ${fetched || 'unknown'})`,
+      need: `Refresh ${adapterId} ${featureClass} cache (last fetched ${fetched || 'unknown'})`,
       adapterId,
       fetchedAt: fetched,
       freshnessDays,
@@ -225,6 +226,27 @@ export function questSeedsFromEvidenceConflicts(venueId, attractionsSidecar) {
   return seeds.slice(0, 40);
 }
 
+/** Signal-derived seeds (stale adapters + evidence conflicts) for briefs and ship path. */
+export function questSeedsFromSignals(venueId, {
+  attractions = null,
+  adapterCaches = null,
+  declaredAdapters = [],
+  catalog = null,
+  asOf = new Date().toISOString().slice(0, 10),
+} = {}) {
+  return [
+    ...questSeedsFromEvidenceConflicts(venueId, attractions),
+    ...(adapterCaches
+      ? questSeedsFromStaleAdapters(venueId, {
+        adapters: declaredAdapters,
+        caches: adapterCaches,
+        catalog,
+        asOf,
+      })
+      : []),
+  ];
+}
+
 /**
  * Ephemeral ops signals — always available as Tier-1 ambient quests once E9 ships.
  * Not derived from builder gaps; listed so the handoff doc and API share one catalogue.
@@ -253,15 +275,13 @@ export function questSeedsForVenue({
   const durable = [
     ...questSeedsFromRequests(venueId, reqs),
     ...questSeedsFromEntrances(venueId, attractions),
-    ...questSeedsFromEvidenceConflicts(venueId, attractions),
-    ...(adapterCaches
-      ? questSeedsFromStaleAdapters(venueId, {
-        adapters: declaredAdapters,
-        caches: adapterCaches,
-        catalog,
-        asOf,
-      })
-      : []),
+    ...questSeedsFromSignals(venueId, {
+      attractions,
+      adapterCaches,
+      declaredAdapters,
+      catalog,
+      asOf,
+    }),
   ];
   const ambient = includeAmbient
     ? TIER1_AMBIENT.map((a) => ({

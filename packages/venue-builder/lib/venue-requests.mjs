@@ -1,5 +1,6 @@
 import { addressBook, resolveOverride } from './venue-ids.mjs';
 import { questSeedsForVenue } from './quest-seeds.mjs';
+import { adapterSignalContext } from './venue-io.mjs';
 
 /**
  * The questions a build cannot answer, written so somebody — or something — can.
@@ -358,10 +359,17 @@ export const briefJson = (venue, reqs, extras = {}) => ({
   requests: reqs,
   /* Gaps open sources cannot settle → Side Quests / Scout missions (E9–E10). */
   questSeeds: extras.questSeeds
-    || questSeedsForVenue({
-      venueId: venue?.id,
-      reqs,
-      attractions: extras.attractions || null,
-      includeAmbient: extras.includeAmbient !== false,
-    }),
+    || (() => {
+      const venueId = venue?.id;
+      const ctx = venueId ? adapterSignalContext(venueId) : { adapterCaches: null, declaredAdapters: [], catalog: null };
+      return questSeedsForVenue({
+        venueId,
+        reqs,
+        attractions: extras.attractions || null,
+        adapterCaches: ctx.adapterCaches,
+        declaredAdapters: ctx.declaredAdapters,
+        catalog: ctx.catalog,
+        includeAmbient: extras.includeAmbient !== false,
+      });
+    })(),
 });

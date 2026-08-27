@@ -13,7 +13,7 @@
  * Does not import venue-io (venue-io calls this after reading sidecars).
  */
 
-import { questSeedsFromEntrances, questSeedsFromStaleAdapters, questSeedsFromEvidenceConflicts } from './quest-seeds.mjs';
+import { questSeedsFromEntrances, questSeedsFromSignals } from './quest-seeds.mjs';
 
 export const SHIPPED_GAP_TYPES = Object.freeze([
   'height',
@@ -218,8 +218,14 @@ export function shippedGapsDocument({ venueId, seeds = [], pois = [], map = null
       if (target) add(type, target);
       continue;
     }
+    if (type === 'path_disputed' && seed.sourceGap === 'evidence_conflict') {
+      const target = resolveGapTarget(pois, seed.target);
+      if (target) add(type, target);
+      else add(type, null);
+      continue;
+    }
     if (type === 'path_disputed' && seed.sourceGap === 'adapter_stale') {
-      add(type, null);
+      add(type, seed.adapterId || seed.target || null);
       continue;
     }
     add(type, null);
@@ -259,15 +265,13 @@ export function shippedGapsForVenue({
 } = {}) {
   const seeds = [
     ...questSeedsFromEntrances(venueId, attractions),
-    ...questSeedsFromEvidenceConflicts(venueId, attractions),
-    ...(adapterCaches
-      ? questSeedsFromStaleAdapters(venueId, {
-        adapters: declaredAdapters,
-        caches: adapterCaches,
-        catalog,
-        asOf,
-      })
-      : []),
+    ...questSeedsFromSignals(venueId, {
+      attractions,
+      adapterCaches,
+      declaredAdapters,
+      catalog,
+      asOf,
+    }),
     ...presenceAndCampingSeeds(meta, pois),
     ...imageryGaps,
   ];

@@ -25,6 +25,29 @@ export const DEFAULT_ADAPTER_FRESHNESS_DAYS = Object.freeze({
 
 export const DEFAULT_FRESHNESS_DAYS = 90;
 
+/** Rough feature class a stale adapter affects — for quest seed copy and gap routing. */
+export const ADAPTER_FEATURE_CLASS = Object.freeze({
+  'queue-times': 'queue',
+  ropedrop: 'queue',
+  'parks-api': 'inventory',
+  rcdb: 'inventory',
+  wikidata: 'metadata',
+  'open-meteo': 'conditions',
+  'mapillary-api': 'geometry',
+  'accessibility-cloud': 'accessibility',
+  'project-sidewalk': 'accessibility',
+  openhistoricalmap: 'geometry',
+  'esa-worldcover': 'landcover',
+  'overture-buildings': 'footprint',
+  'naip-planetary': 'aerial',
+  openrouteservice: 'routing',
+  'google-places': 'poi',
+});
+
+export function adapterFeatureClass(adapterId) {
+  return ADAPTER_FEATURE_CLASS[adapterId] ?? 'external_research';
+}
+
 /**
  * @param {string} adapterId
  * @param {object | null} catalog sources.json payload

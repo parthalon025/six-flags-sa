@@ -59,7 +59,19 @@ await check('stale adapter produces a verify seed naming the source', () => {
   assert.equal(seeds.length, 1);
   assert.equal(seeds[0].sourceGap, 'adapter_stale');
   assert.equal(seeds[0].target, 'queue-times');
+  assert.equal(seeds[0].featureClass, 'queue');
   assert.match(seeds[0].need, /queue-times/i);
+  return true;
+});
+
+await check('missing adapter cache is treated as stale', () => {
+  const seeds = questSeedsFromStaleAdapters('kings-island', {
+    adapters: ['queue-times'],
+    caches: {},
+    asOf: AS_OF,
+  });
+  assert.equal(seeds.length, 1);
+  assert.equal(seeds[0].sourceGap, 'adapter_stale');
   return true;
 });
 
@@ -147,9 +159,38 @@ await check('shipped gaps include stale and conflict signal seeds', () => {
     asOf: AS_OF,
   });
   assert.ok(doc.gaps.some((g) => g.type === 'queue' && g.target === 'maverick'));
-  assert.ok(doc.gaps.some((g) => g.type === 'path_disputed' && g.target === null));
+  assert.ok(doc.gaps.some((g) => g.type === 'path_disputed' && g.target === 'queue-times'));
   assert.equal(shippedTypeForSeed({ sourceGap: 'adapter_stale' }), 'path_disputed');
   assert.equal(shippedTypeForSeed({ sourceGap: 'evidence_conflict', featureKey: 'queue_entrance' }), 'queue');
+  return true;
+});
+
+await check('clean venue ships no stale or conflict signal gaps', () => {
+  const doc = shippedGapsForVenue({
+    venueId: 'park',
+    pois: [{ n: 'Beast', i: 'beast', c: 'coaster', h: { min: 48 } }],
+    attractions: {
+      attractions: [
+        {
+          id: 'beast',
+          name: 'The Beast',
+          features: {
+            queue_entrance: {
+              confidence: 'high',
+              evidence: [
+                { source: 'official_map', at: { lat: 39.34, lng: -84.26 }, date: '2026-06-01' },
+              ],
+            },
+          },
+        },
+      ],
+    },
+    adapterCaches: { 'queue-times': { fetched: '2026-08-26T12:00:00' } },
+    declaredAdapters: ['queue-times'],
+    asOf: AS_OF,
+  });
+  assert.ok(!doc.gaps.some((g) => g.target === 'queue-times'));
+  assert.ok(!doc.gaps.some((g) => g.type === 'queue' && g.target === 'beast'));
   return true;
 });
 
