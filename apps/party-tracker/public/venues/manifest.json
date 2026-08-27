@@ -269,5 +269,67 @@
         "gaps": 70
       }
     }
-  ]
+  ],
+  "generatedBinding": {
+    "algorithm": "sha256-aggregate-v1",
+    "sha256": "b12de346fd35f7861f99ddb7bacd5230fca532ee9841f0f85bbfb7e8177d6952",
+    "files": [
+      {
+        "path": "apps/party-tracker/lib/venueIndex.js",
+        "sha256": "102022fd6e0687697869431c367eb38e85dbc0c37f9607ec5c0aa0244a0fe9a1"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/big-kahunas.gaps.json",
+        "sha256": "3a7dbdfcb4cb97f64075a3aa5408a5e3c085f0ceaf515619538bb998d9363f0c"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/big-kahunas.map.json",
+        "sha256": "3e6cbd364ef4d8bbf730387833be4bd95735699099f0fdc1a1587243010eb87c"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/big-kahunas.pois.json",
+        "sha256": "93930e5483181c4afb2041f9e8f52df8dfc4e790332719f11c0d1731ac108ee7"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/cedar-point.gaps.json",
+        "sha256": "46195b7f32b365c0df792ce3888cb4aaa58abe78f528f0d612bdef20aefe7bc1"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/cedar-point.map.json",
+        "sha256": "50cb73aca476fe57b851a35c968c67d566b0c0ed95f01cec73bb93a35b710fe6"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/cedar-point.pois.json",
+        "sha256": "caea6a9a833bc28250fb833e29bbd468326a44224df86f1444e1066784f9af2b"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/kings-island.gaps.json",
+        "sha256": "a2deb52cf38114f1c4e25811b85f9435668049df0c2298140629ed166091c9ab"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/kings-island.map.json",
+        "sha256": "504d84c9489c15adbfe880573971f248305ec1b75e2037cde00ac73152502e4f"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/kings-island.pois.json",
+        "sha256": "711fcdbf2927c0c0a110b1d01ea1cce109fdd21397538f541e17e83ddbd16be8"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/manifest.json",
+        "sha256": "27066affab4ebafed93cca21eeedc87fd5b08ebb37e272e359b43849efc1e95a"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/six-flags-fiesta-texas.gaps.json",
+        "sha256": "b92f965146bd3c4f36e6fcc83c017839d6cf65da80b9ea29625ef2b63a736040"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/six-flags-fiesta-texas.map.json",
+        "sha256": "3b22005806e90e87fc252ba486c41e1dddaaee7ab15aff8ed8e7541d40aeea1f"
+      },
+      {
+        "path": "apps/party-tracker/public/venues/six-flags-fiesta-texas.pois.json",
+        "sha256": "be3aeeade159d133ada37adab359d70cd17487d0bc28ec41b16d42493f7c6cae"
+      }
+    ]
+  }
 }
