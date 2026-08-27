@@ -59,6 +59,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/venue-freshness.test.mjs',
   'test/scripts/drift-watch.test.mjs',
   'test/scripts/bake-drift-watch.test.mjs',
+  'test/scripts/build-venue-workflow.test.mjs',
   'test/scripts/billing-sync-check.test.mjs',
   'test/scripts/lakebase-config.test.mjs',
   'test/scripts/postdb-migrate.test.mjs',
