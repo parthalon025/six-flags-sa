@@ -6,15 +6,20 @@ This runbook covers **Vercel preview database strategy**, **connection pooling**
 
 ## `DATABASE_URL` and memory fallback
 
-| `DATABASE_URL` | Contributions / profiles | `pingPostgres()` |
-| --- | --- | --- |
-| **Unset** | In-process memory (lost on restart; not shared across serverless instances) | `{ ok: true, backend: 'memory' }` |
-| **Set and reachable** | Durable Postgres | `{ ok: true, backend: 'postgres' }` |
-| **Set but failing** | Errors on write | `{ ok: false, backend: 'postgres', error: '…' }` |
+| `DATABASE_URL` | Contributions / profiles | `pingPostgres()` (dev/test) | `pingPostgres()` (production) |
+| --- | --- | --- | --- |
+| **Unset** | In-process memory (lost on restart; not shared across serverless instances) | `{ ok: true, backend: 'memory' }` | `{ ok: false, backend: 'memory', error: '…' }` |
+| **Set and reachable** | Durable Postgres | `{ ok: true, backend: 'postgres' }` | `{ ok: true, backend: 'postgres' }` |
+| **Set but failing** | Errors on write | `{ ok: false, backend: 'postgres', error: '…' }` | `{ ok: false, backend: 'postgres', error: '…' }` |
 
 A Vercel **preview** without `DATABASE_URL` therefore boots quietly in memory mode — contributions from that preview vanish on the next cold start. That is intentional for local dev and tests, but previews that exercise the contribution path should set `DATABASE_URL`.
 
-**Production guard (#436):** when `NODE_ENV=production` (or Vercel **Production** environment) and `DATABASE_URL` is missing, the planned deploy gate / readiness path will fail closed with a message naming `DATABASE_URL` — memory backend must not report fully ready in production. Dev, test, and preview without the variable stay unchanged until you opt in. Track implementation in issue #436; until it lands, treat any production deploy without `DATABASE_URL` as misconfigured.
+**Production guard (#436):** when Vercel **Production** (`VERCEL_ENV=production`), or self-hosted `NODE_ENV=production` without a Vercel preview/development env, and `DATABASE_URL` is missing:
+
+1. **Deploy gate** — `scripts/lib/vercel-ignore.mjs` applies `applyProductionPostgresGuard` after the Redis guard and **skips** the production build (`category: production-postgres-missing`). The skip reason names `DATABASE_URL`.
+2. **Probe seam** — `pingPostgres()` returns `ok: false` with `backend: 'memory'` so readiness callers can surface not-ready. **`/api/ready` does not call `pingPostgres` yet** (#437).
+
+Dev, test, and Vercel preview without `DATABASE_URL` stay in memory mode with no guard noise.
 
 ## Vercel preview database strategy
 

@@ -14,6 +14,7 @@ import {
   isAgentPreviewBranch,
   applyLiveAutomationGate,
   applyProductionRedisGuard,
+  applyProductionPostgresGuard,
 } from '../../scripts/lib/vercel-ignore.mjs';
 import { isVersionStampOnlyChange } from '../../scripts/lib/version-stamp.mjs';
 import {
@@ -311,6 +312,25 @@ assert.equal(
     NODE_ENV: 'production',
     UPSTASH_REDIS_REST_URL: 'https://x.upstash.io',
     UPSTASH_REDIS_REST_TOKEN: 'tok',
+  });
+  assert.equal(allowed.build, true);
+}
+{
+  const prodBuild = decideVercelBuild({
+    files: ['apps/party-tracker/lib/party/hostService.js'],
+    env: 'production',
+    gitRef: 'main',
+  });
+  const blocked = applyProductionPostgresGuard(prodBuild, 'production', {
+    NODE_ENV: 'production',
+    DATABASE_URL: '',
+  });
+  assert.equal(blocked.build, false);
+  assert.equal(blocked.category, 'production-postgres-missing');
+  assert.match(blocked.reason, /DATABASE_URL/);
+  const allowed = applyProductionPostgresGuard(prodBuild, 'production', {
+    NODE_ENV: 'production',
+    DATABASE_URL: 'postgres://user:pass@host/db',
   });
   assert.equal(allowed.build, true);
 }
