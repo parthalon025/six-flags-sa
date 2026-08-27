@@ -167,8 +167,8 @@ The catalog of license-gated sprites, tilesheets, and icons a kit may reference.
 _Avoid_: ad-hoc URLs; internet search at bake time without review; **Gap**
 
 **PostDB**:
-The canonical store for all factory outputs — **Truth revisions**, **Display packs**, certifications, and published artifact registry. Factories write here; **Delivery** exports from here. Not git paths or working-tree JSON as source of truth.
-_Avoid_: postgres (implementation); file store; repo-as-bus
+The canonical store for all factory outputs — **Truth revisions**, **Display packs**, certifications, and published artifact registry. Factories write here; **Delivery** exports from here. Not git paths or working-tree JSON as source of truth. Author-time: laptop Docker Postgres + CI `postgres:16`; hosted app/API: Neon on the Vercel Marketplace. Databricks jobs stay paused. Detail: ADR-0024, `scripts/lib/operating-stack.json`.
+_Avoid_: lakebase; file store; repo-as-bus
 
 **Truth revision**:
 An immutable Map factory snapshot for one **World** — geometry, **Places**, and **Gaps** as of one build. Append-only; promotion picks which revision guests receive.

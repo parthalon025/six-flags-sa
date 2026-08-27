@@ -466,6 +466,7 @@
     "sheet :: unknown intro state covers the map instead of painting the live app",
     "sheet :: a returning phone skips the first-run overlay",
     "sheet :: a first visit opens the logo splash, then the welcome gate, without a hold in between",
+    "sheet :: signed-in welcome copy uses the Profile display name when we have one",
     "sheet :: the first-run gate is opaque and does not fade in over the live map",
     "sheet :: the boot script stamps data-intro from the same storage key the app reads",
     "sheet :: Clerk stays off when the API keys are not on this box",

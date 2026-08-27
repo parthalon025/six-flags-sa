@@ -5,6 +5,16 @@
  */
 
 export { publishBundle } from './publish-bundle.mjs';
+export { assembleExportBundle, exportFromPostdb, assembleBundleAtRevision } from './export-from-postdb.mjs';
+export {
+  DELTA_STATUS,
+  changedFiles,
+  filesForSync,
+  manifestForSync,
+  parseSinceParam,
+  SINCE_QUERY,
+} from './delta-sync.mjs';
+export { resolveSyncManifest } from './resolve-sync-manifest.mjs';
 export {
   freshnessDecision,
   bundleDriftDecision,

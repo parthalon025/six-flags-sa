@@ -50,6 +50,14 @@ jobs:
       skip_ui: ${{ steps.local_pass.outputs.skip_ui }}
       skip_ci: ${{ steps.local_pass.outputs.skip_ci }}
       local_ci_tag: ${{ steps.local_pass.outputs.local_ci_tag }}
+      canon_builder: ${{ steps.lane.outputs.canon_builder }}
+      canon_lint: ${{ steps.lane.outputs.canon_lint }}
+      canon_selector: ${{ steps.lane.outputs.canon_selector }}
+      canon_any_ui: ${{ steps.lane.outputs.canon_any_ui }}
+      canon_boundaries: ${{ steps.lane.outputs.canon_boundaries }}
+      canon_map_factory: ${{ steps.lane.outputs.canon_map_factory }}
+      canon_visual_factory: ${{ steps.lane.outputs.canon_visual_factory }}
+      canon_delivery_factory: ${{ steps.lane.outputs.canon_delivery_factory }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -72,6 +80,20 @@ jobs:
               node test/app/select-modules.mjs --base "origin/$BASE_REF" --format github
             else
               node test/app/select-modules.mjs --base origin/main --format github
+            fi
+          fi
+
+      - name: Canon lane plan
+        id: lane
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            node scripts/ci/lane-plan.mjs --base HEAD^1
+          else
+            BASE_REF="${{ github.base_ref }}"
+            if [ -n "$BASE_REF" ]; then
+              node scripts/ci/lane-plan.mjs --base "origin/$BASE_REF"
+            else
+              node scripts/ci/lane-plan.mjs --base origin/main
             fi
           fi
 
@@ -104,13 +126,16 @@ jobs:
           FORCE_FULL: ${{ contains(github.event.pull_request.labels.*.name, 'full-ci') || contains(github.event.pull_request.title, '[full-ci]') }}
         run: |
           BASE_REF="${{ github.base_ref }}"
-          ANY_UI="${{ steps.mods.outputs.any_ui }}"
+          ANY_UI="${{ steps.lane.outputs.canon_any_ui }}"
+          PR_HEAD="${{ github.event.pull_request.head.sha }}"
           if [ -z "$BASE_REF" ]; then
             # Push to main: the merge commit is a different diff from any PR
             # head, and it is the tree we ship. It always re-proves itself.
             node scripts/ci/local-ci-pass.mjs check --base origin/main --any-ui "$ANY_UI" --force-full
           elif [ "$FORCE_FULL" = "true" ]; then
-            node scripts/ci/local-ci-pass.mjs check --base "origin/$BASE_REF" --any-ui "$ANY_UI" --force-full
+            node scripts/ci/local-ci-pass.mjs check --base "origin/$BASE_REF" --head "$PR_HEAD" --any-ui "$ANY_UI" --force-full
+          elif [ -n "$PR_HEAD" ]; then
+            node scripts/ci/local-ci-pass.mjs check --base "origin/$BASE_REF" --head "$PR_HEAD" --any-ui "$ANY_UI"
           else
             node scripts/ci/local-ci-pass.mjs check --base "origin/$BASE_REF" --any-ui "$ANY_UI"
           fi
@@ -121,7 +146,7 @@ jobs:
           echo "lint=${{ steps.mods.outputs.lint }} selector=${{ steps.mods.outputs.selector }}"
           echo "builder=${{ steps.mods.outputs.builder }} any_ui=${{ steps.mods.outputs.any_ui }} full=${{ steps.mods.outputs.full_suite }}"
           echo "ui_matrix=${{ steps.mods.outputs.ui_matrix }}"
-          echo "skip_ci=${{ steps.local_pass.outputs.skip_ci }} skip_ui=${{ steps.local_pass.outputs.skip_ui }}"
+          echo "canon_builder=${{ steps.lane.outputs.canon_builder }} canon_any_ui=${{ steps.lane.outputs.canon_any_ui }}"
 
   # Not a merge gate — absent from the `ci` job's `needs:` below on purpose.
   # See docs/agents/ci.md#auto-ready-draft-prs.
@@ -148,7 +173,7 @@ jobs:
   module-select-unit:
     name: Module select unit
     needs: select
-    if: needs.select.outputs.selector == 'true' && needs.select.outputs.skip_ci != 'true'
+    if: needs.select.outputs.canon_selector == 'true' && needs.select.outputs.skip_ci != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -163,7 +188,7 @@ jobs:
     if: >-
       needs.gate.outputs.run == 'true' &&
       needs.select.outputs.skip_ci != 'true' &&
-      (needs.select.outputs.full_suite == 'true' || needs.select.outputs.modules != '')
+      needs.select.outputs.canon_boundaries == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -178,7 +203,7 @@ jobs:
   lint:
     name: Lint
     needs: select
-    if: needs.select.outputs.lint == 'true' && needs.select.outputs.skip_ci != 'true'
+    if: needs.select.outputs.canon_lint == 'true' && needs.select.outputs.skip_ci != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -197,9 +222,25 @@ jobs:
   builder:
     name: Builder
     needs: select
-    if: needs.select.outputs.builder == 'true' && needs.select.outputs.skip_ci != 'true'
+    if: needs.select.outputs.canon_builder == 'true' && needs.select.outputs.skip_ci != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: parkbound
+          POSTGRES_PASSWORD: parkbound
+          POSTGRES_DB: parkbound
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://parkbound:parkbound@localhost:5432/parkbound
     steps:
       - uses: actions/checkout@v4
 
@@ -209,6 +250,9 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      - name: PostDB migrate
+        run: node scripts/postdb-migrate.mjs
 
       - name: Builder unit + compare
         run: npm run test:builder
@@ -216,9 +260,25 @@ jobs:
   map-factory:
     name: Map factory
     needs: select
-    if: needs.select.outputs.map_factory == 'true' && needs.select.outputs.skip_ci != 'true'
+    if: needs.select.outputs.canon_map_factory == 'true' && needs.select.outputs.skip_ci != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: parkbound
+          POSTGRES_PASSWORD: parkbound
+          POSTGRES_DB: parkbound
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://parkbound:parkbound@localhost:5432/parkbound
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -226,6 +286,8 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - name: PostDB migrate
+        run: node scripts/postdb-migrate.mjs
       - run: node test/builder/factory-modules.mjs --leg map
 
   map-factory-result:
@@ -247,9 +309,25 @@ jobs:
   visual-factory:
     name: Visual factory
     needs: select
-    if: needs.select.outputs.visual_factory == 'true' && needs.select.outputs.skip_ci != 'true'
+    if: needs.select.outputs.canon_visual_factory == 'true' && needs.select.outputs.skip_ci != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: parkbound
+          POSTGRES_PASSWORD: parkbound
+          POSTGRES_DB: parkbound
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://parkbound:parkbound@localhost:5432/parkbound
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -257,6 +335,8 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - name: PostDB migrate
+        run: node scripts/postdb-migrate.mjs
       - run: node test/builder/factory-modules.mjs --leg visual
 
   visual-factory-result:
@@ -278,9 +358,25 @@ jobs:
   delivery-factory:
     name: Delivery
     needs: select
-    if: needs.select.outputs.delivery_factory == 'true' && needs.select.outputs.skip_ci != 'true'
+    if: needs.select.outputs.canon_delivery_factory == 'true' && needs.select.outputs.skip_ci != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: parkbound
+          POSTGRES_PASSWORD: parkbound
+          POSTGRES_DB: parkbound
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://parkbound:parkbound@localhost:5432/parkbound
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -288,6 +384,8 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - name: PostDB migrate
+        run: node scripts/postdb-migrate.mjs
       - run: node test/builder/factory-modules.mjs --leg delivery
 
   delivery-factory-result:
@@ -309,7 +407,7 @@ jobs:
   app-build:
     name: Build app
     needs: select
-    if: needs.select.outputs.any_ui == 'true' && needs.select.outputs.skip_ui != 'true'
+    if: needs.select.outputs.canon_any_ui == 'true' && needs.select.outputs.skip_ui != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -344,7 +442,7 @@ jobs:
   ui:
     name: UI · ${{ matrix.module }}
     needs: [select, app-build]
-    if: needs.select.outputs.any_ui == 'true' && needs.select.outputs.skip_ui != 'true'
+    if: needs.select.outputs.canon_any_ui == 'true' && needs.select.outputs.skip_ui != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -387,7 +485,7 @@ jobs:
   visual:
     name: Visual shots (soft)
     needs: [select, app-build]
-    if: needs.select.outputs.any_ui == 'true' && needs.select.outputs.skip_ui != 'true'
+    if: needs.select.outputs.canon_any_ui == 'true' && needs.select.outputs.skip_ui != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     continue-on-error: true

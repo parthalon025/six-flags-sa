@@ -19,7 +19,7 @@ const legArg = process.argv.find((a) => a.startsWith('--leg='))?.slice('--leg='.
 
 const { buildTruth } = await import('../../packages/venue-builder/lib/map-factory/index.mjs');
 const { compileDisplay } = await import('../../packages/venue-builder/lib/visual-factory/index.mjs');
-const { publishBundle, freshnessDecision } = await import('../../packages/venue-builder/lib/delivery/index.mjs');
+const { publishBundle, freshnessDecision, parseSinceParam, SINCE_QUERY } = await import('../../packages/venue-builder/lib/delivery/index.mjs');
 const { getRoute, assertCatalogComplete } = await import('../../packages/venue-builder/lib/factory-types.mjs');
 
 assert.equal(typeof buildTruth, 'function', 'buildTruth exported');
@@ -38,6 +38,7 @@ assert.equal(displayRoute.entry.module, 'visual-factory/compile-display.mjs');
 
 const bundleRoute = getRoute('delivery.bundle');
 assert.equal(bundleRoute.entry.module, 'delivery/publish-bundle.mjs');
+assert.equal(bundleRoute.cli, 'export-bundle.mjs');
 
 const fresh = freshnessDecision({
   truth: [{ venue: 'a', generated: '2026-08-10' }],
@@ -62,6 +63,21 @@ if (!legArg || legArg === 'delivery') {
   const { checkVenueFreshness } = await import('@party-tracker/venue-builder/freshness.js');
   const gate = checkVenueFreshness(ROOT);
   assert.equal(typeof gate.ok, 'boolean');
+  const published = await publishBundle('kings-island', { skipReindex: true, filesOnly: true });
+  assert.ok(published.bundle?.files?.length, 'seed bundle readable through delivery export seam');
+  assert.equal(published.revisionId, null);
+  assert.equal(SINCE_QUERY, 'since');
+  const since = parseSinceParam(new URLSearchParams('since=rev-ki'));
+  assert.equal(since.since, 'rev-ki');
+  assert.equal(since.mode, 'delta');
+  const { manifestForSync } = await import('../../packages/venue-builder/lib/delivery/delta-sync.mjs');
+  const ki = published.bundle;
+  const delta = manifestForSync(ki, {
+    since: '00000000-0000-0000-0000-000000000000',
+    prior: null,
+    priorKnown: false,
+  });
+  assert.equal(delta.mode, 'full', 'unknown since → full KI manifest');
 }
 
 // dependency-cruiser boundary rules (visual → map-io only)

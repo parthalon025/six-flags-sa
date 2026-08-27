@@ -13,6 +13,7 @@ Matt-standard layout: **workflows orchestrate; scripts own policy.** Do not dupl
 | `pre-merge-vertical.mjs` | `runPreMergeVertical()` | Agent merge gate — static + browser vertical; writes `scripts/ci/local-ci-pass.json` |
 | `../lib/clerk-e2e.mjs` | `clerkE2eBlockReason()` | Auth UI diffs require Clerk-on browser e2e before merge |
 | `../lib/app-test-origin.mjs` | `appOrigin()`, `allocateAppPort()`, `probeAppHealth()`, `watchOriginHealth()` | Less-contended default port (3118), ephemeral port allocation, and health probes for UI validation |
+| `../lib/ci-lane-plan.mjs` | `canonLanePlan()`, `staticStepsForFiles()`, `laneGithubOutputs()` | Canon lanes → static steps and GitHub job flags (GitHub mirrors this) |
 | `../lib/vertical-e2e.mjs` | `requiredVerticals()`, `verticalE2eBlockReason()` | Which verticals a diff owes, and what blocks a merge without them |
 | `local-ci-pass.mjs` | `runWrite()`, `runCheck()` | Writes the `local-ci-verified` stamp after a local vertical; tells GitHub which jobs it already proved |
 | `../lib/local-ci-pass.mjs` | `localCiDecision()`, `STATIC_STEPS` | The tag: what a local CI run covers, and when GitHub may honour it |
@@ -36,12 +37,13 @@ The run prints the verticals the diff owes (`scripts/lib/vertical-e2e.mjs`), run
 | Phase | What runs |
 |-------|-----------|
 | Docs-only | Stamp only — no static floor or verticals (matches GitHub touch-only skip) |
-| Static (floor) | `test:ci-gate` → `test:unit` → `lint` → `test:module-select` → `build -w @party-tracker/app` |
-| `automation` vertical | `test:ci-gate` — CI/deploy/stamp decisions through their exported functions |
-| `builder` vertical | `test:builder` — assertions over generated venue output |
-| `app` vertical | start app + `test:validate-ui:changed` — behaviour in a real browser |
+| Agent policy / wayfinder | Thin policy tests only (`scripts/lib/agent-policy-diff.mjs`) — no static floor, verticals, or matt-review |
+| Static (lane-derived) | Subset of `STATIC_STEPS` from `scripts/lib/ci-lane-plan.mjs` — app/guest lane owes the full floor; backside owes `test:ci-gate` only |
+| `backside` vertical | `test:ci-gate` — scripts, API routes, server libs, non-UI packages |
+| `builder` vertical | `test:builder` (+ factory legs when paths require) — assertions over generated venue output |
+| `app` vertical | guest module-select only — start app + `test:validate-ui:changed` + zoom sweep in a real browser |
 
-Docs-only branches owe nothing and skip straight through. `--skip-browser` is **refused** for diffs that touch app behaviour — static steps prove the build compiles, not that a guest can still use it. Code paths no vertical claims fail closed: the diff owes every vertical until a `VERTICALS` row claims the path. See [vertical-e2e policy](./policies/vertical-e2e.md).
+Canon lane plan (`scripts/lib/ci-lane-plan.mjs`) is the source of truth for which static steps and GitHub jobs a diff owes. GitHub `test-app.yml` reads `scripts/ci/lane-plan.mjs` outputs (`canon_*`) so workflow jobs mirror the same lanes. Policy: `scripts/lib/vertical-e2e.mjs`, `scripts/lib/ci-lane-plan.mjs`, and `scripts/lib/agent-policy-diff.mjs`. See [vertical-e2e policy](./policies/vertical-e2e.md).
 
 After a successful run, `scripts/ci/local-ci-pass.json` records the diff, the module selection, the static steps and the `verticals` that ran, tagged `local-ci-verified` (schema 3 — a stamp without the tag or without the verticals never covers a code diff). Commit that file with your branch. Use `--no-stamp` to validate without writing the file.
 
@@ -51,9 +53,9 @@ The tag means *local CI already ran everything the skipped jobs would have run, 
 
 | Property | How it holds |
 |----------|--------------|
-| Same code | `diffHash` — the branch diff vs merge-base with the stamp files excluded, so committing the stamp never invalidates it and any code change does |
-| Same everything else | base ref, merge-base, module selection, `package-lock.json` and `modules.json` hashes all have to match |
-| Nothing waved through | the stamp must list every step in `STATIC_STEPS` and every vertical the diff owes; `pre-merge-vertical` writes it only after they all pass |
+| Same code | `diffHash` — merge-base…PR head vs base (stamp files excluded). GitHub passes `--head` from `pull_request.head.sha` so the hash matches local runs on the branch tip, not the merge commit checkout |
+| Same proof | `staticSteps`, `verticals`, `factoryLegs`, and `browserVertical` when the canon lanes require them — not module-select alone |
+| Nothing waved through | the stamp must list every static step and vertical the diff owes; `stampProvesLocalRun()` gates `skip_ci` |
 | Not written by hand | `local-ci-pass.mjs write` (the hand path) records no tag and no verticals, so it can only ever skip the narrower UI matrix |
 
 `gate` and `select` never skip — `select` is the job that reads the tag, and something unskippable has to.

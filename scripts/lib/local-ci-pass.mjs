@@ -26,6 +26,7 @@
  *   shouldSkipGithubUi(stamp, context, { anyUi })
  *   shouldSkipGithubCi(stamp, context)
  *   localCiDecision(stamp, context, { anyUi, forceFull })
+ *   staticNpmStepsForFiles(files, manifest)
  */
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -33,6 +34,13 @@ import { scrubGitEnv } from './git-env.mjs';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  canonLanePlan,
+  jobsProvenByStamp,
+  jobsRequiredByCanon,
+  stampProvesCanonJobs,
+  staticStepsForFiles,
+} from './ci-lane-plan.mjs';
 import {
   loadModulesManifest,
   selectModulesFromFiles,
@@ -81,6 +89,12 @@ export const STATIC_STEPS = [
 
 export const STATIC_STEP_IDS = STATIC_STEPS.map((s) => s.id);
 
+/** Canon static steps for this diff → npm argv rows (pre-merge-vertical). */
+export function staticNpmStepsForFiles(files, manifest = loadModulesManifest()) {
+  const ids = staticStepsForFiles(files, manifest);
+  return STATIC_STEPS.filter((s) => ids.includes(s.id)).map((s) => s.npm);
+}
+
 /** GitHub jobs the tag may skip: the static floor above plus the verticals. */
 export const TAG_SKIPPED_JOBS = [
   ...new Set([
@@ -125,19 +139,20 @@ function hashFile(path) {
   return createHash('sha256').update(buf).digest('hex').slice(0, 16);
 }
 
-export function gitChangedFiles(baseRef = 'origin/main', cwd = repoRootFrom()) {
+export function gitChangedFiles(baseRef = 'origin/main', headRef = 'HEAD', cwd = repoRootFrom()) {
   try {
-    const mergeBase = git(cwd, ['merge-base', 'HEAD', baseRef]);
-    const out = git(cwd, ['diff', '--name-only', `${mergeBase}...HEAD`]);
+    const mergeBase = git(cwd, ['merge-base', headRef, baseRef]);
+    const out = git(cwd, ['diff', '--name-only', `${mergeBase}...${headRef}`]);
     return {
       mergeBase,
+      headRef,
       files: out
         .split('\n')
         .map((s) => s.trim())
         .filter(Boolean),
     };
   } catch {
-    return { mergeBase: null, files: null };
+    return { mergeBase: null, headRef, files: null };
   }
 }
 
@@ -151,11 +166,18 @@ export function gitChangedFiles(baseRef = 'origin/main', cwd = repoRootFrom()) {
  * scales with the repository's object count, so an identical tree hashes
  * differently on a worktree and on a CI runner holding every branch.
  */
-export function diffHashFor(mergeBase, cwd = repoRootFrom()) {
+export function diffHashFor(mergeBase, headRef = 'HEAD', cwd = repoRootFrom()) {
   if (!mergeBase) return null;
   try {
     const excludes = STAMP_FILES.map((p) => `:(exclude)${p}`);
-    const patch = git(cwd, ['diff', '--full-index', `${mergeBase}...HEAD`, '--', '.', ...excludes]);
+    const patch = git(cwd, [
+      'diff',
+      '--full-index',
+      `${mergeBase}...${headRef}`,
+      '--',
+      '.',
+      ...excludes,
+    ]);
     return createHash('sha256').update(patch).digest('hex').slice(0, 16);
   } catch {
     return null;
@@ -164,28 +186,38 @@ export function diffHashFor(mergeBase, cwd = repoRootFrom()) {
 
 export function buildLocalCiContext({
   baseRef = 'origin/main',
+  headRef = 'HEAD',
   cwd = repoRootFrom(),
   manifest = loadModulesManifest(),
 } = {}) {
-  const head = git(cwd, ['rev-parse', 'HEAD']);
-  const { mergeBase, files } = gitChangedFiles(baseRef, cwd);
+  const head = git(cwd, ['rev-parse', headRef]);
+  const { mergeBase, files } = gitChangedFiles(baseRef, headRef, cwd);
   const selection =
     files == null
       ? { modules: manifest.modules.map((m) => m.id), fullSuite: true }
       : selectModulesFromFiles(files, manifest);
   const modules = [...selection.modules].sort();
-  const needsBrowser = files == null ? true : needsBrowserForFiles(files, manifest);
+  const plan = canonLanePlan(files, manifest);
+  const needsBrowser = plan.needsBrowser;
 
   return {
     schema: LOCAL_CI_PASS_SCHEMA,
-    verticals: requiredVerticals(files),
+    verticals: plan.verticals,
     head,
-    diffHash: diffHashFor(mergeBase, cwd),
+    diffHash: diffHashFor(mergeBase, headRef, cwd),
     mergeBase,
+    headRef,
     baseRef,
+    files,
     modules,
     needsBrowser,
-    staticSteps: [...STATIC_STEP_IDS],
+    staticSteps: plan.staticSteps,
+    factoryLegs: {
+      map: plan.runMapFactory,
+      visual: plan.runVisualFactory,
+      delivery: plan.runDeliveryFactory,
+    },
+    canonJobs: jobsRequiredByCanon(files, manifest),
     lockHash: hashFile(join(cwd, 'package-lock.json')),
     manifestHash: hashFile(join(cwd, 'test/app/modules.json')),
   };
@@ -206,6 +238,7 @@ export function writeLocalCiPass(
     context,
     browserVertical = false,
     verticals = [],
+    factoryLegsRan = [],
     tag = LOCAL_CI_TAG,
     recordedAt = new Date().toISOString(),
   },
@@ -222,6 +255,7 @@ export function writeLocalCiPass(
     browserVertical,
     verticals: [...verticals].sort(),
     staticSteps: context.staticSteps,
+    factoryLegs: [...factoryLegsRan].sort(),
     lockHash: context.lockHash,
     manifestHash: context.manifestHash,
     recordedAt,
@@ -240,6 +274,20 @@ function sortedEq(a, b) {
   return left.every((v, i) => v === right[i]);
 }
 
+function requiredFactoryLegs(context) {
+  const legs = [];
+  if (context.factoryLegs?.map) legs.push('map');
+  if (context.factoryLegs?.visual) legs.push('visual');
+  if (context.factoryLegs?.delivery) legs.push('delivery');
+  return legs;
+}
+
+function stampCoversFactoryLegs(stamp, context) {
+  const required = requiredFactoryLegs(context);
+  const ran = Array.isArray(stamp?.factoryLegs) ? stamp.factoryLegs : [];
+  return required.every((leg) => ran.includes(leg));
+}
+
 /**
  * True when the stamp records a run over exactly this diff and toolchain.
  *
@@ -248,16 +296,28 @@ function sortedEq(a, b) {
  * is the fork point. They differ the moment main moves. `diffHash` is what
  * says "same code", and the lock/manifest hashes are read from the tree that
  * actually ran, so a base that moved the dependencies still fails to cover.
+ *
+ * Module selection is not compared — it drives the UI matrix, not whether local
+ * CI proved the canon lanes for this diff.
  */
 export function stampCoversContext(stamp, context) {
   if (!stamp || stamp.schema !== LOCAL_CI_PASS_SCHEMA) return false;
   // A null hash means the diff could not be read; nothing may be claimed for it.
   if (!stamp.diffHash || stamp.diffHash !== context.diffHash) return false;
   if (stamp.baseRef !== context.baseRef) return false;
-  if (!sortedEq(stamp.modules, context.modules)) return false;
   if (!sortedEq(stamp.staticSteps, context.staticSteps)) return false;
+  if (!stampCoversFactoryLegs(stamp, context)) return false;
   if (stamp.lockHash !== context.lockHash) return false;
   if (stamp.manifestHash !== context.manifestHash) return false;
+  return true;
+}
+
+/** True when a committed stamp proves local pre-merge-vertical ran for this diff. */
+export function stampProvesLocalRun(stamp, context) {
+  if (!stampCoversContext(stamp, context)) return false;
+  if (!stampCoversVerticals(stamp, context.verticals)) return false;
+  if (context.needsBrowser && stamp.browserVertical !== true) return false;
+  if (!stampProvesCanonJobs(stamp, context)) return false;
   return true;
 }
 
@@ -291,11 +351,8 @@ export function shouldSkipGithubUi(stamp, context, { anyUi = false } = {}) {
  * and they are what reads this tag. Something unskippable has to.
  */
 export function shouldSkipGithubCi(stamp, context) {
-  if (!stampCoversContext(stamp, context)) return false;
-  if (stamp.tag !== LOCAL_CI_TAG) return false;
-  if (!stampCoversVerticals(stamp, context.verticals)) return false;
-  if (context.needsBrowser && stamp.browserVertical !== true) return false;
-  return true;
+  if (stamp?.tag !== LOCAL_CI_TAG) return false;
+  return stampProvesLocalRun(stamp, context);
 }
 
 /**
@@ -320,6 +377,18 @@ export function localCiSkipReason(stamp, context) {
   }
   if (context.needsBrowser && stamp.browserVertical !== true) {
     return 'stamp has no browser vertical for a UI diff — full CI will run';
+  }
+  if (!stampCoversFactoryLegs(stamp, context)) {
+    const required = requiredFactoryLegs(context);
+    const ran = stamp?.factoryLegs || [];
+    const missing = required.filter((leg) => !ran.includes(leg));
+    return `stamp is missing factory legs ${missing.join(', ')} — full CI will run`;
+  }
+  if (!stampProvesCanonJobs(stamp, context)) {
+    const required = context.canonJobs || jobsRequiredByCanon(context.files);
+    const proven = new Set(jobsProvenByStamp(stamp));
+    const missing = required.filter((j) => !proven.has(j));
+    return `stamp does not prove canon GitHub jobs (${missing.join(', ')}) — full CI will run`;
   }
   return `${LOCAL_CI_TAG}: local CI covered this diff — skipping ${TAG_SKIPPED_JOBS.join(', ')}`;
 }

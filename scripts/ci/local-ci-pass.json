@@ -1,9 +1,9 @@
 {
   "schema": 3,
   "tag": "local-ci-verified",
-  "diffHash": "e785707b008da452",
-  "head": "1a718b2b814e4757203825651589c76498737da3",
-  "mergeBase": "f722885e9ca4009ed2415a3529d5aceaf2cb9ef6",
+  "diffHash": "e4a7b53b47f0cb86",
+  "head": "3b8f164872cb779e6bd6e1e7d4c6f8323dc908e8",
+  "mergeBase": "f8d1f6425e7a6d20c4a6b7362cff1fded4291273",
   "baseRef": "origin/main",
   "modules": [
     "auth",
@@ -19,19 +19,15 @@
     "venues",
     "walk"
   ],
-  "browserVertical": true,
+  "browserVertical": false,
   "verticals": [
-    "app",
-    "automation"
+    "backside"
   ],
   "staticSteps": [
-    "test:ci-gate",
-    "test:unit",
-    "lint",
-    "test:module-select",
-    "build"
+    "test:ci-gate"
   ],
-  "lockHash": "10b59646dca57be2",
-  "manifestHash": "67d9b30871b63e39",
-  "recordedAt": "2026-08-24T03:43:17.059Z"
+  "factoryLegs": [],
+  "lockHash": "c1b6f32a6fb9dafd",
+  "manifestHash": "9a2f416a52221fc4",
+  "recordedAt": "2026-08-27T01:07:19.138Z"
 }

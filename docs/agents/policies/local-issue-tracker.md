@@ -1,6 +1,6 @@
 # Issue tracker: local markdown
 
-Feature work, wayfinding, and specs for this repo live as markdown files under `.scratch/` (gitignored — session-local scratch).
+Feature work, wayfinding, and specs for this repo live as markdown files under `.scratch/`. Resume caches and non-allowlisted scratch stay local; **wayfinder maps listed in `scripts/lib/wayfinder-committed.json` are committed repo truth** for macro tracking.
 
 ## Conventions
 
@@ -35,7 +35,7 @@ Used by `/wayfinder`. The **map** is a file with one **child** file per ticket.
 
 | Effort | Map |
 | --- | --- |
-| factories → app end-state | `.scratch/factories-to-app/map.md` (supersedes GitHub #625–630) |
+| factories → app end-state | `.scratch/factories-to-app/map.md` (supersedes GitHub #625–630). Operating stack + Matt NOW: `scripts/lib/operating-stack.json` (survives scratch loss). |
 
 ## Implementation tickets (`/to-tickets`)
 

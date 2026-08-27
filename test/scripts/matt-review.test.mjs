@@ -29,6 +29,11 @@ import {
 
 // reviewRequiredForFiles
 assert.equal(reviewRequiredForFiles(['docs/guide/testing.md', 'README.md']), false, 'docs-only diff needs no review');
+assert.equal(
+  reviewRequiredForFiles(['.scratch/factories-to-app/map.md', 'scripts/lib/operating-stack.json']),
+  false,
+  'agent-policy diff needs no review',
+);
 assert.equal(reviewRequiredForFiles(['apps/party-tracker/app/page.js']), true, 'app code needs review');
 assert.equal(reviewRequiredForFiles(['scripts/lib/matt-review.mjs']), true, 'scripts code needs review');
 assert.equal(reviewRequiredForFiles(['.github/workflows/test-app.yml']), true, 'workflow edits need review');
