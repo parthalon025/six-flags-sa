@@ -2,10 +2,9 @@
   "version": 1,
   "venue": "big-kahunas",
   "basedOn": {
-    "map": "2026-08-10",
-    "revisionId": "dd4c0cfa-91f7-4a7a-9f40-2df9e7b5db10"
+    "map": "2026-08-10"
   },
-  "bytes": 67278,
+  "bytes": 67308,
   "files": [
     {
       "path": "/venues/big-kahunas.gaps.json",
@@ -14,8 +13,8 @@
     },
     {
       "path": "/venues/big-kahunas.map.json",
-      "bytes": 39500,
-      "sha256": "f8b48e444bedc7685925c8567e491a94166719c613883fa65fc6d7d62b857bc2"
+      "bytes": 39530,
+      "sha256": "ddf46c570d2d7ca68eda9bbab25057067673ed6af5953f5300d120f7ee3afe16"
     },
     {
       "path": "/venues/big-kahunas.pois.json",

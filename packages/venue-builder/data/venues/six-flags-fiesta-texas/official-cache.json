@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "venue": "six-flags-fiesta-texas",
+  "fetched": "2026-08-28",
+  "pages": [
+    {
+      "id": "fiesta-texas-site",
+      "url": "https://www.sixflags.com/fiestatexas/attractions",
+      "kind": "official_site",
+      "via": "fetch"
+    },
+    {
+      "id": "fiesta-texas-map",
+      "url": "https://www.sixflags.com/fiestatexas/plan-your-visit/park-map",
+      "kind": "official_map",
+      "image": null
+    }
+  ],
+  "attractions": [],
+  "errors": []
+}

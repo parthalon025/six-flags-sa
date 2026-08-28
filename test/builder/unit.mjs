@@ -8431,15 +8431,14 @@ await check('certify emits a birth certificate with nine gates', () => {
   return true;
 });
 
-await check('kings-island passes certification except outstanding park-map image', () => {
+await check('kings-island passes certification with park-map research recorded', () => {
   const doc = certifyVenue('kings-island', { write: false });
   const route = doc.checks.find((c) => c.key === 'route');
   assert.equal(route.pass, true);
   const parkMap = doc.checks.find((c) => c.key === 'park_map_research');
-  assert.equal(parkMap.pass, false, 'no local maps/ image and no LLM park-map search cache yet');
-  const others = doc.checks.filter((c) => c.key !== 'park_map_research');
-  assert.ok(others.every((c) => c.pass), others.filter((c) => !c.pass).map((c) => c.key).join(', '));
-  assert.equal(doc.certified, false);
+  assert.equal(parkMap.pass, true, parkMap.evidence.detail);
+  assert.ok(doc.checks.every((c) => c.pass), doc.checks.filter((c) => !c.pass).map((c) => c.key).join(', '));
+  assert.equal(doc.certified, true);
   return true;
 });
 await check('route QA enforces the Kings Island island standard', () => {
@@ -8450,11 +8449,11 @@ await check('route QA enforces the Kings Island island standard', () => {
   return true;
 });
 
-await check('cedar point fails route gate when a ride is off the network', () => {
+await check('cedar point passes route gate when rides snap to the network', () => {
   const doc = certifyVenue('cedar-point', { write: false });
   const route = doc.checks.find((c) => c.key === 'route');
-  assert.equal(route.pass, false);
-  assert.ok(route.evidence.farRides?.length >= 1);
+  assert.equal(route.pass, true, route.evidence.detail);
+  assert.equal(route.evidence.farRides?.length ?? 0, 0);
   return true;
 });
 

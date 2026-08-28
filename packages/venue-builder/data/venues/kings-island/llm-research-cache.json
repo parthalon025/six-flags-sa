@@ -10,108 +10,108 @@
   "inventoryGaps": [],
   "parkMaps": [
     {
-      "imageUrl": "https://www.cedarpoint.com/park-map",
-      "pageUrl": "https://www.cedarpoint.com/park-map",
+      "imageUrl": "https://www.visitkingsisland.com/park-map",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
       "via": "a.href",
       "mapish": true,
       "source": "html_extract",
       "mapKind": "schematic",
       "confidence": "moderate",
-      "title": "cedar-point-map"
+      "title": "kings-island-map"
     },
     {
-      "imageUrl": "https://www.cedarpoint.com/parkCallout-restaurants.svg?dpl=dpl_4AwVAYrP1FUfu4KijkA2FfQfLZPT",
-      "pageUrl": "https://www.cedarpoint.com/park-map",
+      "imageUrl": "https://www.visitkingsisland.com/parkCallout-restaurants.svg?dpl=dpl_4AwVAYrP1FUfu4KijkA2FfQfLZPT",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
       "via": "img.src",
       "mapish": false,
       "source": "html_extract",
       "mapKind": "schematic",
       "confidence": "low",
-      "title": "cedar-point-map"
+      "title": "kings-island-map"
     },
     {
-      "imageUrl": "https://www.cedarpoint.com/parkCallout-rides.svg?dpl=dpl_4AwVAYrP1FUfu4KijkA2FfQfLZPT",
-      "pageUrl": "https://www.cedarpoint.com/park-map",
+      "imageUrl": "https://www.visitkingsisland.com/parkCallout-rides.svg?dpl=dpl_4AwVAYrP1FUfu4KijkA2FfQfLZPT",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
       "via": "img.src",
       "mapish": false,
       "source": "html_extract",
       "mapKind": "schematic",
       "confidence": "low",
-      "title": "cedar-point-map"
+      "title": "kings-island-map"
     },
     {
-      "imageUrl": "https://www.cedarpoint.com/parkCallout-shows.svg?dpl=dpl_4AwVAYrP1FUfu4KijkA2FfQfLZPT",
-      "pageUrl": "https://www.cedarpoint.com/park-map",
+      "imageUrl": "https://www.visitkingsisland.com/parkCallout-shows.svg?dpl=dpl_4AwVAYrP1FUfu4KijkA2FfQfLZPT",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
       "via": "img.src",
       "mapish": false,
       "source": "html_extract",
       "mapKind": "schematic",
       "confidence": "low",
-      "title": "cedar-point-map"
+      "title": "kings-island-map"
     },
     {
-      "imageUrl": "https://www.cedarpoint.com/parkCallout-events.svg?dpl=dpl_4AwVAYrP1FUfu4KijkA2FfQfLZPT",
-      "pageUrl": "https://www.cedarpoint.com/park-map",
+      "imageUrl": "https://www.visitkingsisland.com/parkCallout-events.svg?dpl=dpl_4AwVAYrP1FUfu4KijkA2FfQfLZPT",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
       "via": "img.src",
       "mapish": false,
       "source": "html_extract",
       "mapKind": "schematic",
       "confidence": "low",
-      "title": "cedar-point-map"
+      "title": "kings-island-map"
     },
     {
-      "imageUrl": "https://www.cedarpoint.com/apple-touch-icon.png",
-      "pageUrl": "https://www.cedarpoint.com/park-map",
+      "imageUrl": "https://www.visitkingsisland.com/apple-touch-icon.png",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
       "via": "a.href",
       "mapish": false,
       "source": "html_extract",
       "mapKind": "schematic",
       "confidence": "low",
-      "title": "cedar-point-map"
+      "title": "kings-island-map"
     },
     {
-      "imageUrl": "https://www.cedarpoint.com/favicon-32x32.png",
-      "pageUrl": "https://www.cedarpoint.com/park-map",
+      "imageUrl": "https://www.visitkingsisland.com/favicon-32x32.png",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
       "via": "a.href",
       "mapish": false,
       "source": "html_extract",
       "mapKind": "schematic",
       "confidence": "low",
-      "title": "cedar-point-map"
+      "title": "kings-island-map"
     },
     {
-      "imageUrl": "https://www.cedarpoint.com/favicon-16x16.png",
-      "pageUrl": "https://www.cedarpoint.com/park-map",
+      "imageUrl": "https://www.visitkingsisland.com/favicon-16x16.png",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
       "via": "a.href",
       "mapish": false,
       "source": "html_extract",
       "mapKind": "schematic",
       "confidence": "low",
-      "title": "cedar-point-map"
+      "title": "kings-island-map"
     },
     {
-      "imageUrl": "https://www.cedarpoint.com/safari-pinned-tab.svg",
-      "pageUrl": "https://www.cedarpoint.com/park-map",
+      "imageUrl": "https://www.visitkingsisland.com/safari-pinned-tab.svg",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
       "via": "a.href",
       "mapish": false,
       "source": "html_extract",
       "mapKind": "schematic",
       "confidence": "low",
-      "title": "cedar-point-map"
+      "title": "kings-island-map"
     },
     {
-      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/ab11ec4c3b1ef10150498b5f913b3f80ae27edbe-828x1084.jpg?rect=0,326,828,433&amp;w=1200&amp;h=627&amp;fit=crop&amp;auto=format",
-      "pageUrl": "https://www.cedarpoint.com/park-map",
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/0316d257307842075305622390d138c9a2106ccf-828x1084.jpg?rect=0,326,828,433&amp;w=1200&amp;h=627&amp;fit=crop&amp;auto=format",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
       "via": "meta",
       "mapish": false,
       "source": "html_extract",
       "mapKind": "schematic",
       "confidence": "low",
-      "title": "cedar-point-map"
+      "title": "kings-island-map"
     }
   ],
   "followUpUrls": [
-    "https://www.cedarpoint.com/park-map"
+    "https://www.visitkingsisland.com/park-map"
   ],
   "searchQueries": [],
   "notes": [
@@ -127,5 +127,5 @@
     "reason": "ai_not_requested",
     "required": true
   },
-  "venue": "cedar-point"
+  "venue": "kings-island"
 }

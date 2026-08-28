@@ -16,7 +16,10 @@
     "kind": "theme-park",
     "pad": 0,
     "decorativeTolerance": 4,
-    "sources": "data/venues/cedar-point/sources.json"
+    "sources": "data/venues/cedar-point/sources.json",
+    "imagery": [
+      "data/venues/cedar-point/path-fixes.geojson"
+    ]
   },
   "built": {
     "at": "2026-08-26",

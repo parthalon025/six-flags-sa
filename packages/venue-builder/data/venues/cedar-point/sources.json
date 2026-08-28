@@ -26,6 +26,9 @@
     }
   ],
   "datasets": {
+    "imagery": [
+      "data/venues/cedar-point/path-fixes.geojson"
+    ],
     "external": [
       "parks-api",
       "queue-times",

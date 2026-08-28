@@ -236,15 +236,14 @@ await check('every shipped big-kahunas imagery feature joins to that same tile',
       'utf8',
     ),
   );
-  assert.equal(collection.properties.imagery.served_via, 'Esri World Imagery');
+  assert.equal(collection.properties.imagery.served_via, 'Microsoft Planetary Computer');
   assert.ok(collection.features.length > 0);
 
   const ledger = readImageryLedger(IMAGERY_LEDGER_FILE);
   for (const feature of collection.features) {
     const cover = claimCoverage(feature.properties, ledger);
-    assert.equal(cover.tile, 'okaloosa-ortho-2025', `${feature.properties.n} should join to the ledgered tile`);
-    assert.equal(cover.ok, false, `${feature.properties.n} is not covered while that row is inadmissible`);
-    assert.match(joined(cover.problems), /Esri World Imagery/);
+    assert.equal(cover.tile, 'fl_m_3008637_sw_16_060_20220123', `${feature.properties.n} should join to the ledgered NAIP tile`);
+    assert.equal(cover.ok, true, `${feature.properties.n} is covered by the admissible NAIP row`);
   }
   return true;
 });
@@ -366,21 +365,20 @@ await check("big-kahunas' shipped bundle still carries the aerial signature", ()
   );
   const signed = map.path.filter((p) => p.src?.by === 'aerial');
   assert.equal(signed.length, 3);
-  assert.ok(signed.every((p) => p.src.source === 'okaloosa-ortho-2025'));
+  assert.ok(signed.every((p) => p.src.source === 'fl_m_3008637_sw_16_060_20220123'));
   return true;
 });
 
-await check('big-kahunas cannot certify while its imagery tile is unadjudicated', () => {
+await check('big-kahunas certifies when its imagery rests on an admissible NAIP tile', () => {
   const doc = certifyVenue('big-kahunas', { write: false });
   const gate = doc.checks.find((c) => c.key === 'imagery_ledger');
   assert.ok(gate, `certification carries no imagery gate: ${doc.checks.map((c) => c.key).join(', ')}`);
-  assert.equal(gate.pass, false, gate.evidence.detail);
-  assert.match(gate.evidence.detail, /okaloosa-ortho-2025/);
-  assert.match(gate.evidence.detail, /Esri World Imagery/);
+  assert.equal(gate.pass, true, gate.evidence.detail);
+  assert.match(gate.evidence.detail, /fl_m_3008637_sw_16_060_20220123|admissible tile/);
   assert.equal(gate.evidence.denominator, 1, 'one tile the shipped bundle rests on');
-  assert.equal(gate.evidence.numerator, 0, 'and none of it is covered');
+  assert.equal(gate.evidence.numerator, 1, 'and it is covered');
   assert.ok(gate.claim && gate.falsifier && gate.soWhat, 'certification rows carry the full contract');
-  assert.equal(doc.certified, false, 'imagery with no defensible provenance must block the birth certificate');
+  assert.equal(doc.certified, true, 'imagery with defensible NAIP provenance must not block the birth certificate');
   return true;
 });
 
