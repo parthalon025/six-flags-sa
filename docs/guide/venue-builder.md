@@ -381,6 +381,40 @@ real source and a project of its own. What is here is what can be done from data
 disk — plus the door for the rest, since every one of those sources already has a weight and
 lands through the same call the automatic ones use.
 
+### The static ride record
+
+`apps/party-tracker/public/venues/<id>.pois.json` is the offline map contract
+(ADR-0002) — every place a venue ships, static because it is only ever
+rewritten by a rebuild or a consolidate run, never by a live signal. A ride's
+record on disk carries:
+
+| Field | What it is |
+| --- | --- |
+| `i` | Deterministic key from the venue's `ids.json` ledger — the primary id (E1.2). |
+| `n` | Display name. |
+| `lat` / `lng` | The place's own point. |
+| `c` | Category key from `@party-tracker/shared/ontology.js`'s `ONTOLOGY.categories` — `isRideable(poi)` is true for ride-like categories. |
+| `a` | The Zone (OSM land polygon) the point falls in, or the venue name if none does. |
+| `h` | Height rule — `{ min, alone, max }` inches, from `data/venues/<id>/heights.json`; `min`/`alone`/`max` are each `null` when that bound does not apply. Absent entirely on a ride with no height rule on file yet ("no data" and "no requirement" must stay distinguishable — see `heightAudit`). |
+| `e` | Fused entrance/exit points from the ride inventory (previous section) — each carries `src.by` provenance, never bare coordinates. Absent until a ride clears the moderate-confidence bar. |
+| `note` | Free-text hand correction from `overrides.json`, shown as-is (e.g. "Upcharge attraction — height and weight checked at the ride"). |
+| `tel` | Phone number, where sourced. |
+| `camp` | Campground facts (`drive`, `hookup`, `sewer`, ...) — only on `c: 'campsite'` places, from a merged dataset or `applyCamping` rules. |
+
+**What is never in this file**, enforced by `packages/venue-builder/lib/external-claims.mjs`'s
+publish contract (`Publish kinds: queue_entrance | ride_exit` — everything
+else is evidence, not a place field) and never written by any builder path:
+live wait minutes, open/closed or temporary-closure status, crowd level, or
+any other signal that changes faster than a rebuild. Those live in the
+observation/realtime path instead — `ObservationRow` in
+`packages/shared/schemas.js` (`waitMin`, `status`, `ts`) and the Ride report
+flow (ADR-0007) — which reads and writes independently of this file and never
+triggers a rebuild. Mixing a live value into `pois.json` as if the builder
+had confirmed it is exactly the failure ADR-0002 exists to rule out: a wait
+time frozen at build time would ship as false "official" data to every guest
+until the next rebuild, indistinguishable from a fact the builder actually
+checked.
+
 ### Getting things off the park's own map
 
 The map a park hands out at the gate knows things OpenStreetMap does not, and until now none
