@@ -43,6 +43,19 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../..');
 const BASE = (process.env.BASE_URL || appOrigin()).replace(/\/+$/, '');
 
+/**
+ * A wedged suite must fail the gate, not hang it forever (#596). CI already
+ * bounds each module with its own 45-minute job timeout — one module per job
+ * — but locally every selected suite runs inside this one process, so with no
+ * bound here a single hang (a `until()` nothing ever resolves, a dangling
+ * browser context) blocks every suite queued after it and `npm run
+ * test:pre-merge-vertical` never returns on its own. Generous next to the
+ * 1–3 minutes a suite normally takes, and well under the CI ceiling above,
+ * so it only fires on a genuine wedge. Overridable for a suite that is
+ * legitimately slower than this on a given machine.
+ */
+const SUITE_TIMEOUT_MS = Number(process.env.VALIDATE_UI_SUITE_TIMEOUT_MS) || 10 * 60 * 1000;
+
 const args = process.argv.slice(2);
 const functionalOnly = args.includes('--functional-only');
 const grandmaOnly = args.includes('--grandma-only');
@@ -138,7 +151,7 @@ function banner(name) {
  * reads as it always did; in parallel it buffers and prints as one block on
  * completion, because interleaving several browser suites live is unreadable.
  */
-function runSuite(name, script, scriptArgs = [], { buffered = false } = {}) {
+function runSuite(name, script, scriptArgs = [], { buffered = false, timeoutMs = SUITE_TIMEOUT_MS } = {}) {
   return new Promise((resolve, reject) => {
     if (!buffered) console.log(banner(name));
     const child = spawn(process.execPath, [path.join(HERE, script), ...scriptArgs], {
@@ -146,6 +159,8 @@ function runSuite(name, script, scriptArgs = [], { buffered = false } = {}) {
       env: { ...process.env, BASE_URL: BASE },
     });
     let output = '';
+    let timedOut = false;
+    let settled = false;
     if (buffered) {
       child.stdout.on('data', (d) => {
         output += d;
@@ -154,14 +169,36 @@ function runSuite(name, script, scriptArgs = [], { buffered = false } = {}) {
         output += d;
       });
     }
-    child.on('error', reject);
+    const timer = setTimeout(() => {
+      timedOut = true;
+      // SIGTERM first so Playwright's own shutdown hooks get a chance to
+      // close the browser cleanly; SIGKILL a few seconds later for a process
+      // wedged deep enough that its own signal handling never runs.
+      child.kill('SIGTERM');
+      setTimeout(() => {
+        if (!settled) child.kill('SIGKILL');
+      }, 5000).unref();
+    }, timeoutMs);
+    timer.unref();
+    child.on('error', (err) => {
+      settled = true;
+      clearTimeout(timer);
+      reject(err);
+    });
     child.on('close', (code) => {
+      settled = true;
+      clearTimeout(timer);
       if (buffered) {
-        process.stdout.write(banner(`${name} — ${code ? 'FAILED' : 'ok'}`));
+        process.stdout.write(banner(`${name} — ${timedOut ? 'TIMED OUT' : code ? 'FAILED' : 'ok'}`));
         process.stdout.write(output.endsWith('\n') ? output : `${output}\n`);
       }
-      if (code) reject(new Error(`${script} exited with code ${code}`));
-      else resolve();
+      if (timedOut) {
+        reject(new Error(`${script} timed out after ${Math.round(timeoutMs / 60000)}m`));
+      } else if (code) {
+        reject(new Error(`${script} exited with code ${code}`));
+      } else {
+        resolve();
+      }
     });
   });
 }

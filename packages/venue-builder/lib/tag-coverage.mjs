@@ -21,6 +21,7 @@ export function tagCoverageFromMap(map) {
   const tunnel = countFlag(ways, WAY_FLAGS.TUNNEL);
   const oneway = countFlag(ways, WAY_FLAGS.ONEWAY) + countFlag(ways, WAY_FLAGS.ONEWAY_BACK);
   const restricted = countFlag(ways, WAY_FLAGS.RESTRICTED);
+  const wheelchair = countFlag(ways, WAY_FLAGS.WHEELCHAIR_NO);
   const layered = countLayer(ways);
 
   let walkableKm = 0;
@@ -43,6 +44,7 @@ export function tagCoverageFromMap(map) {
     layer: layered,
     oneway,
     restricted,
+    wheelchair,
     walkable_km: Math.round(walkableKm * 10) / 10,
   };
 }

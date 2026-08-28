@@ -6,7 +6,7 @@
  * for the venue builder's guest-traces adapter.
  */
 
-import { redisCommand, usingRedis } from './serverStore.js';
+import { redisCommand, redisPipeline, usingRedis } from './serverStore.js';
 
 const TRACE_TTL_S = 90 * 24 * 60 * 60; // 90 days
 const MAX_PER_VENUE = 500;
@@ -31,12 +31,18 @@ export async function appendGuestTraces(traces) {
   for (const [venueId, batch] of byVenue) {
     if (usingRedis) {
       const key = listKey(venueId);
-      for (const trace of batch) {
-        await redisCommand(['LPUSH', key, JSON.stringify(trace)]);
-        stored += 1;
-      }
-      await redisCommand(['LTRIM', key, 0, MAX_PER_VENUE - 1]);
-      await redisCommand(['EXPIRE', key, TRACE_TTL_S]);
+      // One pipelined round trip per venue instead of N sequential LPUSH RTTs
+      // plus two more (#379). A multi-value LPUSH pushes its arguments
+      // left-to-right onto the head — `LPUSH key v1 v2 v3` leaves the list
+      // `[v3, v2, v1]` — the same final order N single-value LPUSH calls in
+      // this loop's order would have produced, so newest-first ordering is
+      // unchanged.
+      await redisPipeline([
+        ['LPUSH', key, ...batch.map((trace) => JSON.stringify(trace))],
+        ['LTRIM', key, 0, MAX_PER_VENUE - 1],
+        ['EXPIRE', key, TRACE_TTL_S],
+      ]);
+      stored += batch.length;
     } else {
       const row = mem.byVenue.get(venueId) || { traces: [], updatedAt: 0 };
       for (const trace of batch) {

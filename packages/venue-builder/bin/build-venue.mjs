@@ -860,7 +860,34 @@ function assignLands(pois, lands, venueName, drawnNames) {
  * Point's twenty-six "Restrooms", or one of five gates all called "Entrance".
  * Same rule for `drop`, where a name has always dropped all five of them.
  */
-function applyOverrides(pois, overrides) {
+
+/** True for a plain `{}` object — not an array, not null, not a class instance. */
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value) && value.constructor === Object;
+}
+
+/**
+ * Merge `patch` onto `target` field by field, recursing into nested plain
+ * objects instead of replacing them outright. A partial height rule like
+ * `h: { min: 48 }` updates only `min` and leaves `alone`/`max` standing,
+ * where a wholesale `Object.assign` would have silently zeroed them.
+ *
+ * `null` is not a plain object, so `h: null` still falls through to a
+ * direct assignment and clears the field — the "check at the ride"
+ * contract survives the switch to a recursive merge.
+ */
+function deepMergePatch(target, patch) {
+  for (const [key, value] of Object.entries(patch)) {
+    if (isPlainObject(value) && isPlainObject(target[key])) {
+      deepMergePatch(target[key], value);
+    } else {
+      target[key] = value;
+    }
+  }
+  return target;
+}
+
+export function applyOverrides(pois, overrides) {
   if (!overrides) return { pois, applied: 0, unmatched: [] };
   /* Every POI under a name, not the last one wearing it. OpenStreetMap
      routinely carries a ride as two nodes — a way and a point, an entrance and
@@ -882,19 +909,28 @@ function applyOverrides(pois, overrides) {
       unmatched.push(name);
       continue;
     }
-    for (const target of targets) Object.assign(target, patch);
+    for (const target of targets) deepMergePatch(target, patch);
     applied += 1;
   }
 
   const dropped = new Set();
   for (const name of overrides.drop || []) {
-    for (const hit of lookup(name) || []) dropped.add(hit);
+    const hits = lookup(name) || [];
+    // A name shared by more than one place drops all of them — deliberate,
+    // per the address-book design — but a build should say so out loud
+    // rather than quietly removing more than whoever wrote the entry saw.
+    if (hits.length > 1) {
+      console.error(
+        `  · drop "${name}": removed ${hits.length} places sharing that name — use the key form to target one`,
+      );
+    }
+    for (const hit of hits) dropped.add(hit);
   }
   let next = pois.filter((p) => !dropped.has(p));
 
   for (const extra of overrides.add || []) {
     const existing = lookup(extra.i || extra.n);
-    if (existing) existing.forEach((p) => Object.assign(p, extra));
+    if (existing) existing.forEach((p) => deepMergePatch(p, extra));
     else next.push({ ...extra });
   }
 

@@ -136,15 +136,15 @@ export const ROUTED_LAYERS = new Set(['path', 'service']);
  *   oneway       567 ways   read at build time to find queue entrances and then
  *                           thrown away; the graph pushes both directions
  *   access       220 ways   `no` and `private` only — back of house
+ *   wheelchair    77 ways   every one at Cedar Point, 76 of them `yes` — which
+ *                           asserts nothing that absence did not, so only the
+ *                           single explicit `no` is carried, against 112
+ *                           flights of steps it is worth being able to avoid
  *
  * Deliberately not carried, with the counts behind each call:
  *
  *   incline, indoor, conveying   zero ways at all four venues
  *   width                        13 ways, nine of them written `10'`
- *   wheelchair                   77 ways, every one of them at Cedar Point and
- *                                76 of them `yes`, which asserts nothing that
- *                                absence did not. The single `no` is the whole
- *                                signal, against 112 flights of steps
  *   covered                      28 ways of 3,037. Shade matters, and an
  *                                attribute on 0.9% of paths cannot answer "is
  *                                this route shaded" — it would look present and
@@ -175,6 +175,9 @@ export function wayAttributes(tags) {
   if (TRUTHY.has(tags.oneway)) f |= WAY_FLAGS.ONEWAY;
   else if (tags.oneway === '-1' || tags.oneway === 'reverse') f |= WAY_FLAGS.ONEWAY_BACK;
   if (tags.access === 'no' || tags.access === 'private') f |= WAY_FLAGS.RESTRICTED;
+  // Only the denial. `wheelchair=yes` is 76 of the 77 tagged ways at the one
+  // venue that carries the tag at all, and claims nothing absence did not.
+  if (FALSEY.has(tags.wheelchair)) f |= WAY_FLAGS.WHEELCHAIR_NO;
 
   /* Clamped rather than dropped, because a `layer` outside ±8 is a typo and a
      typo should not become an unbounded integer in a file the phone parses. */
