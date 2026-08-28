@@ -108,6 +108,7 @@ export const TEST_ESTATE = {
   'test/app/geo.test.mjs': ['test:unit'],
   'test/app/godmode.test.mjs': ['test:unit'],
   'test/app/grandma.mjs': ['ui-matrix', 'app-vertical'],
+  'test/app/guest-traces.test.mjs': ['test:unit'],
   'test/app/host-service-import.test.mjs': ['test:unit'],
   'test/app/iso-track.test.mjs': ['test:unit'],
   'test/app/iso-world.test.mjs': ['test:unit'],
@@ -127,6 +128,7 @@ export const TEST_ESTATE = {
   'test/app/readme-shots-check.mjs': ['test:unit', 'gate-job'],
   'test/app/select-modules.mjs': ['select-job'],
   'test/app/server-store.test.mjs': ['test:unit'],
+  'test/app/server-store-redis.test.mjs': ['test:unit'],
   'test/app/spot.test.mjs': ['test:unit'],
   'test/app/store-links.test.mjs': ['test:unit'],
   'test/app/transport-contract.test.mjs': ['test:unit'],
@@ -138,6 +140,7 @@ export const TEST_ESTATE = {
   'test/app/venue-delta-api.test.mjs': ['test:unit'],
   'test/app/visual.mjs': ['visual-job'],
   'test/app/weather-route.test.mjs': ['test:unit'],
+  'test/app/world-marks.test.mjs': ['test:unit'],
   'test/app/zoom-bands.test.mjs': ['test:unit'],
 
   // --- test/builder: assertions over generated venue output ----------------
@@ -290,6 +293,8 @@ export const TEST_ESTATE_EXCLUDED = {
     'library, not a suite: dynamic import helper for party stack tests that resolves app modules under test. Asserted through the party-protocol and party-runtime suites that import it.',
   'test/app/lib/fakeTransport.mjs':
     'library, not a suite: in-memory transport double for party stack interface tests. Asserted through transport-contract, transport-registry, party-protocol, and party-runtime.',
+  'test/app/lib/fakeUpstash.mjs':
+    'library, not a suite: in-memory stand-in for the Upstash REST API (GET/SET/EXPIRE/INCR, sorted sets, hashes, lists, and EVAL dispatched by exact script text) for tests that need the Redis path with no real credentials. Asserted through server-store-redis, world-marks, and guest-traces.',
   'test/app/lib/module-select.mjs':
     'library, not a suite: the module manifest loader and path matcher that select-modules.mjs, validate-ui.mjs, functional.mjs and the CI scripts import. Asserted by test/app/module-select.test.mjs.',
   'test/app/lib/partyBus.mjs':
