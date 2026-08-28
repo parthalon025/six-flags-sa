@@ -8,6 +8,7 @@ import {
   runImageryClaims,
 } from '../../packages/venue-builder/lib/imagery-claims.mjs';
 import { run as runGooglePlaces } from '../../packages/venue-builder/lib/adapters/google-places.mjs';
+import { writeCache } from '../../packages/venue-builder/lib/adapters/_cache.mjs';
 import { getAdapter } from '../../packages/venue-builder/lib/adapters/registry.mjs';
 import {
   buildOsmChangeProposal,
@@ -81,6 +82,46 @@ const fetched = await runGooglePlaces(
 delete process.env.GOOGLE_MAPS_API_KEY;
 assert.equal(fetched.ok, true);
 assert.equal(fetched.claims[0].displayName, 'Front Gate');
+
+const prevCap = process.env.GOOGLE_PLACES_DAILY_CAP;
+process.env.GOOGLE_MAPS_API_KEY = 'test-key';
+process.env.GOOGLE_PLACES_DAILY_CAP = '2';
+writeCache('fixture-park', 'google-places', {
+  placeIds: [],
+  claims: [],
+  usage: { date: new Date().toISOString().slice(0, 10), count: 2 },
+});
+let fetchCalls = 0;
+const budgetExhausted = await runGooglePlaces(
+  { venueId: 'fixture-park', placeIds: ['ChIJover'] },
+  {
+    fetchFn: async () => {
+      fetchCalls += 1;
+      return { ok: true, json: async () => ({ id: 'ChIJover', displayName: { text: 'Gate' } }) };
+    },
+  },
+);
+assert.equal(budgetExhausted.ok, false);
+assert.equal(budgetExhausted.gap, true);
+assert.match(budgetExhausted.reason, /budget/i);
+assert.equal(fetchCalls, 0, 'past the daily cap, no Places Details call is made');
+
+writeCache('fixture-park', 'google-places', { placeIds: [], claims: [], usage: { date: new Date().toISOString().slice(0, 10), count: 0 } });
+fetchCalls = 0;
+const withinBudget = await runGooglePlaces(
+  { venueId: 'fixture-park', placeIds: ['ChIJok'] },
+  {
+    fetchFn: async () => {
+      fetchCalls += 1;
+      return { ok: true, json: async () => ({ id: 'ChIJok', displayName: { text: 'OK' } }) };
+    },
+  },
+);
+assert.equal(withinBudget.ok, true);
+assert.equal(fetchCalls, 1);
+delete process.env.GOOGLE_MAPS_API_KEY;
+if (prevCap === undefined) delete process.env.GOOGLE_PLACES_DAILY_CAP;
+else process.env.GOOGLE_PLACES_DAILY_CAP = prevCap;
 
 const proposal = buildOsmChangeProposal({ venueId: 'kings-island', claim: { note: 'path position disputed' } });
 assert.equal(proposal.status, 'draft');

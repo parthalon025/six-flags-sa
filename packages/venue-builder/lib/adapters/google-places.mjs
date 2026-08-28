@@ -11,6 +11,40 @@ export const ID = 'google-places';
 
 export const googlePlacesCacheFile = (id) => cachePath(id, 'google-places');
 
+/** Refuse rather than spend past the free-tier SKU cap (ADR-0020 §7, #562). */
+export const DEFAULT_DAILY_CAP = 100;
+
+function dailyCap() {
+  const raw = process.env.GOOGLE_PLACES_DAILY_CAP;
+  if (raw === undefined || raw === '') return DEFAULT_DAILY_CAP;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : DEFAULT_DAILY_CAP;
+}
+
+function todayUtc() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** @param {{ usage?: { date?: string, count?: number } }} cached */
+function usageFromCache(cached) {
+  const usage = cached?.usage;
+  const today = todayUtc();
+  if (!usage || usage.date !== today) return { date: today, count: 0 };
+  return { date: today, count: Number(usage.count) || 0 };
+}
+
+function budgetRefused(usage, cap, requested) {
+  const remaining = cap - usage.count;
+  if (remaining <= 0 || requested > remaining) {
+    return {
+      ok: false,
+      gap: true,
+      reason: `Places Details daily budget exhausted (${usage.count}/${cap} used; ${requested} requested)`,
+    };
+  }
+  return null;
+}
+
 function metadataClaims(details) {
   return (details || []).map((row) => ({
     kind: 'metadata',
@@ -45,8 +79,19 @@ export async function run(ctx = {}, { fetchFn = fetch } = {}) {
     return { ok: true, claims: [], reason: 'no place ids to corroborate' };
   }
 
+  const cap = dailyCap();
+  let usage = usageFromCache(cached);
+  const refused = budgetRefused(usage, cap, placeIds.length);
+  if (refused) {
+    return { ...refused, claims: cached.claims || [] };
+  }
+
   const details = [];
   for (const placeId of placeIds) {
+    const blocked = budgetRefused(usage, cap, 1);
+    if (blocked) {
+      return { ...blocked, claims: cached.claims || [] };
+    }
     const url = `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`;
     const res = await fetchFn(url, {
       headers: {
@@ -67,6 +112,7 @@ export async function run(ctx = {}, { fetchFn = fetch } = {}) {
       placeId,
       displayName: body?.displayName?.text || body?.displayName || null,
     });
+    usage = { date: usage.date, count: usage.count + 1 };
   }
 
   const claims = metadataClaims(details);
@@ -74,6 +120,7 @@ export async function run(ctx = {}, { fetchFn = fetch } = {}) {
     fetched: new Date().toISOString(),
     placeIds,
     claims,
+    usage,
   };
   writeCache(id, 'google-places', out);
   return { ok: true, claims };
