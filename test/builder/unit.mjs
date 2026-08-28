@@ -2404,6 +2404,61 @@ await check('a contradictory f (ONEWAY|ONEWAY_BACK) degrades to two-way, not to 
   return true;
 });
 
+/* #415: wheelchair=no and steps are hard exclusions, unlike ONEWAY's price —
+   there is no lesser-but-still-avoid tier for either signal, so the profile
+   walls the segment off rather than pricing it. */
+const { profilesForCoverage, profileOpts } = await import(
+  '../../apps/party-tracker/lib/routingProfiles.js'
+);
+
+await check('the wheelchair profile is offered only when it has something to avoid (#415)', () => {
+  assert.equal(profilesForCoverage({}).some((p) => p.id === 'wheelchair'), false, 'nothing recorded, nothing to offer');
+  assert.equal(
+    profilesForCoverage({ steps: 3 }).some((p) => p.id === 'wheelchair'),
+    true,
+    'steps alone are enough to offer it',
+  );
+  assert.equal(
+    profilesForCoverage({ wheelchair: 1 }).some((p) => p.id === 'wheelchair'),
+    true,
+    'a single wheelchair=no way is enough to offer it',
+  );
+  return true;
+});
+
+await check('the wheelchair profile excludes both steps and wheelchair=no segments (#415)', () => {
+  const g = buildRouteGraph(CROSSING);
+  const { excludeSeg } = profileOpts('wheelchair', g);
+  const excluded = g.segments
+    .map((s, i) => ({ name: s.name, out: excludeSeg(i) }))
+    .filter((s) => s.out)
+    .map((s) => s.name);
+  assert.deepEqual(new Set(excluded), new Set(['Steps to the midway']));
+  // The default profile excludes nothing here — carrying the flags moved
+  // nothing until this profile spent them.
+  assert.equal(g.segments.some((s, i) => profileOpts('default', g).excludeSeg(i)), false);
+  return true;
+});
+
+await check('a wheelchair=no side of the square routes the long way round (#415)', () => {
+  const g = buildRouteGraph(ONEWAY_SQUARE(WAY_FLAGS.WHEELCHAIR_NO));
+  const direct = findRoute(g, SQ_FROM, SQ_TO, {});
+  const wheelchairRoute = findRoute(g, SQ_FROM, SQ_TO, profileOpts('wheelchair', g));
+  assert.ok(direct.metres < 350, 'the default profile still takes the flagged south side');
+  assert.ok(
+    wheelchairRoute.metres > direct.metres * 1.8,
+    `wheelchair profile detours round the block (${Math.round(wheelchairRoute.metres)} m vs ${Math.round(direct.metres)} m)`,
+  );
+  return true;
+});
+
+await check('WAY_FLAGS.WHEELCHAIR_NO is a distinct bit from every existing flag (#415)', () => {
+  const bits = Object.values(WAY_FLAGS);
+  assert.equal(new Set(bits).size, bits.length, 'every flag value is unique');
+  assert.equal(WAY_FLAGS.WHEELCHAIR_NO, 64, 'load-bearing value — never renumber a shipped bit');
+  return true;
+});
+
 await check('the attributes survive the round trip from tags to bundle to graph', () => {
   const way = (id, tags, coords) => ({
     type: 'way',
@@ -5091,6 +5146,99 @@ await check('a camping rule narrows the venue-wide facts by name', () => {
   return true;
 });
 
+/* -------------------------------------------------------------- overrides -- */
+
+const { applyOverrides } = await import('../../packages/venue-builder/bin/build-venue.mjs');
+
+await check('every shipped venue with an expect lock clears its own floor (#271)', async () => {
+  const { listRecipes, readRecipe } = await import('../../packages/venue-builder/lib/venue-recipe.mjs');
+  const venuesDir = new URL('../../apps/party-tracker/public/venues/', import.meta.url);
+  let checked = 0;
+  for (const id of listRecipes()) {
+    const { data: recipe } = readRecipe(id);
+    const min = recipe?.expect?.walkable_km_min;
+    if (min == null) continue;
+    const mapFile = new URL(`${id}.map.json`, venuesDir);
+    if (!fs.existsSync(mapFile)) continue; // recipe on disk without a shipped bundle (not a fleet venue)
+    const shipped = JSON.parse(fs.readFileSync(mapFile, 'utf8'));
+    const walkableKm = shipped.meta?.coverage?.walkable_km;
+    assert.ok(
+      typeof walkableKm === 'number',
+      `${id}: shipped bundle has no meta.coverage.walkable_km to check against its expect lock`,
+    );
+    assert.ok(
+      walkableKm >= min,
+      `${id}: shipped walkable coverage is ${walkableKm} km, below its own locked floor of ${min} km — ` +
+        'a rebuild already regressed routing coverage and shipped that way.',
+    );
+    checked += 1;
+  }
+  // The assertion is meaningless if nothing on disk declares an expect lock.
+  assert.ok(checked >= 1, 'expected at least one shipped venue with an expect.walkable_km_min lock');
+  return true;
+});
+
+await check('a partial nested override patch leaves sibling fields intact', () => {
+  const pois = [{ n: 'Millennium Force', c: 'coaster', h: { min: 48, alone: 46, max: null } }];
+  const { pois: merged, applied } = applyOverrides(pois, {
+    pois: { 'Millennium Force': { h: { min: 52 } } },
+  });
+  assert.equal(applied, 1);
+  // Only `min` was named in the patch — `alone` and `max` must survive it,
+  // where a wholesale Object.assign onto `h` would have dropped both.
+  assert.deepEqual(merged[0].h, { min: 52, alone: 46, max: null });
+  return true;
+});
+
+await check('an explicit null in an override patch still clears the field', () => {
+  const pois = [{ n: 'Top Thrill 2', c: 'coaster', h: { min: 52, alone: null, max: null } }];
+  const { pois: merged } = applyOverrides(pois, { pois: { 'Top Thrill 2': { h: null } } });
+  // `null` is not a plain object, so it falls through to a direct
+  // assignment rather than being recursed into — "check at the ride" holds.
+  assert.equal(merged[0].h, null);
+  return true;
+});
+
+await check('dropping a name shared by more than one place removes every bearer and says so', () => {
+  const pois = [
+    { n: 'Restrooms', c: 'restroom', i: 'restroom-1' },
+    { n: 'Restrooms', c: 'restroom', i: 'restroom-2' },
+    { n: 'Millennium Force', c: 'coaster', i: 'millennium-force' },
+  ];
+  const logged = [];
+  const origError = console.error;
+  console.error = (...args) => logged.push(args.join(' '));
+  let result;
+  try {
+    result = applyOverrides(pois, { drop: ['Restrooms'] });
+  } finally {
+    console.error = origError;
+  }
+  assert.equal(result.pois.length, 1);
+  assert.equal(result.pois[0].n, 'Millennium Force');
+  assert.ok(
+    logged.some((line) => line.includes('drop "Restrooms"') && line.includes('2 places')),
+    `expected a multi-bearer drop notice, got: ${JSON.stringify(logged)}`,
+  );
+  return true;
+});
+
+await check('dropping a key-addressed single place stays silent', () => {
+  const pois = [{ n: 'Restrooms', c: 'restroom', i: 'restroom-1' }];
+  const logged = [];
+  const origError = console.error;
+  console.error = (...args) => logged.push(args.join(' '));
+  let result;
+  try {
+    result = applyOverrides(pois, { drop: ['restroom-1'] });
+  } finally {
+    console.error = origError;
+  }
+  assert.equal(result.pois.length, 0);
+  assert.deepEqual(logged, []);
+  return true;
+});
+
 /* -------------------------------------------------------- source catalogue -- */
 
 const { wireSources, osmGaps, resolveCredits, readSources } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
@@ -6222,6 +6370,9 @@ await check('the attributes read off a way are the ones worth their bytes', () =
   assert.equal(wayAttributes({ highway: 'service', oneway: '-1' }).f, WAY_FLAGS.ONEWAY_BACK);
   assert.equal(wayAttributes({ highway: 'service', access: 'private' }).f, WAY_FLAGS.RESTRICTED);
   assert.equal(wayAttributes({ highway: 'service', access: 'no' }).f, WAY_FLAGS.RESTRICTED);
+  // Only the denial (#415) — `wheelchair=yes` is 76 of 77 tagged ways and
+  // asserts nothing absence did not.
+  assert.equal(wayAttributes({ highway: 'footway', wheelchair: 'no' }).f, WAY_FLAGS.WHEELCHAIR_NO);
 
   // A denial is not an assertion, and neither is silence.
   assert.equal(wayAttributes({ highway: 'footway' }), null);
@@ -6238,6 +6389,8 @@ await check('the attributes read off a way are the ones worth their bytes', () =
   assert.equal(wayAttributes({ highway: 'footway', surface: 'asphalt' }), null);
   assert.equal(wayAttributes({ highway: 'footway', width: "10'" }), null);
   assert.equal(wayAttributes({ highway: 'footway', covered: 'yes' }), null);
+  // wheelchair=no is read (above); =yes is 76 of 77 tagged ways and asserts
+  // nothing absence did not, so it stays silent same as the others here.
   assert.equal(wayAttributes({ highway: 'footway', wheelchair: 'yes' }), null);
 
   // A `layer` outside the nibble it is worth storing in is a typo, not a cliff.
@@ -6247,6 +6400,23 @@ await check('the attributes read off a way are the ones worth their bytes', () =
 
   // Only the two layers the router welds carry any of it.
   assert.deepEqual([...ROUTED_LAYERS].sort(), ['path', 'service']);
+  return true;
+});
+
+await check('tag coverage counts wheelchair=no ways separately from restricted (#415)', async () => {
+  const { tagCoverageFromMap } = await import('../../packages/venue-builder/lib/tag-coverage.mjs');
+  const noWheelchair = wayAttributes({ highway: 'footway', wheelchair: 'no' });
+  const restricted = wayAttributes({ highway: 'service', access: 'private' });
+  const cov = tagCoverageFromMap({
+    path: [
+      { r: [[0, 0], [0, 0.001]], ...noWheelchair },
+      { r: [[0, 0], [0, 0.001]] },
+    ],
+    service: [{ r: [[0, 0], [0, 0.001]], ...restricted }],
+  });
+  assert.equal(cov.wheelchair, 1);
+  assert.equal(cov.restricted, 1);
+  assert.equal(cov.ways, 3);
   return true;
 });
 
@@ -8050,6 +8220,17 @@ await check('adapter registry lists core external stacks', () => {
   assert.ok(ADAPTER_REGISTRY.length >= 20);
   const summary = registrySummary();
   assert.ok(summary.byAdopt.wrap >= 5);
+  return true;
+});
+
+await check('maplibre-gl-js is credited with its actual license (#565)', () => {
+  // The installed package disagrees with the value this registry used to
+  // carry — regression coverage for the drift, checked against the real
+  // package.json rather than a hardcoded string.
+  const installed = JSON.parse(fs.readFileSync(new URL('../../node_modules/maplibre-gl/package.json', import.meta.url)));
+  const row = getAdapter('maplibre-gl-js');
+  assert.equal(row.license, installed.license);
+  assert.equal(row.license, 'BSD-3-Clause');
   return true;
 });
 

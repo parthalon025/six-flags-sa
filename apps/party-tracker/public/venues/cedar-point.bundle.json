@@ -5,7 +5,7 @@
     "map": "2026-08-09",
     "revisionId": "07f1f9ba-de84-4a85-890b-52a80a96996a"
   },
-  "bytes": 623756,
+  "bytes": 623772,
   "files": [
     {
       "path": "/venues/cedar-point.gaps.json",
@@ -14,8 +14,8 @@
     },
     {
       "path": "/venues/cedar-point.map.json",
-      "bytes": 521644,
-      "sha256": "b349911c15ba310395762253bb89d47ed235bccb3d8fe6afe9aa9deba15d2a0c"
+      "bytes": 521660,
+      "sha256": "40a9fe1d95b8fd65a4db004714628b0000acf7fd4157293757e83817a2166157"
     },
     {
       "path": "/venues/cedar-point.pois.json",
