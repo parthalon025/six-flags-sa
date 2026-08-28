@@ -636,5 +636,11 @@
     "items": [
       "automations mega: fix broken Gate base ref + complete the Upstash ops lane (#748)"
     ]
+  },
+  "1.35.7": {
+    "title": "What's new",
+    "items": [
+      "factory mega: deep-merge override patches, wheelchair routing profile, expect-lock enforcement (#750)"
+    ]
   }
 }
