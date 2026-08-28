@@ -1,12 +1,16 @@
 {
   "schema": 3,
   "tag": "local-ci-verified",
-  "diffHash": "eec9860492cede83",
-  "head": "abc1676c8a13e0f604edcfe86b2a02d6f70d1183",
-  "mergeBase": "9369ecf00d5fa44eb5ce4dba4b6d0c8aa71c9d8e",
+  "diffHash": "PENDING-REGEN",
+  "head": "PENDING-REGEN",
+  "mergeBase": "PENDING-REGEN",
   "baseRef": "origin/main",
   "modules": [
     "builder",
+    "contribution-pipeline",
+    "grandma",
+    "heights",
+    "intake",
     "lint",
     "venues",
     "walk"
@@ -27,7 +31,7 @@
   "factoryLegs": [
     "map"
   ],
-  "lockHash": "9532cc5ddb9c69f6",
-  "manifestHash": "a67c7a6044e34a63",
-  "recordedAt": "2026-08-28T13:43:49.560Z"
+  "lockHash": "PENDING-REGEN",
+  "manifestHash": "PENDING-REGEN",
+  "recordedAt": "2026-08-28T00:00:00.000Z"
 }

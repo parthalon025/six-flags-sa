@@ -745,11 +745,35 @@ Adapters that do not apply (e.g. RopeDrop on Cedar Fair) belong in `gaps.adapter
 Research caches feed `normalizeExternalClaims` → attractions evidence; live waits and
 weather stay builder-only and never land in `pois.json`.
 
+### Guest walk traces (#394)
+
 Guest walk uploads (`Me → Walk history`, opt-in) post anonymised LineStrings and ground-truth
-Points (queue entrances, ride exits, park gates, amenities) to `/api/contributions/traces`. The
-`guest-traces` adapter reads the Redis queue (or a dumped `packages/venue-builder/data/venues/<id>/guest-traces-cache.json`)
-and proposes walkway / entrance candidates where guests disagree with the published graph — research
-only; it never writes `public/venues`.
+Points (queue entrances, ride exits, park gates, amenities) to `/api/contributions/traces`. They
+land in Redis under `ki:guest-traces:{venueId}` (`apps/party-tracker/lib/guestTraces.js`) with a
+90-day TTL — see the key table in [Upstash runbook](./upstash.md#key-namespace-and-ttls-370-386-390).
+The `guest-traces` adapter proposes walkway / entrance candidates where guests disagree with the
+published graph — research only; it never writes `public/venues`.
+
+**Operator export path — Redis → adapter cache:**
+
+The adapter's own fetch mode is the export path; no separate script is needed. It calls the
+token-gated `GET /api/contributions/traces?venueId=<id>&format=geojson` route (the same
+operator gate as `/api/metrics`) and writes the result straight to
+`packages/venue-builder/data/venues/<id>/guest-traces-cache.json` via `writeCache()`:
+
+```bash
+export GUEST_TRACES_API=https://<your-deployment-domain>   # or PARKBOUND_API_BASE
+export GUEST_TRACES_TOKEN=<the deployment's GUEST_TRACES_TOKEN or METRICS_TOKEN>
+
+npm run venues:sync-sources -- <venue-id> --fetch   # refreshes every fetchable adapter, guest-traces included
+# or, scoped to one adapter during agent orchestration:
+npm run venues:build-agent -- <venue-id> --ai --apply
+```
+
+Without `GUEST_TRACES_API` set, the adapter falls back to whatever is already cached on disk
+(`--offline`) or reports `No guest traces yet` — it never blocks a build. Run without `--fetch`
+(or `--offline`) to build entirely from the last dumped cache, e.g. in CI or when iterating
+offline; re-run with `--fetch` when it is time to pull whatever guests have uploaded since.
 
 Every location here is the same data about a different place, and the failure mode that
 comes with that is a park that is *almost* built. Nothing crashes — the map draws, the list
