@@ -31,6 +31,8 @@
  * rather than throwing.
  */
 
+import { WAY_FLAGS, hasWayFlag } from '@party-tracker/shared/wayFlags.js';
+
 /**
  * The World's layers, bottom to top. The order *is* the paint order, and it is
  * the order the SVG renderer painted its groups in — sea, then park, then the
@@ -132,6 +134,12 @@ function featureFor(layer, row, index) {
       id,
       layer: layer.id,
       name: typeof row?.n === 'string' && row.n ? row.n : null,
+      /* Back of house, from the way's own flags. Carried into the style so a
+         park-wide read can drop the service corridors a guest cannot walk
+         down — the one honest tier this data has, since footpaths have no
+         road class to rank them by. `absent is not false` (wayFlags.js): a
+         way with no `f` is one nobody recorded this about, and it is drawn. */
+      restricted: hasWayFlag(row?.f, WAY_FLAGS.RESTRICTED),
     },
   };
 }

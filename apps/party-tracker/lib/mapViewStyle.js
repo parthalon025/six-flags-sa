@@ -83,6 +83,12 @@ const FALLBACK = Object.freeze({
  *  `test/app/map-decisions.json` holds the decision; three runs hold it to it. */
 const SMOOTH = Object.freeze({ 'line-cap': 'round', 'line-join': 'round' });
 
+/** A way OpenStreetMap marks `access=no` or `access=private` — back of house,
+ *  carried onto the feature by `worldGeo.js`. `coalesce` because a way with no
+ *  flags has no such property, and a `case` handed a missing value is a style
+ *  error: the whole layer would draw nothing rather than one way differing. */
+const BACK_OF_HOUSE = ['coalesce', ['get', 'restricted'], false];
+
 /** How each World layer is painted, from the Skin's own paint pack. A layer
  *  named here and absent from a venue simply never gets built — see
  *  `worldLayers` below. */
@@ -115,12 +121,49 @@ const WORLD_PAINT = Object.freeze({
     layout: SMOOTH,
     paint: { 'line-color': p('path').casing, 'line-width': 1 },
   }),
+  /* Walkways carry the map at walking scale and drown it at park-wide. They
+     were a flat width at every zoom — 427 constant-width lines at Kings
+     Island, 701 at Cedar Point — which is why the park read as a net of
+     paths with the rides lost inside it.
+     
+     So they ramp, the way a road atlas thins its minor streets on the way
+     out: a faint hairline when the whole park is on screen, full weight when
+     you are walking one. `p('path').width` stays the anchor so a Skin that
+     sets its own still leads the ramp.
+     
+     Back-of-house ways fade out entirely on the way out. It is the only tier
+     this data has — footpaths carry no road class — and it is a thin one:
+     4 ways at Kings Island, 47 at Cedar Point, 0 at Big Kahuna's. The ramp
+     is what does the work; this only stops service corridors adding noise a
+     guest could not walk down anyway. */
   path: (p) => ({
     type: 'line',
     layout: SMOOTH,
-    paint: { 'line-color': p('path').stroke, 'line-width': p('path').width },
+    paint: {
+      'line-color': p('path').stroke,
+      'line-width': [
+        'interpolate', ['linear'], ['zoom'],
+        12, p('path').width * 0.34,
+        14, p('path').width * 0.55,
+        16, p('path').width,
+        19, p('path').width * 1.7,
+      ],
+      /* Zoom outside, `case` inside. MapLibre only accepts `["zoom"]` at the
+         top level of a property expression, so a per-feature branch wrapping
+         two zoom ramps is an invalid style — and an invalid style is a map
+         that never loads at all, not a layer that looks wrong. The node
+         suites cannot see it (they read the expression as data); the browser
+         check in functional.mjs is what does. */
+      'line-opacity': [
+        'interpolate', ['linear'], ['zoom'],
+        12, ['case', BACK_OF_HOUSE, 0, 0.5],
+        14, ['case', BACK_OF_HOUSE, 0, 0.72],
+        16, ['case', BACK_OF_HOUSE, 0.55, 1],
+      ],
+    },
     // One wide line in the ground colour under the path: without it a midway
-    // crossing a lawn has no edge and reads as a gap in the grass.
+    // crossing a lawn has no edge and reads as a gap in the grass. It hides
+    // at wide zoom already (worldLod's CLOSE group), so it needs no ramp.
     casing: { 'line-color': p('path').casing, 'line-width': p('path').casingWidth },
   }),
   building: (p) => ({

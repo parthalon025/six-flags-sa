@@ -1037,7 +1037,21 @@ const GEOMETRY = worldGeoJson({
   const layerFor = (id) => skinned.layers.find((l) => l.id === worldLayer(id));
   assert.equal(layerFor('water').paint['fill-color'], '#004080', "the Skin's water is the water drawn");
   assert.equal(layerFor('path').paint['line-color'], '#ffcc00');
-  assert.equal(layerFor('path').paint['line-width'], 3);
+  /* The Skin's own width leads the zoom ramp rather than being replaced by
+     it: at walking scale the midway is exactly the 3px this Skin asked for,
+     and the wide end is a proportion of that. A Skin that draws a wider
+     midway still gets a wider midway — it just thins out on the way out. */
+  {
+    const width = layerFor('path').paint['line-width'];
+    assert.ok(Array.isArray(width) && width[0] === 'interpolate', 'the midway ramps with zoom');
+    const at = (zoom) => {
+      const stops = width.slice(3);
+      for (let i = 0; i < stops.length; i += 2) if (stops[i] === zoom) return stops[i + 1];
+      return null;
+    };
+    assert.equal(at(16), 3, "the Skin's width is the walking-scale width");
+    assert.ok(at(12) < 3, 'and it is thinner when the whole park is on screen');
+  }
   assert.equal(skinned.layers.find((l) => l.id === 'bg').paint['background-color'], '#101010');
 
   const plain = bandedWorldStyle({ world: { ...WORLD, geometry: GEOMETRY } });

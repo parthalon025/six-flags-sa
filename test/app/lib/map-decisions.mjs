@@ -182,8 +182,35 @@ const RULES = {
     return { failures, checked };
   },
 
+  'ramps-with-zoom'(params, style, layers) {
+    const { layer: id, wideZoom, walkingZoom, maxAtWide, maxOpacityAtWide } = params;
+    const layer = layers.get(worldLayer(id));
+    if (!layer) return { failures: [], checked: [] };
+    const failures = [];
+    const wide = lineWidthAt(layer.paint?.['line-width'], wideZoom);
+    const walking = lineWidthAt(layer.paint?.['line-width'], walkingZoom);
+    if (wide === null || walking === null) {
+      return { failures: [`${id} line-width is not a width this check can read`], checked: [id] };
+    }
+    /* A constant width passes every absolute cap you could write and is
+       exactly the thing this rule exists to refuse, so the ratio is the
+       check: the layer has to actually thin out, not merely be thin. */
+    if (!(wide < walking)) {
+      failures.push(`${id} is ${wide}px at park-wide and ${walking}px at walking scale — it does not thin out at all`);
+    } else if (wide > walking * maxAtWide) {
+      failures.push(
+        `${id} keeps ${(wide / walking * 100).toFixed(0)}% of its walking width at park-wide, over the ${maxAtWide * 100}% this decision allows`,
+      );
+    }
+    const opacity = lineWidthAt(layer.paint?.['line-opacity'] ?? 1, wideZoom);
+    if (opacity !== null && opacity > maxOpacityAtWide) {
+      failures.push(`${id} is at ${opacity} opacity at park-wide, over the ${maxOpacityAtWide} this decision allows`);
+    }
+    return { failures, checked: [id] };
+  },
+
   'drawn-at-every-zoom'(params, style, layers) {
-    const { layer: id, wideZoom, maxWidthAtWide, maxOpacityAtWide, lighterThanAtWide } = params;
+    const { layer: id, wideZoom, maxWidthAtWide, maxOpacityAtWide, againstAtWide, maxRatioAtWide } = params;
     const layer = layers.get(worldLayer(id));
     if (!layer) return { failures: [], checked: [] };
     const failures = [];
@@ -206,11 +233,16 @@ const RULES = {
     if (opacity !== null && opacity > maxOpacityAtWide) {
       failures.push(`${id} is at ${opacity} opacity at park-wide, over the ${maxOpacityAtWide} this decision allows`);
     }
-    const other = layers.get(worldLayer(lighterThanAtWide));
+    /* It may lead the midway at park-wide — it is the landmark a guest looks
+       for — but not dominate it. A ceiling rather than "thinner than", because
+       the midway ramps down too: "thinner than the midway" would now mean
+       under a pixel, which is the invisible coaster this decision exists to
+       stop. */
+    const other = layers.get(worldLayer(againstAtWide));
     const otherWidth = other ? lineWidthAt(other.paint?.['line-width'], wideZoom) : null;
-    if (width !== null && otherWidth !== null && !(width < otherWidth)) {
+    if (width !== null && otherWidth !== null && width > otherWidth * maxRatioAtWide) {
       failures.push(
-        `${id} (${width}px) must sit lighter than ${lighterThanAtWide} (${otherWidth}px) at park-wide — it is a landmark there, not the subject`,
+        `${id} is ${(width / otherWidth).toFixed(2)}× ${againstAtWide} at park-wide (${width}px vs ${otherWidth}px), over the ${maxRatioAtWide}× this decision allows — it leads there, it does not take over`,
       );
     }
     return { failures, checked: [id] };

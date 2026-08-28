@@ -83,7 +83,12 @@ export const KITS = {
   'quest-sensor': { id: 'quest-sensor', label: 'Quest sensor', glyph: 'sensor.fill' },
 };
 
-function paint(path, ground, water, grass, building, label) {
+/* `track` defaults to `path` only so a caller that predates it keeps its old
+   look; every palette that draws coaster track should pass its own. Leaving
+   the default in place is what made track and walkway the same hex in Trail
+   and Park Midnight, so a coaster read as more midway — see
+   `test/app/map-decisions.json`, "coaster-track-reads-as-track". */
+function paint(path, ground, water, grass, building, label, track = path) {
   return {
     path: { stroke: path, width: 2.4, casing: ground, casingWidth: 4.6 },
     building: { fill: building, stroke: path, width: 0.8 },
@@ -102,7 +107,7 @@ function paint(path, ground, water, grass, building, label) {
     midway: path,
     midwayCase: ground,
     structure: building,
-    structureEdge: path,
+    structureEdge: track,
     label: { fill: label, halo: ground, fontSize: 9.5 },
     land: { fill: label, fontSize: 15, tracking: 2.4 },
     mapBg: ground,
@@ -112,8 +117,14 @@ function paint(path, ground, water, grass, building, label) {
   };
 }
 
-const NIGHT_PAINT = paint('#C4A882', '#1A1520', '#1E4A5C', '#1E3020', '#2A2438', '#F0E8DC');
-const DAY_PAINT = paint('#8B7355', '#F5F0E8', '#7EC8E3', '#B8D4A0', '#E8E0D4', '#2C2416');
+/* The two always-on Palettes. Their last argument is coaster track, which
+   until now inherited the walkway colour — so on the two looks every guest
+   sees, a coaster and a footpath were the same hex and track read as more
+   midway. The hues are the ride family the pins and the key already use
+   (theme.js `coaster: #FF6B35`), pulled toward the ground each Palette sits
+   on: rust on Trail's warm paper, a lighter ember against Park Midnight. */
+const NIGHT_PAINT = paint('#C4A882', '#1A1520', '#1E4A5C', '#1E3020', '#2A2438', '#F0E8DC', '#E8845C');
+const DAY_PAINT = paint('#8B7355', '#F5F0E8', '#7EC8E3', '#B8D4A0', '#E8E0D4', '#2C2416', '#C0552F');
 
 export const SKINS = {
   postcard: {
