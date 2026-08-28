@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** ready-for-human
+**Status:** resolved
 
 ## Evidence
 
@@ -109,3 +109,37 @@ The two branches are large and opposite, and neither is an agent's call:
 
 Until one is chosen, `npm run test:validate-ui:changed` cannot pass — **on this branch or on
 `origin/main`**, which is equally affected since no app source involved here differs between them.
+
+## Correction — already fixed on main (2026-08-28)
+
+**This ticket was right about the symptom and wrong about the cause, and the escalation was
+premature.** Merging `origin/main` into the branch settles it.
+
+`apps/party-tracker/components/ParkMap.jsx:68` on current main:
+
+```js
+const ParkMapGl = dynamic(() => import('./ParkMapGl'), { ssr: false });
+```
+
+rendered at line 242. **MapLibre is mounted.** It arrives through a dynamic import inside
+`ParkMap.jsx` rather than a static import in `app/page.js`, which is why
+`git log -S ParkMapGl -- app/page.js` came back empty and why grepping `page.js` for the import
+found nothing. I read that absence as "never mounted" when it only meant "not mounted *there*".
+
+The real history is in `b041666` — **"fix(app): restore h11 MapLibre ParkMap after zone-tone merge
+regression (#729)"** — followed by `b7d59ee` (#730) cleaning up `mapWrap`, zone tones and fog
+scope. A merge regression had dropped the MapLibre mount; both fixes landed on `main` **after this
+branch's base commit** `3d97dc2`. Everything observed here — no `park-map-gl` on the page, no
+canvas, 19 assertions failing — was this branch running without those fixes.
+
+So **h18 is not satisfied by a renderer nothing mounts**, and the train plan, the test suite and
+the page do agree. What actually happened is narrower and less alarming: a regression broke the
+mount, it was caught, and it was fixed on main while this branch was in flight.
+
+What survives from this ticket:
+
+- The `hydrated()` selector staleness is **genuine and independent** — `circle.poiMarker` could
+  never match a `<g class="poiMarker">` regardless of which renderer mounts. That fix stands on its
+  own merits and is proven discriminating.
+- The lesson worth keeping: a dynamic import is invisible to the grep that finds a static one, and
+  "no import in the obvious place" is not evidence of "never mounted".
