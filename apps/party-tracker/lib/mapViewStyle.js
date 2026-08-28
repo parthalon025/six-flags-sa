@@ -75,6 +75,14 @@ const FALLBACK = Object.freeze({
   member: '#7c4dff',
 });
 
+/** Round caps and joins, which every way on the map is drawn with.
+ *  MapLibre's defaults are butt caps and mitre joins, so a way that does not
+ *  say this ends square at every segment break and spikes at every bend — and
+ *  a default nobody had to type is the kind of decision that reverts by
+ *  omission. Named once so a new way layer cannot quietly go without it.
+ *  `test/app/map-decisions.json` holds the decision; three runs hold it to it. */
+const SMOOTH = Object.freeze({ 'line-cap': 'round', 'line-join': 'round' });
+
 /** How each World layer is painted, from the Skin's own paint pack. A layer
  *  named here and absent from a venue simply never gets built — see
  *  `worldLayers` below. */
@@ -99,17 +107,17 @@ const WORLD_PAINT = Object.freeze({
   // spiking at every surveyed corner.
   boundary: (p) => ({
     type: 'line',
-    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    layout: SMOOTH,
     paint: { 'line-color': p('groundEdge'), 'line-width': 1.5 },
   }),
   service: (p) => ({
     type: 'line',
-    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    layout: SMOOTH,
     paint: { 'line-color': p('path').casing, 'line-width': 1 },
   }),
   path: (p) => ({
     type: 'line',
-    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    layout: SMOOTH,
     paint: { 'line-color': p('path').stroke, 'line-width': p('path').width },
     // One wide line in the ground colour under the path: without it a midway
     // crossing a lawn has no edge and reads as a gap in the grass.
@@ -121,7 +129,7 @@ const WORLD_PAINT = Object.freeze({
   }),
   slide: (p) => ({
     type: 'line',
-    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    layout: SMOOTH,
     paint: { 'line-color': p('poolEdge'), 'line-width': 2 },
   }),
   // Track is the landmark a guest navigates a park by, and it flies over the
@@ -132,7 +140,7 @@ const WORLD_PAINT = Object.freeze({
   // holds that decision; two suites hold it to it.
   coaster: (p) => ({
     type: 'line',
-    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    layout: SMOOTH,
     paint: {
       'line-color': p('structureEdge'),
       'line-width': ['interpolate', ['linear'], ['zoom'], 13, 3.2, 16, 6, 19, 10],
@@ -150,14 +158,14 @@ function overlayLayers(colour) {
       id: `${source('route')}-case`,
       type: 'line',
       source: source('route'),
-      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      layout: SMOOTH,
       paint: { 'line-color': '#000000', 'line-opacity': 0.35, 'line-width': 8 },
     },
     {
       id: source('route'),
       type: 'line',
       source: source('route'),
-      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      layout: SMOOTH,
       paint: { 'line-color': colour('route'), 'line-width': 4 },
     },
     {

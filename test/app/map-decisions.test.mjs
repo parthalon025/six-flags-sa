@@ -17,7 +17,7 @@
  */
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
-import { bandedWorldStyle, worldLayer } from '../../apps/party-tracker/lib/mapViewStyle.js';
+import { bandedWorldStyle, worldCaseLayer, worldLayer } from '../../apps/party-tracker/lib/mapViewStyle.js';
 import { worldGeoJson } from '../../apps/party-tracker/lib/worldGeo.js';
 import { mapPaint } from '../../apps/party-tracker/lib/world.js';
 import {
@@ -132,7 +132,7 @@ assert.ok(sawParking > 0, 'no shipped venue drew a parking lot, so nothing check
     lineWidthAt(midway.paint['line-width'], 16) >= 2.4,
     'a walkway is a shape with width, not a hairline',
   );
-  const casing = style.layers.find((l) => l.id === `${worldLayer('path')}-case`);
+  const casing = style.layers.find((l) => l.id === worldCaseLayer('path'));
   assert.ok(casing, 'and it keeps the casing that gives it an edge against the lawn');
   assert.equal(casing.layout['line-join'], 'round', 'the casing bends with the walkway, not against it');
   for (const id of ['service', 'slide', 'coaster', 'boundary']) {
