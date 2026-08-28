@@ -70,11 +70,11 @@ if (prevKey) process.env.GOOGLE_MAPS_API_KEY = prevKey;
 
 process.env.GOOGLE_MAPS_API_KEY = 'test-key';
 const cached = await runGooglePlaces({ venueId: 'fixture-park', offline: true });
-delete process.env.GOOGLE_MAPS_API_KEY;
-if (prevKey) process.env.GOOGLE_MAPS_API_KEY = prevKey;
 assert.equal(cached.ok, true);
 assert.equal(cached.offline, true);
 assert.equal(cached.claims[0].displayName, 'Front Gate');
+if (prevKey) process.env.GOOGLE_MAPS_API_KEY = prevKey;
+else delete process.env.GOOGLE_MAPS_API_KEY;
 
 const proposal = buildOsmChangeProposal({ venueId: 'kings-island', claim: { note: 'path position disputed' } });
 assert.equal(proposal.status, 'draft');

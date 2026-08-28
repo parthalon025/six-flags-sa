@@ -9,10 +9,11 @@ import { run as runGooglePlaces, googlePlacesCacheFile } from '../../packages/ve
 const FIXTURE = 'fixture-park';
 const FIXTURE_CACHE = googlePlacesCacheFile(FIXTURE);
 const TEST_VENUE = '__test-google-places-cache__';
+const TEST_VENUE_LIVE = '__test-google-places-cache-live__';
 
-const cleanup = () => {
+const cleanup = (id = TEST_VENUE) => {
   try {
-    rmSync(new URL(`../../packages/venue-builder/data/venues/${TEST_VENUE}`, import.meta.url), {
+    rmSync(new URL(`../../packages/venue-builder/data/venues/${id}`, import.meta.url), {
       recursive: true,
       force: true,
     });
@@ -22,6 +23,7 @@ const cleanup = () => {
 };
 
 cleanup();
+cleanup(TEST_VENUE_LIVE);
 
 const fixtureBefore = readFileSync(FIXTURE_CACHE, 'utf8');
 
@@ -54,8 +56,29 @@ delete process.env.GOOGLE_MAPS_API_KEY;
 assert.equal(fetched.ok, true);
 assert.equal(fetched.claims[0].displayName, 'Live Gate');
 const written = JSON.parse(readFileSync(googlePlacesCacheFile(TEST_VENUE), 'utf8'));
-assert.equal(written.fetched, fixedNow, 'a genuine fetch must stamp fetched from the live clock');
+assert.equal(written.fetched, fixedNow, 'injectable now controls fetched when provided');
+
+const beforeMs = Date.now();
+process.env.GOOGLE_MAPS_API_KEY = 'test-key';
+await runGooglePlaces(
+  { venueId: TEST_VENUE_LIVE, placeIds: ['ChIJwall'] },
+  {
+    fetchFn: async () => ({
+      ok: true,
+      json: async () => ({ id: 'ChIJwall', displayName: { text: 'Wall Clock' } }),
+    }),
+  },
+);
+delete process.env.GOOGLE_MAPS_API_KEY;
+const afterMs = Date.now();
+const liveWritten = JSON.parse(readFileSync(googlePlacesCacheFile(TEST_VENUE_LIVE), 'utf8'));
+const fetchedMs = Date.parse(liveWritten.fetched);
+assert.ok(
+  fetchedMs >= beforeMs && fetchedMs <= afterMs,
+  'default fetch stamps wall-clock fetched when now is omitted',
+);
 
 cleanup();
+cleanup(TEST_VENUE_LIVE);
 
 console.log('google-places-cache: ok');
