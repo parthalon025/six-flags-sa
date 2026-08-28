@@ -158,10 +158,38 @@ export function completionLine(c) {
 }
 
 /**
+ * Is this Contribution's ground truth inside the given World.
+ *
+ * `venue` is the loaded venue row (`{ id, bounds }`), or omitted entirely by
+ * a caller with no World context (existing tests, callers that pre-filter
+ * some other way) — in which case every fact passes, unchanged from before
+ * this filter existed. A Contribution that already records which World it
+ * was made in (`fact.venueId`, set since #589) is scoped by that id; older
+ * data with no `venueId` falls back to the venue's own `bounds`, since that
+ * is the only fact still available about where it was made.
+ */
+function factBelongsToVenue(fact, venue) {
+  if (!venue) return true;
+  if (fact.venueId) return fact.venueId === venue.id;
+  if (venue.bounds && Number.isFinite(fact.lat) && Number.isFinite(fact.lng)) {
+    const { north, south, east, west } = venue.bounds;
+    return fact.lat < north && fact.lat > south && fact.lng < east && fact.lng > west;
+  }
+  return true;
+}
+
+/**
  * Paint Overlay onto shipped Places. Does not mutate `pois`.
  * Path crumbs and queue pins are extra drawables, not walkable geometry.
+ *
+ * `venue` (optional) scopes painting to one World — see `factBelongsToVenue`.
+ * Place-targeted facts (`height`, `camping`) are already implicitly scoped
+ * because their target only exists in `pois` for the venue that shipped it;
+ * the four fact types that append a Place or a pin on coordinates alone
+ * (`restroom`, `food`, `gate`, `path`, and `queue`'s pin) are not, which is
+ * what let a Contribution made at one World get painted onto the next.
  */
-export function applyOverlayToPlaces(pois = [], overlay = emptyOverlay()) {
+export function applyOverlayToPlaces(pois = [], overlay = emptyOverlay(), venue = null) {
   const byId = new Map();
   for (const p of pois) {
     const id = p?.i || p?.id;
@@ -174,6 +202,7 @@ export function applyOverlayToPlaces(pois = [], overlay = emptyOverlay()) {
 
   for (const fact of Object.values(overlay.drawn || {})) {
     if (!fact || !FIELD.has(fact.type)) continue;
+    if (!factBelongsToVenue(fact, venue)) continue;
     const target = fact.placeId;
     if (fact.type === 'height' && target && byId.has(target)) {
       const answer = fact.payload?.heightIn;

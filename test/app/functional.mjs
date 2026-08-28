@@ -3032,8 +3032,12 @@ await check('picking a World by hand outranks the host', async () => {
 });
 
 // Out again, so the roster the tests below assert on is the one they set up.
+// Best-effort teardown, not an assertion under test: this phone is about to
+// have its whole context closed regardless, so a click that times out here
+// (#596) must become a swallowed rejection, not an uncaught one that kills
+// the entire suite process before the checks below ever run.
 await go(d, 'Party');
-await d.locator('.codeBox button:has-text("Leave")').click();
+await d.locator('.codeBox button:has-text("Leave")').click().catch(() => {});
 await until(async () => (await d.locator('button:has-text("Start a party")').count()) > 0, {
   timeout: JOIN_TIMEOUT,
   label: 'phone D to leave the party',

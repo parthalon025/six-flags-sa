@@ -132,7 +132,7 @@ const listeners = new Set();
  * Places against the old geometry, for one render.
  */
 function repaint() {
-  const painted = applyOverlayToPlaces(shipped, overlay);
+  const painted = applyOverlayToPlaces(shipped, overlay, state.venue);
   state.pois = painted.places;
   state.overlayPins = painted.pins;
   /* painted.venueCamping is dropped on purpose: no screen reads a

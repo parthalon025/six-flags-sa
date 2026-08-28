@@ -48,11 +48,35 @@ const counters =
     mailbox_posted: 0,
     mailbox_dropped: 0,
     store_errors: 0,
+    party_write_oversize_warned: 0,
+    party_write_oversize_blocked: 0,
   });
 
 const bump = (name, by = 1) => {
   counters[name] += by;
 };
+
+/* ---------------------------------------------------------- size guard */
+
+/**
+ * A party record above this is already surprising — a roster or an Overlay
+ * growing without bound — and worth knowing about long before it is large
+ * enough to matter to Upstash. Logged once per party, not once per write, so
+ * a party that stays oversized does not spam.
+ */
+const PARTY_SIZE_WARN_BYTES = 200 * 1024;
+/**
+ * Above this, `writeParty` refuses the SET rather than send it. There is no
+ * trim that is safe to invent here — which Members or which Overlay facts to
+ * drop is a decision for the domain the record belongs to, not this store —
+ * so the caller gets a thrown, labeled error instead of a silently truncated
+ * write or a value Upstash itself would reject.
+ */
+const PARTY_SIZE_HARD_BYTES = 1024 * 1024;
+
+// Hung off globalThis for the same reason `counters` is: one warning per
+// party's lifetime, surviving the dev server's module reloads.
+const warnedOversizeParties = globalThis.__kiOversizeWarned ?? (globalThis.__kiOversizeWarned = new Set());
 
 /* ------------------------------------------------------------------ redis */
 
@@ -94,14 +118,19 @@ const pipeline = redisPipeline;
 
 /**
  * Upstash EVAL — one RTT for scripts that need a prior command's result
- * (mailbox append needs INCR seq before ZADD member).
+ * (mailbox append needs INCR seq before ZADD member) or that read and
+ * conditionally write in a single atomic step (a compare-and-set, standing
+ * in for the WATCH/MULTI the REST transport does not offer — see
+ * lib/worldMarks.js).
  */
-async function redisEval(script, keys = [], args = []) {
+export async function redisEval(script, keys = [], args = []) {
   return redisCommand(['EVAL', script, String(keys.length), ...keys, ...args]);
 }
 
-/** Append mailbox message in one Redis RTT (INCR + ZADD + trim + expires). */
-const APPEND_MAILBOX_LUA = `
+/** Append mailbox message in one Redis RTT (INCR + ZADD + trim + expires).
+ *  Exported so a contract test can dispatch a fake EVAL by the exact script
+ *  text this module actually sends — see test/app/lib/fakeUpstash.mjs. */
+export const APPEND_MAILBOX_LUA = `
 local seq = redis.call('INCR', KEYS[1])
 local payload = cjson.decode(ARGV[1])
 payload['seq'] = seq
@@ -198,9 +227,24 @@ export async function readParty(id) {
 
 export async function writeParty(id, party) {
   bump('party_writes');
+  const serialized = JSON.stringify(party);
+  const bytes = Buffer.byteLength(serialized, 'utf8');
+  if (bytes >= PARTY_SIZE_HARD_BYTES) {
+    bump('party_write_oversize_blocked');
+    throw new Error(
+      `writeParty: party ${id} serialized to ${bytes} bytes, at or over the ${PARTY_SIZE_HARD_BYTES}-byte hard cap — refusing the write`,
+    );
+  }
+  if (bytes >= PARTY_SIZE_WARN_BYTES && !warnedOversizeParties.has(id)) {
+    warnedOversizeParties.add(id);
+    bump('party_write_oversize_warned');
+    console.warn(
+      `writeParty: party ${id} is ${bytes} bytes, at or over the ${PARTY_SIZE_WARN_BYTES}-byte warning threshold`,
+    );
+  }
   if (usingRedis) {
     await pipeline([
-      ['SET', partyKey(id), JSON.stringify(party), 'EX', String(PARTY_TTL_S)],
+      ['SET', partyKey(id), serialized, 'EX', String(PARTY_TTL_S)],
       // The code index has to outlive nothing: refreshing it alongside the
       // party keeps join working right up to the party's own expiry.
       ...(party.code ? [['SET', codeKey(party.code), id, 'EX', String(PARTY_TTL_S)]] : []),
