@@ -135,7 +135,7 @@
     {
       "id": "clerk-profile-oauth",
       "slice": "EP",
-      "user_action": "Guest or OAuth from /sign-in; first paint is never blocked by an in-place OAuth wall",
+      "user_action": "Guest or Google/Apple OAuth on /sign-in",
       "suite": "functional",
       "check": "sign-in route shows Guest and Google/Apple OAuth buttons"
     },
