@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
+import { readFileSync, rmSync, statSync } from 'node:fs';
 import {
   CI_PROVEN_PASSES,
   compareToOsm,
@@ -7,13 +8,27 @@ import {
   routeImageryExtractions,
   runImageryClaims,
 } from '../../packages/venue-builder/lib/imagery-claims.mjs';
-import { run as runGooglePlaces } from '../../packages/venue-builder/lib/adapters/google-places.mjs';
+import {
+  googlePlacesCacheFile,
+  run as runGooglePlaces,
+} from '../../packages/venue-builder/lib/adapters/google-places.mjs';
 import { getAdapter } from '../../packages/venue-builder/lib/adapters/registry.mjs';
 import {
   buildOsmChangeProposal,
   writeOsmProposalFile,
 } from '../../packages/venue-builder/lib/osm-writeback.mjs';
 import { SHIPPED_GAP_TYPES } from '../../packages/venue-builder/lib/ship-gaps.mjs';
+
+const FIXTURE_VENUE = 'fixture-park';
+const FETCH_TEST_VENUE = '__test-google-places-fetch__';
+
+function scrubGooglePlacesCache(venueId) {
+  try {
+    rmSync(googlePlacesCacheFile(venueId));
+  } catch {
+    // absent is fine
+  }
+}
 
 const geoMap = {
   layers: {
@@ -63,15 +78,43 @@ assert.deepEqual(places.evidence_sources, []);
 const prevKey = process.env.GOOGLE_MAPS_API_KEY;
 delete process.env.GOOGLE_MAPS_API_KEY;
 delete process.env.GOOGLE_MAPS_API;
-const missingKey = await runGooglePlaces({ venueId: 'fixture-park' });
+const missingKey = await runGooglePlaces({ venueId: FIXTURE_VENUE });
 assert.equal(missingKey.gap, true);
 assert.equal(missingKey.ok, false);
 if (prevKey) process.env.GOOGLE_MAPS_API_KEY = prevKey;
 
-process.env.GOOGLE_MAPS_API_KEY = 'test-key';
-const fetched = await runGooglePlaces(
-  { venueId: 'fixture-park', placeIds: ['ChIJtest'] },
+const fixtureCachePath = googlePlacesCacheFile(FIXTURE_VENUE);
+const fixtureCacheBefore = readFileSync(fixtureCachePath, 'utf8');
+const fixtureMtimeBefore = statSync(fixtureCachePath).mtimeMs;
+
+const offlineReplay = await runGooglePlaces(
+  { venueId: FIXTURE_VENUE, offline: true, placeIds: ['ChIJtest'] },
   {
+    fetchFn: async () => {
+      throw new Error('offline must not fetch');
+    },
+  },
+);
+assert.equal(offlineReplay.ok, true);
+assert.equal(offlineReplay.offline, true);
+assert.equal(
+  readFileSync(fixtureCachePath, 'utf8'),
+  fixtureCacheBefore,
+  'offline replay must not rewrite the tracked fixture cache',
+);
+assert.equal(
+  statSync(fixtureCachePath).mtimeMs,
+  fixtureMtimeBefore,
+  'offline replay must not touch the fixture cache mtime',
+);
+
+scrubGooglePlacesCache(FETCH_TEST_VENUE);
+process.env.GOOGLE_MAPS_API_KEY = 'test-key';
+const fetchedAt = '2026-08-28T12:34:56.789Z';
+const fetched = await runGooglePlaces(
+  { venueId: FETCH_TEST_VENUE, placeIds: ['ChIJtest'] },
+  {
+    now: () => new Date(fetchedAt),
     fetchFn: async () => ({
       ok: true,
       json: async () => ({ id: 'ChIJtest', displayName: { text: 'Front Gate' } }),
@@ -81,6 +124,28 @@ const fetched = await runGooglePlaces(
 delete process.env.GOOGLE_MAPS_API_KEY;
 assert.equal(fetched.ok, true);
 assert.equal(fetched.claims[0].displayName, 'Front Gate');
+const written = JSON.parse(readFileSync(googlePlacesCacheFile(FETCH_TEST_VENUE), 'utf8'));
+assert.equal(written.fetched, fetchedAt, 'a genuine fetch stamps fetched on the cache row');
+scrubGooglePlacesCache(FETCH_TEST_VENUE);
+
+scrubGooglePlacesCache('__test-google-places-now-default__');
+process.env.GOOGLE_MAPS_API_KEY = 'test-key';
+const beforeFetch = Date.now();
+await runGooglePlaces(
+  { venueId: '__test-google-places-now-default__', placeIds: ['ChIJnow'] },
+  {
+    fetchFn: async () => ({
+      ok: true,
+      json: async () => ({ id: 'ChIJnow', displayName: { text: 'Clock Gate' } }),
+    }),
+  },
+);
+delete process.env.GOOGLE_MAPS_API_KEY;
+const defaultWritten = JSON.parse(readFileSync(googlePlacesCacheFile('__test-google-places-now-default__'), 'utf8'));
+const fetchedMs = Date.parse(defaultWritten.fetched);
+assert.ok(Number.isFinite(fetchedMs), 'default fetch path writes a parseable fetched timestamp');
+assert.ok(fetchedMs >= beforeFetch - 1000 && fetchedMs <= Date.now() + 1000, 'default fetch path uses wall-clock time');
+scrubGooglePlacesCache('__test-google-places-now-default__');
 
 const proposal = buildOsmChangeProposal({ venueId: 'kings-island', claim: { note: 'path position disputed' } });
 assert.equal(proposal.status, 'draft');
