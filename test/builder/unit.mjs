@@ -5095,6 +5095,34 @@ await check('a camping rule narrows the venue-wide facts by name', () => {
 
 const { applyOverrides } = await import('../../packages/venue-builder/bin/build-venue.mjs');
 
+await check('every shipped venue with an expect lock clears its own floor (#271)', async () => {
+  const { listRecipes, readRecipe } = await import('../../packages/venue-builder/lib/venue-recipe.mjs');
+  const venuesDir = new URL('../../apps/party-tracker/public/venues/', import.meta.url);
+  let checked = 0;
+  for (const id of listRecipes()) {
+    const { data: recipe } = readRecipe(id);
+    const min = recipe?.expect?.walkable_km_min;
+    if (min == null) continue;
+    const mapFile = new URL(`${id}.map.json`, venuesDir);
+    if (!fs.existsSync(mapFile)) continue; // recipe on disk without a shipped bundle (not a fleet venue)
+    const shipped = JSON.parse(fs.readFileSync(mapFile, 'utf8'));
+    const walkableKm = shipped.meta?.coverage?.walkable_km;
+    assert.ok(
+      typeof walkableKm === 'number',
+      `${id}: shipped bundle has no meta.coverage.walkable_km to check against its expect lock`,
+    );
+    assert.ok(
+      walkableKm >= min,
+      `${id}: shipped walkable coverage is ${walkableKm} km, below its own locked floor of ${min} km — ` +
+        'a rebuild already regressed routing coverage and shipped that way.',
+    );
+    checked += 1;
+  }
+  // The assertion is meaningless if nothing on disk declares an expect lock.
+  assert.ok(checked >= 1, 'expected at least one shipped venue with an expect.walkable_km_min lock');
+  return true;
+});
+
 await check('a partial nested override patch leaves sibling fields intact', () => {
   const pois = [{ n: 'Millennium Force', c: 'coaster', h: { min: 48, alone: 46, max: null } }];
   const { pois: merged, applied } = applyOverrides(pois, {
