@@ -52,10 +52,10 @@
       "rule": "min-line-width",
       "params": {
         "layer": "coaster",
-        "zoom": 13,
-        "atLeast": 3
+        "zoom": 16,
+        "atLeast": 6
       },
-      "why": "Heaviest-of-the-lines is a ranking and a ranking survives everything shrinking together. This is the floor: at the zoom a whole park fits on the screen the track is still three pixels of structure."
+      "why": "Heaviest-of-the-lines is a ranking, and a ranking survives everything shrinking together. This is the floor, and it is set at the zoom the track first appears: `worldLod.js` hides the coaster layer below 0.7 px/m, which at this latitude is about MapLibre zoom 15.5, so a floor asserted at a wider camera would be pinning a width nothing draws. Six pixels at the moment track becomes visible, ramping to ten as a single ride fills the screen."
     },
     {
       "id": "coaster-flies-over-the-buildings",

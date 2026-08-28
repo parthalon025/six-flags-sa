@@ -20,6 +20,10 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { bandedWorldStyle, worldCaseLayer, worldLayer } from '../../apps/party-tracker/lib/mapViewStyle.js';
 import { worldGeoJson } from '../../apps/party-tracker/lib/worldGeo.js';
 import { mapPaint } from '../../apps/party-tracker/lib/world.js';
+import { worldLodGroups, worldPlanZoom } from '../../apps/party-tracker/lib/worldLod.js';
+
+/** Kings Island, which is the venue the explicit block below reads. */
+const KINGS_ISLAND_LAT = 39.34;
 import {
   AREA_LAYER_IDS,
   checkMapDecisions,
@@ -109,10 +113,20 @@ assert.ok(sawParking > 0, 'no shipped venue drew a parking lot, so nothing check
   const coaster = layer('coaster');
   const path = layer('path');
   assert.equal(coaster.type, 'line');
-  for (const zoom of [13, 14, 16, 18, 20]) {
+  /* Only the zooms the track is actually drawn at. `worldLod.js` hides the
+     coaster layer below 0.7 px/m — about MapLibre z15.5 at this latitude — so
+     a floor asserted wider than that pins a width nothing puts on screen, and
+     a green assertion over an invisible layer is the decorative kind this
+     suite exists to refuse. VISIBLE_FROM is checked against worldLod rather
+     than hard-coded, so moving that threshold moves this with it. */
+  for (const zoom of [16, 17, 18, 19, 20]) {
+    assert.ok(
+      worldLodGroups(worldPlanZoom(zoom, KINGS_ISLAND_LAT), {}).detail,
+      `z${zoom} must actually draw the coaster layer for this assertion to mean anything`,
+    );
     const track = lineWidthAt(coaster.paint['line-width'], zoom);
     const midway = lineWidthAt(path.paint['line-width'], zoom);
-    assert.ok(track >= 3, `coaster track is ${track}px at z${zoom} — thinner than the 3px floor`);
+    assert.ok(track >= 6, `coaster track is ${track}px at z${zoom} — under the 6px floor where it is visible`);
     assert.ok(
       track > midway * 1.25,
       `coaster track (${track}px at z${zoom}) has to outweigh the midway (${midway}px), not match it`,
