@@ -185,6 +185,7 @@ export const TEST_ESTATE = {
   'test/builder/skin-distinct.mjs': ['test:unit', 'test:builder'],
   'test/builder/stale-builder-paths.mjs': ['test:builder'],
   'test/builder/stamp-coverage.mjs': ['test:builder'],
+  'test/builder/top-parks-allow-no-heights.mjs': ['test:builder'],
   'test/builder/steward-review.mjs': ['test:builder'],
   'test/builder/terrain.mjs': ['test:builder'],
   'test/builder/tiles-export.mjs': ['test:builder'],

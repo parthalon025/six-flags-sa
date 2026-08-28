@@ -15,7 +15,26 @@ import { BUILDER_ROOT } from '../src/paths.mjs';
 
 export const CATALOG_FILE = path.join(BUILDER_ROOT, 'data', 'top-100-us-theme-parks.json');
 
-/** @typedef {{ rank: number, name: string, place: string, locality: string, kind?: string, id?: string, skip?: boolean, note?: string }} ParkEntry */
+/** Park kinds that legitimately publish no height rules — batch runs proceed without --allow-no-heights. */
+export const HEIGHTLESS_KINDS = new Set(['water-park', 'zoo', 'aquarium']);
+
+/** @typedef {{ rank: number, name: string, place: string, locality: string, kind?: string, allowNoHeights?: boolean, id?: string, skip?: boolean, note?: string }} ParkEntry */
+
+/**
+ * Resolve whether a catalog park should skip the heights gate.
+ * Precedence: CLI --allow-no-heights > CLI --strict-heights > catalog default > strict.
+ *
+ * @param {ParkEntry} park
+ * @param {{ cliAllowNoHeights?: boolean, cliStrictHeights?: boolean }} opts
+ */
+export function resolveAllowNoHeights(park, { cliAllowNoHeights = false, cliStrictHeights = false } = {}) {
+  if (cliAllowNoHeights) return true;
+  if (cliStrictHeights) return false;
+  if (park.allowNoHeights === true) return true;
+  if (park.allowNoHeights === false) return false;
+  if (park.kind && HEIGHTLESS_KINDS.has(park.kind)) return true;
+  return false;
+}
 
 /**
  * @returns {{ version: number, source: string, generated: string, parks: ParkEntry[] }}
