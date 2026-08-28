@@ -587,11 +587,22 @@ export function workflowBlockReason({ files, cwd = REPO }) {
   if (!files?.some((f) => f.startsWith('packages/venue-builder/'))) return null;
   const efforts = listEfforts(cwd);
   if (efforts.length === 0) return null;
-  for (const slug of efforts) {
-    const result = checkIntent({ cwd, effort: slug, intent: 'implement' });
-    if (!result.ok) return `${result.message}\nRun: npm run workflow:next`;
-  }
-  return null;
+
+  /* Which effort is this diff actually working? A diff that edits an effort's own
+     `.scratch/<slug>/` files names it, and then that is the effort to judge. Only
+     when the diff names none do we fall back to weighing them all. */
+  const named = efforts.filter((slug) => files.some((f) => f.startsWith(`.scratch/${slug}/`)));
+  const judged = named.length ? named : efforts;
+
+  /* Block when no candidate effort is ready to implement — not when some effort
+     is not. Asking "does any effort forbid implement?" meant one unrelated effort
+     parked at spec froze every builder change in the repo, including work driven
+     by an effort sitting in implement. The gate is here to catch builder code
+     written ahead of its own effort's thinking, which is a claim about the effort
+     the work belongs to, not about the least advanced effort on disk. */
+  const results = judged.map((slug) => checkIntent({ cwd, effort: slug, intent: 'implement' }));
+  if (results.some((r) => r.ok)) return null;
+  return `${results[0].message}\nRun: npm run workflow:next`;
 }
 
 /** Render skill catalog grouped by flow. */
