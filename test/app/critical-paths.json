@@ -135,9 +135,9 @@
     {
       "id": "clerk-profile-oauth",
       "slice": "EP",
-      "user_action": "Sign in or Guest from the Profile gate; Google/Apple on /sign-in",
+      "user_action": "Guest or OAuth from /sign-in; first paint is never blocked by an in-place OAuth wall",
       "suite": "functional",
-      "check": "Profile gate shows Sign in and Guest"
+      "check": "sign-in route shows Guest and Google/Apple OAuth buttons"
     },
     {
       "id": "ep5-sharing",
@@ -294,11 +294,11 @@
       "check": "leaving removes the member from the other phone\u2019s roster"
     },
     {
-      "id": "iso-custom-map",
+      "id": "pixel-tycoon-osm",
       "slice": "Adventure",
-      "user_action": "Wear the Pixel tycoon Skin and see its isometric Custom map",
+      "user_action": "Wear the Pixel tycoon Skin and see MapLibre OSM until its baked world ships",
       "suite": "functional",
-      "check": "wearing Pixel tycoon draws the isometric custom map"
+      "check": "wearing Pixel tycoon keeps the MapLibre map (OSM until a bake exists)"
     },
     {
       "id": "baked-world-map",

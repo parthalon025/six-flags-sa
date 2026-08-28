@@ -98,6 +98,7 @@ export const TEST_ESTATE = {
   'test/app/band-plan.test.mjs': ['test:unit'],
   'test/app/contributions-thanks.test.mjs': ['test:unit'],
   'test/app/contribution-consolidate-vertical.test.mjs': ['test:unit'],
+  'test/app/critical-paths-contract.test.mjs': ['test:unit'],
   'test/app/contributions-postgres.test.mjs': ['test:unit'],
   'test/app/postgres-probe.test.mjs': ['test:unit'],
   'test/app/ready-route.test.mjs': ['test:unit'],

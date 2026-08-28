@@ -296,12 +296,16 @@ await check('first paint is the splash, not an in-place OAuth wall', async () =>
   return true;
 });
 
-await check('sign-in route shows Google and Apple logo buttons', async () => {
+await check('sign-in route shows Guest and Google/Apple OAuth buttons', async () => {
   await a.goto(`${BASE}/sign-in`, { waitUntil: 'domcontentloaded' });
   await until(
     async () => (await a.locator('.clerkAuthPage .oauthBtn, .cl-socialButtons, .cl-socialButtonsBlockButton').count()) >= 1,
     { timeout: 25000, label: 'Clerk sign-in OAuth buttons' },
   );
+  const guest = a.locator('.authGateGuest');
+  if ((await guest.count()) < 1) throw new Error('Guest button missing on /sign-in');
+  const guestText = (await guest.first().innerText()).trim();
+  if (!/guest/i.test(guestText)) throw new Error(`Guest button label: "${guestText}"`);
   return true;
 });
 
