@@ -124,14 +124,42 @@ assert.ok(sawParking > 0, 'no shipped venue drew a parking lot, so nothing check
   assert.equal(layer('parking').type, 'fill', 'a parking lot is an area, drawn as one');
   assert.ok(layer('parking').paint['fill-color'], 'and it is filled, not merely outlined');
 
+  // "walkways ... use shapes and smooth bends"
+  const midway = layer('path');
+  assert.equal(midway.layout['line-cap'], 'round', 'a walkway does not end square at every segment break');
+  assert.equal(midway.layout['line-join'], 'round', 'a walkway curves at its bends rather than spiking');
+  assert.ok(
+    lineWidthAt(midway.paint['line-width'], 16) >= 2.4,
+    'a walkway is a shape with width, not a hairline',
+  );
+  const casing = style.layers.find((l) => l.id === `${worldLayer('path')}-case`);
+  assert.ok(casing, 'and it keeps the casing that gives it an edge against the lawn');
+  assert.equal(casing.layout['line-join'], 'round', 'the casing bends with the walkway, not against it');
+  for (const id of ['service', 'slide', 'coaster', 'boundary']) {
+    const way = layer(id);
+    if (!way) continue;
+    assert.equal(way.layout?.['line-join'], 'round', `${id} bends smoothly`);
+  }
+
   // The general form, which is the part that survives the next new layer.
   for (const id of AREA_LAYER_IDS) {
     const built = layer(id);
     if (!built) continue;
-    const pending = registry.decisions.some(
-      (d) => d.status === 'pending' && d.covers_layers?.includes(id),
+    /* An area layer is either a shape, or the outline of a shape that is
+       itself drawn below it — which is what `boundary` is over `park`. Both
+       are accounted for in the registry; anything else is an area the map
+       draws as a bare line. */
+    const asEdgeOf = registry.decisions.find(
+      (d) => d.rule === 'area-edge-drawn-as-outline' && d.params.layer === id,
     );
-    if (pending) continue;
+    if (asEdgeOf) {
+      assert.equal(
+        layer(asEdgeOf.params.shapeBeneath).type,
+        'fill',
+        `${id} is drawn as an outline only because ${asEdgeOf.params.shapeBeneath} is the shape under it`,
+      );
+      continue;
+    }
     assert.equal(built.type, 'fill', `${id} is an area in truth and must be drawn as one`);
   }
 }

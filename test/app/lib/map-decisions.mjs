@@ -149,6 +149,49 @@ const RULES = {
     return { failures, checked };
   },
 
+  'smooth-bends'(params, style, layers) {
+    const failures = [];
+    const checked = [];
+    for (const id of params.layers || []) {
+      const layer = layers.get(worldLayer(id));
+      if (!layer) continue;
+      checked.push(id);
+      // MapLibre's defaults are butt caps and mitre joins, so an absent value
+      // is a square corner rather than an unset one — `!== 'round'` is the
+      // check, not `=== 'butt'`.
+      if (layer.layout?.['line-cap'] !== 'round') {
+        failures.push(`${id} ends square (line-cap ${layer.layout?.['line-cap'] ?? 'butt, by default'})`);
+      }
+      if (layer.layout?.['line-join'] !== 'round') {
+        failures.push(`${id} spikes at its bends (line-join ${layer.layout?.['line-join'] ?? 'miter, by default'})`);
+      }
+      const casing = layers.get(worldCaseLayer(id));
+      if (casing && (casing.layout?.['line-cap'] !== 'round' || casing.layout?.['line-join'] !== 'round')) {
+        failures.push(`${id}'s casing does not bend with it, so the smoothing shows as a fringe`);
+      }
+    }
+    return { failures, checked };
+  },
+
+  'area-edge-drawn-as-outline'(params, style, layers) {
+    const { layer: id, shapeBeneath } = params;
+    const outline = layers.get(worldLayer(id));
+    if (!outline) return { failures: [], checked: [] };
+    const shape = layers.get(worldLayer(shapeBeneath));
+    const failures = [];
+    if (!shape) {
+      failures.push(`${id} draws an outline with no \`${shapeBeneath}\` shape under it to be the edge of`);
+    } else {
+      if (shape.type !== 'fill') {
+        failures.push(`${id} is only an outline because \`${shapeBeneath}\` is the shape — but ${shapeBeneath} is painted as \`${shape.type}\``);
+      }
+      if (!(indexOfLayer(style, worldLayer(shapeBeneath)) < indexOfLayer(style, worldLayer(id)))) {
+        failures.push(`${shapeBeneath} must be painted under ${id} for ${id} to read as its edge`);
+      }
+    }
+    return { failures, checked: [id, shapeBeneath] };
+  },
+
   'has-casing'(params, style, layers) {
     const failures = [];
     const checked = [];
@@ -206,6 +249,11 @@ export function checkMapDecisions(style, { decisions = loadMapDecisions(), requi
   const shapes = decisions.decisions.find((d) => d.rule === 'area-layers-are-shapes');
   const claimed = new Set([
     ...(shapes?.params?.covers || []),
+    // An area layer drawn as the edge of the shape beneath it is accounted
+    // for too — by a rule that checks that shape is still there.
+    ...decisions.decisions
+      .filter((d) => d.rule === 'area-edge-drawn-as-outline')
+      .map((d) => d.params?.layer),
     ...decisions.decisions.flatMap((d) => d.covers_layers || []),
   ]);
   for (const id of AREA_LAYER_IDS) {

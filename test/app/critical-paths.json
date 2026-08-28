@@ -30,7 +30,7 @@
     {
       "id": "map-decisions-hold",
       "slice": "Navigate",
-      "user_action": "Read a park map that still draws what was asked for — coaster track heavy enough to navigate by, parking lots as areas rather than outlines",
+      "user_action": "Read a park map that still draws what was asked for — coaster track heavy enough to navigate by, walkways and broad areas as shapes with smooth bends rather than hairlines",
       "suite": "functional",
       "check": "the map still draws the decisions it was asked for"
     },

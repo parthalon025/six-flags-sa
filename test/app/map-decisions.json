@@ -5,12 +5,14 @@
     "min-line-width": "A line layer is at least this many pixels wide at this zoom.",
     "line-weight-order": "Line layers ranked heaviest first, asserted on the widths the style actually ships.",
     "paint-order": "[under, over] — the second layer is painted after the first.",
-    "has-casing": "The layer ships a `-case` layer beneath it, wider than its own stroke."
+    "has-casing": "The layer ships a `-case` layer beneath it, wider than its own stroke.",
+    "smooth-bends": "Every way is drawn with round caps and round joins. A mitred join spikes where a walkway turns and a butt cap leaves a square end at every segment break, which is what makes a curved midway read as a run of straight sticks.",
+    "area-edge-drawn-as-outline": "A layer that draws only an outline is allowed exactly when the area it outlines is itself painted as a shape, below it. `shapeBeneath` names that fill."
   },
   "decisions": [
     {
       "id": "areas-are-shapes-not-lines",
-      "asked": "things like parking lots and thick wall areas use shapes over just lines",
+      "asked": "walkways and broad areas use shapes and smooth bends",
       "status": "enforced",
       "rule": "area-layers-are-shapes",
       "params": {
@@ -26,7 +28,7 @@
           "building"
         ]
       },
-      "why": "A parking lot outlined is a lot you read as a fence. Ground the guest walks on, parks on or stands in front of is an area in truth, so it is an area on the map — the outline is the shape's edge, never the whole of it."
+      "why": "A parking lot outlined is a lot you read as a fence. Broad ground — the lot, the lake, the lawn, the building footprint — is an area in truth, so it is an area on the map, and the outline is the shape's edge rather than the whole of it."
     },
     {
       "id": "coaster-track-is-the-heaviest-line",
@@ -91,14 +93,43 @@
       "why": "One wide line in the ground colour under the path. Without it a midway crossing a lawn has no edge and reads as a gap in the grass."
     },
     {
-      "id": "park-boundary-drawn-as-a-shape",
-      "asked": "thick wall areas use shapes over just lines",
-      "status": "pending",
-      "covers_layers": [
-        "boundary"
-      ],
-      "question": "`boundary` is the only area layer still painted as a bare 1.5px outline, and it is the only wall-like thing the map has: OpenStreetMap walls and fences (`barrier=wall`, `barrier=fence`) match no rule in packages/venue-builder/lib/osm-tags.mjs, so they are dropped before the app ever sees them. Filling `boundary` is not the fix — it sits above every ground layer in WORLD_LAYERS, so a fill there paints over the lake. Which does this decision mean: (a) the park perimeter drawn as a wall band with real thickness, (b) a new `wall` layer carried from OSM barriers through the builder, or (c) both?",
-      "why": "Recorded rather than guessed. A decision nobody wrote down is the one that reverted; a decision guessed at wrong is the one that ships wrong and stays."
+      "id": "ways-bend-smoothly",
+      "asked": "walkways and broad areas use shapes and smooth bends",
+      "status": "enforced",
+      "rule": "smooth-bends",
+      "params": {
+        "layers": [
+          "path",
+          "service",
+          "slide",
+          "coaster",
+          "boundary"
+        ]
+      },
+      "why": "A midway is a curve, and MapLibre's default join is a mitre: every bend in it spikes and every segment break ends square, which is what turns a drawn walkway into a run of straight sticks. Round caps and joins are the whole of what makes a way read as one continuous shape."
+    },
+    {
+      "id": "walkways-have-a-width-you-can-see",
+      "asked": "walkways and broad areas use shapes and smooth bends",
+      "status": "enforced",
+      "rule": "min-line-width",
+      "params": {
+        "layer": "path",
+        "zoom": 16,
+        "atLeast": 2.4
+      },
+      "why": "A walkway a guest is meant to follow with a phone at arm's length is a shape with width, not a hairline. Paired with the casing below it, that width is what gives the midway an edge against the lawn."
+    },
+    {
+      "id": "park-edge-outlines-a-shape",
+      "asked": "walkways and broad areas use shapes and smooth bends",
+      "status": "enforced",
+      "rule": "area-edge-drawn-as-outline",
+      "params": {
+        "layer": "boundary",
+        "shapeBeneath": "park"
+      },
+      "why": "`boundary` is the one area layer drawn as a line, and it is allowed to be: it is the edge of the `park` fill directly beneath it, and it sits above every ground layer, so filling it would paint over the lake. The rule holds it to that — take the park fill away and the boundary becomes a bare outline, and this fails."
     }
   ]
 }

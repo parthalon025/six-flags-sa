@@ -94,9 +94,19 @@ const WORLD_PAINT = Object.freeze({
   water: (p) => ({ type: 'fill', paint: { 'fill-color': p('waterFill'), 'fill-outline-color': p('waterEdge') } }),
   pool: (p) => ({ type: 'fill', paint: { 'fill-color': p('poolFill'), 'fill-outline-color': p('poolEdge') } }),
   // A line layer over a polygon source draws its outline, which is all the
-  // park boundary ever was.
-  boundary: (p) => ({ type: 'line', paint: { 'line-color': p('groundEdge'), 'line-width': 1.5 } }),
-  service: (p) => ({ type: 'line', paint: { 'line-color': p('path').casing, 'line-width': 1 } }),
+  // park boundary ever was — the edge of the `park` fill directly beneath it,
+  // not a shape of its own. Round-joined so the perimeter curves rather than
+  // spiking at every surveyed corner.
+  boundary: (p) => ({
+    type: 'line',
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': p('groundEdge'), 'line-width': 1.5 },
+  }),
+  service: (p) => ({
+    type: 'line',
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': p('path').casing, 'line-width': 1 },
+  }),
   path: (p) => ({
     type: 'line',
     layout: { 'line-cap': 'round', 'line-join': 'round' },
@@ -109,7 +119,11 @@ const WORLD_PAINT = Object.freeze({
     type: 'fill',
     paint: { 'fill-color': p('building').fill, 'fill-outline-color': p('building').stroke },
   }),
-  slide: (p) => ({ type: 'line', paint: { 'line-color': p('poolEdge'), 'line-width': 2 } }),
+  slide: (p) => ({
+    type: 'line',
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': p('poolEdge'), 'line-width': 2 },
+  }),
   // Track is the landmark a guest navigates a park by, and it flies over the
   // busiest ground on the map — so it is drawn as structure rather than as a
   // hairline: the heaviest line in the World tier, ramped so it keeps that
