@@ -945,6 +945,53 @@ export function certifyStyleContract({
     }));
   }
 
+  /* Track against the midway it runs beside.
+   *
+   * `style_track_presence` above compares each track sample to the terrain
+   * UNDER it, and `style_road_hierarchy` compares road ink to the floor.
+   * Both can pass while track and midway are the same ink: two linework
+   * layers, each clear of the ground, indistinguishable from each other.
+   * That is not hypothetical — watercolor-quest shipped track and path on
+   * one hex (ΔE 0.0), and every existing row passed.
+   *
+   * A kit may legitimately share ink between the two — the note on
+   * `style_track_presence` says so, and blueprint-survey is the case. That
+   * is an opt-out a profile states, not a silence: an exempt kit still
+   * emits a passing row carrying its reason, so a reader sees the choice
+   * rather than the absence of a check.
+   */
+  if (groups.track?.length && medians.road) {
+    const rule = profile.structures?.trackVsRoad ?? null;
+    const margin = rule?.minDeltaE
+      ?? profile.structures?.coasterVsUnderlay?.minDeltaE ?? 10;
+    if (rule?.sharedInk) {
+      checks.push(check({
+        key: 'style_track_vs_path',
+        claim: 'this kit shares ink between track and midway by design',
+        pass: true,
+        evidence: `exempt: ${rule.sharedInk}`,
+        confidence: 0.6,
+        falsifier: 'a kit claiming shared ink while carrying no other channel that separates them',
+        soWhat: 'a stated exemption is reviewable; a missing check is not',
+      }));
+    } else {
+      // Median against median: one ink per layer is the question, so the
+      // per-vertex spread that `style_track_presence` needs is noise here.
+      const measured = medians.track ? dE(medians.track, medians.road) : null;
+      checks.push(check({
+        key: 'style_track_vs_path',
+        claim: `ride track separates from the midway beside it (ΔE ≥ ${margin})`,
+        pass: measured === null || measured >= margin,
+        evidence: measured === null
+          ? 'no track median sampled in this bake — nothing to compare'
+          : `track vs road ΔE ${measured}`,
+        confidence: 0.85,
+        falsifier: 'a kit whose coaster and footpath are one ink, each clear of the ground and not of each other',
+        soWhat: 'a coaster you cannot tell from a footpath is not a coaster on the map',
+      }));
+    }
+  }
+
   if (groups.badge?.length && fams.badge) {
     const perBadge = {};
     for (const e of groups.badge) {

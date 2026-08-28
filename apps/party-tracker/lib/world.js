@@ -306,7 +306,12 @@ export const SKINS = {
       midway: '#756276',
       midwayCase: '#F4EFDF',
       structure: '#B8A68D',
-      structureEdge: '#756276',
+      /* Burnt sienna, a watercolour pigment, against the plum-grey midway.
+         Both were '#756276' — ΔE 0.0 — so a coaster and a footpath were one
+         ink. Every style-contract row still passed: track was clear of the
+         terrain under it and road ink was clear of the paper, and nothing
+         compared the two to each other. `style_track_vs_path` does now. */
+      structureEdge: '#9C5A45',
       groundEdge: '#C9BFAE',
     },
     traits: { mapSkin: 'watercolor-quest', mapStyle: 'watercolor' },
