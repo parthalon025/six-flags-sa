@@ -122,20 +122,32 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
      the next camera move, and the double-draw would persist for however long
      the guest sat still after the image landed. */
   let lastPlan = null;
+  /* What the tier was last told, so the `sourcedata` handler below can do
+     nothing when nothing changed. `setLayoutProperty` itself makes the map
+     emit `sourcedata`, so a handler that re-applies unconditionally re-enters
+     on its own writes and never settles — the map thread saturates, and the
+     symptom is not an error but a page that stops answering: clicks time out
+     and lists come back empty. Comparing first is what breaks that loop. */
+  let lastCovered = null;
 
-  const applyPlan = (m, plan) => {
-    for (const band of BANDS) {
-      const layer = bandLayer(band.id);
-      if (!m.getLayer(layer)) continue;
-      m.setLayoutProperty(layer, 'visibility', plan.draw.includes(band.id) ? 'visible' : 'none');
-    }
-    applyWorldTier(m, plan.worldLod, bakeCovering(m, plan));
+  const applyPlan = (m, plan, { force = false } = {}) => {
+    const covered = bakeCovering(m, plan);
+    if (!force && covered === lastCovered) return;
+    lastCovered = covered;
+    applyWorldTier(m, plan.worldLod, covered);
   };
 
   const paint = (plan) =>
     whenLoaded((m) => {
       lastPlan = plan;
-      applyPlan(m, plan);
+      for (const band of BANDS) {
+        const layer = bandLayer(band.id);
+        if (!m.getLayer(layer)) continue;
+        m.setLayoutProperty(layer, 'visibility', plan.draw.includes(band.id) ? 'visible' : 'none');
+      }
+      // A camera move changes the LOD groups even when the bake state has not,
+      // so the plan path always applies; only the event path is deduped.
+      applyPlan(m, plan, { force: true });
     });
 
   return {
