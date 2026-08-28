@@ -24,6 +24,7 @@ import {
   parkMapSearchRequired,
   applyParkMapCandidatesToSources,
   downloadParkMapImage,
+  pickParkMapForDownload,
 } from './park-map-research.mjs';
 
 export const llmResearchCacheFile = (id) => venueSidecar(id, 'llm-research-cache.json');
@@ -36,6 +37,7 @@ export {
   parkMapSearchRequired,
   applyParkMapCandidatesToSources,
   downloadParkMapImage,
+  pickParkMapForDownload,
 } from './park-map-research.mjs';
 
 const EXTRACT_SYSTEM = `You extract structured research candidates from an official theme-park website listing.
@@ -328,10 +330,9 @@ export async function runOpenResearch(venueId, pois, opts = {}) {
 
   let mapsApplied = null;
   let downloaded = null;
-  if (opts.fetchMaps) {
-    const remote = (merged.parkMaps || []).find(
-      (m) => m.imageUrl && m.confidence !== 'low' && m.source === 'llm_park_map_search',
-    ) || (merged.parkMaps || []).find((m) => m.imageUrl && m.mapish);
+  const shouldFetchMaps = opts.fetchMaps ?? opts.fetch;
+  if (shouldFetchMaps) {
+    const remote = pickParkMapForDownload(merged.parkMaps || []);
     if (remote?.imageUrl) {
       downloaded = await downloadParkMapImage(venueId, remote.imageUrl, {
         year: remote.year || undefined,

@@ -60,25 +60,66 @@ function absolutize(href, baseUrl) {
   }
 }
 
+function decodeHtmlEntities(s) {
+  return String(s)
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"');
+}
+
+/** Pixel area from Sanity-style `-{w}x{h}.ext` filenames; 0 when unknown. */
+function imagePixelArea(url) {
+  const m = String(url).match(/-(\d+)x(\d+)\.(?:jpe?g|png|webp|gif)/i);
+  if (!m) return 0;
+  return Number(m[1]) * Number(m[2]);
+}
+
+function isLikelyParkMapAsset(url, via) {
+  if (MAPISH_RE.test(url) || MAPISH_RE.test(via || '')) return true;
+  const area = imagePixelArea(url);
+  if (area >= 500_000) return true;
+  if (/cdn\.sanity\.io/i.test(url) && area >= 400_000) return true;
+  return false;
+}
+
+function decodeNextImageProxy(raw) {
+  const text = decodeHtmlEntities(String(raw || ''));
+  const m = text.match(/[?&]url=([^&]+)/i);
+  if (!m) return null;
+  try {
+    return decodeURIComponent(m[1]);
+  } catch {
+    return null;
+  }
+}
+
 /** Pull map-like image/PDF URLs from an HTML page. */
 export function extractParkMapAssetUrls(html, pageUrl) {
-  const text = String(html || '');
+  const text = decodeHtmlEntities(String(html || ''));
   const found = new Map();
 
   const consider = (raw, via) => {
-    const url = absolutize(String(raw || '').trim().replace(/^<|>$/g, ''), pageUrl);
-    if (!url || !/^https?:/i.test(url)) return;
-    if (!MAP_ASSET_RE.test(url) && !MAPISH_RE.test(url)) return;
-    const key = url.split('#')[0];
-    if (found.has(key)) return;
-    const mapish = MAPISH_RE.test(url) || MAPISH_RE.test(via || '');
-    found.set(key, {
-      imageUrl: key,
-      pageUrl: pageUrl || null,
-      via: via || 'html',
-      mapish,
-      source: 'html_extract',
-    });
+    const decoded = decodeHtmlEntities(String(raw || '').trim().replace(/^<|>$/g, ''));
+    const candidates = [decoded];
+    const proxied = decodeNextImageProxy(decoded);
+    if (proxied) candidates.push(proxied);
+
+    for (const candidate of candidates) {
+      const url = absolutize(candidate, pageUrl);
+      if (!url || !/^https?:/i.test(url)) continue;
+      if (!MAP_ASSET_RE.test(url) && !MAPISH_RE.test(url)) continue;
+      const key = url.split('#')[0];
+      if (found.has(key)) continue;
+      const mapish = isLikelyParkMapAsset(url, via);
+      found.set(key, {
+        imageUrl: key,
+        pageUrl: pageUrl || null,
+        via: via || 'html',
+        mapish,
+        source: 'html_extract',
+      });
+    }
   };
 
   for (const m of text.matchAll(/\bsrc=["']([^"']+)["']/gi)) consider(m[1], 'img.src');
@@ -93,8 +134,39 @@ export function extractParkMapAssetUrls(html, pageUrl) {
       consider(u, 'srcset');
     }
   }
+  for (const m of text.matchAll(/(?:imageSrcSet|src)=["']([^"']*_next\/image[^"']+)["']/gi)) {
+    consider(m[1], 'next.image');
+  }
+  for (const m of text.matchAll(/url=(https%3A%2F%2F[^&"'\s]+)/gi)) {
+    consider(m[0], 'next.url');
+  }
+  for (const m of text.matchAll(/(https:\/\/cdn\.sanity\.io\/images\/[^\s"'<>]+?\.(?:png|jpe?g|webp|gif))/gi)) {
+    consider(m[1], 'sanity.inline');
+  }
 
-  return [...found.values()].sort((a, b) => Number(b.mapish) - Number(a.mapish));
+  return [...found.values()].sort((a, b) => {
+    const mapish = Number(b.mapish) - Number(a.mapish);
+    if (mapish !== 0) return mapish;
+    return imagePixelArea(b.imageUrl) - imagePixelArea(a.imageUrl);
+  });
+}
+
+/** Pick the best remote park-map asset to download (deterministic, no LLM). */
+export function pickParkMapForDownload(parkMaps = []) {
+  const ranked = [...parkMaps]
+    .filter((m) => m.imageUrl)
+    .sort((a, b) => {
+      const conf = { high: 3, moderate: 2, low: 1 };
+      const c = (conf[b.confidence] || 0) - (conf[a.confidence] || 0);
+      if (c !== 0) return c;
+      const mapish = Number(b.mapish) - Number(a.mapish);
+      if (mapish !== 0) return mapish;
+      return imagePixelArea(b.imageUrl) - imagePixelArea(a.imageUrl);
+    });
+  return ranked.find((m) => m.confidence !== 'low')
+    || ranked.find((m) => m.mapish)
+    || ranked[0]
+    || null;
 }
 
 /**

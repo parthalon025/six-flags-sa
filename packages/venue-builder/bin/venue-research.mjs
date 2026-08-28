@@ -9,9 +9,10 @@
  * Reads what is on disk — bundle, overrides, source catalogue, recipe — and
  * prints judgement hints (name pairings, OSM gaps) plus a sourcing plan.
  * With --ai and VENUE_LLM_API_KEY set, asks a model to review the packet.
- * With --fetch, pulls the park's official website from URLs in sources.json.
+ * With --fetch, pulls the park's official website from URLs in sources.json
+ * and refreshes llm-research-cache.json (deterministic park-map scrape + optional download).
  *
- * This never writes venue files and never runs during a build.
+ * This never runs during a build; --fetch/--ai write llm-research-cache.json and may download maps/.
  */
 
 import path from 'node:path';
@@ -21,6 +22,7 @@ import { llmConfig, reviewResearch } from '../lib/venue-llm.mjs';
 import { loadVenuePacket } from '../lib/venue-packet.mjs';
 import { officialUrls } from '../lib/venue-official-site.mjs';
 import { syncExternalSources, EXTERNAL_ADAPTER_IDS } from '../lib/external-research.mjs';
+import { runOpenResearch } from '../lib/open-research.mjs';
 
 const USAGE = `
 Research assistant for venue builds — judgement, sourcing, optional AI review.
@@ -328,6 +330,17 @@ async function main() {
       browser: args.browser,
       parksApi: args.parksApi,
     }));
+    if (args.fetch || args.ai) {
+      const pois = readJson(path.join(VENUE_DIR, `${id}.pois.json`), []) || [];
+      await runOpenResearch(id, pois, {
+        fetch: args.fetch,
+        offline: args.offline,
+        browser: args.browser,
+        ai: args.ai,
+        fetchMaps: args.fetch,
+        applyMaps: args.fetch,
+      });
+    }
   }
 
   if (args.ai) {

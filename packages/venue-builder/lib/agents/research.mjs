@@ -41,11 +41,12 @@ export async function runResearchAgent(venueId, opts = {}) {
     const pois = readJson(path.join(VENUE_DIR, `${venueId}.pois.json`), []) || [];
     try {
       openResearch = await runOpenResearch(venueId, pois, {
-        fetch: false,
-        offline: true,
-        browser: false,
+        fetch: opts.fetch ?? false,
+        offline: opts.offline ?? true,
+        browser: opts.browser ?? false,
         ai: opts.ai ?? false,
         applyAliases: opts.applyAliases ?? false,
+        fetchMaps: opts.fetchMaps ?? opts.fetch ?? false,
         // Test-only redirect for the sidecar write; unset in every real build run.
         cacheFile: opts.researchCacheFile,
       });

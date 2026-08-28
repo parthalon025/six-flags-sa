@@ -8198,15 +8198,13 @@ await check('certify emits a birth certificate with nine gates', () => {
   return true;
 });
 
-await check('kings-island passes certification except outstanding park-map image', () => {
+await check('kings-island passes certification with acquired park-map image (#434)', () => {
   const doc = certifyVenue('kings-island', { write: false });
   const route = doc.checks.find((c) => c.key === 'route');
   assert.equal(route.pass, true);
   const parkMap = doc.checks.find((c) => c.key === 'park_map_research');
-  assert.equal(parkMap.pass, false, 'no local maps/ image and no LLM park-map search cache yet');
-  const others = doc.checks.filter((c) => c.key !== 'park_map_research');
-  assert.ok(others.every((c) => c.pass), others.filter((c) => !c.pass).map((c) => c.key).join(', '));
-  assert.equal(doc.certified, false);
+  assert.equal(parkMap.pass, true, 'local maps/ image from deterministic Cedar Fair HTML scrape');
+  assert.equal(doc.certified, true);
   return true;
 });
 await check('route QA enforces the Kings Island island standard', () => {
@@ -8743,10 +8741,12 @@ await check('LLM park-map search extracts HTML assets and merges as required', a
       <a href="/maps/2026-park-map.webp">Download map</a>
       <img src="https://cdn.example.test/hero.jpg" />
       <img src="https://cdn.example.test/guest-park-map-2026.png" alt="Park map" />
+      <link rel="preload" as="image" imageSrcSet="/_next/image?url=https%3A%2F%2Fcdn.sanity.io%2Fimages%2Fdemo%2Fproduction%2Fparkmap-1633x980.png&amp;w=1920&amp;q=75 1920w" />
     </body></html>`;
   const assets = extractParkMapAssetUrls(html, 'https://example.test/park-map/');
   assert.ok(assets.some((a) => /park-map-2026\.png/.test(a.imageUrl)));
   assert.ok(assets.some((a) => /2026-park-map\.webp/.test(a.imageUrl)));
+  assert.ok(assets.some((a) => /parkmap-1633x980\.png/.test(a.imageUrl)));
 
   const catalog = {
     sources: [{
