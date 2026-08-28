@@ -158,7 +158,7 @@ module.exports = {
     {
       name: "venue-builder-core-orchestration-is-sanctioned",
       comment:
-        "Core lib/*.mjs reaching into agents/, operators/, or adapters/ is an orchestration seam, not the default. Only the files listed here do it today (build-pipeline, venue-official-site, the external-*/venue-certify/venue-packet adapter consumers) — a new core file that needs the same reach adds itself here deliberately rather than importing silently.",
+        "Core lib/*.mjs reaching into agents/, operators/, or adapters/ is an orchestration seam, not the default. Only the files listed here do it today (build-pipeline, venue-official-site, the external-*/venue-certify/venue-packet adapter consumers, venue-io, inventory-gaps) — a new core file that needs the same reach adds itself here deliberately rather than importing silently.",
       severity: "error",
       from: {
         path: "^packages/venue-builder/lib/[^/]+\\.mjs$",
@@ -169,6 +169,24 @@ module.exports = {
           "^packages/venue-builder/lib/external-research\\.mjs$",
           "^packages/venue-builder/lib/venue-certify\\.mjs$",
           "^packages/venue-builder/lib/venue-packet\\.mjs$",
+          // venue-io.mjs's gapsDocumentFor reads each declared adapter's cache
+          // file (adapters/_cache.mjs:adapterCacheFile) to fold adapter-sourced
+          // gap notes into the shipped gaps document — the same adapter-cache
+          // read venue-certify.mjs (already sanctioned above) does for its own
+          // brief. Genuine orchestration, not an accidental import: it is the
+          // step that gathers sidecar + adapter data before handing off to
+          // ship-gaps.mjs, which deliberately does not import venue-io.mjs
+          // (see ship-gaps.mjs's header) to keep that handoff one-directional.
+          "^packages/venue-builder/lib/venue-io\\.mjs$",
+          // inventory-gaps.mjs compares each venue's parks-api/queue-times
+          // adapter cache against shipped POIs to find inventory under-coverage
+          // — the same compareParksApiToBundle/compareQueueTimesToBundle calls
+          // external-research.mjs, external-claims.mjs, venue-certify.mjs, and
+          // venue-packet.mjs (already sanctioned above) already make. It is the
+          // extracted, single-purpose home for that comparison so ship-gaps.mjs
+          // can turn under-coverage into shipped gaps + quest seeds without
+          // reaching into the adapters itself.
+          "^packages/venue-builder/lib/inventory-gaps\\.mjs$",
         ],
       },
       to: { path: "^packages/venue-builder/lib/(agents|operators|adapters)/" },

@@ -5306,6 +5306,58 @@ await check('slug-key overrides resolve via addressBook, not display name', asyn
   return true;
 });
 
+await check('a rename override survives rebuild only while the ledger pins the OSM element', async () => {
+  /* Cedar Point shipped "Lake Eerie Nor'easter" and "Watterin' Hole" to guests
+     because its two spelling overrides silently stopped applying. The shape of
+     that failure, pinned here so it cannot come back unnoticed.
+
+     assignKeys stores the name a place ended the build with — the *corrected*
+     one, after overrides. On the next rebuild OpenStreetMap hands back the raw
+     spelling. Step 1 rematches on the OSM element; step 2 only compares
+     baseKeyFor(name) against baseKeyFor(name). So a record carrying no `osm`
+     has nothing but the name to match on, the two spellings disagree, the key
+     retires, a suffixed one is issued, and an override filed under the base key
+     lands on nothing. Nothing throws. The park just starts shipping the typo. */
+  const raw = "Lake Eerie Nor'easter"; // what OSM says
+  const fixed = "Lake Erie Nor'easter"; // what the override makes it
+  const at = { lat: 41.488522, lng: -82.687185 };
+  const ledgerWith = (rec) => ({ venue: 'cedar-point', keys: { 'lake-eerie-nor-easter': rec } });
+
+  // No `osm` on the record: step 1 cannot help, step 2's names disagree.
+  const rotated = assignKeys(
+    [{ n: raw, c: 'ride', ...at, osm: 'way/106356823' }],
+    ledgerWith({ n: fixed, c: 'ride', at: '41.488522,-82.687185' }),
+    { venue: 'cedar-point', keepOsm: true },
+  );
+  assert.notEqual(
+    rotated.pois[0].i,
+    'lake-eerie-nor-easter',
+    'a nameless-match ledger record should rotate the key — if this now holds, step 2 '
+      + 'learned to bridge the override rename and this test is pinning the wrong trap',
+  );
+  assert.equal(
+    resolveOverride(addressBook(rotated.pois), 'lake-eerie-nor-easter', { n: fixed }),
+    null,
+    'an override filed under the retired base key must land on nothing — that silent '
+      + 'null is the whole defect',
+  );
+
+  // Same rename, but the record pins the element: the key holds.
+  const held = assignKeys(
+    [{ n: raw, c: 'ride', ...at, osm: 'way/106356823' }],
+    ledgerWith({ n: fixed, c: 'ride', at: '41.488522,-82.687185', osm: 'way/106356823' }),
+    { venue: 'cedar-point', keepOsm: true },
+  );
+  assert.equal(
+    held.pois[0].i,
+    'lake-eerie-nor-easter',
+    'with the OSM element pinned, step 1 rematches and the key survives the rename',
+  );
+  const hit = resolveOverride(addressBook(held.pois), 'lake-eerie-nor-easter', { n: fixed });
+  assert.ok(hit?.length, 'and the override still reaches its Place');
+  return true;
+});
+
 await check('KI Xtreme Skyflyer override is ledger-keyed and survives rename', async () => {
   const { addressBook, assignKeys, resolveOverride } = await import(
     '../../packages/venue-builder/lib/venue-ids.mjs'

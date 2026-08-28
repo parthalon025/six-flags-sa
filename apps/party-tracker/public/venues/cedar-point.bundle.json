@@ -2,9 +2,10 @@
   "version": 1,
   "venue": "cedar-point",
   "basedOn": {
-    "map": "2026-08-09"
+    "map": "2026-08-09",
+    "revisionId": "07f1f9ba-de84-4a85-890b-52a80a96996a"
   },
-  "bytes": 623758,
+  "bytes": 623756,
   "files": [
     {
       "path": "/venues/cedar-point.gaps.json",
@@ -18,38 +19,38 @@
     },
     {
       "path": "/venues/cedar-point.pois.json",
-      "bytes": 72145,
-      "sha256": "99ab28c4bdd69f85a2624f86e4fae30ad34310f0e494dc48366119cb4290673a"
+      "bytes": 72143,
+      "sha256": "cfb7fd820dce8efacfc5906a46ad832c2669785c88e94d966e7436646616d75d"
     },
     {
       "path": "/venues/cedar-point/display/blueprint-survey.visual.json",
       "bytes": 4286,
-      "sha256": "d21d7cdfc444571f397a65c420c2f4a6f07ad9d28b47426f1177ae2e3bcddb89"
+      "sha256": "c84b42cc901e8830ef35b961fab24f4b7db054cbcef990d5d88a318cd16a992c"
     },
     {
       "path": "/venues/cedar-point/display/layered-atlas.visual.json",
       "bytes": 4283,
-      "sha256": "3ba0dc224dd0f3faee8281aa00f3f682a5364ee0ee733e45fe3edd295354b217"
+      "sha256": "87f8737aa3c2a897f66886d80970cf5bd7f8ea0866852ea96c6bc753be6a146f"
     },
     {
       "path": "/venues/cedar-point/display/midnight-carnival.visual.json",
       "bytes": 4312,
-      "sha256": "ec2f4025815410580c18a8031eacd36c975ec563c1132aa4b2b4986ed1a05355"
+      "sha256": "a0040a187d3d24c612de71d46d06f1d9d9d15f6334cc01b4572d7bb3c536fa4e"
     },
     {
       "path": "/venues/cedar-point/display/park-midnight.visual.json",
       "bytes": 4212,
-      "sha256": "3ba0f017698addf6b375519e115521245660e5c9e96155a00799fb63ce77cf05"
+      "sha256": "e8e0156311dec30bfe7edd4217392af63289f171ddc536a9b8ba6275f0870018"
     },
     {
       "path": "/venues/cedar-point/display/trail.visual.json",
       "bytes": 4179,
-      "sha256": "adf722e51c734607e1eed630e99fb48022432f2a68372ba464325e16aaba5e97"
+      "sha256": "f391ddd9123c23789f6e759b89170bebda6bd4035a0d732a47e576de3a623a74"
     },
     {
       "path": "/venues/cedar-point/display/watercolor-quest.visual.json",
       "bytes": 4284,
-      "sha256": "5e15e2c99522402224263cbdd631221602cc358101b92187f21e154f0911849d"
+      "sha256": "10651e03291b8bdc64ba9099ab24838544c722c27a3c1c2839b4bbf7c1e92cd0"
     }
   ]
 }

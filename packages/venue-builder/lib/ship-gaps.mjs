@@ -4,7 +4,8 @@
  * Builder ask seeds and low-confidence queue evidence stay in certification
  * sidecars. This module is the seam that ships what guests can settle:
  * height, queue, path, path_disputed, restroom, food, gate, camping, verify
- * (stale adapter cache). Credits, aliases, locality, and live ops never go
+ * (stale adapter cache), inventory (adapter under-coverage, from
+ * inventory-gaps.mjs). Credits, aliases, locality, and live ops never go
  * in `*.gaps.json`.
  *
  * Place keys `i` are unique. Invent one Gap per `i`. A display name is only
@@ -27,6 +28,7 @@ export const SHIPPED_GAP_TYPES = Object.freeze([
   'gate',
   'camping',
   'verify',
+  'inventory',
 ]);
 
 /** Rides farther than this from walkable geometry get a targeted path Gap. */
@@ -194,10 +196,10 @@ function presenceAndCampingSeeds(meta, pois) {
  * Place key `i` (not per display name). Path Gaps need a `map`; omit it in
  * unit tests that are not about walk geometry.
  *
- * @param {{ venueId: string, seeds?: object[], pois?: object[], map?: object | null }} opts
+ * @param {{ venueId: string, seeds?: object[], pois?: object[], map?: object | null, inventoryGaps?: { type: string, target: string | null }[] }} opts
  * @returns {{ version: number, venue: string, gaps: { type: string, target: string | null }[] }}
  */
-export function shippedGapsDocument({ venueId, seeds = [], pois = [], map = null } = {}) {
+export function shippedGapsDocument({ venueId, seeds = [], pois = [], map = null, inventoryGaps = [] } = {}) {
   const seen = new Set();
   const gaps = [];
   const add = (type, target) => {
@@ -209,12 +211,32 @@ export function shippedGapsDocument({ venueId, seeds = [], pois = [], map = null
 
   for (const gap of heightGapsFromPois(pois)) add(gap.type, gap.target);
 
+  for (const gap of inventoryGaps || []) {
+    if (gap && gap.type === 'inventory') add('inventory', gap.target);
+  }
+
   for (const seed of seeds) {
     const type = shippedTypeForSeed(seed);
     if (!type) continue;
-    if (type === 'height' || type === 'queue' || type === 'path_disputed') {
+    if (type === 'height' || type === 'queue') {
       const target = resolveGapTarget(pois, seed.target);
       if (target) add(type, target);
+      continue;
+    }
+    if (type === 'path_disputed') {
+      // A ride-attributed dispute (evidence_conflict) resolves to one Place
+      // key like height/queue — ambiguous or unmatched targets are skipped,
+      // not forked (resolveGapTarget's contract). But an imagery extraction
+      // can dispute the path itself with no ride in play (routeImageryExtractions
+      // ships `target: null` on purpose) — that Gap still has to reach the
+      // phone, so an intentionally-untargeted dispute ships as-is instead of
+      // being dropped for "no target".
+      if (seed.target == null) {
+        add(type, null);
+      } else {
+        const target = resolveGapTarget(pois, seed.target);
+        if (target) add(type, target);
+      }
       continue;
     }
     if (type === 'verify') {

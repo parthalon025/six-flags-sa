@@ -45,6 +45,7 @@
     "venues:factory-validate": "node --env-file-if-exists=.env packages/venue-builder/bin/factory-validate.mjs",
     "venues:consolidate": "node --env-file-if-exists=.env packages/venue-builder/bin/consolidate.mjs",
     "venues:steward-review": "node --env-file-if-exists=.env packages/venue-builder/bin/steward-review.mjs",
+    "venues:export": "node --env-file-if-exists=.env packages/venue-builder/bin/export-bundle.mjs",
     "export:databricks": "node scripts/export-for-databricks.mjs",
     "consolidate:export": "node scripts/run-consolidate-from-export.mjs --queue data/databricks/bronze/consolidate-export.json",
     "databricks:setup": "node scripts/databricks-workspace-setup.mjs",

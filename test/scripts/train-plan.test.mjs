@@ -135,18 +135,23 @@ const FIXTURES = {
   },
   h11: {
     before: [
-      { 'apps/party-tracker/package.json': '{"dependencies":{"maplibre-gl":"^5"}}', 'apps/party-tracker/components/ParkMap.jsx': 'export default function ParkMap() {}', 'apps/party-tracker/components/ParkMapGl.jsx': 'x', 'apps/party-tracker/lib/mapLibreConfigured.js': 'export function parkMapRenderer() {}' },
-      { 'apps/party-tracker/package.json': '{"dependencies":{"next":"^15"}}', 'apps/party-tracker/components/ParkMap.jsx': "import { overlayGeo } from '../lib/overlayGeo.js';", 'apps/party-tracker/components/ParkMapGl.jsx': 'x', 'apps/party-tracker/lib/mapLibreConfigured.js': 'export function parkMapRenderer() {}' },
+      // no maplibre dependency: nothing shows the renderer was even added
+      { 'apps/party-tracker/package.json': '{"dependencies":{"next":"^15"}}', 'apps/party-tracker/components/ParkMapGl.jsx': 'x', 'apps/party-tracker/lib/mapLibreConfigured.js': 'export function parkMapRenderer() {}', 'apps/party-tracker/lib/overlayGeo.js': 'export const OVERLAY_LAYERS = [];', 'apps/party-tracker/lib/mapViewMaplibre.js': "import { OVERLAY_LAYERS } from './overlayGeo.js';" },
       // no GL component: a dependency in package.json is not a renderer
-      { 'apps/party-tracker/package.json': '{"dependencies":{"maplibre-gl":"^5"}}', 'apps/party-tracker/components/ParkMap.jsx': "import { overlayGeo } from '../lib/overlayGeo.js';", 'apps/party-tracker/lib/mapLibreConfigured.js': 'export function parkMapRenderer() {}' },
+      { 'apps/party-tracker/package.json': '{"dependencies":{"maplibre-gl":"^5"}}', 'apps/party-tracker/lib/mapLibreConfigured.js': 'export function parkMapRenderer() {}', 'apps/party-tracker/lib/overlayGeo.js': 'export const OVERLAY_LAYERS = [];', 'apps/party-tracker/lib/mapViewMaplibre.js': "import { OVERLAY_LAYERS } from './overlayGeo.js';" },
       // no renderer switch: nothing can ask for the ported path
-      { 'apps/party-tracker/package.json': '{"dependencies":{"maplibre-gl":"^5"}}', 'apps/party-tracker/components/ParkMap.jsx': "import { overlayGeo } from '../lib/overlayGeo.js';", 'apps/party-tracker/components/ParkMapGl.jsx': 'x' },
+      { 'apps/party-tracker/package.json': '{"dependencies":{"maplibre-gl":"^5"}}', 'apps/party-tracker/components/ParkMapGl.jsx': 'x', 'apps/party-tracker/lib/overlayGeo.js': 'export const OVERLAY_LAYERS = [];', 'apps/party-tracker/lib/mapViewMaplibre.js': "import { OVERLAY_LAYERS } from './overlayGeo.js';" },
+      // the GL renderer exists but does not consume the overlay module — the
+      // exact shape of the bug this probe used to miss (it read ParkMap.jsx,
+      // where overlayGeo no longer lives, instead of the GL adapter)
+      { 'apps/party-tracker/package.json': '{"dependencies":{"maplibre-gl":"^5"}}', 'apps/party-tracker/components/ParkMapGl.jsx': 'x', 'apps/party-tracker/lib/mapLibreConfigured.js': 'export function parkMapRenderer() {}', 'apps/party-tracker/lib/overlayGeo.js': 'export const OVERLAY_LAYERS = [];', 'apps/party-tracker/lib/mapViewMaplibre.js': 'export function createMapLibreRenderer() {}' },
     ],
     after: {
       'apps/party-tracker/package.json': '{"dependencies":{"maplibre-gl":"^5"}}',
-      'apps/party-tracker/components/ParkMap.jsx': "import { overlayGeo } from '../lib/overlayGeo.js';",
       'apps/party-tracker/components/ParkMapGl.jsx': 'export default function ParkMapGl() {}',
       'apps/party-tracker/lib/mapLibreConfigured.js': 'export function parkMapRenderer() {}',
+      'apps/party-tracker/lib/overlayGeo.js': 'export const OVERLAY_LAYERS = [];',
+      'apps/party-tracker/lib/mapViewMaplibre.js': "import { OVERLAY_LAYERS } from './overlayGeo.js';",
     },
   },
   h18: {
@@ -168,8 +173,16 @@ const FIXTURES = {
     },
   },
   h14: {
-    before: [{ 'packages/venue-builder/data/display/kits/iso.json': '{}' }],
-    after: { 'packages/venue-builder/data/display/kits/pixel-tycoon.json': '{}' },
+    before: [
+      // ledger binds pixel-tycoon, but the kit it points at was never authored
+      { 'packages/venue-builder/data/display/skins.json': '{"skins":{"pixel-tycoon":{"bakeKit":"pixel-tycoon"}}}' },
+      // the kit is on disk, but nothing in the ledger resolves it — issue #28's shape
+      { 'packages/venue-builder/data/display/kits/pixel-tycoon.json': '{}', 'packages/venue-builder/data/display/skins.json': '{"skins":{"trail":{"bakeKit":"island-brochure"}}}' },
+    ],
+    after: {
+      'packages/venue-builder/data/display/kits/pixel-tycoon.json': '{}',
+      'packages/venue-builder/data/display/skins.json': '{"skins":{"pixel-tycoon":{"bakeKit":"pixel-tycoon"}}}',
+    },
   },
   h15: {
     before: [{ [VERTICAL]: 'await runBrowserVertical();' }],

@@ -2,7 +2,8 @@
   "version": 1,
   "venue": "six-flags-fiesta-texas",
   "basedOn": {
-    "map": "2026-08-09"
+    "map": "2026-08-09",
+    "revisionId": "afb14bee-8317-4539-b9e7-2e66c296ee76"
   },
   "bytes": 385093,
   "files": [
@@ -24,32 +25,32 @@
     {
       "path": "/venues/six-flags-fiesta-texas/display/blueprint-survey.visual.json",
       "bytes": 3438,
-      "sha256": "55335def63d5d99e4728cab3d958fed470689b886fcd2d6730653db6128db2f1"
+      "sha256": "7fb17ad9779b831080def30892876160f93ca8e6ab5cf98afb428048f3ab9d25"
     },
     {
       "path": "/venues/six-flags-fiesta-texas/display/layered-atlas.visual.json",
       "bytes": 3435,
-      "sha256": "8b15028ed17f00fd6c0a03408a394209d9c9a2150ae0ed6cedef291a827643a2"
+      "sha256": "dc0c3491d30b39678bdd9178bfc5c4651476fe88ec40ecb768d96df0d4764961"
     },
     {
       "path": "/venues/six-flags-fiesta-texas/display/midnight-carnival.visual.json",
       "bytes": 3452,
-      "sha256": "48874aa9723ace61f8d172ad0c9914f2ecd87681fecb76bfa9690c729b8031cf"
+      "sha256": "d2291368f45fa0287938d3dcc4024497f5895f7690fd5bb74899c7b51db987cb"
     },
     {
       "path": "/venues/six-flags-fiesta-texas/display/park-midnight.visual.json",
       "bytes": 3352,
-      "sha256": "8a3f5bbc554136fccf4c12b8da44049ef5253b5adcbb6857e42564e6ad1914f0"
+      "sha256": "c0d58a1dea52e10939b2ce8b9ae24003b9b1a35b75989e4d74191e46da7b5d99"
     },
     {
       "path": "/venues/six-flags-fiesta-texas/display/trail.visual.json",
       "bytes": 3331,
-      "sha256": "1fd062f7c1609b1d135fd3c1122be377ea5bdb8f855e7212ad711f760a2b9387"
+      "sha256": "596984e6245b4367d099826ae34835fee5f09a053637d87eecdd5b1dc50b5a8c"
     },
     {
       "path": "/venues/six-flags-fiesta-texas/display/watercolor-quest.visual.json",
       "bytes": 3436,
-      "sha256": "990b6d7d2fa08b87dad4830399cc4c013aa318450419ea9a567bd33b20c9e212"
+      "sha256": "4a54582e56852625cf2d9b81888e54147ce49658a31fcf4bd5bdeb3bb1303aa5"
     }
   ]
 }

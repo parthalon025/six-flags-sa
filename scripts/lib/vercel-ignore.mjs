@@ -30,7 +30,7 @@ import { checkProductionRedisGuard } from './production-redis-guard.mjs';
 import { checkProductionPostgresGuard } from './production-postgres-guard.mjs';
 
 /** Agent / worktree branches — never preview unless the user directed it. */
-const AGENT_PREVIEW_BRANCH = /^(worktree-|cursor\/)/;
+const AGENT_PREVIEW_BRANCH = /^(worktree-|cursor\/|claude\/)/;
 
 export { isVersionStampOnlyChange };
 

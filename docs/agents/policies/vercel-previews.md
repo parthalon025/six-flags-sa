@@ -22,7 +22,10 @@ Needs `VERCEL_TOKEN` + `VERCEL_PROJECT_ID` (`VERCEL_TEAM_ID` optional) set on th
 ## Agents: no preview pushes by default
 
 - No branch or PR push just to "see it on Vercel" when `npm run build -w @party-tracker/app` and Playwright/manual checks suffice.
-- `cursor/*` and `worktree-*` previews are skipped by ignoreCommand unless user-directed.
+- `cursor/*`, `worktree-*` and `claude/*` previews are skipped by ignoreCommand unless
+  user-directed. `claude/*` was missing from `AGENT_PREVIEW_BRANCH` until 2026-08-28, so every
+  Claude Code agent push built a preview and drew from the 100/day account budget — the
+  opposite of what this policy promises. Add a prefix here **and** to that pattern together.
 - Human PR previews are also skipped unless user-directed — do not assume a PR needs Vercel.
 
 ## When a user-directed preview IS warranted
