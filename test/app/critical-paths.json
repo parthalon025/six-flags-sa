@@ -28,6 +28,13 @@
       "check": "the nearest-park button asks before building that park"
     },
     {
+      "id": "map-decisions-hold",
+      "slice": "Navigate",
+      "user_action": "Read a park map that still draws what was asked for — coaster track heavy enough to navigate by, parking lots as areas rather than outlines",
+      "suite": "functional",
+      "check": "the map still draws the decisions it was asked for"
+    },
+    {
       "id": "settings-credits",
       "slice": "Navigate",
       "user_action": "Tap the on-map OSM notice into Settings, see every sourced attribution with its license",

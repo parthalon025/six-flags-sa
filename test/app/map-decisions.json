@@ -1,0 +1,104 @@
+{
+  "$schema_note": "The map's drawn decisions, in the words they were asked for. Every row is either enforced by a rule this suite runs (test/app/lib/map-decisions.mjs) or pending with the question that blocks it. A decision that is not in this file is a decision nothing stops from reverting — which is the whole reason the file exists. Checked twice: test/app/map-decisions.test.mjs against the style module, and functional.mjs against the style a real browser is drawing.",
+  "rules": {
+    "area-layers-are-shapes": "Every World layer whose truth geometry is an area is painted as a fill. `covers` must account for every polygon layer in WORLD_LAYERS that is not named in a pending row — so a new area layer added later is covered on the day it lands, not the day someone remembers.",
+    "min-line-width": "A line layer is at least this many pixels wide at this zoom.",
+    "line-weight-order": "Line layers ranked heaviest first, asserted on the widths the style actually ships.",
+    "paint-order": "[under, over] — the second layer is painted after the first.",
+    "has-casing": "The layer ships a `-case` layer beneath it, wider than its own stroke."
+  },
+  "decisions": [
+    {
+      "id": "areas-are-shapes-not-lines",
+      "asked": "things like parking lots and thick wall areas use shapes over just lines",
+      "status": "enforced",
+      "rule": "area-layers-are-shapes",
+      "params": {
+        "covers": [
+          "sea",
+          "park",
+          "lands",
+          "wood",
+          "grass",
+          "parking",
+          "water",
+          "pool",
+          "building"
+        ]
+      },
+      "why": "A parking lot outlined is a lot you read as a fence. Ground the guest walks on, parks on or stands in front of is an area in truth, so it is an area on the map — the outline is the shape's edge, never the whole of it."
+    },
+    {
+      "id": "coaster-track-is-the-heaviest-line",
+      "asked": "roller coasters displayed more visual and thicker on the map",
+      "status": "enforced",
+      "rule": "line-weight-order",
+      "params": {
+        "order": [
+          "coaster",
+          "path",
+          "slide",
+          "service"
+        ]
+      },
+      "why": "Coaster track is the thing the park is famous for and the landmark a guest navigates by. Drawn at 1.6px it sat lighter than the midway it flies over and read as a stray scribble. The order is the whole World tier's line weight, so making the track heavier by making the midway thinner does not satisfy it. `boundary` is deliberately out of this chain — it is a hairline pending the wall decision below."
+    },
+    {
+      "id": "coaster-track-has-real-weight",
+      "asked": "roller coasters displayed more visual and thicker on the map",
+      "status": "enforced",
+      "rule": "min-line-width",
+      "params": {
+        "layer": "coaster",
+        "zoom": 13,
+        "atLeast": 3
+      },
+      "why": "Heaviest-of-the-lines is a ranking and a ranking survives everything shrinking together. This is the floor: at the zoom a whole park fits on the screen the track is still three pixels of structure."
+    },
+    {
+      "id": "coaster-flies-over-the-buildings",
+      "asked": "roller coasters displayed more visual",
+      "status": "enforced",
+      "rule": "paint-order",
+      "params": {
+        "pairs": [
+          [
+            "building",
+            "coaster"
+          ],
+          [
+            "parking",
+            "coaster"
+          ],
+          [
+            "path",
+            "coaster"
+          ]
+        ]
+      },
+      "why": "Track passes over the station house, the midway and the lot in life. Painted under any of them the ride is chopped into pieces wherever the park is busiest."
+    },
+    {
+      "id": "midway-keeps-its-casing",
+      "asked": "paths read as walkways, not as gaps in the grass",
+      "status": "enforced",
+      "rule": "has-casing",
+      "params": {
+        "layers": [
+          "path"
+        ]
+      },
+      "why": "One wide line in the ground colour under the path. Without it a midway crossing a lawn has no edge and reads as a gap in the grass."
+    },
+    {
+      "id": "park-boundary-drawn-as-a-shape",
+      "asked": "thick wall areas use shapes over just lines",
+      "status": "pending",
+      "covers_layers": [
+        "boundary"
+      ],
+      "question": "`boundary` is the only area layer still painted as a bare 1.5px outline, and it is the only wall-like thing the map has: OpenStreetMap walls and fences (`barrier=wall`, `barrier=fence`) match no rule in packages/venue-builder/lib/osm-tags.mjs, so they are dropped before the app ever sees them. Filling `boundary` is not the fix — it sits above every ground layer in WORLD_LAYERS, so a fill there paints over the lake. Which does this decision mean: (a) the park perimeter drawn as a wall band with real thickness, (b) a new `wall` layer carried from OSM barriers through the builder, or (c) both?",
+      "why": "Recorded rather than guessed. A decision nobody wrote down is the one that reverted; a decision guessed at wrong is the one that ships wrong and stays."
+    }
+  ]
+}

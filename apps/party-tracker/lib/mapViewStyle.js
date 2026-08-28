@@ -110,7 +110,20 @@ const WORLD_PAINT = Object.freeze({
     paint: { 'fill-color': p('building').fill, 'fill-outline-color': p('building').stroke },
   }),
   slide: (p) => ({ type: 'line', paint: { 'line-color': p('poolEdge'), 'line-width': 2 } }),
-  coaster: (p) => ({ type: 'line', paint: { 'line-color': p('structureEdge'), 'line-width': 1.6 } }),
+  // Track is the landmark a guest navigates a park by, and it flies over the
+  // busiest ground on the map — so it is drawn as structure rather than as a
+  // hairline: the heaviest line in the World tier, ramped so it keeps that
+  // weight from a park-wide camera down to a single ride. At 1.6px it read as
+  // a stray scribble under the midway it passes over. `test/app/map-decisions.json`
+  // holds that decision; two suites hold it to it.
+  coaster: (p) => ({
+    type: 'line',
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: {
+      'line-color': p('structureEdge'),
+      'line-width': ['interpolate', ['linear'], ['zoom'], 13, 3.2, 16, 6, 19, 10],
+    },
+  }),
 });
 
 /** The Overlay's layers, bottom to top within the tier. Route under the marks

@@ -114,6 +114,7 @@ export const TEST_ESTATE = {
   'test/app/map-camera.test.mjs': ['test:unit'],
   'test/app/map-view-camera-apply.test.mjs': ['test:unit'],
   'test/app/map-view.test.mjs': ['test:unit'],
+  'test/app/map-decisions.test.mjs': ['test:unit'],
   'test/app/map-visual.test.mjs': ['test:unit'],
   'test/app/module-select.test.mjs': ['test:module-select'],
   'test/app/native.test.mjs': ['test:unit'],
@@ -290,6 +291,8 @@ export const TEST_ESTATE_EXCLUDED = {
     'library, not a suite: dynamic import helper for party stack tests that resolves app modules under test. Asserted through the party-protocol and party-runtime suites that import it.',
   'test/app/lib/fakeTransport.mjs':
     'library, not a suite: in-memory transport double for party stack interface tests. Asserted through transport-contract, transport-registry, party-protocol, and party-runtime.',
+  'test/app/lib/map-decisions.mjs':
+    'library, not a suite: the map decision registry\'s checker, run over the style module by map-decisions.test.mjs and over a live MapLibre style by functional.mjs.',
   'test/app/lib/module-select.mjs':
     'library, not a suite: the module manifest loader and path matcher that select-modules.mjs, validate-ui.mjs, functional.mjs and the CI scripts import. Asserted by test/app/module-select.test.mjs.',
   'test/app/lib/partyBus.mjs':
