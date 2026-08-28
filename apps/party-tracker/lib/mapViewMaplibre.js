@@ -16,12 +16,13 @@ import { Map as MapLibreMap, setWorkerUrl } from 'maplibre-gl';
 import { BANDS } from '@party-tracker/shared/zoomBands.js';
 import { OVERLAY_LAYERS } from './overlayGeo.js';
 import { constrainCameraPitch, mapWritesForCamera } from './mapViewCameraApply.js';
-import { worldLodVisibility } from './worldLod.js';
+import { worldTierVisibility } from './worldLod.js';
 import {
   bandLayer,
   bandedWorldStyle,
   OVERLAY_SOURCES,
   PLACES_LAYER,
+  bandSource,
   worldCaseLayer,
   worldLayer,
 } from './mapViewStyle.js';
@@ -79,8 +80,23 @@ function ensureMapLibreWorker() {
  *   the engine's job and only the engine can do it — which is why the tap
  *   comes out here rather than the seam growing an `unproject`.
  */
-function applyWorldLod(map, groups) {
-  const vis = worldLodVisibility(groups);
+/**
+ * Is a baked band actually on screen — loaded, not merely asked for?
+ *
+ * `plan.draw` is the band chooser's intent; `isSourceLoaded` is whether the
+ * image arrived. The gap between them is the whole reason this asks the
+ * engine rather than trusting the plan: a Skin that declares a pack it has
+ * not downloaded yet must not take the Truth geometry away from the guest.
+ */
+function bakeCovering(map, plan) {
+  return (plan.draw ?? []).some((id) => {
+    const source = bandSource(id);
+    return Boolean(map.getSource(source)) && map.isSourceLoaded(source);
+  });
+}
+
+function applyWorldTier(map, groups, covered) {
+  const vis = worldTierVisibility(groups, { covered });
   for (const [key, visible] of Object.entries(vis)) {
     const id = key === 'path-case' ? worldCaseLayer('path') : worldLayer(key);
     if (!map.getLayer(id)) continue;
@@ -101,14 +117,25 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
   const setData = (source, data) =>
     whenLoaded((m) => m.getSource(source)?.setData(data));
 
+  /* The last plan, kept so a band finishing its download can re-run the tier
+     decision. Without it the vector tier would only ever be reconsidered on
+     the next camera move, and the double-draw would persist for however long
+     the guest sat still after the image landed. */
+  let lastPlan = null;
+
+  const applyPlan = (m, plan) => {
+    for (const band of BANDS) {
+      const layer = bandLayer(band.id);
+      if (!m.getLayer(layer)) continue;
+      m.setLayoutProperty(layer, 'visibility', plan.draw.includes(band.id) ? 'visible' : 'none');
+    }
+    applyWorldTier(m, plan.worldLod, bakeCovering(m, plan));
+  };
+
   const paint = (plan) =>
     whenLoaded((m) => {
-      for (const band of BANDS) {
-        const layer = bandLayer(band.id);
-        if (!m.getLayer(layer)) continue;
-        m.setLayoutProperty(layer, 'visibility', plan.draw.includes(band.id) ? 'visible' : 'none');
-      }
-      applyWorldLod(m, plan.worldLod);
+      lastPlan = plan;
+      applyPlan(m, plan);
     });
 
   return {
@@ -137,6 +164,19 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
         loaded = true;
         while (queued.length > 0) queued.shift()(map);
         onLoad?.();
+      });
+      /* A band's image arriving is what takes the vector tier off screen, and
+         it arrives long after the plan that asked for it. `sourcedata` is the
+         only signal for that, so the tier decision is re-run here rather than
+         waiting for the guest's next camera move — otherwise the double-draw
+         would sit there for as long as they sat still. Cheap: the handler
+         only re-applies when the source that settled is one the current plan
+         is actually drawing. */
+      map.on('sourcedata', (event) => {
+        if (!map || !lastPlan) return;
+        if (event?.dataType !== 'source' || !event.isSourceLoaded) return;
+        if (!(lastPlan.draw ?? []).some((id) => bandSource(id) === event.sourceId)) return;
+        applyPlan(map, lastPlan);
       });
       // Every move, gesture or ours, and continuously rather than at the end
       // of one: the tilt has to track a pinch as it happens. Our own moves

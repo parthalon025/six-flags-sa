@@ -26,7 +26,10 @@
 import { readFileSync } from 'node:fs';
 import { WORLD_LAYERS } from '../../../apps/party-tracker/lib/worldGeo.js';
 import { worldCaseLayer, worldLayer } from '../../../apps/party-tracker/lib/mapViewStyle.js';
-import { worldLodVisibility } from '../../../apps/party-tracker/lib/worldLod.js';
+import { worldLodVisibility, worldTierVisibility } from '../../../apps/party-tracker/lib/worldLod.js';
+
+/** Every LOD group on, so the bake rule reads the bake and nothing else. */
+const ALL_LOD_ON = Object.freeze({ detail: true, service: true, close: true });
 
 /** Every World layer some zoom hides, read from the LOD table rather than
  *  restated — a layer added to a hide-group there must not be able to keep
@@ -180,6 +183,18 @@ const RULES = {
       }
     }
     return { failures, checked };
+  },
+
+  'vector-tier-yields-to-a-loaded-bake'(_params, style, layers) {
+    const failures = [];
+    const covered = worldTierVisibility(ALL_LOD_ON, { covered: true });
+    const uncovered = worldTierVisibility(ALL_LOD_ON, { covered: false });
+    for (const id of [...AREA_LAYER_IDS, ...WAY_LAYER_IDS]) {
+      if (covered[id] !== false) failures.push(`${id} still draws under a loaded bake`);
+      if (uncovered[id] !== true) failures.push(`${id} does not draw when no bake is on screen — the fallback is gone`);
+    }
+    if (covered['path-case'] !== false) failures.push('the midway casing still draws under a loaded bake');
+    return { failures, checked: ['bake-tier'] };
   },
 
   'ramps-with-zoom'(params, style, layers) {

@@ -1469,11 +1469,31 @@ const read = (name) => JSON.parse(readFileSync(new URL(name, VENUES), 'utf8'));
   assert.equal(hidden.coaster, undefined, 'track is not hidden at park-wide');
   assert.equal(shown.coaster, undefined, 'and is not toggled when walking either');
 
+  /* A loaded bake takes the whole vector tier off screen — the Visual
+     factory's image IS the map at that point, and Truth geometry drawn under
+     it is work for nobody and a bleed risk through the bake's soft edges.
+     Every layer, not just the ones the LOD table names. */
+  const { worldTierVisibility } = await import('../../apps/party-tracker/lib/worldLod.js');
+  const { WORLD_LAYERS: TIER } = await import('../../apps/party-tracker/lib/worldGeo.js');
+  const baked = worldTierVisibility(walking, { covered: true });
+  for (const { id } of TIER) assert.equal(baked[id], false, `${id} is hidden under a loaded bake`);
+  assert.equal(baked['path-case'], false, 'including the midway casing');
+
+  /* And ADR-0019's fallback survives: with no bake on screen the tier draws,
+     so a pack that never downloads leaves a working map rather than an empty
+     one. This is why the renderer asks isSourceLoaded rather than trusting a
+     Skin's declaration. */
+  const unbaked = worldTierVisibility(walking, { covered: false });
+  assert.equal(unbaked.path, true, 'no bake on screen, so Truth still draws');
+  assert.equal(unbaked.coaster, true);
+  assert.equal(worldTierVisibility(parkWide, { covered: false }).grass, false, 'and zoom LOD still applies under it');
+
   const seam = readFileSync(new URL('../../apps/party-tracker/lib/mapView.js', import.meta.url), 'utf8');
   assert.match(seam, /worldLodGroups/, 'LOD groups live on the zoom seam, next to the band plan');
   const adapter = readFileSync(new URL('../../apps/party-tracker/lib/mapViewMaplibre.js', import.meta.url), 'utf8');
   assert.match(adapter, /plan\.worldLod/, 'the adapter paints the seam\'s LOD, it does not choose it');
-  assert.match(adapter, /worldLodVisibility/, 'layer ids come from the lod table, not a second list');
+  assert.match(adapter, /worldTierVisibility/, 'layer ids come from the lod table, not a second list');
+  assert.doesNotMatch(adapter, /WORLD_LAYERS/, 'and the adapter does not enumerate the tier itself');
   assert.doesNotMatch(adapter, /worldLodGroups/, 'the adapter does not recompute groups mid-pinch');
 }
 

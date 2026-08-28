@@ -9,7 +9,8 @@
     "smooth-bends": "Every way is drawn with round caps and round joins. A mitred join spikes where a walkway turns and a butt cap leaves a square end at every segment break, which is what makes a curved midway read as a run of straight sticks.",
     "area-edge-drawn-as-outline": "A layer that draws only an outline is allowed exactly when the area it outlines is itself painted as a shape, below it. `shapeBeneath` names that fill.",
     "drawn-at-every-zoom": "The layer is in no LOD hide-group, so nothing ever toggles it off — and its paint is quiet at the wide end: under an absolute width and opacity cap, and no more than `maxRatioAtWide` times the layer it is measured against, so it may lead there without taking the map over.",
-    "ramps-with-zoom": "The layer's width is a zoom ramp, not a constant, and it is at most `maxAtWide` of its walking-scale width when the whole park is on screen. A flat width is the failure this catches: it draws the same at every camera, so the park-wide read is as heavy as standing on it."
+    "ramps-with-zoom": "The layer's width is a zoom ramp, not a constant, and it is at most `maxAtWide` of its walking-scale width when the whole park is on screen. A flat width is the failure this catches: it draws the same at every camera, so the park-wide read is as heavy as standing on it.",
+    "vector-tier-yields-to-a-loaded-bake": "With a baked band actually on screen, every layer of the vector tier is hidden; with none on screen, the tier draws. Checked through `worldTierVisibility`, the one function the renderer asks — a decision that lived only in the adapter could not be checked without a browser."
   },
   "decisions": [
     {
@@ -162,6 +163,14 @@
         "maxOpacityAtWide": 0.6
       },
       "why": "Walkways were one flat width at every camera — 427 constant lines at Kings Island, 701 at Cedar Point — so the park-wide view was a net of paths with the rides lost inside it. A road atlas thins its minor streets on the way out; this does the same. The cap is relative to the layer's own walking-scale width, so a Skin that draws a wider midway still has to thin it by the same proportion, and the rule cannot be satisfied by making the walking view thinner."
+    },
+    {
+      "id": "osm-vectors-yield-to-factory-output",
+      "asked": "OSM vectors should be hidden if they have a visual factory replacement or overlay",
+      "status": "enforced",
+      "rule": "vector-tier-yields-to-a-loaded-bake",
+      "params": {},
+      "why": "When the Visual factory's image is on screen it is the map, and the Truth geometry underneath is drawn for nobody — wasted work every frame, and a bleed risk through the bake's soft edges and semi-transparent passages. The trigger is the image having loaded, not a Skin declaring a pack: ADR-0019 makes the vector tier the never-fails fallback, so a bake that is still downloading, offline or failed to decode must leave a working map rather than an empty one. Hiding on the declaration would trade that away for nothing; hiding on the event keeps both. The renderer asks `isSourceLoaded`, and re-runs the decision on `sourcedata` so the tier goes when the image lands rather than at the guest's next camera move."
     }
   ]
 }
