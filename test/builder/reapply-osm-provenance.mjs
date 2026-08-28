@@ -4,7 +4,8 @@
  * Seam: assignKeys when incoming pois carry keys but no build-time osm field.
  */
 import assert from 'node:assert/strict';
-import { assignKeys } from '../../packages/venue-builder/lib/venue-ids.mjs';
+import { assignKeys, readLedger } from '../../packages/venue-builder/lib/venue-ids.mjs';
+import { VENUE_DIR, readJson } from '../../packages/venue-builder/lib/venue-io.mjs';
 
 const PASS = [];
 const FAIL = [];
@@ -16,6 +17,9 @@ const bad = (n, e) => {
   FAIL.push(`${n} :: ${e}`);
   console.log('  FAIL', n, '->', e);
 };
+
+const osmCount = (ledger) =>
+  Object.values(ledger?.keys || {}).filter((rec) => rec?.osm).length;
 
 console.log('\nreapply osm provenance\n');
 
@@ -82,6 +86,25 @@ try {
   ok('assignKeys records fresh osm from source when the poi carries it');
 } catch (e) {
   bad('assignKeys records fresh osm from source when the poi carries it', e.message);
+}
+
+try {
+  const id = 'cedar-point';
+  const ledger = readLedger(id);
+  const onDisk = readJson(`${VENUE_DIR}/${id}.pois.json`, []);
+  const before = osmCount(ledger);
+  assert.ok(before > 0, 'cedar-point ledger must ship osm provenance');
+  const merged = assignKeys(onDisk, ledger, { venue: id, keepOsm: true });
+  const keyed = assignKeys(
+    merged.pois.sort((a, b) => a.n.localeCompare(b.n)),
+    ledger,
+    { venue: id },
+  );
+  const after = osmCount(keyed.ledger);
+  assert.equal(after, before, 'cedar-point reapply must not strip ledger osm fields');
+  ok('cedar-point reapply preserves committed ids.json osm provenance');
+} catch (e) {
+  bad('cedar-point reapply preserves committed ids.json osm provenance', e.message);
 }
 
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====\n`);
