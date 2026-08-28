@@ -232,21 +232,30 @@ export async function openPhone(
   return { context, page, errors, requests, label };
 }
 
+// Marker selector shared by mapIsDrawn/hydrated. Two renderers can draw the
+// World map (lib/mapLibreConfigured.js): ParkMapGl mounts `canvas` under
+// `[data-testid="park-map-gl"]`, but the renderer actually shipped today
+// (ParkMap.jsx, app/page.js) draws `svg.mapSvg` with Places/Members/the meet
+// pin as `<g class="…Marker">` wrappers around an icon — only the self-location
+// dot is a bare `<circle class="mePulse">`. This used to require `circle.` on
+// every class, which no `<g>`-based marker has ever matched, so it could only
+// ever go true off `mePulse` — and only once a GPS fix lands after the intro
+// gate. Match the tag each marker actually renders as instead of assuming circle.
+const MAP_MARKERS_SELECTOR =
+  'svg.mapSvg .poiMarker, svg.mapSvg .memMarker, svg.mapSvg circle.mePulse, svg.mapSvg .meetPin';
+
 export async function mapIsDrawn(page) {
   const gl = page.locator('[data-testid="park-map-gl"]:not(.mapMissing)');
-  if (!(await gl.count())) return false;
   if (await gl.locator('canvas').count()) return true;
-  return (await page.locator('svg.mapSvg circle.poiMarker, svg.mapSvg circle.memMarker, svg.mapSvg circle.mePulse, svg.mapSvg circle.meetPin').count()) >= 1;
+  return (await page.locator(MAP_MARKERS_SELECTOR).count()) >= 1;
 }
 
 export const hydrated = (page) =>
-  page.waitForFunction(() => {
+  page.waitForFunction((selector) => {
     const gl = document.querySelector('[data-testid="park-map-gl"]:not(.mapMissing)');
     if (gl?.querySelector('canvas')) return true;
-    return document.querySelectorAll(
-      'svg.mapSvg circle.poiMarker, svg.mapSvg circle.memMarker, svg.mapSvg circle.mePulse, svg.mapSvg circle.meetPin',
-    ).length >= 1;
-  }, null, {
+    return document.querySelectorAll(selector).length >= 1;
+  }, MAP_MARKERS_SELECTOR, {
     timeout: 40000,
   });
 
