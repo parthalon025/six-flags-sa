@@ -1,6 +1,6 @@
 {
   "_comment": "Corrections and hand-added places, re-applied on every rebuild. Height rules live in data/venues/big-kahunas.heights.json. Source catalogue and imagery datasets: data/venues/big-kahunas.sources.json.",
-  "credits": "Height requirements were compiled from Big Kahuna's own 2026 attraction pages. Ride and amenity positions combine OpenStreetMap (ODbL), Okaloosa County orthophotos of 1 March 2025 via Esri World Imagery, and the park's 2026 illustrated map.",
+  "credits": "Height requirements were compiled from Big Kahuna's own 2026 attraction pages. Ride and amenity positions combine OpenStreetMap (ODbL), USDA NAIP via Microsoft Planetary Computer (fl_m_3008637_sw_16_060_20220123), and the park's 2026 illustrated map.",
   "pois": {},
   "drop": [
     "Tiki River Run (Left Slide)",
@@ -169,5 +169,5 @@
       "c": "restroom"
     }
   ],
-  "_add_comment": "Positions combine three open sources, in priority order:\n\n1. OpenStreetMap centroids where the element is uniquely named (Main Entrance = way 679972968).\n2. Okaloosa County orthophotos of 1 March 2025 via Esri World Imagery — 7.6 cm/px, 0.19 m stated accuracy — for structures whose type is unique in the park (Skycoaster arch, flowrider basin, play fort, etc.).\n3. The park's 2026 illustrated map (docs/big-kahunas-2026-parkmap.webp) for disambiguation when several lookalikes share a type: twin flumes, river channels, shallow children's pools. Each candidate was accepted only when orthophoto structure type, map label placement, and (where available) an OSM unnamed slide centroid agreed.\n\nThe eight rides previously in `_unmapped` are included under that rule. Queue entrances ship via data/venues/big-kahunas.merge.geojson."
+  "_add_comment": "Positions combine three open sources, in priority order:\n\n1. OpenStreetMap centroids where the element is uniquely named (Main Entrance = way 679972968).\n2. USDA NAIP via Microsoft Planetary Computer (fl_m_3008637_sw_16_060_20220123) — ~0.6 m/px — for structures whose type is unique in the park (Skycoaster arch, flowrider basin, play fort, etc.).\n3. The park's 2026 illustrated map (docs/big-kahunas-2026-parkmap.webp) for disambiguation when several lookalikes share a type: twin flumes, river channels, shallow children's pools. Each candidate was accepted only when orthophoto structure type, map label placement, and (where available) an OSM unnamed slide centroid agreed.\n\nThe eight rides previously in `_unmapped` are included under that rule. Queue entrances ship via data/venues/big-kahunas.merge.geojson."
 }
