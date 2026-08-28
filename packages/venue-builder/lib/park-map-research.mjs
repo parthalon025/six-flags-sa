@@ -22,18 +22,14 @@ import {
   resolveBuilderPath,
 } from './venue-io.mjs';
 import { readSources } from './venue-sources.mjs';
+import { decodeHtml } from './operators/generic.mjs';
 
 const MAP_ASSET_RE = /\.(?:png|jpe?g|webp|gif|pdf|svg)(?:\?|#|$)/i;
 const MAPISH_RE = /park[-_ ]?map|map[-_ ]?of|guest[-_ ]?map|guide[-_ ]?map|schematic|handout|cartograph|venue[-_ ]?map/i;
 const SANITY_DIM_RE = /-(\d+)x(\d+)\.(?:png|jpe?g|webp|gif)$/i;
 const NEXT_IMAGE_RE = /\/_next\/image\?url=([^"'&\s]+)/gi;
-
-function decodeHtmlEntities(text) {
-  return String(text || '')
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
-}
+/** Wide schematic guest maps (Cedar Fair / Six Flags Sanity assets) are mapish by aspect. */
+const SCHEMATIC_MIN_ASPECT = 2.5;
 
 function sanityDimensions(url) {
   const base = String(url || '').split('?')[0];
@@ -48,7 +44,7 @@ function sanityDimensions(url) {
 /** Wide schematic guest maps (Cedar Fair / Six Flags Sanity assets) are mapish by aspect. */
 function mapishFromUrl(url) {
   const dim = sanityDimensions(url);
-  if (dim && dim.aspect >= 2.5) return true;
+  if (dim && dim.aspect >= SCHEMATIC_MIN_ASPECT) return true;
   return MAP_ASSET_RE.test(url) && MAPISH_RE.test(url);
 }
 
@@ -88,7 +84,7 @@ function absolutize(href, baseUrl) {
 
 /** Pull map-like image/PDF URLs from an HTML page. */
 export function extractParkMapAssetUrls(html, pageUrl) {
-  const text = decodeHtmlEntities(html || '');
+  const text = decodeHtml(html || '');
   const found = new Map();
 
   const consider = (raw, via) => {

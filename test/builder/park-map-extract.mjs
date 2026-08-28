@@ -82,6 +82,20 @@ await check('kings-island park_map_research passes with local maps/ image', () =
   return true;
 });
 
+await check('cedar-point park_map_research passes with local maps/ image', () => {
+  const doc = certifyVenue('cedar-point', { write: false });
+  const pm = doc.checks.find((c) => c.key === 'park_map_research');
+  assert.equal(pm.pass, true, pm.evidence.detail);
+  return true;
+});
+
+await check('six-flags-fiesta-texas park_map_research passes with local maps/ image', () => {
+  const doc = certifyVenue('six-flags-fiesta-texas', { write: false });
+  const pm = doc.checks.find((c) => c.key === 'park_map_research');
+  assert.equal(pm.pass, true, pm.evidence.detail);
+  return true;
+});
+
 console.log(`\n${PASS.length} passed, ${FAIL.length} failed\n`);
 if (FAIL.length) {
   for (const f of FAIL) console.error('  ', f);
