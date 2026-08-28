@@ -624,5 +624,11 @@
     "items": [
       "fix(app): Bugbot ParkMap regressions — mapWrap, zone tones, fog scope (#730)"
     ]
+  },
+  "1.35.5": {
+    "title": "What's new",
+    "items": [
+      "fix(#16): close the delivery revision cursor, and the gates that were hiding work (#746)"
+    ]
   }
 }
