@@ -1,0 +1,27 @@
+{
+  "fetched": "2026-08-28",
+  "source": "planetary-computer:naip",
+  "tile": "fl_m_3008637_sw_16_060_20220123",
+  "href": "https://naipeuwest.blob.core.windows.net/naip/v002/fl/2021/fl_060cm_2021/30086/m_3008637_sw_16_060_20220123.tif",
+  "captured": "2022-01-23",
+  "gsd": 0.6,
+  "license": "public-domain",
+  "attribution": "USDA FPAC-BC-GEO NAIP via Microsoft Planetary Computer",
+  "epsg": 26916,
+  "sha256": "de888e670536c6b0eeeafe912af7b2a1f96963e98d3977b331e595095a0b756b",
+  "bandCount": 4,
+  "window": {
+    "left": 4457,
+    "top": 8975,
+    "width": 996,
+    "height": 1126
+  },
+  "complete": true,
+  "itemCount": 6,
+  "bounds": {
+    "north": 30.39219,
+    "south": 30.38621,
+    "east": -86.46936,
+    "west": -86.47545
+  }
+}

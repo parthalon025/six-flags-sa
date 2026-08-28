@@ -18,7 +18,7 @@
         "west": -86.47545
       },
       "source": "OpenStreetMap contributors, ODbL",
-      "credits": "Height requirements were compiled from Big Kahuna's own 2026 attraction pages. Ride and amenity positions combine OpenStreetMap (ODbL), Okaloosa County orthophotos of 1 March 2025 via Esri World Imagery, and the park's 2026 illustrated map.",
+      "credits": "Height requirements were compiled from Big Kahuna's own 2026 attraction pages. Ride and amenity positions combine OpenStreetMap (ODbL), USDA NAIP orthophotos (2022) via Microsoft Planetary Computer, and the park's 2026 illustrated map.",
       "generated": "2026-08-10",
       "coverage": {
         "ways": 173,
@@ -94,7 +94,7 @@
         "pois": 427,
         "rides": 74,
         "heights": 73,
-        "gaps": 64
+        "gaps": 63
       }
     },
     {
@@ -180,7 +180,7 @@
   ],
   "generatedBinding": {
     "algorithm": "sha256-aggregate-v1",
-    "sha256": "42e4b01119b805c53cbc8481ccb0ae4c27b89c709e48299e30c140dd1a0cb1f4",
+    "sha256": "bab30ebfd96e74eda9296cbec12b688393b1c9103b38c7bb109154154df62d77",
     "files": [
       {
         "path": "apps/party-tracker/lib/venueIndex.js",
@@ -192,7 +192,7 @@
       },
       {
         "path": "apps/party-tracker/public/venues/big-kahunas.map.json",
-        "sha256": "f8b48e444bedc7685925c8567e491a94166719c613883fa65fc6d7d62b857bc2"
+        "sha256": "ddf46c570d2d7ca68eda9bbab25057067673ed6af5953f5300d120f7ee3afe16"
       },
       {
         "path": "apps/party-tracker/public/venues/big-kahunas.pois.json",
@@ -200,11 +200,11 @@
       },
       {
         "path": "apps/party-tracker/public/venues/cedar-point.gaps.json",
-        "sha256": "31fe9066c882a73ac6b0086453b87f58c510d8afeff885c4087cc50dffde8ed7"
+        "sha256": "97cb2cfe4b4b8f26f6cebdca197568e70e4154d8664d2d02e120644529dbeaf2"
       },
       {
         "path": "apps/party-tracker/public/venues/cedar-point.map.json",
-        "sha256": "40a9fe1d95b8fd65a4db004714628b0000acf7fd4157293757e83817a2166157"
+        "sha256": "cba508227093937b59b2086c5b29fd96ed71c0f2b35f71ec1423f84d68132672"
       },
       {
         "path": "apps/party-tracker/public/venues/cedar-point.pois.json",
@@ -224,7 +224,7 @@
       },
       {
         "path": "apps/party-tracker/public/venues/manifest.json",
-        "sha256": "1bcdb293512e4f54cb0c396dc5ece90ebbc01886238501c724a30822b8069ced"
+        "sha256": "340d3165ec0f16980abd76c2c3cde669e4d6d9a5e993b9037a4f0c71c47c6a86"
       },
       {
         "path": "apps/party-tracker/public/venues/six-flags-fiesta-texas.gaps.json",

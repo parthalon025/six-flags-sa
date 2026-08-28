@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "venue": "kings-island",
+  "fetched": "2026-08-28",
+  "pages": [
+    {
+      "id": "kings-island-site",
+      "url": "https://www.visitkingsisland.com/rides-experiences",
+      "kind": "official_site",
+      "via": "fetch"
+    },
+    {
+      "id": "kings-island-map",
+      "url": "https://www.visitkingsisland.com/park-map",
+      "kind": "official_map",
+      "image": null
+    }
+  ],
+  "attractions": [],
+  "errors": []
+}
