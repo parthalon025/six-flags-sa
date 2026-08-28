@@ -209,6 +209,26 @@ jobs:
       - run: npm ci
       - run: npm run lint:boundaries
 
+  upstash-smoke:
+    name: Upstash smoke (optional)
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      # No `npm ci` — scripts/lib/upstash-smoke.mjs is pure ESM over node
+      # builtins + fetch, same "runs before workspace install" property as
+      # Gate. Skips (exit 0) when UPSTASH_REDIS_REST_URL/TOKEN test secrets
+      # are unset — most branches have none, and absence must never be red.
+      - run: node scripts/ci/upstash-smoke.mjs
+        env:
+          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL_TEST }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN_TEST }}
+
   lint:
     name: Lint
     needs: select
