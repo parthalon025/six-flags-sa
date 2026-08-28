@@ -152,6 +152,31 @@ assert.equal(
   true,
   'production app changes use automation budget without user directive',
 );
+// files == null (unreadable diff) must NOT fail open for an agent preview
+// branch — isAgentPreviewBranch must be checked before the files == null
+// branch, or every claude/worktree-/cursor/ push whose diff can't be read
+// builds a preview and burns the 100/day account budget.
+assert.equal(
+  decideVercelBuild({ files: null, gitRef: 'claude/foo', env: 'preview' }).build,
+  false,
+  'agent preview branch must skip even when the diff is unreadable',
+);
+assert.equal(
+  decideVercelBuild({ files: null, gitRef: 'claude/foo', env: 'preview' }).category,
+  'skip-agent-preview',
+  'unreadable-diff agent preview skip must report skip-agent-preview',
+);
+assert.equal(
+  decideVercelBuild({
+    files: null,
+    gitRef: 'claude/foo',
+    env: 'preview',
+    subject: 'feat: map [vercel build]',
+  }).build,
+  true,
+  'a user-directed build on an agent branch must still win, even with an unreadable diff',
+);
+
 assert.equal(isAgentPreviewBranch('worktree-fix-party', 'preview'), true);
 /* Claude Code agent branches are `claude/<slug>`, the prefix its harness mandates.
    They were absent from AGENT_PREVIEW_BRANCH while the policy said agents must not

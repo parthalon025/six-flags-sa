@@ -61,6 +61,20 @@ export function decideVercelBuild({
       files,
     };
   }
+  // Branch name is always known, even when the diff is not — so an agent
+  // preview branch must never build regardless of diff readability. This
+  // must run BEFORE the `files == null` fail-open branch below: that branch
+  // used to run first and built a preview for every claude/worktree-/cursor/
+  // push whose diff was unreadable, burning the 100/day account budget
+  // (docs/agents/policies/vercel-previews.md).
+  if (isAgentPreviewBranch(gitRef, env)) {
+    return {
+      build: false,
+      category: 'skip-agent-preview',
+      reason: `agent preview branch ${gitRef} — skipping (user reserve: add [vercel build] or VERCEL_USER_BUILD=1)`,
+      files,
+    };
+  }
   if (files == null) {
     return { build: true, category: 'unknown-diff', reason: 'unknown-changed-files — proceeding with build' };
   }
@@ -84,14 +98,6 @@ export function decideVercelBuild({
       category: 'version-stamp-production',
       reason:
         'version-stamp production bump — proceeding (bump push cancels the merge deploy)',
-      files,
-    };
-  }
-  if (isAgentPreviewBranch(gitRef, env)) {
-    return {
-      build: false,
-      category: 'skip-agent-preview',
-      reason: `agent preview branch ${gitRef} — skipping (user reserve: add [vercel build] or VERCEL_USER_BUILD=1)`,
       files,
     };
   }
