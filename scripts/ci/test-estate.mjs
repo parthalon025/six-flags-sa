@@ -177,6 +177,7 @@ export const TEST_ESTATE = {
   'test/builder/inspect-certification.mjs': ['test:builder'],
   'test/builder/inventory-gaps.mjs': ['test:builder'],
   'test/builder/certify-regression.mjs': ['test:builder'],
+  'test/builder/reapply-osm-provenance.mjs': ['test:builder'],
   'test/builder/iso-track.mjs': ['test:builder'],
   'test/builder/iso-world.mjs': ['test:builder'],
   'test/builder/llm-agent.mjs': ['test:builder'],

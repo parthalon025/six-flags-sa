@@ -306,7 +306,12 @@ export function assignKeys(pois, ledger, { venue = ledger?.venue || null, keepOs
 
   /* -- the ledger this run would leave behind ------------------------------ */
   const keys = {};
-  for (const poi of list) if (!keys[poi.i]) keys[poi.i] = record(poi);
+  for (const poi of list) {
+    if (keys[poi.i]) continue;
+    const rec = record(poi);
+    const priorOsm = prior[poi.i]?.osm;
+    keys[poi.i] = !rec.osm && priorOsm ? { ...rec, osm: priorOsm } : rec;
+  }
   /* Rebuilt with the key first, because the key is the first thing about a
      place and a generated file that reads well is a generated file people
      check. Provenance stays in the ledger; the bundle is a download. */
