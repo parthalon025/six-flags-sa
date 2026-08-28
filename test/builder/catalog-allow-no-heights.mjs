@@ -31,6 +31,7 @@ const {
   catalogHeightsOptional,
   loadCatalog,
   withIds,
+  zeroHeightsGate,
 } = await import('../../packages/venue-builder/lib/top-parks-catalog.mjs');
 
 await check('strict by default for coaster parks', () => {
@@ -112,6 +113,30 @@ await check('catalogHeightsOptional geometry-only when CLI --allow-no-heights', 
 await check('catalogHeightsOptional strict when CLI --strict-heights on water park', () => {
   const park = { id: 'big-kahuna-s', name: "Big Kahuna's", kind: 'water-park' };
   assert.equal(catalogHeightsOptional(park, { strictHeights: true }), false);
+  return true;
+});
+
+await check('zeroHeightsGate aborts coaster parks with zero rules', () => {
+  assert.equal(zeroHeightsGate(0, false), 'abort');
+  return true;
+});
+
+await check('zeroHeightsGate allows empty heights for water parks', () => {
+  assert.equal(zeroHeightsGate(0, true), 'allow-empty');
+  return true;
+});
+
+await check('zeroHeightsGate continues when rules exist', () => {
+  assert.equal(zeroHeightsGate(3, false), 'continue');
+  return true;
+});
+
+await check('pipeline heights gate uses catalog resolution for big kahunas', () => {
+  const park = { id: 'big-kahuna-s', name: "Big Kahuna's", kind: 'water-park' };
+  const optional = catalogHeightsOptional(park, {});
+  assert.equal(zeroHeightsGate(0, optional), 'allow-empty');
+  const coaster = { id: 'cedar-point', name: 'Cedar Point', kind: 'theme-park' };
+  assert.equal(zeroHeightsGate(0, catalogHeightsOptional(coaster, {})), 'abort');
   return true;
 });
 

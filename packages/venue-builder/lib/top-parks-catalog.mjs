@@ -58,6 +58,18 @@ export function catalogHeightsOptional(park, args = {}) {
 }
 
 /**
+ * Heights-stage gate: abort when zero rules are sourced unless optional (#428).
+ *
+ * @param {number} ruleCount
+ * @param {boolean} heightsOptional
+ * @returns {'continue' | 'allow-empty' | 'abort'}
+ */
+export function zeroHeightsGate(ruleCount, heightsOptional) {
+  if (ruleCount > 0) return 'continue';
+  return heightsOptional ? 'allow-empty' : 'abort';
+}
+
+/**
  * @returns {{ version: number, source: string, generated: string, parks: ParkEntry[] }}
  */
 export function loadCatalog(file = CATALOG_FILE) {

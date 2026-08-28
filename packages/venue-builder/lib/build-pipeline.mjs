@@ -35,7 +35,7 @@ import { compileDisplay } from './visual-factory/index.mjs';
 import { loadParksApiData } from './adapters/parks-api.mjs';
 import { readSources } from './venue-sources.mjs';
 import { loadOfficialData } from './venue-official-site.mjs';
-import { catalogHeightsOptional } from './top-parks-catalog.mjs';
+import { catalogHeightsOptional, zeroHeightsGate } from './top-parks-catalog.mjs';
 
 const BUILDER_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const BUILDER_BIN = path.join(BUILDER_ROOT, '..', 'bin', 'build-venue.mjs');
@@ -270,19 +270,18 @@ export async function runVenuePipeline(park, opts = {}) {
       if (heights.officialErrors?.length) {
         console.error(`    warnings: ${heights.officialErrors.join('; ')}`);
       }
+      if (zeroHeightsGate(heights.ruleCount, heightsOptional) === 'abort') {
+        return {
+          id: park.id,
+          rank: park.rank,
+          status: 'failed',
+          error: 'no height rules could be sourced from the official website',
+          stages,
+        };
+      }
       if (!heights.ruleCount) {
-        if (heightsOptional) {
-          console.error('    no height rules — catalog allows proceeding without heights');
-          logStage('heights', { ruleCount: 0, matched: heights.matched, rideCount: heights.rideCount, allowed: true });
-        } else {
-          return {
-            id: park.id,
-            rank: park.rank,
-            status: 'failed',
-            error: 'no height rules could be sourced from the official website',
-            stages,
-          };
-        }
+        console.error('    no height rules — catalog allows proceeding without heights');
+        logStage('heights', { ruleCount: 0, matched: heights.matched, rideCount: heights.rideCount, allowed: true });
       } else {
         logStage('heights', {
           ruleCount: heights.ruleCount,
