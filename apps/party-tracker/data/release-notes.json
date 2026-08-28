@@ -630,5 +630,11 @@
     "items": [
       "fix(#16): close the delivery revision cursor, and the gates that were hiding work (#746)"
     ]
+  },
+  "1.35.6": {
+    "title": "What's new",
+    "items": [
+      "automations mega: fix broken Gate base ref + complete the Upstash ops lane (#748)"
+    ]
   }
 }
