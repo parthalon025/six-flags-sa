@@ -5091,6 +5091,71 @@ await check('a camping rule narrows the venue-wide facts by name', () => {
   return true;
 });
 
+/* -------------------------------------------------------------- overrides -- */
+
+const { applyOverrides } = await import('../../packages/venue-builder/bin/build-venue.mjs');
+
+await check('a partial nested override patch leaves sibling fields intact', () => {
+  const pois = [{ n: 'Millennium Force', c: 'coaster', h: { min: 48, alone: 46, max: null } }];
+  const { pois: merged, applied } = applyOverrides(pois, {
+    pois: { 'Millennium Force': { h: { min: 52 } } },
+  });
+  assert.equal(applied, 1);
+  // Only `min` was named in the patch — `alone` and `max` must survive it,
+  // where a wholesale Object.assign onto `h` would have dropped both.
+  assert.deepEqual(merged[0].h, { min: 52, alone: 46, max: null });
+  return true;
+});
+
+await check('an explicit null in an override patch still clears the field', () => {
+  const pois = [{ n: 'Top Thrill 2', c: 'coaster', h: { min: 52, alone: null, max: null } }];
+  const { pois: merged } = applyOverrides(pois, { pois: { 'Top Thrill 2': { h: null } } });
+  // `null` is not a plain object, so it falls through to a direct
+  // assignment rather than being recursed into — "check at the ride" holds.
+  assert.equal(merged[0].h, null);
+  return true;
+});
+
+await check('dropping a name shared by more than one place removes every bearer and says so', () => {
+  const pois = [
+    { n: 'Restrooms', c: 'restroom', i: 'restroom-1' },
+    { n: 'Restrooms', c: 'restroom', i: 'restroom-2' },
+    { n: 'Millennium Force', c: 'coaster', i: 'millennium-force' },
+  ];
+  const logged = [];
+  const origError = console.error;
+  console.error = (...args) => logged.push(args.join(' '));
+  let result;
+  try {
+    result = applyOverrides(pois, { drop: ['Restrooms'] });
+  } finally {
+    console.error = origError;
+  }
+  assert.equal(result.pois.length, 1);
+  assert.equal(result.pois[0].n, 'Millennium Force');
+  assert.ok(
+    logged.some((line) => line.includes('drop "Restrooms"') && line.includes('2 places')),
+    `expected a multi-bearer drop notice, got: ${JSON.stringify(logged)}`,
+  );
+  return true;
+});
+
+await check('dropping a key-addressed single place stays silent', () => {
+  const pois = [{ n: 'Restrooms', c: 'restroom', i: 'restroom-1' }];
+  const logged = [];
+  const origError = console.error;
+  console.error = (...args) => logged.push(args.join(' '));
+  let result;
+  try {
+    result = applyOverrides(pois, { drop: ['restroom-1'] });
+  } finally {
+    console.error = origError;
+  }
+  assert.equal(result.pois.length, 0);
+  assert.deepEqual(logged, []);
+  return true;
+});
+
 /* -------------------------------------------------------- source catalogue -- */
 
 const { wireSources, osmGaps, resolveCredits, readSources } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
