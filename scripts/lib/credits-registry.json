@@ -84,7 +84,7 @@
       "license": "BSD-3-Clause",
       "url": "https://maplibre.org",
       "attribution": "credits-screen",
-      "note": "WebGL vector-tile map renderer. Confirmed via node_modules/maplibre-gl/package.json (\"license\": \"BSD-3-Clause\") — the venue-builder's own adapter registry (packages/venue-builder/lib/adapters/registry.mjs) lists this as BSD-2-Clause, which is out of date; flagged for the maintainers to fix separately."
+      "note": "WebGL vector-tile map renderer. Confirmed via node_modules/maplibre-gl/package.json (\"license\": \"BSD-3-Clause\"); the venue-builder's adapter registry (packages/venue-builder/lib/adapters/registry.mjs) agrees (#565)."
     },
     {
       "id": "pmtiles",

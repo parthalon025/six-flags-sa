@@ -1,6 +1,6 @@
 {
   "$note": "Pinned section :: check names produced by the suites in `sources`. test/builder/check-names.mjs runs them and fails when the set moves. This exists so test/builder/unit.mjs can be split across files without silently losing a check: a split changes `sources`, never `checks`.",
-  "$rename-2026-08-27": "commit 5e2cebc (Visual factory owns Zone tone) renamed two 'venue selection' checks in place. 'a district is tinted by its own venue, or by its own name' -> 'a Zone is painted by the Visual factory, or by its own name': same assertion (landTint honours a supplied per-name table over the generated fallback), updated for the new per-World pack argument, coverage widened (asserts stroke/label too, and the empty-pack case). 'every named district is one this venue actually has' -> 'map truth carries no Zone treatment': NOT the same assertion \u2014 the old check asserted no stray tint entries in the retired v.lands/meta.lands table; the new check asserts that retired table stays gone from the manifest and map.json. That table no longer exists, so the old assertion has no target left to check. The coverage it protected \u2014 a named land/Zone tone must name a Zone the venue actually has \u2014 is still enforced against the mechanism that replaced v.lands (the compiled Visual-factory spec) by the pre-existing, untouched check `display :: a land tone naming a land the venue does not have fails` (test/builder/display.mjs), which predates and postdates this commit unchanged and runs unconditionally in `npm run test:builder` ahead of check-names.mjs. No coverage was dropped.",
+  "$rename-2026-08-27": "commit 5e2cebc (Visual factory owns Zone tone) renamed two 'venue selection' checks in place. 'a district is tinted by its own venue, or by its own name' -> 'a Zone is painted by the Visual factory, or by its own name': same assertion (landTint honours a supplied per-name table over the generated fallback), updated for the new per-World pack argument, coverage widened (asserts stroke/label too, and the empty-pack case). 'every named district is one this venue actually has' -> 'map truth carries no Zone treatment': NOT the same assertion — the old check asserted no stray tint entries in the retired v.lands/meta.lands table; the new check asserts that retired table stays gone from the manifest and map.json. That table no longer exists, so the old assertion has no target left to check. The coverage it protected — a named land/Zone tone must name a Zone the venue actually has — is still enforced against the mechanism that replaced v.lands (the compiled Visual-factory spec) by the pre-existing, untouched check `display :: a land tone naming a land the venue does not have fails` (test/builder/display.mjs), which predates and postdates this commit unchanged and runs unconditionally in `npm run test:builder` ahead of check-names.mjs. No coverage was dropped.",
   "sources": [
     "test/builder/unit.mjs"
   ],
@@ -19,7 +19,7 @@
     "core/state :: a phone cannot remove or retag another phone",
     "core/state :: a bare heartbeat is silent but still moves lastSeen",
     "core/state :: a heartbeat carrying battery or status is broadcast",
-    "core/state :: nobody can edit anybody else\u2019s record",
+    "core/state :: nobody can edit anybody else’s record",
     "core/state :: rejoining after a refresh keeps join order and location",
     "core/state :: set-leader moves the host role across the roster",
     "core/state :: applyOps reproduces host state on a replica",
@@ -422,7 +422,7 @@
     "live/recommend :: membersAt counts only people at the place",
     "live/recommend :: recommendNow surfaces nearby clear-sky rides",
     "live/recommend :: recommendNow explains a weather-hedged pick with factors[] and a short why",
-    "live/recommend :: recommendNow prefers the party\u2019s report over the weather hedge as the why",
+    "live/recommend :: recommendNow prefers the party’s report over the weather hedge as the why",
     "live/recommend :: recommendNow adds an eligibility factor once a rider height is known",
     "live/recommend :: recommendNow never recommends a ride the rider cannot ride",
     "venue/ids :: every place in every shipped venue gets a unique id",
@@ -481,7 +481,7 @@
     "sheet :: Clerk provider can mount with only the publishable key",
     "sheet :: resolveClerkSignIn prefers hook client then falls back to Clerk.client",
     "sheet :: clerkOAuthReady waits for Clerk JS, not useSignIn isLoaded",
-    "sheet :: Profile gate is Sign in (Clerk /sign-in) or Guest \u2014 last working auth",
+    "sheet :: Profile gate is Sign in (Clerk /sign-in) or Guest — last working auth",
     "sheet :: The World pick is one component, mounted by both intake paths",
     "sheet :: The intro is a tap-to-continue splash and never invents a party code",
     "sheet :: first-run splash does not wait for the Profile gate",
@@ -559,7 +559,7 @@
     "adventure/questQueue :: nearbyReports keeps only resolvable fixes within radius, nearest first",
     "adventure/questQueue :: createQuestQueue enqueues, loads in order, removes and clears",
     "adventure/questQueue :: createQuestQueue rejects anything that is not a built report",
-    "adventure/questQueue :: createQuestQueue caps its tail at max \u2014 oldest is dropped, not newest",
+    "adventure/questQueue :: createQuestQueue caps its tail at max — oldest is dropped, not newest",
     "adventure/questQueue :: separate queue instances do not share an in-memory outbox",
     "adventure/questQueue :: quest seeds map builder ask gaps to Scout types",
     "adventure/questQueue :: height-chart headers are dropped and arcades reclassified",
@@ -581,7 +581,19 @@
     "adventure/questQueue :: contribution store accepts durable rows in memory",
     "adventure/questQueue :: slimAgentContext truncates large agent payloads",
     "adventure/questQueue :: llmConfig databricks requires host and token",
-    "adventure/questQueue :: consolidate accepts height kind alias"
+    "adventure/questQueue :: consolidate accepts height kind alias",
+    "routing/attributes :: the wheelchair profile is offered only when it has something to avoid (#415)",
+    "routing/attributes :: the wheelchair profile excludes both steps and wheelchair=no segments (#415)",
+    "routing/attributes :: a wheelchair=no side of the square routes the long way round (#415)",
+    "routing/attributes :: WAY_FLAGS.WHEELCHAIR_NO is a distinct bit from every existing flag (#415)",
+    "venue tag rules :: tag coverage counts wheelchair=no ways separately from restricted (#415)",
+    "plan :: every shipped venue with an expect lock clears its own floor (#271)",
+    "plan :: a partial nested override patch leaves sibling fields intact",
+    "plan :: an explicit null in an override patch still clears the field",
+    "plan :: dropping a name shared by more than one place removes every bearer and says so",
+    "plan :: dropping a key-addressed single place stays silent",
+    "sheet :: maplibre-gl-js is credited with its actual license (#565)"
   ],
-  "$added-2026-08-27": "New check pinned with ticket 25's fix: 'a rename override survives rebuild only while the ledger pins the OSM element'. The fix (re-keying cedar-point's two spelling overrides to their live ledger keys) shipped with no regression coverage \u2014 the two-axis Spec review caught the gap against ticket 25's own acceptance box. The check pins both halves of the mechanism: a ledger record with no osm rotates its key when an override renamed the place, orphaning the override silently; the same record with the osm element pinned survives. Verified discriminating by disabling assignKeys step 1 \u2014 it fails on its own message."
+  "$added-2026-08-27": "New check pinned with ticket 25's fix: 'a rename override survives rebuild only while the ledger pins the OSM element'. The fix (re-keying cedar-point's two spelling overrides to their live ledger keys) shipped with no regression coverage — the two-axis Spec review caught the gap against ticket 25's own acceptance box. The check pins both halves of the mechanism: a ledger record with no osm rotates its key when an override renamed the place, orphaning the override silently; the same record with the osm element pinned survives. Verified discriminating by disabling assignKeys step 1 — it fails on its own message.",
+  "$added-2026-08-28": "New checks pinned with this batch: the wheelchair-accessible routing profile (#415, five checks spanning WAY_FLAGS, osm-tags wayAttributes, tag-coverage, routingProfiles gating/exclusion and a graph-level detour proof); applyOverrides deep-merge + multi-bearer drop notice (#273, four checks); the expect-lock shipped-bundle floor check (#271); and the MapLibre GL JS license regression check (#565)."
 }
