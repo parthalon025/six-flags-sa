@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
 ## Evidence
 
@@ -68,3 +68,44 @@ In both cases:
 Do not close this by deleting `ParkMapGl.jsx` to make the record tidy — that discards the port
 `h11` did and answers the question by throwing away the work. The owner decides which renderer
 ships; this ticket only requires that the plan and the app agree.
+
+## Escalation — this is not a bookkeeping slip (2026-08-28)
+
+Fixing `hydrated()`'s stale selector let the suites get past the 40-second hang, and what they
+reached settles it. `smoke` now reports **15 passed, 5 failed**, and every one of the five is a
+MapLibre assertion:
+
+```
+FAIL park geometry is drawn -> map not drawn (no MapLibre canvas)
+FAIL the camera follows this phone and snaps back after a free look
+       -> waiting for locator('[data-testid="park-map-gl"]')
+FAIL park-wide rest shows Zone names and ride names -> timed out waiting for map ready
+FAIL wearing Pixel tycoon keeps the MapLibre map (OSM until a bake exists)
+FAIL wearing Watercolor quest draws the baked world image under the overlay
+       -> waiting for '[data-testid="park-map-gl"][data-baked-world$="watercolor-quest.world.png"]'
+```
+
+**`test/app/functional.mjs` contains 19 references to `park-map-gl`.** Nineteen assertions were
+written against a renderer `app/page.js` has never imported — `git log -S ParkMapGl -- app/page.js`
+returns nothing, in any commit.
+
+So the hydration bug was not merely hiding itself. It was **masking the entire MapLibre
+expectation**: every suite hung before reaching an assertion that would have said the shipped page
+has no MapLibre map. Two defects stacked, and the outer one kept the inner one invisible for as
+long as both existed.
+
+The app is not broken for guests — the SVG map draws Zones, Places and markers. What is broken is
+the agreement between three things that are supposed to describe each other: the train plan says
+MapLibre ships, the test suite asserts MapLibre ships, and the page renders `ParkMap`.
+
+### Why this needs a human
+
+The two branches are large and opposite, and neither is an agent's call:
+
+1. **Mount MapLibre** — `app/page.js` renders `ParkMapGl`, and the 19 assertions start passing.
+   This is the shipped guest map changing engine; ADR-0019 and ADR-0021's band work assume it.
+2. **Retract h18** — the SVG renderer is what ships, `PARK_MAP_RENDERERS` and the slice title are
+   corrected, and the 19 assertions are rewritten against the renderer that actually draws.
+
+Until one is chosen, `npm run test:validate-ui:changed` cannot pass — **on this branch or on
+`origin/main`**, which is equally affected since no app source involved here differs between them.
