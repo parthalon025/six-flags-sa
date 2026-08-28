@@ -185,9 +185,24 @@ that this adds a better path, not that it removes the old one.
    with no peers has no data channel, its first beacon throws, the manager fails
    it over to the relay, and then nobody is listening for offers. QR signalling
    is pointless until a data channel works over the existing relay-based path.
-2. **The three open behavioural defects** (split-brain election, no range between
-   phones, leave not propagating) should be closed first. Debugging QR signalling
-   on top of an election that can produce two hosts will waste your time.
+2. **Of the three open behavioural defects this doc originally listed, two are
+   closed** (#311):
+   - **Split-brain election** — `lib/party/election.js`'s `noteHostSeen` stands
+     an open election down the moment host traffic is heard; `handleClaim` /
+     `handleVictory` reassert (rate-limited by `reassertGapMs`) or step down by
+     the same total order (`outranks`) every peer computes independently.
+     Regression coverage: `test/app/election.test.mjs` (host-traffic-cancels,
+     reassert rate limiting, yield-to-a-genuinely-better-rival) and
+     `test/app/party-protocol.test.mjs` ("two phones that promote at once
+     settle on the total order", "the election margin DOES resolve a split
+     brain once the battery gap clears it").
+   - **Range between phones** — `components/PartyPanel.jsx` computes per-member
+     distance and bearing for located Members and range to the Rally Point.
+     Covered by `test/app/functional.mjs`'s "roster shows a real walk and
+     bearing to phone B".
+   - **Leave not propagating** is still open — tracked in #367, out of scope
+     for #311. Debugging QR signalling on top of a leave that can strand a
+     ghost Member on some replicas will waste your time; close #367 first.
 
 ---
 

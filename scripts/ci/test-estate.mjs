@@ -104,6 +104,7 @@ export const TEST_ESTATE = {
   'test/app/custom-map.test.mjs': ['test:unit'],
   'test/app/displaySpike.test.mjs': ['test:unit'],
   'test/app/eligibility.test.mjs': ['test:unit'],
+  'test/app/election.test.mjs': ['test:unit'],
   'test/app/functional.mjs': ['ui-matrix', 'app-vertical'],
   'test/app/geo.test.mjs': ['test:unit'],
   'test/app/godmode.test.mjs': ['test:unit'],
