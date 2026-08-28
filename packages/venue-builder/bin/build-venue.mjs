@@ -71,6 +71,7 @@ import {
   runVenueBatch,
   parseCatalogArgs,
   pipelineOptsFromCatalogArgs,
+  pipelineOptsForPark,
 } from '../lib/build-pipeline.mjs';
 import { loadCatalog, selectParks, withIds } from '../lib/top-parks-catalog.mjs';
 
@@ -1426,6 +1427,7 @@ async function runCatalogBatch(argv) {
 
   const summary = await runVenueBatch(parks, {
     ...pipelineOptsFromCatalogArgs(args, { batch: true }),
+    catalogArgs: args,
     batchDelay: args.delay,
     openPr: args.openPr,
     catalogSize: catalog.parks.length,
@@ -1460,7 +1462,7 @@ async function runSinglePipeline(argv) {
     locality: args.locality || '',
     kind: args.kind || 'theme-park',
   };
-  const result = await runVenuePipeline(park, pipelineOptsFromCatalogArgs(catalogArgs));
+  const result = await runVenuePipeline(park, pipelineOptsForPark(park, catalogArgs));
   process.exit(result.status === 'built' || result.status === 'dry-run' ? 0 : 1);
 }
 
