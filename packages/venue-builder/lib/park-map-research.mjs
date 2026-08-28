@@ -22,7 +22,19 @@ import {
   resolveBuilderPath,
 } from './venue-io.mjs';
 import { readSources } from './venue-sources.mjs';
-import { decodeHtml } from './operators/generic.mjs';
+
+/** Decode a handful of HTML entities without a parser dependency. */
+function decodeHtml(s) {
+  return String(s || '')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ');
+}
 
 const MAP_ASSET_RE = /\.(?:png|jpe?g|webp|gif|pdf|svg)(?:\?|#|$)/i;
 const MAPISH_RE = /park[-_ ]?map|map[-_ ]?of|guest[-_ ]?map|guide[-_ ]?map|schematic|handout|cartograph|venue[-_ ]?map/i;
