@@ -142,6 +142,7 @@ export const TEST_ESTATE = {
   'test/app/visual.mjs': ['visual-job'],
   'test/app/weather-route.test.mjs': ['test:unit'],
   'test/app/world-marks.test.mjs': ['test:unit'],
+  'test/app/world-marks-memory.test.mjs': ['test:unit'],
   'test/app/zoom-bands.test.mjs': ['test:unit'],
 
   // --- test/builder: assertions over generated venue output ----------------

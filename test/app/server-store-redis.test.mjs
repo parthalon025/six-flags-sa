@@ -34,7 +34,7 @@ delete process.env.KV_REST_API_TOKEN;
 
 const APP = '../../apps/party-tracker/';
 const store = await import(`${APP}lib/serverStore.js`);
-const { createParty, createMember } = await import(`${APP}lib/core/state.js`);
+const { createParty, createMember, PARTY_TTL_MS } = await import(`${APP}lib/core/state.js`);
 
 assert.equal(store.usingRedis, true, 'this file needs the Redis path — Upstash creds must precede the import');
 
@@ -190,11 +190,11 @@ await check('depth trim keeps only the newest MAILBOX_DEPTH entries', async () =
   assert.equal(seq, 505, 'the high-water mark is unaffected by the trim');
 });
 
-await check('the EVAL both refreshes the box TTL and the seq-key TTL', async () => {
+await check('the EVAL both refreshes the box TTL and the seq-key TTL, with the right seconds', async () => {
   const id = idc();
   await store.appendMailbox(id, { from: 'a', to: null, kind: 'test', data: {} });
-  assert.ok(fake.store.ttl.has(`ki:zbox:${id}`), 'box EXPIRE was issued');
-  assert.ok(fake.store.ttl.has(`ki:seq:${id}`), 'seq-key EXPIRE was issued');
+  assert.equal(fake.store.ttl.get(`ki:zbox:${id}`), Math.round(store.MAILBOX_TTL_MS / 1000), 'box EXPIRE seconds');
+  assert.equal(fake.store.ttl.get(`ki:seq:${id}`), Math.round(PARTY_TTL_MS / 1000), 'seq-key EXPIRE seconds');
 });
 
 await check('appendMailbox is one EVAL round trip, not a multi-step pipeline', async () => {

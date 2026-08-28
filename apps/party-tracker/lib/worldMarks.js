@@ -110,9 +110,7 @@ async function mutateVenueWorld(venueId, mutate) {
 
   if (!usingRedis) {
     const cur = parseWorld(mem.byVenue.get(venueId));
-    const next = shapeWorld(mutate(cur));
-    mem.byVenue.set(venueId, next);
-    return next;
+    return saveVenueWorld(venueId, mutate(cur));
   }
 
   const key = worldKey(venueId);
