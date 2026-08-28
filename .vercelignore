@@ -52,6 +52,7 @@ packages/venue-builder/lib/*
 !packages/venue-builder/lib/imagery-claims.mjs
 !packages/venue-builder/lib/quest-seeds.mjs
 !packages/venue-builder/lib/ship-gaps.mjs
+!packages/venue-builder/lib/ambient-signal-seeds.mjs
 !packages/venue-builder/lib/factory-types.mjs
 !packages/venue-builder/lib/postdb-seed-from-files.mjs
 

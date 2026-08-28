@@ -12,25 +12,31 @@
  * '@party-tracker/venue-builder/delivery.js'" (#706, commit 640f4e8 hit this
  * same wall by adding more negations under the same excluded parent).
  *
+ * The must-upload set is not a hand-typed list — a hardcoded list silently
+ * drifts the next time someone adds an import (that is exactly how
+ * lib/ambient-signal-seeds.mjs got missed once already: it is imported by
+ * lib/quest-seeds.mjs and lib/ship-gaps.mjs, both of which WERE on the
+ * hand-typed list, but the file they import was not). Instead this computes
+ * the real transitive import closure — via computeImportClosure()
+ * (scripts/lib/import-closure.mjs), which follows every relative
+ * import/export/dynamic-import()/require() — from the entry points below,
+ * and asserts every file it finds is not ignored.
+ *
+ * ENTRY_POINTS:
+ *   - lib/delivery/index.mjs, src/paths.mjs — the two subpaths
+ *     apps/party-tracker actually imports (see
+ *     apps/party-tracker/app/api/venues/[venueId]/bundle/route.js and
+ *     apps/party-tracker/lib/venueCompare.js). Real runtime need.
+ *   - lib/venue-report-gate.mjs — exported in package.json's `exports` map
+ *     (./venue-report-gate.js) but not reachable from the two entries above,
+ *     and nothing in apps/party-tracker imports it today (only bin/ CLI
+ *     scripts and tests do, and those stay excluded independently). Kept
+ *     uploaded for exports-map parity, not runtime need.
+ *
  * This asserts the DECISION `git check-ignore` makes over the real
  * `.vercelignore`, against a fixture git repo (so it also catches a future
  * edit that reintroduces the same excluded-parent trap) — not just that some
  * command exits zero.
- *
- * The must-upload list here is the real transitive import closure of
- * `@party-tracker/venue-builder/delivery.js` and `/paths.js` (the two
- * subpaths `apps/party-tracker` actually imports — see
- * apps/party-tracker/app/api/venues/[venueId]/bundle/route.js and
- * apps/party-tracker/lib/venueCompare.js), traced by following every
- * relative import/export/dynamic-import starting at
- * packages/venue-builder/lib/delivery/index.mjs and
- * packages/venue-builder/src/paths.mjs. Also included:
- * lib/venue-report-gate.mjs and the three files only it needs
- * (venue-checklist.mjs, venue-recipe.mjs, venue-ids.mjs) — that subpath is
- * exported in packages/venue-builder/package.json's `exports` map but wasn't
- * reachable from delivery.js/paths.js, so it stays here for exports-map
- * parity even though nothing in apps/party-tracker imports it today (only
- * bin/ CLI scripts and tests do, and those stay excluded independently).
  *
  *   node test/scripts/vercelignore-venue-builder.test.mjs
  */
@@ -41,50 +47,37 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { scrubGitEnv } from '../../scripts/lib/git-env.mjs';
+import { computeImportClosure } from '../../scripts/lib/import-closure.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
-// Real transitive import closure of delivery.js + paths.js, plus the
-// venue-report-gate.js exports-map subpath (see file header).
-const MUST_UPLOAD = [
-  'packages/venue-builder/package.json',
+// Entries as repo-root-relative paths (not package-relative): the closure
+// can legitimately reach outside packages/venue-builder — venue-report-gate.mjs
+// reaches into apps/party-tracker/lib/venue/ids.js — and repo-root-relative
+// paths are what .vercelignore patterns (and git check-ignore) key on, so
+// nothing needs re-prefixing (and mis-prefixing) after the trace.
+const REAL_ENTRIES = [
   'packages/venue-builder/lib/delivery/index.mjs',
-  'packages/venue-builder/lib/delivery/publish-bundle.mjs',
-  'packages/venue-builder/lib/delivery/export-from-postdb.mjs',
-  'packages/venue-builder/lib/delivery/delta-sync.mjs',
-  'packages/venue-builder/lib/delivery/resolve-sync-manifest.mjs',
-  'packages/venue-builder/lib/delivery/freshness.mjs',
-  'packages/venue-builder/lib/delivery/builder-app-contract.mjs',
-  'packages/venue-builder/lib/delivery/delivery-io.mjs',
-  'packages/venue-builder/lib/db/postgres.mjs',
-  'packages/venue-builder/lib/postdb-io.mjs',
-  'packages/venue-builder/lib/venue-io.mjs',
-  'packages/venue-builder/lib/venue-bundle.mjs',
-  'packages/venue-builder/lib/evidence.mjs',
-  'packages/venue-builder/lib/imagery-claims.mjs',
-  'packages/venue-builder/lib/quest-seeds.mjs',
-  'packages/venue-builder/lib/ship-gaps.mjs',
-  'packages/venue-builder/lib/venue-fs.mjs',
-  'packages/venue-builder/lib/venue-sources.mjs',
-  'packages/venue-builder/lib/evidence-graph.mjs',
-  'packages/venue-builder/lib/factory-types.mjs',
-  'packages/venue-builder/lib/postdb-seed-from-files.mjs',
-  'packages/venue-builder/lib/adapters/_cache.mjs',
-  'packages/venue-builder/lib/map-factory/map-io.mjs',
-  'packages/venue-builder/lib/map-factory/postdb-sync.mjs',
-  'packages/venue-builder/lib/visual-factory/postdb-sync.mjs',
-  'packages/venue-builder/lib/venue-report-gate.mjs',
-  'packages/venue-builder/lib/venue-checklist.mjs',
-  'packages/venue-builder/lib/venue-recipe.mjs',
-  'packages/venue-builder/lib/venue-ids.mjs',
   'packages/venue-builder/src/paths.mjs',
-  'packages/venue-builder/src/routing-coverage.mjs',
 ];
+const EXTRA_ENTRIES = ['packages/venue-builder/lib/venue-report-gate.mjs'];
+
+const closure = computeImportClosure({ root, entries: [...REAL_ENTRIES, ...EXTRA_ENTRIES] });
+
+assert.deepEqual(
+  closure.unresolved,
+  [],
+  `import-closure trace found unresolved relative imports (broken source, or the tracer needs a fix): ${closure.unresolved.join(', ')}`,
+);
+
+// package.json is never imported by JS, but npm workspaces needs it on disk
+// to resolve the package at all.
+const MUST_UPLOAD = ['packages/venue-builder/package.json', ...closure.files];
 
 // Never needed at runtime by the deployed app — must stay out of the upload
 // so it stays lean. lib/adapters, lib/map-factory and lib/visual-factory are
-// large factory trees; only the thin seams above (an index.mjs each) are
-// pulled in, so the rest of each directory must stay excluded too.
+// large factory trees; only the thin seams the closure above pulls in are
+// needed, so the rest of each directory must stay excluded.
 const MUST_STAY_EXCLUDED = [
   'packages/venue-builder/data/whatever.json',
   'packages/venue-builder/bin/build-venue.mjs',
@@ -122,7 +115,7 @@ try {
     assert.equal(
       gitCheckIgnore(fixture, path),
       false,
-      `.vercelignore must upload ${path} (delivery.js's real import closure needs it)`,
+      `.vercelignore must upload ${path} — reached by the real import closure of ${[...REAL_ENTRIES, ...EXTRA_ENTRIES].join(', ')}`,
     );
   }
   for (const path of MUST_STAY_EXCLUDED) {
@@ -162,4 +155,4 @@ assert.match(
   'must exclude venue-builder one level at a time so nested re-includes actually apply',
 );
 
-console.log('vercelignore-venue-builder: ok');
+console.log(`vercelignore-venue-builder: ok (${MUST_UPLOAD.length} must-upload files derived from the import closure)`);
