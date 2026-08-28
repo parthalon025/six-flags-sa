@@ -1,7 +1,7 @@
 {
   "version": 1,
   "venue": "big-kahunas",
-  "skin": "blueprint-survey",
+  "skin": "pixel-tycoon",
   "basedOn": {
     "map": "2026-08-28"
   },
@@ -9,22 +9,13 @@
     "contrastFloor": 4.5,
     "labelHalo": true,
     "mode": "day",
-    "landTones": {
-      "cover": 0.12,
-      "lean": 0.18,
-      "spread": 0.04,
-      "steps": 3
-    },
     "colors": {
-      "path": "#39567E",
-      "ground": "#FBF7EC",
-      "water": "#E3EDF6",
-      "grass": "#F0F3E2",
-      "building": "#FBF7EC",
-      "label": "#39567E",
-      "structureEdge": "#39567E",
-      "groundEdge": "#C9D4A8",
-      "pathCasing": "#FBF7EC"
+      "path": "#E8D49C",
+      "ground": "#C4A46C",
+      "water": "#3C7CBC",
+      "grass": "#5C9C4C",
+      "building": "#B45C4C",
+      "label": "#1C140C"
     }
   },
   "surfaces": {
@@ -33,14 +24,14 @@
       "layers": [
         "path"
       ],
-      "color": "#56667B"
+      "color": "#BFB28D"
     },
     "service-road": {
       "material": "asphalt--worn",
       "layers": [
         "service"
       ],
-      "color": "#394A60"
+      "color": "#A29672"
     },
     "vegetation": {
       "material": "grass--meadow",
@@ -49,35 +40,35 @@
         "wood",
         "park"
       ],
-      "color": "#B1B69A"
+      "color": "#588240"
     },
     "water": {
       "material": "water--calm",
       "layers": [
         "water"
       ],
-      "color": "#ABD4EC"
+      "color": "#4790C9"
     },
     "pool": {
       "material": "water--pool",
       "layers": [
         "pool"
       ],
-      "color": "#A8DCF0"
+      "color": "#4498CE"
     },
     "slide": {
       "material": "fiberglass--flume",
       "layers": [
         "slide"
       ],
-      "color": "#7F6869"
+      "color": "#E8B47B"
     },
     "structure": {
       "material": "roofing--shingle",
       "layers": [
         "building"
       ],
-      "color": "#B7B5AB"
+      "color": "#8D584B"
     }
   },
   "landTones": {},
