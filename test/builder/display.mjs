@@ -1500,6 +1500,38 @@ await check('the style cert carries the label row when a spec rides along', () =
   return true;
 });
 
+/** Per-role Zone tones: `{ day: { fill, stroke, label } }`, not the retired flat hex shape. */
+function assertPerRoleLandTones(spec, name) {
+  for (const [zone, byMode] of Object.entries(spec.landTones || {})) {
+    for (const [mode, tone] of Object.entries(byMode)) {
+      assert.equal(
+        typeof tone,
+        'object',
+        `${name} landTones.${zone}.${mode} uses the retired flat shape — re-run venues:display`,
+      );
+      assert.ok(tone?.fill, `${name} landTones.${zone}.${mode}.fill missing`);
+      assert.ok(tone?.stroke, `${name} landTones.${zone}.${mode}.stroke missing`);
+      assert.ok(tone?.label, `${name} landTones.${zone}.${mode}.label missing`);
+    }
+  }
+}
+
+await check('every shipped visual.json carries per-role landTones, not the retired flat shape', () => {
+  const venues = new URL('../../packages/venue-builder/data/venues/', import.meta.url);
+  const specs = [];
+  for (const venue of readdirSync(venues).sort()) {
+    const display = new URL(`${venue}/display/`, venues);
+    let entries = [];
+    try { entries = readdirSync(display); } catch { continue; }
+    for (const f of entries.filter((n) => n.endsWith('.visual.json')).sort()) {
+      specs.push([`${venue}/${f}`, JSON.parse(readFileSync(new URL(f, display), 'utf8'))]);
+    }
+  }
+  assert.ok(specs.length >= 16, `expected the four shipped venues × four Skins, found ${specs.length}`);
+  for (const [name, spec] of specs) assertPerRoleLandTones(spec, name);
+  return true;
+});
+
 /* --------------------------------------------------------------- wiring -- */
 
 await check('display is a pipeline stage after certify, opt-in via --display', () => {

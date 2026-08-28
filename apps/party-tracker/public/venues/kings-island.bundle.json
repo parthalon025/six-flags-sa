@@ -5,7 +5,7 @@
     "map": "2026-08-09",
     "revisionId": "7ce988f1-89e1-4cf5-8c58-969041986b1a"
   },
-  "bytes": 15207385,
+  "bytes": 15207224,
   "files": [
     {
       "path": "/venues/kings-island.gaps.json",
@@ -54,8 +54,8 @@
     },
     {
       "path": "/venues/kings-island/display/pixel-tycoon.visual.json",
-      "bytes": 3173,
-      "sha256": "010319879472f5532153989e4c455a929076cb8f3ea7e9be47ba74ad8d365fe8"
+      "bytes": 3012,
+      "sha256": "40123a58bec253772f4271533e77c2a2c6d326c19665b8c0a994f2499d012d69"
     },
     {
       "path": "/venues/kings-island/display/trail.visual.json",

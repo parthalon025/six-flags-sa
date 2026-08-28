@@ -5,7 +5,7 @@ the current Visual-factory output shape.
 
 **Blocked by:** None
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Evidence
 
