@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
   CI_PROVEN_PASSES,
   compareToOsm,
@@ -69,18 +72,27 @@ assert.equal(missingKey.ok, false);
 if (prevKey) process.env.GOOGLE_MAPS_API_KEY = prevKey;
 
 process.env.GOOGLE_MAPS_API_KEY = 'test-key';
-const fetched = await runGooglePlaces(
-  { venueId: 'fixture-park', placeIds: ['ChIJtest'] },
-  {
-    fetchFn: async () => ({
-      ok: true,
-      json: async () => ({ id: 'ChIJtest', displayName: { text: 'Front Gate' } }),
-    }),
-  },
-);
+const placesCacheDir = mkdtempSync(join(tmpdir(), 'imagery-places-'));
+try {
+  const fetched = await runGooglePlaces(
+    {
+      venueId: 'fixture-park',
+      placeIds: ['ChIJtest'],
+      cacheFile: join(placesCacheDir, 'google-places-cache.json'),
+    },
+    {
+      fetchFn: async () => ({
+        ok: true,
+        json: async () => ({ id: 'ChIJtest', displayName: { text: 'Front Gate' } }),
+      }),
+    },
+  );
+  assert.equal(fetched.ok, true);
+  assert.equal(fetched.claims[0].displayName, 'Front Gate');
+} finally {
+  rmSync(placesCacheDir, { recursive: true, force: true });
+}
 delete process.env.GOOGLE_MAPS_API_KEY;
-assert.equal(fetched.ok, true);
-assert.equal(fetched.claims[0].displayName, 'Front Gate');
 
 const proposal = buildOsmChangeProposal({ venueId: 'kings-island', claim: { note: 'path position disputed' } });
 assert.equal(proposal.status, 'draft');
