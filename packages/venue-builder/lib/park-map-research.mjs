@@ -239,6 +239,23 @@ export function deterministicParkMapCandidates({ catalog, official, htmlByUrl = 
 }
 
 /**
+ * Fallback pages when Six Flags /park-map 404s (map assets live on directions/park-hours).
+ * Exported for tests; used by fetchParkMapPages.
+ */
+export function parkMapFetchFallbackUrls(pageUrl) {
+  if (!pageUrl) return [];
+  try {
+    const u = new URL(pageUrl);
+    if (!/\.sixflags\.com$/i.test(u.hostname)) return [];
+    if (!/\/park-map\/?$/i.test(u.pathname)) return [];
+    const base = u.pathname.replace(/\/park-map\/?$/i, '');
+    return [`${u.origin}${base}/directions`, `${u.origin}${base}/park-hours`];
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Fetch official_map pages for HTML extraction (network).
  */
 export async function fetchParkMapPages(catalog, opts = {}) {
@@ -248,11 +265,19 @@ export async function fetchParkMapPages(catalog, opts = {}) {
   for (const m of maps) {
     if (!m.url) continue;
     if (opts.offline) continue;
-    try {
-      htmlByUrl[m.url] = await fetchUrl(m.url, { timeoutMs: opts.timeoutMs || 25000 });
-    } catch (err) {
-      errors.push(`${m.url}: ${err.message}`);
+    const tryUrls = [m.url, ...parkMapFetchFallbackUrls(m.url)];
+    let html = null;
+    let lastErr = null;
+    for (const url of tryUrls) {
+      try {
+        html = await fetchUrl(url, { timeoutMs: opts.timeoutMs || 25000 });
+        htmlByUrl[m.url] = html;
+        break;
+      } catch (err) {
+        lastErr = err;
+      }
     }
+    if (!html) errors.push(`${m.url}: ${lastErr?.message || 'fetch failed'}`);
   }
   return { htmlByUrl, errors };
 }

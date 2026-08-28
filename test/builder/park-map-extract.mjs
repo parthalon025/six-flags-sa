@@ -25,7 +25,7 @@ async function check(name, fn) {
 
 console.log('\npark-map HTML extraction (#434)\n');
 
-const { extractParkMapAssetUrls, pickParkMapForDownload } = await import(
+const { extractParkMapAssetUrls, pickParkMapForDownload, parkMapFetchFallbackUrls } = await import(
   '../../packages/venue-builder/lib/park-map-research.mjs'
 );
 
@@ -105,6 +105,16 @@ await check('extractParkMapAssetUrls rejects extensionless park-map page hrefs',
   const html = '<a href="https://www.cedarpoint.com/park-map">Map</a>';
   const assets = extractParkMapAssetUrls(html, 'https://www.cedarpoint.com/park-map');
   assert.equal(assets.length, 0);
+  return true;
+});
+
+await check('parkMapFetchFallbackUrls adds Six Flags directions/park-hours when /park-map 404s', () => {
+  const fallbacks = parkMapFetchFallbackUrls('https://www.sixflags.com/fiestatexas/park-map');
+  assert.deepEqual(fallbacks, [
+    'https://www.sixflags.com/fiestatexas/directions',
+    'https://www.sixflags.com/fiestatexas/park-hours',
+  ]);
+  assert.deepEqual(parkMapFetchFallbackUrls('https://www.cedarpoint.com/park-map'), []);
   return true;
 });
 
