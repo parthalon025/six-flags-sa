@@ -46,7 +46,7 @@ than its first.
       which keep the write and only hide it
 - [x] `fetched` still records real fetch time on a genuine (non-fixture) run, and a test proves
       that distinction rather than assuming it
-- [ ] `npm run test:pre-merge-vertical` green
+- [x] `npm run test:pre-merge-vertical` green
 
 ## Notes
 
