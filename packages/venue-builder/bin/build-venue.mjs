@@ -41,7 +41,7 @@ import {
   campDetailsFromTags, classify, isCampground, isCampPitch, isLand, isVenueOutline, openingHoursFromTags,
   wayAttributes,
 } from '../lib/osm-tags.mjs';
-import { OVERRIDE_DIR, gapsDocumentFor, readJson, readOverrides, reindex, serializeVenue, slugify, VENUE_DIR, writeVenue, venueSidecar } from '../lib/venue-io.mjs';
+import { OVERRIDE_DIR, gapsDocumentFor, readJson, readOverrides, reindex, serializeVenue, slugify, VENUE_DIR, writeVenue, venueSidecar, resolveBuilderPath } from '../lib/venue-io.mjs';
 import { mirrorTruthToPostdb } from '../lib/map-factory/postdb-sync.mjs';
 import {
   argsFromRecipe, listRecipes, readRecipe, recipeFile, recipeFrom, writeRecipe,
@@ -1176,7 +1176,7 @@ export function mergeDataset(pois, features, { metres = 25 } = {}) {
  * spreadsheet of pitch hookups a one-line import.
  */
 export function readDataset(file) {
-  const raw = readFileSync(file, 'utf8');
+  const raw = readFileSync(resolveBuilderPath(file), 'utf8');
   if (raw.trim().startsWith('{')) {
     const gj = JSON.parse(raw);
     const feats = gj.type === 'FeatureCollection' ? gj.features || [] : [gj];
@@ -1768,7 +1768,7 @@ async function buildOne(args, { previous = null } = {}) {
   if (args.trace) {
     const files = Array.isArray(args.trace) ? args.trace : [String(args.trace)];
     for (const file of files) {
-      const traced = JSON.parse(readFileSync(file, 'utf8'));
+      const traced = JSON.parse(readFileSync(resolveBuilderPath(file), 'utf8'));
       const got = applyTrace(pois, layers, traced);
       const err = traced.properties?.traced?.error_m;
       console.error(
@@ -1787,7 +1787,7 @@ async function buildOne(args, { previous = null } = {}) {
   if (args.imagery) {
     const files = Array.isArray(args.imagery) ? args.imagery : [String(args.imagery)];
     for (const file of files) {
-      const collection = JSON.parse(readFileSync(file, 'utf8'));
+      const collection = JSON.parse(readFileSync(resolveBuilderPath(file), 'utf8'));
       const got = applyImagery(pois, layers, collection, {
         metres: Number(args['imagery-metres'] ?? 15),
       });
