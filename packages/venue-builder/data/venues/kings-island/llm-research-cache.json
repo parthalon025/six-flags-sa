@@ -1,0 +1,481 @@
+{
+  "version": 1,
+  "fetched": "2026-08-28",
+  "sources": [
+    "official_site"
+  ],
+  "mode": "official",
+  "aliases": [],
+  "heightCandidates": [],
+  "inventoryGaps": [],
+  "parkMaps": [
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/0d0ec8d1619da1e67c161a015804378ba682871b-6144x4096.jpg?w=850&h=490&q=80&fit=clip&auto=format&dpr=2",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "img.src",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/0d0ec8d1619da1e67c161a015804378ba682871b-6144x4096.jpg",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/2f621e9cbdfaa8f89044135c9b46e0783bc40158-4999x3333.jpg?w=628&h=770&q=80&fit=clip&auto=format&dpr=2",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "img.src",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/2f621e9cbdfaa8f89044135c9b46e0783bc40158-4999x3333.jpg",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/d86318010594e6a086cd032298bb45049ec1ec1f-1920x1067.webp?w=850&h=490&q=80&fit=clip&auto=format&dpr=2",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "img.src",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/d86318010594e6a086cd032298bb45049ec1ec1f-1920x1067.webp",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/df8ac06df740ca1bb8462770d341aa22474c4744-1356x1036.jpg?w=690&h=290&q=80&fit=clip&auto=format&dpr=2",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "img.src",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/cb64911d0a14a6dfe35239c9897f73a0d8f06bcd-1356x1036.jpg?w=690&h=290&q=80&fit=clip&auto=format&dpr=2",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "img.src",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/429f6af2230857d5baa7ccb331dc30ca6a437e27-1356x1036.jpg?w=690&h=290&q=80&fit=clip&auto=format&dpr=2",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "img.src",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/269345a8a08dff3300174d588f0043bf9bca4ea1-1356x1036.jpg?w=690&h=290&q=80&fit=clip&auto=format&dpr=2",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "img.src",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/df8ac06df740ca1bb8462770d341aa22474c4744-1356x1036.jpg",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/cb64911d0a14a6dfe35239c9897f73a0d8f06bcd-1356x1036.jpg",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/429f6af2230857d5baa7ccb331dc30ca6a437e27-1356x1036.jpg",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/269345a8a08dff3300174d588f0043bf9bca4ea1-1356x1036.jpg",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/74ecf6bcec127d9536830db0764f3acd7eed1499-1440x690.jpg?w=628&h=770&q=80&fit=clip&auto=format&dpr=2",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "img.src",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/74ecf6bcec127d9536830db0764f3acd7eed1499-1440x690.jpg",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/f8c7bf27222e473e28c7015f638071b5a90ea5e5-1920x475.jpg?w=1920&h=1080&q=80&fit=clip&auto=format&dpr=2",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "img.src",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/f8c7bf27222e473e28c7015f638071b5a90ea5e5-1920x475.jpg",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/0316d257307842075305622390d138c9a2106ccf-828x1084.jpg?rect=0,326,828,433&w=1200&h=627&fit=crop&auto=format",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "meta",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/0316d257307842075305622390d138c9a2106ccf-828x1084.jpg",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/884a2898f671500363bffdcc55be3d284f0b12b2-2102x376.png?w=128&h=54&q=80&fit=clip&auto=format&dpr=2",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "img.src",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/c25a9fdda8686538345b2b759f8e19efc69a7cd4-1000x600.jpg",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://www.visitkingsisland.com/park-map",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "a.href",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/392fa013120bf34fbef1259268edf52ea16a581f-300x300.png",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/58b344401c79a4106124f433e99656c953f376a1-300x300.png",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/bdc78b93931c54414391a7250b19f97e75a56bbe-300x300.png",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/c7b25a94e279e849ee8ecf9cca580c3cf847da53-150x150.png",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/278aa5008a8e50731bb9fc7ce4213cc6f69340b7-150x150.png",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/bed992f7094cae00189fa4f3486ba6b8e23fed9d-150x150.png",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/e0a91a7fc2801f8e9fe9c0df86b5a032b6fb9b4c-150x150.png",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/2e61c47063a86fa511f529346484209c1247d361-150x150.png",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/854ebdf035dd08b81c8e693ff1703dbb17c3686c-150x150.png",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/25053509df0e7755841255c4cfdd0b308a3b39e6-150x150.jpg",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/d3a45c68b1288a1d8d952374c1c1ebc153cff94a-150x150.png",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/e8b857e6af4d29fcd58c353d9e7c671c56543979-150x150.png",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/83c366dbe6500afcb369cfab7d7e4fa3328cf0e6-150x150.png",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/22df72910f5acaddee15d82cfb6dbf01950cb699-150x150.png",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://www.visitkingsisland.com/favicon-32x32.png",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "a.href",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://www.visitkingsisland.com/favicon-16x16.png",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "a.href",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://www.visitkingsisland.com/parkCallout-restaurants.svg?dpl=dpl_4AwVAYrP1FUfu4KijkA2FfQfLZPT",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "img.src",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://www.visitkingsisland.com/parkCallout-rides.svg?dpl=dpl_4AwVAYrP1FUfu4KijkA2FfQfLZPT",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "img.src",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://www.visitkingsisland.com/parkCallout-shows.svg?dpl=dpl_4AwVAYrP1FUfu4KijkA2FfQfLZPT",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "img.src",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://www.visitkingsisland.com/parkCallout-events.svg?dpl=dpl_4AwVAYrP1FUfu4KijkA2FfQfLZPT",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "img.src",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://www.visitkingsisland.com/apple-touch-icon.png",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "a.href",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    },
+    {
+      "imageUrl": "https://www.visitkingsisland.com/safari-pinned-tab.svg",
+      "pageUrl": "https://www.visitkingsisland.com/park-map",
+      "via": "a.href",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "kings-island-map"
+    }
+  ],
+  "followUpUrls": [
+    "https://www.visitkingsisland.com/park-map"
+  ],
+  "searchQueries": [],
+  "notes": [
+    "LLM open research skipped: ai_not_requested",
+    "45 park-map candidate(s) from catalogue/HTML",
+    "LLM park-map search skipped (required): ai_not_requested"
+  ],
+  "siteCount": 0,
+  "bundleRideCount": 68,
+  "llm": null,
+  "llmParkMapSearch": {
+    "skipped": true,
+    "reason": "ai_not_requested",
+    "required": true
+  },
+  "venue": "kings-island"
+}

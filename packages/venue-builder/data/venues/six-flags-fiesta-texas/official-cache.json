@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "venue": "six-flags-fiesta-texas",
+  "fetched": "2026-08-28",
+  "pages": [
+    {
+      "id": "fiesta-texas-map",
+      "url": "https://www.sixflags.com/fiestatexas/directions",
+      "kind": "official_map",
+      "image": null
+    }
+  ],
+  "attractions": [],
+  "errors": [
+    "https://www.sixflags.com/fiestatexas/attractions: Cannot find package 'playwright' imported from /workspace/.claude/worktrees/fix-434-park-map-research/packages/venue-builder/lib/adapters/playwright-official.mjs; browser: Cannot find package 'playwright' imported from /workspace/.claude/worktrees/fix-434-park-map-research/packages/venue-builder/lib/adapters/playwright-official.mjs"
+  ]
+}

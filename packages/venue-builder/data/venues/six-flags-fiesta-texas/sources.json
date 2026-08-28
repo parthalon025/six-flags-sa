@@ -21,8 +21,9 @@
       "id": "fiesta-texas-map",
       "kind": "official_map",
       "map_kind": "schematic",
-      "url": "https://www.sixflags.com/fiestatexas/park-map",
-      "used_for": "Ride labels, food, restrooms, walking paths and queue entrances when georeferenced (illustrated handout \u2014 TPS). Acquire the map image via npm run venues:research -- six-flags-fiesta-texas --ai (LLM park-map search)."
+      "url": "https://www.sixflags.com/fiestatexas/directions",
+      "used_for": "Ride labels, food, restrooms, walking paths and queue entrances when georeferenced (illustrated handout — TPS). The legacy /park-map path 404s; directions hosts the guest map assets (View Park Guide).",
+      "image": "data/venues/six-flags-fiesta-texas/maps/2026-parkmap.jpg"
     }
   ],
   "datasets": {

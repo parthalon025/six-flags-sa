@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "venue": "cedar-point",
+  "fetched": "2026-08-28",
+  "pages": [
+    {
+      "id": "cedar-point-map",
+      "url": "https://www.cedarpoint.com/park-map",
+      "kind": "official_map",
+      "image": null
+    }
+  ],
+  "attractions": [],
+  "errors": [
+    "https://www.cedarpoint.com/rides-experiences: Cannot find package 'playwright' imported from /workspace/.claude/worktrees/fix-434-park-map-research/packages/venue-builder/lib/adapters/playwright-official.mjs; browser: Cannot find package 'playwright' imported from /workspace/.claude/worktrees/fix-434-park-map-research/packages/venue-builder/lib/adapters/playwright-official.mjs"
+  ]
+}

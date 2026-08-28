@@ -1,0 +1,251 @@
+{
+  "version": 1,
+  "fetched": "2026-08-28",
+  "sources": [
+    "official_site"
+  ],
+  "mode": "official",
+  "aliases": [],
+  "heightCandidates": [],
+  "inventoryGaps": [],
+  "parkMaps": [
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/e76216dbe15253cfe0f1b2e70026f69f9fd6729e-2880x1600.jpg",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "sanity.inline",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/9801a7b542bbd924a085c08270e4b2d0df886d97-1920x1280.jpg",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "sanity.inline",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/c656be329a6a721d15eca5a132b59fac8e56064c-1440x1533.jpg",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "sanity.inline",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/5385db404c2eaa3d5964b2abf5497058b0c2cf87-1440x1533.jpg",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "sanity.inline",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/e458d97eee03f5b1a67cc97e848d92cca78af9e9-1633x980.jpg",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "sanity.inline",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/d423db4c3d13d1e95b4014753c8e2315b62e9dce-1536x1022.jpg",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "sanity.inline",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/1339f6b623c16e917fa0674cfd2a63fe18552588-1920x475.jpg",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "sanity.inline",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/7cbb808240079f98cebc56b820f1bd366ee260a9-1323x682.png?w=128&h=54&q=80&fit=clip&auto=format&dpr=2",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "img.src",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/c769d6c36acfb673e9e111435889b21b74fa0bef-1323x682.png?w=130&h=62&q=80&fit=clip&auto=format&dpr=2",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "img.src",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/a349c6f4c231175d9f275e46933234a2e4942d92-1000x600.jpg",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "sanity.inline",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/f117f316287a4243dd5f4f421abbeffa12fe2346-644x280.png?rect=54,0,536,280&w=1200&h=627&fit=crop&auto=format",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "meta",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/f117f316287a4243dd5f4f421abbeffa12fe2346-644x280.png",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/392fa013120bf34fbef1259268edf52ea16a581f-300x300.png",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/4bcffa65309ab992d3262cc2623d5bab13ec1069-150x150.png",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/83c366dbe6500afcb369cfab7d7e4fa3328cf0e6-150x150.png",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/e0a91a7fc2801f8e9fe9c0df86b5a032b6fb9b4c-150x150.png",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/c7b25a94e279e849ee8ecf9cca580c3cf847da53-150x150.png",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/e8b857e6af4d29fcd58c353d9e7c671c56543979-150x150.png",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "sanity.inline",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://www.sixflags.com/favicon-32x32.png",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "a.href",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://www.sixflags.com/favicon-16x16.png",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "a.href",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://www.sixflags.com/apple-touch-icon.png",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "a.href",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://www.sixflags.com/safari-pinned-tab.svg",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/directions",
+      "via": "a.href",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    }
+  ],
+  "followUpUrls": [
+    "https://www.sixflags.com/fiestatexas/directions"
+  ],
+  "searchQueries": [],
+  "notes": [
+    "LLM open research skipped: ai_not_requested",
+    "22 park-map candidate(s) from catalogue/HTML",
+    "LLM park-map search skipped (required): ai_not_requested"
+  ],
+  "siteCount": 0,
+  "bundleRideCount": 70,
+  "llm": null,
+  "llmParkMapSearch": {
+    "skipped": true,
+    "reason": "ai_not_requested",
+    "required": true
+  },
+  "venue": "six-flags-fiesta-texas"
+}
