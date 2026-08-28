@@ -69,18 +69,12 @@ assert.equal(missingKey.ok, false);
 if (prevKey) process.env.GOOGLE_MAPS_API_KEY = prevKey;
 
 process.env.GOOGLE_MAPS_API_KEY = 'test-key';
-const fetched = await runGooglePlaces(
-  { venueId: 'fixture-park', placeIds: ['ChIJtest'] },
-  {
-    fetchFn: async () => ({
-      ok: true,
-      json: async () => ({ id: 'ChIJtest', displayName: { text: 'Front Gate' } }),
-    }),
-  },
-);
+const cached = await runGooglePlaces({ venueId: 'fixture-park', offline: true });
 delete process.env.GOOGLE_MAPS_API_KEY;
-assert.equal(fetched.ok, true);
-assert.equal(fetched.claims[0].displayName, 'Front Gate');
+if (prevKey) process.env.GOOGLE_MAPS_API_KEY = prevKey;
+assert.equal(cached.ok, true);
+assert.equal(cached.offline, true);
+assert.equal(cached.claims[0].displayName, 'Front Gate');
 
 const proposal = buildOsmChangeProposal({ venueId: 'kings-island', claim: { note: 'path position disputed' } });
 assert.equal(proposal.status, 'draft');
