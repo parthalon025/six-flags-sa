@@ -7,7 +7,7 @@
   },
   "certified": false,
   "certifiedAt": null,
-  "bundleFingerprint": "af64a9954402a97a4b5ef96eb7da6667fc3ed93ebf389e7faf885bfee004b7dc",
+  "bundleFingerprint": "5b2805b51e088be0f131d179eaab982e32d9edb40e1a9fc8767801569a8dd23e",
   "checks": [
     {
       "key": "checklist",
@@ -119,11 +119,11 @@
     {
       "key": "external_sources",
       "claim": "Declared external adapters have caches or an honest gap note",
-      "pass": false,
+      "pass": true,
       "evidence": {
-        "numerator": 7,
+        "numerator": 8,
         "denominator": 8,
-        "detail": "7/8 caches, 0 gap(s); claims=0+5; attached=1; missing=queue-times",
+        "detail": "8/8 caches, 0 gap(s); claims=0+23; attached=1",
         "declared": [
           "parks-api",
           "queue-times",
@@ -134,11 +134,9 @@
           "project-sidewalk",
           "esa-worldcover"
         ],
-        "missingRequired": [
-          "queue-times"
-        ],
+        "missingRequired": [],
         "bySource": {
-          "queue_times": 1,
+          "queue_times": 19,
           "wikidata": 2,
           "open_meteo": 1,
           "aerial": 1
@@ -280,6 +278,11 @@
       {
         "key": "parks-api-inventory",
         "need": "ParksAPI matched 0/1 rides — declare gaps or improve aliases",
+        "blocking": false
+      },
+      {
+        "key": "queue-times-inventory",
+        "need": "Queue-Times matched 0/1 rides — builder QA only, never wait minutes in pois",
         "blocking": false
       }
     ]
