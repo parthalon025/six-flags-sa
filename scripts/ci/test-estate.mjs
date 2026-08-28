@@ -171,6 +171,7 @@ export const TEST_ESTATE = {
   'test/builder/factory-validate.mjs': ['test:builder'],
   'test/builder/gaps-quests.mjs': ['test:unit', 'test:builder'],
   'test/builder/imagery-claims.mjs': ['test:builder'],
+  'test/builder/google-places-cache.mjs': ['test:builder'],
   'test/builder/imagery-ledger.mjs': ['test:builder'],
   'test/builder/inspect-evidence.mjs': ['test:builder'],
   'test/builder/inspect-review.mjs': ['test:builder'],
