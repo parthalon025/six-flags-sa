@@ -21,7 +21,7 @@ function metadataClaims(details) {
 }
 
 /**
- * @param {{ venueId?: string, offline?: boolean, placeIds?: string[] }} ctx
+ * @param {{ venueId?: string, offline?: boolean, placeIds?: string[], now?: () => Date }} ctx
  */
 export async function run(ctx = {}, { fetchFn = fetch } = {}) {
   const id = ctx.venueId || 'unknown';
@@ -70,8 +70,9 @@ export async function run(ctx = {}, { fetchFn = fetch } = {}) {
   }
 
   const claims = metadataClaims(details);
+  const stampNow = ctx.now ?? (() => new Date());
   const out = {
-    fetched: new Date().toISOString(),
+    fetched: stampNow().toISOString(),
     placeIds,
     claims,
   };

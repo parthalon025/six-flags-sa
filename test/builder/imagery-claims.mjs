@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
+import { existsSync, rmSync } from 'node:fs';
+import path from 'node:path';
 import {
   CI_PROVEN_PASSES,
   compareToOsm,
@@ -14,7 +16,16 @@ import {
   writeOsmProposalFile,
 } from '../../packages/venue-builder/lib/osm-writeback.mjs';
 import { SHIPPED_GAP_TYPES } from '../../packages/venue-builder/lib/ship-gaps.mjs';
+import { googlePlacesCacheFile } from '../../packages/venue-builder/lib/adapters/google-places.mjs';
 
+const SCRATCH_GOOGLE_PLACES_VENUE = '__test-imagery-claims-google-places__';
+
+function cleanupScratchGooglePlacesVenue() {
+  const dir = path.dirname(googlePlacesCacheFile(SCRATCH_GOOGLE_PLACES_VENUE));
+  if (existsSync(dir)) rmSync(dir, { recursive: true, force: true });
+}
+
+cleanupScratchGooglePlacesVenue();
 const geoMap = {
   layers: {
     path: [{
@@ -70,7 +81,7 @@ if (prevKey) process.env.GOOGLE_MAPS_API_KEY = prevKey;
 
 process.env.GOOGLE_MAPS_API_KEY = 'test-key';
 const fetched = await runGooglePlaces(
-  { venueId: 'fixture-park', placeIds: ['ChIJtest'] },
+  { venueId: SCRATCH_GOOGLE_PLACES_VENUE, placeIds: ['ChIJtest'] },
   {
     fetchFn: async () => ({
       ok: true,
@@ -81,6 +92,7 @@ const fetched = await runGooglePlaces(
 delete process.env.GOOGLE_MAPS_API_KEY;
 assert.equal(fetched.ok, true);
 assert.equal(fetched.claims[0].displayName, 'Front Gate');
+cleanupScratchGooglePlacesVenue();
 
 const proposal = buildOsmChangeProposal({ venueId: 'kings-island', claim: { note: 'path position disputed' } });
 assert.equal(proposal.status, 'draft');
