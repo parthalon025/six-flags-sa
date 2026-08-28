@@ -642,5 +642,11 @@
     "items": [
       "factory mega: deep-merge override patches, wheelchair routing profile, expect-lock enforcement (#750)"
     ]
+  },
+  "1.35.8": {
+    "title": "What's new",
+    "items": [
+      "app mega: World-keyed Overlay, atomic relay store, suite resilience (#751)"
+    ]
   }
 }
