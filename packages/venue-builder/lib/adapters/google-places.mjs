@@ -12,7 +12,7 @@ export const ID = 'google-places';
 export const googlePlacesCacheFile = (id) => cachePath(id, 'google-places');
 
 /** Refuse rather than spend past the free-tier SKU cap (ADR-0020 §7, #562). */
-export const DEFAULT_DAILY_CAP = 100;
+const DEFAULT_DAILY_CAP = 100;
 
 function dailyCap() {
   const raw = process.env.GOOGLE_PLACES_DAILY_CAP;
@@ -113,6 +113,7 @@ export async function run(ctx = {}, { fetchFn = fetch } = {}) {
       displayName: body?.displayName?.text || body?.displayName || null,
     });
     usage = { date: usage.date, count: usage.count + 1 };
+    writeCache(id, 'google-places', { ...cached, usage });
   }
 
   const claims = metadataClaims(details);
