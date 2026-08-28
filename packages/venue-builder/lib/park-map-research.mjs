@@ -76,6 +76,7 @@ function imagePixelArea(url) {
 }
 
 function isLikelyParkMapAsset(url, via) {
+  if (!MAP_ASSET_RE.test(url)) return false;
   if (MAPISH_RE.test(url) || MAPISH_RE.test(via || '')) return true;
   const area = imagePixelArea(url);
   if (area >= 500_000) return true;
@@ -108,7 +109,7 @@ export function extractParkMapAssetUrls(html, pageUrl) {
     for (const candidate of candidates) {
       const url = absolutize(candidate, pageUrl);
       if (!url || !/^https?:/i.test(url)) continue;
-      if (!MAP_ASSET_RE.test(url) && !MAPISH_RE.test(url)) continue;
+      if (!MAP_ASSET_RE.test(url)) continue;
       const key = url.split('#')[0];
       if (found.has(key)) continue;
       const mapish = isLikelyParkMapAsset(url, via);
@@ -151,8 +152,13 @@ export function extractParkMapAssetUrls(html, pageUrl) {
   });
 }
 
-/** Pick the best remote park-map asset to download (deterministic, no LLM). */
+/** Pick the best remote park-map asset to download. LLM search wins when present. */
 export function pickParkMapForDownload(parkMaps = []) {
+  const llm = (parkMaps || []).find(
+    (m) => m.imageUrl && m.confidence !== 'low' && m.source === 'llm_park_map_search',
+  );
+  if (llm) return llm;
+
   const ranked = [...parkMaps]
     .filter((m) => m.imageUrl)
     .sort((a, b) => {

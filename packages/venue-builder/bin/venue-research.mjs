@@ -330,15 +330,15 @@ async function main() {
       browser: args.browser,
       parksApi: args.parksApi,
     }));
-    if (args.fetch || args.ai) {
+    if (args.fetch) {
       const pois = readJson(path.join(VENUE_DIR, `${id}.pois.json`), []) || [];
       await runOpenResearch(id, pois, {
-        fetch: args.fetch,
+        fetch: true,
         offline: args.offline,
         browser: args.browser,
         ai: args.ai,
-        fetchMaps: args.fetch,
-        applyMaps: args.fetch,
+        fetchMaps: true,
+        applyMaps: true,
       });
     }
   }

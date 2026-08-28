@@ -82,6 +82,32 @@ await check('pickParkMapForDownload prefers mapish moderate over low icon', () =
   return true;
 });
 
+await check('pickParkMapForDownload prefers llm_park_map_search over larger html scrape', () => {
+  const pick = pickParkMapForDownload([
+    {
+      imageUrl: 'https://cdn.example/huge-banner-2880x1600.jpg',
+      confidence: 'moderate',
+      mapish: true,
+      source: 'html_extract',
+    },
+    {
+      imageUrl: 'https://cdn.example/guest-park-map-2026.png',
+      confidence: 'high',
+      mapish: false,
+      source: 'llm_park_map_search',
+    },
+  ]);
+  assert.match(pick.imageUrl, /guest-park-map-2026/);
+  return true;
+});
+
+await check('extractParkMapAssetUrls rejects extensionless park-map page hrefs', () => {
+  const html = '<a href="https://www.cedarpoint.com/park-map">Map</a>';
+  const assets = extractParkMapAssetUrls(html, 'https://www.cedarpoint.com/park-map');
+  assert.equal(assets.length, 0);
+  return true;
+});
+
 console.log(`\n${PASS.length} passed, ${FAIL.length} failed\n`);
 if (FAIL.length) {
   for (const f of FAIL) console.error('  ', f);
