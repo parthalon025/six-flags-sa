@@ -1,16 +1,12 @@
 {
   "schema": 3,
   "tag": "local-ci-verified",
-  "diffHash": "PENDING-REGEN",
-  "head": "PENDING-REGEN",
-  "mergeBase": "PENDING-REGEN",
+  "diffHash": "00eb5acbe0021876",
+  "head": "6632bd0829e8de2585d6e194bf7faea5ec45e85e",
+  "mergeBase": "7e1948b32d60040fdd26e582dde8e11c9e49cddc",
   "baseRef": "origin/main",
   "modules": [
     "builder",
-    "contribution-pipeline",
-    "grandma",
-    "heights",
-    "intake",
     "lint",
     "venues",
     "walk"
@@ -31,7 +27,7 @@
   "factoryLegs": [
     "map"
   ],
-  "lockHash": "PENDING-REGEN",
-  "manifestHash": "PENDING-REGEN",
-  "recordedAt": "2026-08-28T00:00:00.000Z"
+  "lockHash": "660d8ac4655c8267",
+  "manifestHash": "a67c7a6044e34a63",
+  "recordedAt": "2026-08-28T14:19:13.144Z"
 }

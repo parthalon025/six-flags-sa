@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "diffHash": "PENDING-REGEN",
-  "mergeBase": "PENDING-REGEN",
+  "diffHash": "b12b30915a8b6690",
+  "mergeBase": "7e1948b32d60040fdd26e582dde8e11c9e49cddc",
   "model": "claude-sonnet-5",
   "gitnexus": "unavailable",
-  "recordedAt": "2026-08-28T00:00:00.000Z"
+  "recordedAt": "2026-08-28T14:11:29.992Z"
 }
