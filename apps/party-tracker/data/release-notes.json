@@ -648,5 +648,11 @@
     "items": [
       "app mega: World-keyed Overlay, atomic relay store, suite resilience (#751)"
     ]
+  },
+  "1.35.9": {
+    "title": "What's new",
+    "items": [
+      "fix(deploy): unbreak production uploads, stop agent previews burning budget, end CI-stamp conflicts (#759)"
+    ]
   }
 }
