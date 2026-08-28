@@ -75,6 +75,19 @@ packages/venue-builder/src/*
 !packages/venue-builder/src/routing-coverage.mjs
 
 # Repo scripts are not part of the Next build (ignoreCommand + bump stay).
+#
+# Same excluded-parent trap as packages/venue-builder above, one hop deeper:
+# `!scripts/lib/` un-ignores the lib/ directory entry itself so its children
+# can be evaluated at all, but only the files explicitly negated below are
+# actually re-included — everything else under scripts/lib stays excluded by
+# `scripts/**`. scripts/lib/git-env.mjs and scripts/lib/release-bump.mjs were
+# both real imports of the entry points below and both missing from this
+# list: the preview ignoreCommand crashed with ERR_MODULE_NOT_FOUND on
+# git-env.mjs before decideVercelBuild ever ran, so Vercel fell back to
+# building every preview regardless of the Fix 2 branch-order fix above —
+# the actual mechanism behind the preview-budget leak, not just a
+# theoretical risk. release-bump.mjs (imported by bump-version.mjs) was the
+# same failure waiting to happen on the next post-merge bump.
 scripts/**
 !scripts/vercel-ignore.sh
 !scripts/bump-version.mjs
@@ -90,6 +103,8 @@ scripts/**
 !scripts/lib/app-paths.mjs
 !scripts/lib/app-paths.json
 !scripts/lib/gitnexus-only.mjs
+!scripts/lib/git-env.mjs
+!scripts/lib/release-bump.mjs
 
 *.md
 !apps/party-tracker/**/*.md

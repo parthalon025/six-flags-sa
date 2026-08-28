@@ -264,7 +264,7 @@ export const TEST_ESTATE = {
   'test/scripts/vercel-deploy-gate.test.mjs': ['ci-gate'],
   'test/scripts/vercel-ignore.test.mjs': ['ci-gate'],
   'test/scripts/import-closure.test.mjs': ['ci-gate'],
-  'test/scripts/vercelignore-venue-builder.test.mjs': ['ci-gate'],
+  'test/scripts/vercelignore-import-closures.test.mjs': ['ci-gate'],
   'test/scripts/gitattributes-ci-stamps.test.mjs': ['ci-gate'],
   'test/scripts/production-redis-guard.test.mjs': ['ci-gate'],
   'test/scripts/upstash-budget.test.mjs': ['ci-gate'],

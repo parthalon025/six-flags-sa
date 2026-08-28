@@ -21,7 +21,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/version-stamp.test.mjs',
   'test/scripts/vercel-ignore.test.mjs',
   'test/scripts/import-closure.test.mjs',
-  'test/scripts/vercelignore-venue-builder.test.mjs',
+  'test/scripts/vercelignore-import-closures.test.mjs',
   'test/scripts/gitattributes-ci-stamps.test.mjs',
   'test/scripts/production-redis-guard.test.mjs',
   'test/scripts/upstash-budget.test.mjs',
