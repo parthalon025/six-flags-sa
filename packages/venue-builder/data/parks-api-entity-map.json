@@ -36,14 +36,14 @@
       "destination": "Disneyland Resort"
     },
     "universal-studios-florida": {
-      "entityId": "267615cc-8943-4c2a-b2b6-5a8ca1ae7a45",
+      "entityId": "eb3f4560-2383-4a36-9152-6b3e5ed6bc57",
       "apiName": "Universal Studios Florida",
       "score": 1,
       "reason": "override"
     },
     "universal-s-islands-of-adventure": {
-      "entityId": "267615cc-8943-4c2a-b2b6-5a8ca1ae7a45",
-      "apiName": "Universal's Islands of Adventure",
+      "entityId": "267615cc-8943-4c2a-ae2c-5da728ca591f",
+      "apiName": "Universal Islands of Adventure",
       "score": 1,
       "reason": "override"
     },
