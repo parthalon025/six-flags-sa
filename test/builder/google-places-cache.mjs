@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { run as runGooglePlaces } from '../../packages/venue-builder/lib/adapters/google-places.mjs';
 import { googlePlacesCacheFile } from '../../packages/venue-builder/lib/adapters/google-places.mjs';
 import { readCache } from '../../packages/venue-builder/lib/adapters/_cache.mjs';
+import { scrubGitEnv } from '../../scripts/lib/git-env.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const FIXTURE_CACHE = path.join(
@@ -24,6 +25,7 @@ function gitPorcelain(relativePath) {
   return execFileSync('git', ['status', '--porcelain', '--', relativePath], {
     cwd: root,
     encoding: 'utf8',
+    env: scrubGitEnv(),
   }).trim();
 }
 
@@ -70,7 +72,11 @@ assert.equal(
   'offline replay must leave git porcelain clean for the fixture cache',
 );
 
-execFileSync('node', ['test/builder/imagery-claims.mjs'], { cwd: root, stdio: 'inherit' });
+execFileSync('node', ['test/builder/imagery-claims.mjs'], {
+  cwd: root,
+  stdio: 'inherit',
+  env: scrubGitEnv(),
+});
 assert.equal(
   gitPorcelain('packages/venue-builder/data/venues/fixture-park/google-places-cache.json'),
   '',
