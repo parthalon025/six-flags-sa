@@ -22,7 +22,8 @@
       "kind": "official_map",
       "map_kind": "schematic",
       "url": "https://www.cedarpoint.com/park-map",
-      "used_for": "Ride labels, food, restrooms, walking paths and queue entrances when georeferenced (illustrated handout \u2014 TPS). Acquire the map image via npm run venues:research -- cedar-point --ai (LLM park-map search)."
+      "used_for": "Ride labels, food, restrooms, walking paths and queue entrances when georeferenced (illustrated handout — TPS). Acquire the map image via npm run venues:research -- cedar-point --ai (LLM park-map search).",
+      "image": "data/venues/cedar-point/maps/2026-parkmap.jpg"
     }
   ],
   "datasets": {

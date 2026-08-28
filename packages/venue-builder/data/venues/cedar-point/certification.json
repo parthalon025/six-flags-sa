@@ -157,14 +157,14 @@
     {
       "key": "park_map_research",
       "claim": "Official park map image is local or LLM park-map search recorded candidates",
-      "pass": false,
+      "pass": true,
       "evidence": {
-        "numerator": 0,
+        "numerator": 1,
         "denominator": 1,
-        "detail": "local_images=0; parkMap_candidates=0; llm_park_map_search=false",
+        "detail": "local_images=1; parkMap_candidates=0; llm_park_map_search=false",
         "searchQueries": []
       },
-      "confidence": "low",
+      "confidence": "high",
       "falsifier": "sources.json lists official_map but no image and no LLM park-map search cache",
       "soWhat": "Guest maps for tracing require LLM search (or a package maps/ image) before georef"
     }
