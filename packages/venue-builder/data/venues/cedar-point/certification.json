@@ -110,9 +110,9 @@
       "claim": "No blocking external requests remain",
       "pass": true,
       "evidence": {
-        "numerator": 2,
-        "denominator": 2,
-        "detail": "2 non-blocking request(s)",
+        "numerator": 1,
+        "denominator": 1,
+        "detail": "1 non-blocking request(s)",
         "blocking": []
       },
       "confidence": "high",
@@ -203,25 +203,6 @@
           "If the park's name for a ride differs from the name in the list, key the entry by the park's name and add `\"alias\": \"<the name in the list>\"`.",
           "Weight limits, life-jacket exceptions, \"must ride with an adult\", single-tube versus double — real rules this model has no field for — go in `note`, in the park's own terms. Never round one off into a height."
         ]
-      },
-      {
-        "key": "unmatched",
-        "need": "Overrides that match no place",
-        "blocking": false,
-        "why": "2 entries in data/venues/cedar-point/overrides.json are keyed to a name nothing in this venue answers to, so each is a correction that silently did not happen.",
-        "targets": [
-          "lake-eerie-nor-easter",
-          "watterin-hole"
-        ],
-        "ask": [
-          "For each name below, work out which of the two it is.",
-          "Either the park renamed the ride and OpenStreetMap still carries the old name — in which case keep the entry keyed by the park's name and add `\"alias\": \"<the OSM name>\"`.",
-          "Or the attraction is genuinely not in the bundle, because OpenStreetMap has its geometry unnamed or does not have it at all — in which case move the entry into `_unmapped` in the same file, where it waits without pretending to have been applied."
-        ],
-        "schema": "{\n  \"pois\": {\n    \"<the park's name>\": { \"alias\": \"<the name in the bundle>\", \"h\": { \"min\": 48 } }\n  },\n  \"_unmapped\": {\n    \"<not in the bundle at all>\": { \"h\": { \"min\": 48 } }\n  }\n}",
-        "rules": [
-          "Do not delete an entry to make the warning go away. The research in it is the expensive part and `_unmapped` is where it keeps."
-        ]
       }
     ],
     "questSeeds": {
@@ -239,28 +220,6 @@
           "blocking": false,
           "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
           "need": "Ride height requirements"
-        },
-        {
-          "venueId": "cedar-point",
-          "type": "name_fix",
-          "tier": 2,
-          "graduation": "overrides_alias",
-          "sourceGap": "unmatched",
-          "target": "lake-eerie-nor-easter",
-          "blocking": false,
-          "whyOpenSourceFails": "Park marketing names and OSM names drift; guests who read the sign settle aliases.",
-          "need": "Overrides that match no place"
-        },
-        {
-          "venueId": "cedar-point",
-          "type": "name_fix",
-          "tier": 2,
-          "graduation": "overrides_alias",
-          "sourceGap": "unmatched",
-          "target": "watterin-hole",
-          "blocking": false,
-          "whyOpenSourceFails": "Park marketing names and OSM names drift; guests who read the sign settle aliases.",
-          "need": "Overrides that match no place"
         },
         {
           "venueId": "cedar-point",
@@ -1056,7 +1015,7 @@
         }
       ],
       "counts": {
-        "durable": 64,
+        "durable": 62,
         "ambient": 5
       }
     }
