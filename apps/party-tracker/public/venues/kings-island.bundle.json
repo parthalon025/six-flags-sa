@@ -5,7 +5,7 @@
     "map": "2026-08-09",
     "revisionId": "7ce988f1-89e1-4cf5-8c58-969041986b1a"
   },
-  "bytes": 15207369,
+  "bytes": 15207385,
   "files": [
     {
       "path": "/venues/kings-island.gaps.json",
@@ -14,8 +14,8 @@
     },
     {
       "path": "/venues/kings-island.map.json",
-      "bytes": 282511,
-      "sha256": "f3776f608301da0a698e9c5a596d2c7986d96970d6752dd350d6324e8ab9645d"
+      "bytes": 282527,
+      "sha256": "ed5b69b939113062a3e287a9f05a3e261179a54c5ef13c75e8f16f12421704e5"
     },
     {
       "path": "/venues/kings-island.pois.json",

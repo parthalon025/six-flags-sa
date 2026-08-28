@@ -2404,6 +2404,61 @@ await check('a contradictory f (ONEWAY|ONEWAY_BACK) degrades to two-way, not to 
   return true;
 });
 
+/* #415: wheelchair=no and steps are hard exclusions, unlike ONEWAY's price —
+   there is no lesser-but-still-avoid tier for either signal, so the profile
+   walls the segment off rather than pricing it. */
+const { profilesForCoverage, profileOpts } = await import(
+  '../../apps/party-tracker/lib/routingProfiles.js'
+);
+
+await check('the wheelchair profile is offered only when it has something to avoid (#415)', () => {
+  assert.equal(profilesForCoverage({}).some((p) => p.id === 'wheelchair'), false, 'nothing recorded, nothing to offer');
+  assert.equal(
+    profilesForCoverage({ steps: 3 }).some((p) => p.id === 'wheelchair'),
+    true,
+    'steps alone are enough to offer it',
+  );
+  assert.equal(
+    profilesForCoverage({ wheelchair: 1 }).some((p) => p.id === 'wheelchair'),
+    true,
+    'a single wheelchair=no way is enough to offer it',
+  );
+  return true;
+});
+
+await check('the wheelchair profile excludes both steps and wheelchair=no segments (#415)', () => {
+  const g = buildRouteGraph(CROSSING);
+  const { excludeSeg } = profileOpts('wheelchair', g);
+  const excluded = g.segments
+    .map((s, i) => ({ name: s.name, out: excludeSeg(i) }))
+    .filter((s) => s.out)
+    .map((s) => s.name);
+  assert.deepEqual(new Set(excluded), new Set(['Steps to the midway']));
+  // The default profile excludes nothing here — carrying the flags moved
+  // nothing until this profile spent them.
+  assert.equal(g.segments.some((s, i) => profileOpts('default', g).excludeSeg(i)), false);
+  return true;
+});
+
+await check('a wheelchair=no side of the square routes the long way round (#415)', () => {
+  const g = buildRouteGraph(ONEWAY_SQUARE(WAY_FLAGS.WHEELCHAIR_NO));
+  const direct = findRoute(g, SQ_FROM, SQ_TO, {});
+  const wheelchairRoute = findRoute(g, SQ_FROM, SQ_TO, profileOpts('wheelchair', g));
+  assert.ok(direct.metres < 350, 'the default profile still takes the flagged south side');
+  assert.ok(
+    wheelchairRoute.metres > direct.metres * 1.8,
+    `wheelchair profile detours round the block (${Math.round(wheelchairRoute.metres)} m vs ${Math.round(direct.metres)} m)`,
+  );
+  return true;
+});
+
+await check('WAY_FLAGS.WHEELCHAIR_NO is a distinct bit from every existing flag (#415)', () => {
+  const bits = Object.values(WAY_FLAGS);
+  assert.equal(new Set(bits).size, bits.length, 'every flag value is unique');
+  assert.equal(WAY_FLAGS.WHEELCHAIR_NO, 64, 'load-bearing value — never renumber a shipped bit');
+  return true;
+});
+
 await check('the attributes survive the round trip from tags to bundle to graph', () => {
   const way = (id, tags, coords) => ({
     type: 'way',
@@ -6315,6 +6370,9 @@ await check('the attributes read off a way are the ones worth their bytes', () =
   assert.equal(wayAttributes({ highway: 'service', oneway: '-1' }).f, WAY_FLAGS.ONEWAY_BACK);
   assert.equal(wayAttributes({ highway: 'service', access: 'private' }).f, WAY_FLAGS.RESTRICTED);
   assert.equal(wayAttributes({ highway: 'service', access: 'no' }).f, WAY_FLAGS.RESTRICTED);
+  // Only the denial (#415) — `wheelchair=yes` is 76 of 77 tagged ways and
+  // asserts nothing absence did not.
+  assert.equal(wayAttributes({ highway: 'footway', wheelchair: 'no' }).f, WAY_FLAGS.WHEELCHAIR_NO);
 
   // A denial is not an assertion, and neither is silence.
   assert.equal(wayAttributes({ highway: 'footway' }), null);
@@ -6331,6 +6389,8 @@ await check('the attributes read off a way are the ones worth their bytes', () =
   assert.equal(wayAttributes({ highway: 'footway', surface: 'asphalt' }), null);
   assert.equal(wayAttributes({ highway: 'footway', width: "10'" }), null);
   assert.equal(wayAttributes({ highway: 'footway', covered: 'yes' }), null);
+  // wheelchair=no is read (above); =yes is 76 of 77 tagged ways and asserts
+  // nothing absence did not, so it stays silent same as the others here.
   assert.equal(wayAttributes({ highway: 'footway', wheelchair: 'yes' }), null);
 
   // A `layer` outside the nibble it is worth storing in is a typo, not a cliff.
@@ -6340,6 +6400,23 @@ await check('the attributes read off a way are the ones worth their bytes', () =
 
   // Only the two layers the router welds carry any of it.
   assert.deepEqual([...ROUTED_LAYERS].sort(), ['path', 'service']);
+  return true;
+});
+
+await check('tag coverage counts wheelchair=no ways separately from restricted (#415)', async () => {
+  const { tagCoverageFromMap } = await import('../../packages/venue-builder/lib/tag-coverage.mjs');
+  const noWheelchair = wayAttributes({ highway: 'footway', wheelchair: 'no' });
+  const restricted = wayAttributes({ highway: 'service', access: 'private' });
+  const cov = tagCoverageFromMap({
+    path: [
+      { r: [[0, 0], [0, 0.001]], ...noWheelchair },
+      { r: [[0, 0], [0, 0.001]] },
+    ],
+    service: [{ r: [[0, 0], [0, 0.001]], ...restricted }],
+  });
+  assert.equal(cov.wheelchair, 1);
+  assert.equal(cov.restricted, 1);
+  assert.equal(cov.ways, 3);
   return true;
 });
 
