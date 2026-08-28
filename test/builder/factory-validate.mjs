@@ -140,7 +140,7 @@ await check('freshnessPin delegates to revision pin when revision ids are presen
 
 /* ------------------------------------------------ kings-island happy path */
 
-await check('kings-island passes buildable factory stages (warn on incomplete cert + publish)', async () => {
+await check('kings-island passes buildable factory stages (cert + publish)', async () => {
   const doc = await validateVenue('kings-island', { root: MONO_ROOT });
   assert.equal(doc.venue, 'kings-island');
   assert.ok(doc.truthStamp, 'KI carries a truth stamp');
@@ -149,7 +149,7 @@ await check('kings-island passes buildable factory stages (warn on incomplete ce
   assert.ok(doc.ok, 'required stages pass; warns do not fail the run');
 
   const certify = doc.routes.find((r) => r.id === 'map.certify');
-  assert.equal(certify.status, 'warn', 'map cert is incomplete (park_map_research) — warn not fail');
+  assert.equal(certify.status, 'pass', 'map cert passes with park-map research recorded');
 
   const displayCert = doc.routes.find((r) => r.id === 'visual.display-certify');
   assert.equal(displayCert.status, 'pass', 'Visual factory is certified on KI');
