@@ -159,5 +159,39 @@
   },
   "fallback": {
     "landTone": "name-hue"
+  },
+  "terrain": {
+    "source": "usgs-3dep",
+    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n40w085/USGS_13_n40w085.tif",
+    "resolution": 10,
+    "surfaceModel": false,
+    "cellMetres": 6.45,
+    "fitness": "marginal",
+    "relief": {
+      "min": 190.5,
+      "max": 238.9
+    },
+    "grid": {
+      "cols": 240,
+      "rows": 197
+    },
+    "hillshade": {
+      "file": "hillshade.png",
+      "azimuth": 315,
+      "altitude": 45
+    },
+    "bounds": {
+      "north": 39.348,
+      "south": 39.3365,
+      "east": -84.2595,
+      "west": -84.2775
+    },
+    "steepDegrees": 18,
+    "constrained": {
+      "paths": 757,
+      "water": 24,
+      "pads": 206,
+      "nodes": 139445
+    }
   }
 }
