@@ -153,6 +153,14 @@ assert.equal(
   'production app changes use automation budget without user directive',
 );
 assert.equal(isAgentPreviewBranch('worktree-fix-party', 'preview'), true);
+/* Claude Code agent branches are `claude/<slug>`, the prefix its harness mandates.
+   They were absent from AGENT_PREVIEW_BRANCH while the policy said agents must not
+   push branches hoping for a preview — so every agent push built one and drew from
+   the 100/day account budget, the opposite of what vercel-previews.md promises. */
+assert.equal(isAgentPreviewBranch('claude/factory-development-status-cc21re', 'preview'), true);
+assert.equal(isAgentPreviewBranch('claude/anything', 'preview'), true);
+// Not a blanket match: a real branch that merely contains the word must still build.
+assert.equal(isAgentPreviewBranch('feat/claude-integration', 'preview'), false);
 assert.equal(isAgentPreviewBranch('main', 'preview'), false);
 
 assert.equal(
