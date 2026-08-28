@@ -1,13 +1,14 @@
 {
   "schema": 3,
   "tag": "local-ci-verified",
-  "diffHash": "1f778c7b37a512ae",
-  "head": "70d2e26fde8a84fadecbf1cb1cea2defe02e878a",
-  "mergeBase": "96975b09cefa2fe2c56ff492a8b7e2d61514cb8d",
+  "diffHash": "3d73b95689b4a22d",
+  "head": "af812c12e67ae68f0596c5fe9ef4da1c2add17c4",
+  "mergeBase": "9369ecf00d5fa44eb5ce4dba4b6d0c8aa71c9d8e",
   "baseRef": "origin/main",
   "modules": [
     "auth",
     "builder",
+    "contribution-pipeline",
     "grandma",
     "heights",
     "intake",
@@ -27,7 +28,7 @@
     "test:ci-gate"
   ],
   "factoryLegs": [],
-  "lockHash": "b3b460a27c27096a",
-  "manifestHash": "9a2f416a52221fc4",
-  "recordedAt": "2026-08-27T04:55:31.751Z"
+  "lockHash": "9532cc5ddb9c69f6",
+  "manifestHash": "a67c7a6044e34a63",
+  "recordedAt": "2026-08-28T12:48:33.403Z"
 }
