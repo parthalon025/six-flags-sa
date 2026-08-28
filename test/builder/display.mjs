@@ -1517,17 +1517,22 @@ function assertPerRoleLandTones(spec, name) {
 }
 
 await check('every shipped visual.json carries per-role landTones, not the retired flat shape', () => {
-  const venues = new URL('../../packages/venue-builder/data/venues/', import.meta.url);
+  const roots = [
+    ['builder', new URL('../../packages/venue-builder/data/venues/', import.meta.url)],
+    ['public', new URL('../../apps/party-tracker/public/venues/', import.meta.url)],
+  ];
   const specs = [];
-  for (const venue of readdirSync(venues).sort()) {
-    const display = new URL(`${venue}/display/`, venues);
-    let entries = [];
-    try { entries = readdirSync(display); } catch { continue; }
-    for (const f of entries.filter((n) => n.endsWith('.visual.json')).sort()) {
-      specs.push([`${venue}/${f}`, JSON.parse(readFileSync(new URL(f, display), 'utf8'))]);
+  for (const [label, venues] of roots) {
+    for (const venue of readdirSync(venues).sort()) {
+      const display = new URL(`${venue}/display/`, venues);
+      let entries = [];
+      try { entries = readdirSync(display); } catch { continue; }
+      for (const f of entries.filter((n) => n.endsWith('.visual.json')).sort()) {
+        specs.push([`${label}/${venue}/${f}`, JSON.parse(readFileSync(new URL(f, display), 'utf8'))]);
+      }
     }
   }
-  assert.ok(specs.length >= 16, `expected the four shipped venues × four Skins, found ${specs.length}`);
+  assert.ok(specs.length >= 16, `expected builder + published visual specs, found ${specs.length}`);
   for (const [name, spec] of specs) assertPerRoleLandTones(spec, name);
   return true;
 });
