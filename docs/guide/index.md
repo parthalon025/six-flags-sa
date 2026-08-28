@@ -12,6 +12,7 @@ Full documentation split out of the root README. Start with [Features](features.
 | [Walking directions](walking-directions.md) | On-device routing from venue geometry. |
 | [How the party works](party.md) | Host, transports, failover, and standalone server. |
 | [API](api.md) | Mailbox, REST surface, weather proxy, and rate limits. |
+| [Security](security.md) | Fail-open rate limiting, what actually bounds abuse, key cardinality. |
 | [Upstash Redis](upstash.md) | Production party-store credentials, deploy guard, and symptoms. |
 | [Neon Postgres](neon.md) | Branching, pooled endpoints, and production DATABASE_URL guard. |
 | [Notifications](notifications.md) | Web Push setup and what gets sent. |
