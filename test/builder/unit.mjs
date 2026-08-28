@@ -8146,6 +8146,17 @@ await check('adapter registry lists core external stacks', () => {
   return true;
 });
 
+await check('maplibre-gl-js is credited with its actual license (#565)', () => {
+  // The installed package disagrees with the value this registry used to
+  // carry — regression coverage for the drift, checked against the real
+  // package.json rather than a hardcoded string.
+  const installed = JSON.parse(fs.readFileSync(new URL('../../node_modules/maplibre-gl/package.json', import.meta.url)));
+  const row = getAdapter('maplibre-gl-js');
+  assert.equal(row.license, installed.license);
+  assert.equal(row.license, 'BSD-3-Clause');
+  return true;
+});
+
 await check('mapillary-tools row covers ride-walkthrough video evidence', () => {
   const row = getAdapter('mapillary-tools');
   assert.ok(row.evidence_sources.includes('mapillary'));
