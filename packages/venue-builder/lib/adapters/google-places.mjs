@@ -5,29 +5,11 @@
  * No guest-path or runtime use. Missing key is a recorded gap, not a throw.
  */
 
-import path from 'node:path';
-import { mkdirSync, writeFileSync } from 'node:fs';
 import { cachePath, readCache, writeCache } from './_cache.mjs';
-import { readJson } from '../venue-fs.mjs';
 
 export const ID = 'google-places';
 
 export const googlePlacesCacheFile = (id) => cachePath(id, 'google-places');
-
-function readVenueCache(id, cacheFile) {
-  if (cacheFile) return readJson(cacheFile) || { placeIds: [], claims: [] };
-  return readCache(id, 'google-places') || { placeIds: [], claims: [] };
-}
-
-function writeVenueCache(id, cacheFile, data) {
-  if (cacheFile) {
-    const file = cacheFile;
-    mkdirSync(path.dirname(file), { recursive: true });
-    writeFileSync(file, `${JSON.stringify(data, null, 2)}\n`);
-    return file;
-  }
-  return writeCache(id, 'google-places', data);
-}
 
 function metadataClaims(details) {
   return (details || []).map((row) => ({
@@ -45,7 +27,8 @@ function metadataClaims(details) {
 export async function run(ctx = {}, { fetchFn = fetch, now = () => new Date().toISOString() } = {}) {
   const id = ctx.venueId || 'unknown';
   const key = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API;
-  const cached = readVenueCache(id, ctx.cacheFile);
+  const cacheOpts = ctx.cacheFile ? { cacheFile: ctx.cacheFile } : {};
+  const cached = readCache(id, ID, cacheOpts) || { placeIds: [], claims: [] };
 
   if (!key) {
     return {
@@ -94,6 +77,6 @@ export async function run(ctx = {}, { fetchFn = fetch, now = () => new Date().to
     placeIds,
     claims,
   };
-  writeVenueCache(id, ctx.cacheFile, out);
+  writeCache(id, ID, out, cacheOpts);
   return { ok: true, claims };
 }

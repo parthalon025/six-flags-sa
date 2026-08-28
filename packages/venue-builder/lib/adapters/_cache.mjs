@@ -41,12 +41,16 @@ export function adapterCacheFile(venueId, adapterId) {
   return cachePath(venueId, suffix);
 }
 
-export function readCache(venueId, suffix) {
-  return readJson(cachePath(venueId, suffix));
+export function resolveCacheFile(venueId, suffix, cacheFile) {
+  return cacheFile || cachePath(venueId, suffix);
 }
 
-export function writeCache(venueId, suffix, data) {
-  const file = cachePath(venueId, suffix);
+export function readCache(venueId, suffix, { cacheFile } = {}) {
+  return readJson(resolveCacheFile(venueId, suffix, cacheFile));
+}
+
+export function writeCache(venueId, suffix, data, { cacheFile } = {}) {
+  const file = resolveCacheFile(venueId, suffix, cacheFile);
   mkdirSync(path.dirname(file), { recursive: true });
   writeFileSync(file, `${JSON.stringify(data, null, 2)}\n`);
   return file;
