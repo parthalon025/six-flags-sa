@@ -203,6 +203,7 @@ export const TEST_ESTATE = {
   'test/scripts/apple-developer.test.mjs': ['ci-gate'],
   'test/scripts/bake-drift-watch.test.mjs': ['ci-gate'],
   'test/scripts/build-venue-workflow.test.mjs': ['ci-gate'],
+  'test/scripts/build-top100-workflow.test.mjs': ['ci-gate'],
   'test/scripts/builder-app-contract.test.mjs': ['ci-gate'],
   'test/scripts/builder-certify-ci.test.mjs': ['ci-gate'],
   'test/scripts/billing-sync-check.test.mjs': ['ci-gate', 'test:unit'],
