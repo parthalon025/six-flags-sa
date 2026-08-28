@@ -3,6 +3,24 @@
   "contact": "imagery evidence lane — docs/adr/0020-imagery-ground-truth.md clauses 1-2, as amended by docs/adr/0021-zoomable-worlds-revised.md clauses 8-9",
   "_comment": "Every imagery tile any venue derives a claim from, pinned the way this package already pins assets (data/display/assets.json) and reference images (data/display/references/images.json). Read by lib/imagery-ledger.mjs. Rows are recorded as the venue's sources.json actually stamps them; a row is never edited to make a gate pass, and there is no exemption field. A row that raises problems is an open question for a human, not a bug in the ledger.",
   "tiles": {
+    "fl_m_3008637_sw_16_060_20220123": {
+      "label": "NAIP 2022 quarter-quad over Big Kahuna's Destin",
+      "kind": "aerial_imagery",
+      "source": "planetary-computer:naip",
+      "provider": "USDA FPAC-BC-GEO NAIP",
+      "served_via": "Microsoft Planetary Computer",
+      "captured": "2022-01-23",
+      "sha256": "de888e670536c6b0eeeafe912af7b2a1f96963e98d3977b331e595095a0b756b",
+      "license": "public-domain",
+      "path": null,
+      "gsd": 0.6,
+      "used_by": [
+        "big-kahunas"
+      ],
+      "used_for": "Walking paths OpenStreetMap does not draw, re-derived from NAIP after okaloosa-ortho-2025 failed ADR-0020 clause 2 (Esri serving channel).",
+      "recorded_from": "packages/venue-builder/data/venues/big-kahunas/naip-planetary-cache.json",
+      "review": "ADR-0020-admissible. Fetched via lib/adapters/naip-planetary.mjs STAC search + windowed COG read; sha256 pins the ingested venue window bytes."
+    },
     "okaloosa-ortho-2025": {
       "label": "Okaloosa County 2025 orthophotography over Big Kahuna's Destin",
       "kind": "aerial_imagery",
@@ -15,12 +33,10 @@
       "path": null,
       "gsd": 0.076,
       "horizontal_accuracy_m": 0.19,
-      "used_by": [
-        "big-kahunas"
-      ],
-      "used_for": "Walking paths OpenStreetMap does not draw, and ride positions where OSM names geometry but not the attraction.",
+      "used_by": [],
+      "used_for": "Superseded for derivation by NAIP fl_m_3008637_sw_16_060_20220123 — retained as historical catalogue only.",
       "recorded_from": "data/venues/big-kahunas/sources.json",
-      "review": "UNADJUDICATED. Copied verbatim from the venue's sources.json, which is the only record of this imagery that exists. Three things are true at once and only a human can weigh them. (a) ADR-0020 clause 2 rejects Esri for derivation, and this row says its pixels were served via Esri World Imagery. (b) The imagery is attributed to a county GIS programme, and a county ortho reached through an Esri endpoint is a different thing from Esri's own basemap — that reading may well be defensible. (c) Neither reading is evidenced: no licence class was ever recorded for the county programme, and the tile bytes were never ingested, so clause 1's sha256 pin does not exist either. Nothing in this repo adjudicated any of it before this row existed. Resolving it means finding the county's imagery licence and its direct download, not editing this file."
+      "review": "UNADJUDICATED — not used by shipped bundles after ticket 23 re-derivation. ADR-0020 clause 2 rejects Esri for derivation."
     }
   }
 }

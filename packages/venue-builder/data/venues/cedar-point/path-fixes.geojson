@@ -1,0 +1,32 @@
+{
+  "type": "FeatureCollection",
+  "_comment": "Walk-network connectors recorded where OpenStreetMap path geometry does not reach a ride queue. Folded in via datasets.imagery in sources.json. Siren's Curse is 45 m off the network against a 35 m certification threshold — this connector lands on the nearest graph segment pending an upstream OSM footway writeback.",
+  "properties": {
+    "imagery": {
+      "by": "override",
+      "source": "osm-path-gap",
+      "note": "Recorded override — not imagery-derived; does not rest on the imagery ledger."
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "path",
+        "n": "Siren's Curse queue connector",
+        "src": {
+          "by": "override",
+          "source": "osm-path-gap",
+          "note": "Footway gap between the Millennium Force midway and Siren's Curse queue plaza; OSM writeback proposal pending steward review."
+        }
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-82.685183, 41.480929],
+          [-82.68556830713234, 41.48064479890505]
+        ]
+      }
+    }
+  ]
+}

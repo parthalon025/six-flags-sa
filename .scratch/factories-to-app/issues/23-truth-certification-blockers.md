@@ -5,7 +5,7 @@
 
 **Blocked by:** None
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Evidence
 
@@ -53,13 +53,13 @@ re-derived. Do **not** close this by adding a sha256 to an inadmissible row.
 
 ## Acceptance
 
-- [ ] `park_map_research` passes for kings-island, cedar-point, six-flags-fiesta-texas
-- [ ] Siren's Curse snaps to the cedar-point walk network (≤35 m), fixed upstream in OSM or via a
+- [x] `park_map_research` passes for kings-island, cedar-point, six-flags-fiesta-texas
+- [x] Siren's Curse snaps to the cedar-point walk network (≤35 m), fixed upstream in OSM or via a
       recorded override — not by moving the threshold
-- [ ] `okaloosa-ortho-2025` either carries an ADR-0020-admissible source with sha256 and licence
+- [x] `okaloosa-ortho-2025` either carries an ADR-0020-admissible source with sha256 and licence
       class, or big-kahunas' aerial-derived claims are re-derived from an admissible tile
-- [ ] `npm run venues:certify` reports `certified: true` for all four flagships
-- [ ] `npm run test:pre-merge-vertical` green
+- [x] `npm run venues:certify` reports `certified: true` for all four flagships
+- [x] `npm run test:pre-merge-vertical` green
 
 ## Notes
 

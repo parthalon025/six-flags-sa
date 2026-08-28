@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "venue": "cedar-point",
+  "fetched": "2026-08-28",
+  "pages": [
+    {
+      "id": "cedar-point-site",
+      "url": "https://www.cedarpoint.com/rides-experiences",
+      "kind": "official_site",
+      "via": "fetch"
+    },
+    {
+      "id": "cedar-point-map",
+      "url": "https://www.cedarpoint.com/park-map",
+      "kind": "official_map",
+      "image": null
+    }
+  ],
+  "attractions": [],
+  "errors": []
+}
