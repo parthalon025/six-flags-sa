@@ -612,5 +612,17 @@
     "items": [
       "fix(#436,#443): Postgres deploy guard + deploy:post-check (#727)"
     ]
+  },
+  "1.35.3": {
+    "title": "What's new",
+    "items": [
+      "fix(app): restore h11 MapLibre ParkMap after zone-tone merge regression (#729)"
+    ]
+  },
+  "1.35.4": {
+    "title": "What's new",
+    "items": [
+      "fix(app): Bugbot ParkMap regressions — mapWrap, zone tones, fog scope (#730)"
+    ]
   }
 }

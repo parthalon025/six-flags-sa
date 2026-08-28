@@ -16,7 +16,7 @@
  */
 
 import { mapThemePack } from './mapThemeTokens.js';
-import { paletteFor } from './theme.js';
+import { landTint, paletteFor } from './theme.js';
 import { worldGeoJson } from './worldGeo.js';
 
 const finite = (value) => typeof value === 'number' && Number.isFinite(value);
@@ -98,6 +98,37 @@ export function worldFor(map) {
     ? { lat: declared.lat, lng: declared.lng }
     : null;
   return { id: map.meta.id, bounds, geometry: worldGeoJson(map), center };
+}
+
+/**
+ * Stamp each land feature with the tint MapLibre reads (`mapViewStyle.js`).
+ *
+ * Zone tones from the Visual factory arrive asynchronously; until they land
+ * `landTint` falls back to the renderer's name-hue, which is the same answer
+ * the SVG path used to paint inline.
+ *
+ * @param {ReturnType<typeof worldFor>} world
+ * @param {string|null|undefined} theme
+ * @param {Record<string, {fill: string}>|null} zoneTones
+ */
+export function worldWithLandTints(world, theme, zoneTones = null) {
+  if (!world?.geometry?.lands?.features?.length) return world;
+  const features = world.geometry.lands.features.map((feature) => {
+    const name = feature.properties?.name;
+    if (!name) return feature;
+    const tint = landTint(name, theme, zoneTones).fill;
+    return {
+      ...feature,
+      properties: { ...feature.properties, tint },
+    };
+  });
+  return {
+    ...world,
+    geometry: {
+      ...world.geometry,
+      lands: { ...world.geometry.lands, features },
+    },
+  };
 }
 
 /**

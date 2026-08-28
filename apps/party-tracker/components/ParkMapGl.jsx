@@ -86,7 +86,6 @@ export default function ParkMapGl({
   onUserPan = null,
   /** Map chrome — the key, the attribution — drawn over the canvas. */
   children = null,
-  style = null,
 }) {
   const containerRef = useRef(null);
   const viewRef = useRef(null);
@@ -381,7 +380,7 @@ export default function ParkMapGl({
   );
 
   return (
-    <div className="mapWrap" style={style ?? undefined} data-renderer="gl">
+    <div className="mapGlHost" data-renderer="gl">
       <div
         ref={containerRef}
         style={S.canvas}
