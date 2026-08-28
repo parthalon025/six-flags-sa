@@ -502,6 +502,7 @@
     "sheet :: releaseNotesSince returns every unseen version up to the installed build",
     "sheet :: the shipped release-notes file has an entry for the current version",
     "sheet :: adapter registry lists core external stacks",
+    "sheet :: maplibre-gl-js registry license matches installed maplibre-gl package",
     "sheet :: mapillary-tools row covers ride-walkthrough video evidence",
     "sheet :: mapillary-tools is runnable but opt-in, not scaffolded by default",
     "sheet :: poly-haven is a Display-layer adapter with no evidence_sources",

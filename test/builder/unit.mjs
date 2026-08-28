@@ -8053,6 +8053,20 @@ await check('adapter registry lists core external stacks', () => {
   return true;
 });
 
+await check('maplibre-gl-js registry license matches installed maplibre-gl package', () => {
+  const row = getAdapter('maplibre-gl-js');
+  assert.ok(row, 'maplibre-gl-js adapter row exists');
+  const pkgPath = new URL('../../node_modules/maplibre-gl/package.json', import.meta.url);
+  let installed = 'BSD-3-Clause';
+  try {
+    installed = JSON.parse(fs.readFileSync(pkgPath, 'utf8')).license;
+  } catch {
+    // Offline / no install: issue #565 documents maplibre-gl as BSD-3-Clause.
+  }
+  assert.equal(row.license, installed);
+  return true;
+});
+
 await check('mapillary-tools row covers ride-walkthrough video evidence', () => {
   const row = getAdapter('mapillary-tools');
   assert.ok(row.evidence_sources.includes('mapillary'));

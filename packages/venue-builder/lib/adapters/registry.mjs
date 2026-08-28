@@ -423,7 +423,7 @@ const ENTRIES = [
     capability: 'WebGL vector-tile map renderer with custom styling',
     role: 'MAP_RENDERER_OPTION',
     stage: 'runtime_map',
-    license: 'BSD-2-Clause',
+    license: 'BSD-3-Clause',
     adopt: 'evaluate',
     maturity: 'production',
     maintenance: 5,
