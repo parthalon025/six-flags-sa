@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it: the bundle is overwritten by every rebuild and this is the accumulated evidence, which is the expensive part. Only features that clear \"moderate\" confidence are copied into the bundle the app reads. Refresh with: npm run venues:attractions -- big-kahunas",
+  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it.",
   "venue": "big-kahunas",
-  "generated": "2026-08-11",
+  "generated": "2026-08-28",
   "publish_at": "moderate",
   "attractions": [
     {
@@ -11,8 +11,8 @@
       "venue": "big-kahunas",
       "type": "attraction",
       "at": {
-        "lat": 30.388012,
-        "lng": -86.472376
+        "lat": 30.38801,
+        "lng": -86.472382
       },
       "features": {
         "queue_entrance": {

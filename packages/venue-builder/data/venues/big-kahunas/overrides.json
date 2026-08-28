@@ -1,6 +1,6 @@
 {
   "_comment": "Corrections and hand-added places, re-applied on every rebuild. Height rules live in data/venues/big-kahunas.heights.json. Source catalogue and imagery datasets: data/venues/big-kahunas.sources.json.",
-  "credits": "Height requirements were compiled from Big Kahuna's own 2026 attraction pages. Ride and amenity positions combine OpenStreetMap (ODbL), Okaloosa County orthophotos of 1 March 2025 via Esri World Imagery, and the park's 2026 illustrated map.",
+  "credits": "Height requirements were compiled from Big Kahuna's own 2026 attraction pages. Ride and amenity positions combine OpenStreetMap (ODbL), USDA NAIP orthophotography (2022-01-23 via Microsoft Planetary Computer), and the park's 2026 illustrated map.",
   "pois": {},
   "drop": [
     "Tiki River Run (Left Slide)",

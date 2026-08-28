@@ -1,15 +1,14 @@
 {
   "type": "FeatureCollection",
-  "_comment": "Paths and rides surveyed from Okaloosa County orthophotos of 1 March 2025 via Esri World Imagery, registered to this venue's OpenStreetMap geometry. Folded in by the universal builder via data/venues/big-kahunas.sources.json.",
+  "_comment": "Paths surveyed from USDA NAIP orthophotography (fl_m_3008637_sw_16_060_20220123) via Microsoft Planetary Computer, registered to this venue's OpenStreetMap geometry. Folded in by the universal builder via data/venues/big-kahunas.sources.json.",
   "properties": {
     "imagery": {
       "by": "aerial",
-      "source": "okaloosa-ortho-2025",
-      "provider": "Okaloosa County GIS",
-      "served_via": "Esri World Imagery",
-      "capture_date": "2025-03-01",
-      "horizontal_accuracy_m": 0.19,
-      "resolution_cm": 7.6
+      "source": "naip-fl-20220123",
+      "provider": "USDA FPAC-BC-GEO NAIP",
+      "served_via": "Microsoft Planetary Computer",
+      "capture_date": "2022-01-23",
+      "gsd_m": 0.6
     }
   },
   "features": [
@@ -20,8 +19,8 @@
         "n": "Wave pool deck to midway",
         "src": {
           "by": "aerial",
-          "source": "okaloosa-ortho-2025",
-          "note": "Concrete deck along the wave pool east edge; OSM has the pool but not this link to the central midway."
+          "source": "naip-fl-20220123",
+          "note": "Concrete deck along the wave pool east edge; OSM has the pool but not this link to the central midway. Re-stamped from NAIP after okaloosa-ortho-2025 was inadmissible."
         }
       },
       "geometry": {
@@ -41,8 +40,8 @@
         "n": "Adventure Park boardwalk",
         "src": {
           "by": "aerial",
-          "source": "okaloosa-ortho-2025",
-          "note": "Raised walk from the mini-golf plaza to the ticket plaza; visible on orthophoto, absent from OSM footways."
+          "source": "naip-fl-20220123",
+          "note": "Raised walk from the mini-golf plaza to the ticket plaza; visible on NAIP orthophoto, absent from OSM footways."
         }
       },
       "geometry": {
@@ -62,8 +61,8 @@
         "n": "Buccaneer Cove bridge",
         "src": {
           "by": "aerial",
-          "source": "okaloosa-ortho-2025",
-          "note": "Short bridge from the south-west midway into Buccaneer Cove; drawn on orthophoto, missing from OSM."
+          "source": "naip-fl-20220123",
+          "note": "Short bridge from the south-west midway into Buccaneer Cove; drawn on NAIP orthophoto, missing from OSM."
         }
       },
       "geometry": {

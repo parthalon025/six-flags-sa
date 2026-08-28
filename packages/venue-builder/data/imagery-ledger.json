@@ -3,6 +3,24 @@
   "contact": "imagery evidence lane — docs/adr/0020-imagery-ground-truth.md clauses 1-2, as amended by docs/adr/0021-zoomable-worlds-revised.md clauses 8-9",
   "_comment": "Every imagery tile any venue derives a claim from, pinned the way this package already pins assets (data/display/assets.json) and reference images (data/display/references/images.json). Read by lib/imagery-ledger.mjs. Rows are recorded as the venue's sources.json actually stamps them; a row is never edited to make a gate pass, and there is no exemption field. A row that raises problems is an open question for a human, not a bug in the ledger.",
   "tiles": {
+    "naip-fl-20220123": {
+      "label": "NAIP orthophoto over Big Kahuna's Destin (fl_m_3008637_sw_16_060_20220123)",
+      "kind": "aerial_imagery",
+      "source": "planetary-computer:naip",
+      "provider": "USDA FPAC-BC-GEO NAIP",
+      "served_via": "Microsoft Planetary Computer",
+      "captured": "2022-01-23",
+      "sha256": "de888e670536c6b0eeeafe912af7b2a1f96963e98d3977b331e595095a0b756b",
+      "license": "public-domain",
+      "path": null,
+      "gsd": 0.6,
+      "tile": "fl_m_3008637_sw_16_060_20220123",
+      "used_by": [
+        "big-kahunas"
+      ],
+      "used_for": "Walking paths OpenStreetMap does not draw, and ride positions where OSM names geometry but not the attraction.",
+      "recorded_from": "data/venues/big-kahunas/naip-planetary-cache.json"
+    },
     "okaloosa-ortho-2025": {
       "label": "Okaloosa County 2025 orthophotography over Big Kahuna's Destin",
       "kind": "aerial_imagery",

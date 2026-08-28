@@ -1,0 +1,31 @@
+{
+  "type": "FeatureCollection",
+  "_comment": "Recorded OSM path-gap fills for Cedar Point. These are steward-recorded connectors, not imagery-derived geometry. Folded in via data/venues/cedar-point/sources.json datasets.imagery.",
+  "properties": {
+    "imagery": {
+      "by": "override",
+      "note": "OSM path-gap connectors recorded by the factory steward — not orthophoto-derived."
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "path",
+        "n": "Siren's Curse to Perimeter Road",
+        "src": {
+          "by": "override",
+          "note": "OSM path gap: Siren's Curse queue area is 45 m from Perimeter Road; guest-facing walk connector recorded pending upstream OSM write-back."
+        }
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-82.685183, 41.480929],
+          [-82.68535, 41.4808],
+          [-82.68556830713234, 41.48064479890505]
+        ]
+      }
+    }
+  ]
+}

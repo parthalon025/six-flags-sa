@@ -136,14 +136,6 @@
     "a": "Cedar Point"
   },
   {
-    "i": "bayou-refreshments",
-    "n": "Bayou Refreshments",
-    "lat": 41.478931,
-    "lng": -82.680202,
-    "c": "food",
-    "a": "Main Midway"
-  },
-  {
     "i": "beaches-cream",
     "n": "Beaches & Cream",
     "lat": 41.487306,
@@ -412,14 +404,6 @@
     "lng": -82.682846,
     "c": "shop",
     "a": "Main Midway"
-  },
-  {
-    "i": "coral-dining-room",
-    "n": "Coral Dining Room",
-    "lat": 41.482487,
-    "lng": -82.681424,
-    "c": "food",
-    "a": "Lakeside Midway"
   },
   {
     "i": "corkscrew",
@@ -713,6 +697,14 @@
     "n": "Fountain Custard",
     "lat": 41.480143,
     "lng": -82.681154,
+    "c": "food",
+    "a": "Main Midway"
+  },
+  {
+    "i": "sweets-n-treats",
+    "n": "French Quarter Confections",
+    "lat": 41.47875,
+    "lng": -82.679906,
     "c": "food",
     "a": "Main Midway"
   },
@@ -3525,14 +3517,6 @@
     "n": "Sweet Shop",
     "lat": 41.481373,
     "lng": -82.682154,
-    "c": "food",
-    "a": "Main Midway"
-  },
-  {
-    "i": "sweets-n-treats",
-    "n": "Sweets 'n Treats",
-    "lat": 41.47875,
-    "lng": -82.679906,
     "c": "food",
     "a": "Main Midway"
   },
