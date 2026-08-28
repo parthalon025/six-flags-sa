@@ -143,7 +143,14 @@ const WORLD_PAINT = Object.freeze({
     layout: SMOOTH,
     paint: {
       'line-color': p('structureEdge'),
-      'line-width': ['interpolate', ['linear'], ['zoom'], 13, 3.2, 16, 6, 19, 10],
+      // Drawn at every zoom (worldLod.js no longer hides it), so the wide end
+      // of this ramp is the whole of what keeps a coaster park from reading as
+      // spaghetti at park-wide: a hairline at 45% is a landmark you can find
+      // the ride by, not a layer competing with the midway. Weight and opacity
+      // arrive together as you pinch in, so track becomes structure exactly
+      // where there is room for it.
+      'line-width': ['interpolate', ['linear'], ['zoom'], 12, 1, 14, 1.6, 15.5, 3.4, 16, 6, 19, 10],
+      'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.45, 14, 0.6, 16, 1],
     },
   }),
 });

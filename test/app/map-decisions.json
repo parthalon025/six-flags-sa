@@ -7,7 +7,8 @@
     "paint-order": "[under, over] — the second layer is painted after the first.",
     "has-casing": "The layer ships a `-case` layer beneath it, wider than its own stroke.",
     "smooth-bends": "Every way is drawn with round caps and round joins. A mitred join spikes where a walkway turns and a butt cap leaves a square end at every segment break, which is what makes a curved midway read as a run of straight sticks.",
-    "area-edge-drawn-as-outline": "A layer that draws only an outline is allowed exactly when the area it outlines is itself painted as a shape, below it. `shapeBeneath` names that fill."
+    "area-edge-drawn-as-outline": "A layer that draws only an outline is allowed exactly when the area it outlines is itself painted as a shape, below it. `shapeBeneath` names that fill.",
+    "drawn-at-every-zoom": "The layer is in no LOD hide-group, so nothing ever toggles it off — and its paint is quiet at the wide end: thinner than the midway and under full opacity, so being always-drawn does not become clutter."
   },
   "decisions": [
     {
@@ -41,9 +42,10 @@
           "path",
           "slide",
           "service"
-        ]
+        ],
+        "zoom": 16
       },
-      "why": "Coaster track is the thing the park is famous for and the landmark a guest navigates by. Drawn at 1.6px it sat lighter than the midway it flies over and read as a stray scribble. The order is the whole World tier's line weight, so making the track heavier by making the midway thinner does not satisfy it. `boundary` is deliberately out of this chain — it is a hairline pending the wall decision below."
+      "why": "Coaster track is the thing the park is famous for and the landmark a guest navigates by. Drawn at 1.6px it sat lighter than the midway it flies over and read as a stray scribble. Asserted at ride scale (z16), which is where track carries full weight — at park-wide it is deliberately the lighter line, and `coaster-visible-at-park-wide` holds that end. The order is the whole World tier's line weight, so making track heavier by thinning the midway does not satisfy it. `boundary` is out of this chain — it is the park edge, held by its own row."
     },
     {
       "id": "coaster-track-has-real-weight",
@@ -130,6 +132,20 @@
         "shapeBeneath": "park"
       },
       "why": "`boundary` is the one area layer drawn as a line, and it is allowed to be: it is the edge of the `park` fill directly beneath it, and it sits above every ground layer, so filling it would paint over the lake. The rule holds it to that — take the park fill away and the boundary becomes a bare outline, and this fails."
+    },
+    {
+      "id": "coaster-visible-at-park-wide",
+      "asked": "make coasters visible at park-wide zoom without making the map too visually complicated",
+      "status": "enforced",
+      "rule": "drawn-at-every-zoom",
+      "params": {
+        "layer": "coaster",
+        "wideZoom": 13,
+        "maxWidthAtWide": 2,
+        "maxOpacityAtWide": 0.7,
+        "lighterThanAtWide": "path"
+      },
+      "why": "The view the app opens on is the whole park, and a coaster park with no coasters in that view is the plainest possible failure of \"displayed more visual\" — thickness cannot fix a layer that is not drawn. worldLod.js used to hide track below 0.7 px/m, so no width would ever have shown there. It is drawn at every zoom now. The second half of the ask is the constraint: a hairline under full opacity, lighter than the midway, so at park-wide it reads as a landmark you can find the ride by rather than as the line spaghetti ADR-0012 warns against. Both halves are asserted, because either one alone is the wrong map."
     }
   ]
 }

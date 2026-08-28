@@ -26,6 +26,15 @@
 import { readFileSync } from 'node:fs';
 import { WORLD_LAYERS } from '../../../apps/party-tracker/lib/worldGeo.js';
 import { worldCaseLayer, worldLayer } from '../../../apps/party-tracker/lib/mapViewStyle.js';
+import { worldLodVisibility } from '../../../apps/party-tracker/lib/worldLod.js';
+
+/** Every World layer some zoom hides, read from the LOD table rather than
+ *  restated — a layer added to a hide-group there must not be able to keep
+ *  claiming here that it is drawn at every zoom. */
+const LOD_HIDDEN_LAYERS = new Set(
+  Object.keys(worldLodVisibility({ detail: false, service: false, close: false }))
+    .map((key) => key.replace(/-case$/, '')),
+);
 
 const REGISTRY = new URL('../map-decisions.json', import.meta.url);
 
@@ -171,6 +180,40 @@ const RULES = {
       }
     }
     return { failures, checked };
+  },
+
+  'drawn-at-every-zoom'(params, style, layers) {
+    const { layer: id, wideZoom, maxWidthAtWide, maxOpacityAtWide, lighterThanAtWide } = params;
+    const layer = layers.get(worldLayer(id));
+    if (!layer) return { failures: [], checked: [] };
+    const failures = [];
+
+    /* Half one: nothing may hide it. The LOD table is the only thing that
+       toggles a World layer off, so a layer it does not name is drawn at
+       every zoom — and a layer it names is not, whatever its paint says. */
+    if (LOD_HIDDEN_LAYERS.has(id)) {
+      failures.push(`${id} is in a zoom hide-group, so it is not drawn at park-wide however it is painted`);
+    }
+
+    /* Half two: and being always-drawn must not become clutter. Both are the
+       decision; asserting only the first ships spaghetti, only the second
+       ships an invisible layer. */
+    const width = lineWidthAt(layer.paint?.['line-width'], wideZoom);
+    if (width !== null && width > maxWidthAtWide) {
+      failures.push(`${id} is ${width}px at park-wide zoom ${wideZoom}, over the ${maxWidthAtWide}px this decision allows`);
+    }
+    const opacity = lineWidthAt(layer.paint?.['line-opacity'] ?? 1, wideZoom);
+    if (opacity !== null && opacity > maxOpacityAtWide) {
+      failures.push(`${id} is at ${opacity} opacity at park-wide, over the ${maxOpacityAtWide} this decision allows`);
+    }
+    const other = layers.get(worldLayer(lighterThanAtWide));
+    const otherWidth = other ? lineWidthAt(other.paint?.['line-width'], wideZoom) : null;
+    if (width !== null && otherWidth !== null && !(width < otherWidth)) {
+      failures.push(
+        `${id} (${width}px) must sit lighter than ${lighterThanAtWide} (${otherWidth}px) at park-wide — it is a landmark there, not the subject`,
+      );
+    }
+    return { failures, checked: [id] };
   },
 
   'area-edge-drawn-as-outline'(params, style, layers) {

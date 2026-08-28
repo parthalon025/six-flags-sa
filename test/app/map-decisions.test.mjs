@@ -20,7 +20,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { bandedWorldStyle, worldCaseLayer, worldLayer } from '../../apps/party-tracker/lib/mapViewStyle.js';
 import { worldGeoJson } from '../../apps/party-tracker/lib/worldGeo.js';
 import { mapPaint } from '../../apps/party-tracker/lib/world.js';
-import { worldLodGroups, worldPlanZoom } from '../../apps/party-tracker/lib/worldLod.js';
+import { worldLodGroups, worldLodVisibility, worldPlanZoom } from '../../apps/party-tracker/lib/worldLod.js';
 
 /** Kings Island, which is the venue the explicit block below reads. */
 const KINGS_ISLAND_LAT = 39.34;
@@ -114,14 +114,15 @@ assert.ok(sawParking > 0, 'no shipped venue drew a parking lot, so nothing check
   const path = layer('path');
   assert.equal(coaster.type, 'line');
   /* Only the zooms the track is actually drawn at. `worldLod.js` hides the
-     coaster layer below 0.7 px/m — about MapLibre z15.5 at this latitude — so
-     a floor asserted wider than that pins a width nothing puts on screen, and
-     a green assertion over an invisible layer is the decorative kind this
-     suite exists to refuse. VISIBLE_FROM is checked against worldLod rather
-     than hard-coded, so moving that threshold moves this with it. */
+     coaster layer only when the table names it, and it no longer does — track
+     is drawn at every zoom. These are the zooms where it carries full weight;
+     the wide end is quieted by paint and pinned by its own decision row. The
+     LOD table is read rather than assumed, so putting coaster back into a
+     hide group fails here instead of silently making this range moot. */
   for (const zoom of [16, 17, 18, 19, 20]) {
-    assert.ok(
-      worldLodGroups(worldPlanZoom(zoom, KINGS_ISLAND_LAT), {}).detail,
+    assert.equal(
+      worldLodVisibility(worldLodGroups(worldPlanZoom(zoom, KINGS_ISLAND_LAT), {})).coaster,
+      undefined,
       `z${zoom} must actually draw the coaster layer for this assertion to mean anything`,
     );
     const track = lineWidthAt(coaster.paint['line-width'], zoom);

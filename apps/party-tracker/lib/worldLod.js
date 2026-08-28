@@ -16,7 +16,15 @@ const SERVICE_LEAVE = 1.28;
 /** Path casing and slides: the SVG's `lowZoom` line (`!detail || z < 0.85`). */
 const CLOSE_ENTER = 0.85;
 
-const DETAIL_LAYERS = Object.freeze(['grass', 'building', 'coaster']);
+/* Coaster track is deliberately absent. Grass and buildings are detail — they
+   clutter a park-wide read and say nothing at that scale. Track is the
+   opposite: it is the landmark a guest orients by, and hiding it meant the
+   view the app opens on had no coasters in a coaster park. It is drawn at
+   every zoom now and kept quiet at the wide end by paint rather than by
+   absence (mapViewStyle.js ramps its width and opacity), which is what keeps
+   ADR-0012's "overview zoom keeps line spaghetti quiet" true without also
+   making the ride invisible. */
+const DETAIL_LAYERS = Object.freeze(['grass', 'building']);
 const SERVICE_LAYERS = Object.freeze(['service']);
 const CLOSE_LAYERS = Object.freeze(['slide', 'path-case']);
 

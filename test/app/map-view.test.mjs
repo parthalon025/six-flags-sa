@@ -1435,17 +1435,25 @@ const read = (name) => JSON.parse(readFileSync(new URL(name, VENUES), 'utf8'));
   const hidden = worldLodVisibility(parkWide);
   assert.equal(hidden.grass, false);
   assert.equal(hidden.building, false);
-  assert.equal(hidden.coaster, false);
   assert.equal(hidden.service, false);
   assert.equal(hidden.slide, false);
   assert.equal(hidden['path-case'], false);
   const shown = worldLodVisibility(walking);
   assert.equal(shown.grass, true);
   assert.equal(shown.building, true);
-  assert.equal(shown.coaster, true);
   assert.equal(shown.service, true);
   assert.equal(shown.slide, true);
   assert.equal(shown['path-case'], true);
+
+  /* Coaster track is in no LOD group, at either end. A layer this table does
+     not name is never toggled, which is how it stays drawn at every zoom —
+     the park-wide view of a coaster park has coasters in it. Quieting it at
+     the wide end is paint's job (mapViewStyle.js ramps width and opacity),
+     and `test/app/map-decisions.json` holds that. Asserted at both ends
+     because "always drawn" is the decision, not "drawn at the zoom I
+     happened to check". */
+  assert.equal(hidden.coaster, undefined, 'track is not hidden at park-wide');
+  assert.equal(shown.coaster, undefined, 'and is not toggled when walking either');
 
   const seam = readFileSync(new URL('../../apps/party-tracker/lib/mapView.js', import.meta.url), 'utf8');
   assert.match(seam, /worldLodGroups/, 'LOD groups live on the zoom seam, next to the band plan');
