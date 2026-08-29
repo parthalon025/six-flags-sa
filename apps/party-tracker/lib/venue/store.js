@@ -347,7 +347,13 @@ async function fetchOptionalJson(url, { refresh = false } = {}) {
   }
 }
 
-export const SHIPPED_GAP_TYPES = new Set(['height', 'queue', 'path', 'path_disputed', 'restroom', 'food', 'gate', 'camping', 'verify', 'inventory']);
+/* ADR-0009's frozen seven plus verify and inventory. Disputes are not on this
+ * list and must never be: where sources disagree the builder keeps a private
+ * record and asks no guest about it (owner decision, 2026-08-22). This Set is
+ * also the reason a bundle already sitting in a phone's cache is safe — a
+ * `path_disputed` row in a stale `*.gaps.json` is filtered out on load rather
+ * than surviving until the cache turns over. */
+export const SHIPPED_GAP_TYPES = new Set(['height', 'queue', 'path', 'restroom', 'food', 'gate', 'camping', 'verify', 'inventory']);
 
 export function gapsUrlFor(venue) {
   if (venue?.gaps) return venue.gaps;

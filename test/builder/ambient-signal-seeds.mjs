@@ -106,7 +106,7 @@ await check('converging attractions emit no conflict seeds', () => {
   return true;
 });
 
-await check('shipped gaps path includes stale and conflict seeds', () => {
+await check('a stale adapter ships a verify Gap; a conflict ships nothing and stays in the brief', () => {
   const pois = [{ n: 'Maverick', i: 'maverick', c: 'coaster', h: { min: 52 } }];
   const attractions = {
     attractions: [{
@@ -136,7 +136,24 @@ await check('shipped gaps path includes stale and conflict seeds', () => {
     asOf: '2026-08-27',
   });
   assert.ok(doc.gaps.some((g) => g.type === 'verify' && g.target === 'parks-api'));
-  assert.ok(doc.gaps.some((g) => g.type === 'path_disputed' && g.target === 'maverick'));
+  // The conflict is real and still seeded — it just has no way onto a phone.
+  // It reaches the certification brief instead (durable quest seeds below).
+  assert.ok(
+    !doc.gaps.some((g) => g.type === 'path_disputed'),
+    'an evidence conflict must not reach the phone as a Gap (owner decision, 2026-08-22)',
+  );
+  const brief = questSeedsForVenue({
+    venueId: 'cedar-point',
+    attractions,
+    adapterCaches,
+    gapNotes: {},
+    asOf: '2026-08-27',
+    includeAmbient: false,
+  });
+  assert.ok(
+    brief.durable.some((seed) => seed.sourceGap === 'evidence_conflict' && seed.target === 'maverick'),
+    'the conflict is still on the builder-side seed list, not lost',
+  );
   return true;
 });
 
@@ -175,7 +192,11 @@ await check('questSeedsForVenue includes signal-derived durable seeds', () => {
 
 await check('shipped type mapping and allowlists include verify', () => {
   assert.equal(shippedTypeForSeed({ sourceGap: 'adapter_stale' }), 'verify');
-  assert.equal(shippedTypeForSeed({ sourceGap: 'evidence_conflict', target: 'x' }), 'path_disputed');
+  assert.equal(
+    shippedTypeForSeed({ sourceGap: 'evidence_conflict', target: 'x' }),
+    null,
+    'a dispute seed has no shipped Gap type',
+  );
   assert.ok(SHIPPED_GAP_TYPES.includes('verify'));
   assert.ok(PHONE_GAP_TYPES.has('verify'));
   assert.ok(ADAPTER_CACHE_FRESHNESS_DAYS['parks-api'] > 0);

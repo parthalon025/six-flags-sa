@@ -41,6 +41,7 @@ const { questSeedsFromRequests, questSeedsFromEntrances } = await import(
 );
 const { buildSideQuests, isOnWalkway, sortByProximity } = await import('../../apps/party-tracker/lib/sideQuests.js');
 const { normalizeGapsDocument, gapsUrlFor, SHIPPED_GAP_TYPES: PHONE_SHIPPED_GAP_TYPES } = await import('../../apps/party-tracker/lib/venue/store.js');
+const { DISPUTE_KINDS, assertNoDisputeKinds } = await import('../../packages/venue-builder/lib/imagery-disputes.mjs');
 
 await check('rankFromXp follows the Scout / Ranger / Cartographer / Steward ladder', () => {
   assert.equal(rankFromXp(0), 'visitor');
@@ -401,6 +402,9 @@ await check('sortByProximity keeps camping last even when it has no pin', () => 
 
 await check('normalizeGapsDocument ignores unknown types and a missing file is an empty list', () => {
   assert.deepEqual(normalizeGapsDocument(null), []);
+  // `path_disputed` is here on purpose: a bundle published while it was a
+  // shipped type can still be sitting in a phone's cache, and the phone drops
+  // it on load rather than waiting for the cache to turn over.
   assert.deepEqual(
     normalizeGapsDocument({
       version: 1,
@@ -415,7 +419,6 @@ await check('normalizeGapsDocument ignores unknown types and a missing file is a
     [
       { type: 'height', target: 'a' },
       { type: 'path', target: null },
-      { type: 'path_disputed', target: null },
     ],
   );
   assert.equal(gapsUrlFor({ id: 'kings-island' }), '/venues/kings-island.gaps.json');
@@ -425,6 +428,43 @@ await check('normalizeGapsDocument ignores unknown types and a missing file is a
     [...SHIPPED_GAP_TYPES].sort(),
     'the phone keep-list and the builder allowlist must stay the same set',
   );
+  return true;
+});
+
+await check('neither allowlist can spell a dispute kind, and no dispute seed can reach one', () => {
+  // The phone list gets the same wall the builder list gets at module load —
+  // asserted here because store.js cannot import the builder package.
+  assertNoDisputeKinds(PHONE_SHIPPED_GAP_TYPES, 'store.js SHIPPED_GAP_TYPES');
+  assertNoDisputeKinds(SHIPPED_GAP_TYPES, 'ship-gaps.mjs SHIPPED_GAP_TYPES');
+  for (const kind of DISPUTE_KINDS) {
+    assert.equal(
+      shippedTypeForSeed({ sourceGap: kind, target: 'maverick' }),
+      null,
+      `sourceGap ${kind} must not map onto a shipped Gap type`,
+    );
+    assert.equal(
+      shippedTypeForSeed({ type: kind, target: 'maverick' }),
+      null,
+      `seed type ${kind} must not map onto a shipped Gap type`,
+    );
+  }
+  // And nothing gets through the document builder either — including the
+  // untargeted imagery shape that used to be shipped as-is.
+  const doc = shippedGapsDocument({
+    venueId: 'demo',
+    // No declared height, so this venue ships one real Gap. Without it the
+    // "nothing got through" sweep below would pass over an empty list.
+    pois: [{ n: 'Maverick', i: 'maverick', c: 'coaster' }],
+    seeds: [
+      { sourceGap: 'path_disputed', target: null },
+      { sourceGap: 'evidence_conflict', target: 'maverick' },
+      { type: 'path_disputed', target: 'maverick' },
+    ],
+  });
+  assert.ok(doc.gaps.length > 0, 'guard: the document is not empty for unrelated reasons');
+  for (const gap of doc.gaps) {
+    assert.ok(!DISPUTE_KINDS.includes(gap.type), `${gap.type} reached the shipped document`);
+  }
   return true;
 });
 

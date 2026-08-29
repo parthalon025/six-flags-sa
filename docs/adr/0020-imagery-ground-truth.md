@@ -50,9 +50,15 @@ never repositions.
    versus gravel, where lawn meets plaza — re-expressed inside each Skin's own palette. Skins
    stay distinct (the beyond-palette gate holds) while every Skin stays unmistakably that park.
 5. **Truth-conflict rule: OSM stays canonical; imagery adds and flags.** Imagery adds what OSM
-   lacks and, where it contradicts OSM geometry, raises an evidence claim / **Gap** ("path
-   position disputed") for steward review — or a Side Quest — never a silent geometry move
+   lacks and, where it contradicts OSM geometry, raises an evidence claim and a dispute
+   ("path position disputed") for steward review — never a silent geometry move
    (the OSM import-guidelines norm). Confirmed corrections may flow back upstream to OSM.
+   *Clarified 2026-08-29 by [ADR-0021](./0021-zoomable-worlds-revised.md)'s closed Open
+   section:* "**Gap**" here meant the steward's review queue, not the guest-facing **Gap** type
+   in [ADR-0009](./0009-ship-gaps.md), and the two were conflated while Train I was built. The
+   owner's answer of 2026-08-22 is that a dispute is builder-side only — recorded in
+   `imagery-disputes.json` beside the venue's other maintainer sidecars, and never a Side
+   Quest, a shipped Gap, or anything else a guest is asked to settle.
 6. **Sequencing: the grounding harvest rides Train H** (kings-island's banded worlds ship already
    grounded in that park's real relationships); the **evidence lane is Train I** after H —
    extraction passes, evidence-graph wiring, the steward gate, and the OSM feedback loop.

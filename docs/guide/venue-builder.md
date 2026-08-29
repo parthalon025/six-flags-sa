@@ -140,7 +140,7 @@ available as the escape hatch for the entries a name cannot address on its own, 
 of twenty-six places called "Restrooms".
 
 Each build writes `apps/party-tracker/public/venues/<id>.map.json`, `apps/party-tracker/public/venues/<id>.pois.json`, and `apps/party-tracker/public/venues/<id>.gaps.json`, then
-rebuilds `apps/party-tracker/public/venues/manifest.json` and the generated `apps/party-tracker/lib/venueIndex.js`. Gaps are facts the builder cannot settle (height, queue, path, path_disputed, restroom, food, gate, camping, verify); `verify` rows name a stale adapter id in `target`. The phone ranks them by Location and does not invent them from POI fields. The client
+rebuilds `apps/party-tracker/public/venues/manifest.json` and the generated `apps/party-tracker/lib/venueIndex.js`. Gaps are facts the builder cannot settle (height, queue, path, restroom, food, gate, camping, verify, inventory); `verify` rows name a stale adapter id in `target`. The phone ranks them by Location and does not invent them from POI fields. Disagreements are not Gaps: where imagery contradicts OSM, or two evidence sources contradict each other, the build records a dispute in `packages/venue-builder/data/venues/<id>/imagery-disputes.json` for a maintainer and ships nothing — a guest is never asked to settle one (owner decision, 2026-08-22; ADR-0021 Open). `ship-gaps.mjs` fails to load if a dispute kind is ever added back to the shipped allowlist. The client
 *fetches* those files rather than importing them, which is the point: a venue added to the
 manifest reaches a phone that already has the app installed, and the service worker caches
 whichever one gets opened. A missing Gaps file is an empty list — it must not fail the park load.

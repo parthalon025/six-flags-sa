@@ -153,10 +153,25 @@ Closed 2026-08-22 so Trains H and I can finish. The answers:
   is the parent-placeholder functional check (playbook row 5 / slice h9), not a correctness
   gate — clause 1 already removed that rationale. A pinned real device is a later addition,
   not a ship blocker.
-- **Train I.** A disputed path position ships as Gap type `path_disputed` (extends the frozen
-  seven; ADR-0020 clause 5 names this Gap). OSM write-back is steward-gated proposal files,
-  never an automatic upload. Google Places is back-office metadata corroboration only (clause
-  7 already). Mapillary share-alike stays attribution-gated and does not write truth.
+- **Train I.** A disputed path position **never reaches a guest**. It stays builder-side: a
+  maintainer record (`packages/venue-builder/data/venues/<id>/imagery-disputes.json`, written by
+  `imagery-disputes.mjs`) plus a dissenting claim in the evidence graph, for steward review. The
+  shipped Gap vocabulary stays ADR-0009's frozen seven plus `verify` and `inventory`; no dispute
+  kind may be spelled as a shipped Gap type, and `ship-gaps.mjs` asserts that at module load.
+  OSM write-back is steward-gated proposal files, never an automatic upload. Google Places is
+  back-office metadata corroboration only (clause 7 already). Mapillary share-alike stays
+  attribution-gated and does not write truth.
+
+  *Corrected 2026-08-29:* this bullet previously recorded the opposite answer — "ships as Gap
+  type `path_disputed` (extends the frozen seven)". That was written from ADR-0020 clause 5's
+  word "Gap" before the owner had answered, and `path_disputed` was already in
+  `SHIPPED_GAP_TYPES` and on the phone's keep-list by the time the answer came back. The owner
+  chose the third option on 2026-08-22 — *keep it internal, never show guests* — so the eighth
+  type this bullet added to the frozen seven is unshipped, along with `evidence_conflict`, which
+  had since been routed onto it. No published bundle under
+  `apps/party-tracker/public/venues/` ever carried a `path_disputed` row, so nothing reached a
+  guest's cache; the phone's keep-list drops the type anyway, which is what covers a bundle
+  cached from a preview build.
 
 Plus the crop question that building h1 surfaced: **a band plan describes the World; the
 pyramid georeferences against the cropped PNG** (`cert.bounds`). `bandBakePlan` stays

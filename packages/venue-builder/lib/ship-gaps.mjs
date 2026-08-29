@@ -3,10 +3,17 @@
  *
  * Builder ask seeds and low-confidence queue evidence stay in certification
  * sidecars. This module is the seam that ships what guests can settle:
- * height, queue, path, path_disputed, restroom, food, gate, camping, verify
- * (stale adapter cache), inventory (adapter under-coverage, from
- * inventory-gaps.mjs). Credits, aliases, locality, and live ops never go
+ * height, queue, path, restroom, food, gate, camping (ADR-0009's frozen
+ * seven), verify (stale adapter cache), inventory (adapter under-coverage,
+ * from inventory-gaps.mjs). Credits, aliases, locality, and live ops never go
  * in `*.gaps.json`.
+ *
+ * Disputes are not on that list and cannot be added to it. Where sources
+ * disagree the builder keeps a maintainer record (imagery-disputes.mjs) and
+ * ships nothing — the owner's answer, 2026-08-22, to "how does a disputed path
+ * position reach a guest?" was that it does not. `assertNoDisputeKinds` runs
+ * over the allowlist below at module load, so putting a dispute kind back into
+ * it fails the builder instead of reaching a phone.
  *
  * Place keys `i` are unique. Invent one Gap per `i`. A display name is only
  * a fallback when exactly one Place has that title; an ambiguous title is
@@ -17,12 +24,12 @@
 
 import { questSeedsFromEntrances } from './quest-seeds.mjs';
 import { ambientSignalShipArtifacts } from './ambient-signal-seeds.mjs';
+import { assertNoDisputeKinds, isDisputeKind } from './imagery-disputes.mjs';
 
 export const SHIPPED_GAP_TYPES = Object.freeze([
   'height',
   'queue',
   'path',
-  'path_disputed',
   'restroom',
   'food',
   'gate',
@@ -30,6 +37,8 @@ export const SHIPPED_GAP_TYPES = Object.freeze([
   'verify',
   'inventory',
 ]);
+
+assertNoDisputeKinds(SHIPPED_GAP_TYPES, 'ship-gaps.mjs SHIPPED_GAP_TYPES');
 
 /** Rides farther than this from walkable geometry get a targeted path Gap. */
 export const PATH_RIDE_SNAP_METRES = 35;
@@ -48,16 +57,17 @@ const RIDE = (p) => p && (p.c === 'coaster' || p.c === 'ride');
 export function shippedTypeForSeed(seed) {
   if (!seed) return null;
   if (seed.sourceGap === 'adapter_stale') return 'verify';
-  if (seed.sourceGap === 'evidence_conflict') return 'path_disputed';
+  // A dispute seed has no shipped type by construction, whatever it is called.
+  // The seed still exists — questSeedsForVenue keeps it in the certification
+  // brief and imagery-disputes.mjs keeps the imagery half — it simply has no
+  // channel to the phone.
+  if (isDisputeKind(seed.sourceGap) || isDisputeKind(seed.type)) return null;
   if (DROP_SEED_TYPES.has(seed.type)) return null;
   if (seed.sourceGap === 'credits' || seed.sourceGap === 'locality') return null;
   if (seed.sourceGap === 'ambient_ops') return null;
   if (seed.type === 'height_rule' || seed.sourceGap === 'heights') return 'height';
   if (seed.type === 'geometry_nudge' || seed.sourceGap === 'entrance_missing' || seed.sourceGap === 'entrance_low_confidence') {
     return 'queue';
-  }
-  if (seed.sourceGap === 'path_disputed' || seed.type === 'path_disputed') {
-    return 'path_disputed';
   }
   if (seed.sourceGap === 'camping' || seed.type === 'poi_attribute') return 'camping';
   if (seed.type === 'poi_presence' || seed.sourceGap === 'missing-poi') {
@@ -223,22 +233,6 @@ export function shippedGapsDocument({ venueId, seeds = [], pois = [], map = null
       if (target) add(type, target);
       continue;
     }
-    if (type === 'path_disputed') {
-      // A ride-attributed dispute (evidence_conflict) resolves to one Place
-      // key like height/queue — ambiguous or unmatched targets are skipped,
-      // not forked (resolveGapTarget's contract). But an imagery extraction
-      // can dispute the path itself with no ride in play (routeImageryExtractions
-      // ships `target: null` on purpose) — that Gap still has to reach the
-      // phone, so an intentionally-untargeted dispute ships as-is instead of
-      // being dropped for "no target".
-      if (seed.target == null) {
-        add(type, null);
-      } else {
-        const target = resolveGapTarget(pois, seed.target);
-        if (target) add(type, target);
-      }
-      continue;
-    }
     if (type === 'verify') {
       add(type, seed.adapterId || null);
       continue;
@@ -264,6 +258,9 @@ export function shippedGapsDocument({ venueId, seeds = [], pois = [], map = null
  * Invent Gaps for a built venue without going through venue-requests
  * (that import cycle would pull venue-io back in).
  *
+ * Imagery extractions do not appear here. A disputed extraction is recorded by
+ * imagery-disputes.mjs and stops there; nothing about it is on the wire.
+ *
  * @param {{ venueId: string, meta?: object, pois?: object[], map?: object, attractions?: object | null }} opts
  */
 export function shippedGapsForVenue({
@@ -272,7 +269,6 @@ export function shippedGapsForVenue({
   pois = [],
   map = {},
   attractions = null,
-  imageryGaps = [],
   adapterCaches = null,
   gapNotes = {},
   asOf,
@@ -287,7 +283,6 @@ export function shippedGapsForVenue({
   const seeds = [
     ...questSeedsFromEntrances(venueId, attractions),
     ...presenceAndCampingSeeds(meta, pois),
-    ...imageryGaps,
     ...signals.seeds,
   ];
   return shippedGapsDocument({ venueId, seeds, pois, map: map ?? {} });

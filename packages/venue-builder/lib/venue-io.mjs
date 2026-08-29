@@ -36,6 +36,7 @@ import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { shippedGapsForVenue } from './ship-gaps.mjs';
 import { routeImageryExtractions } from './imagery-claims.mjs';
+import { DISPUTE_SIDECAR, recordDisputes } from './imagery-disputes.mjs';
 import { writeBundleManifest } from './venue-bundle.mjs';
 import { buildGeneratedBinding } from './delivery/builder-app-contract.mjs';
 import { writeRoutingCoverage } from '../src/routing-coverage.mjs';
@@ -81,18 +82,51 @@ export {
   writeJson,
 };
 
+/** Whatever extractions.json holds for this venue, as a flat list. */
+function extractionsFor(id, extractions) {
+  const loaded = extractions ?? (id ? readJson(venueSidecar(id, 'extractions.json'), []) : []);
+  if (Array.isArray(loaded)) return loaded;
+  return Array.isArray(loaded?.extractions) ? loaded.extractions : [];
+}
+
+/**
+ * Disputes this build found, for the builder-side record. Never shipped —
+ * the owner's answer of 2026-08-22 was that a disputed path position stays
+ * internal, so this is a separate call from `gapsDocumentFor` rather than a
+ * field inside it. See imagery-disputes.mjs.
+ */
+export function imageryDisputesFor({ meta, map, extractions } = {}) {
+  const list = extractionsFor(meta?.id, extractions);
+  return routeImageryExtractions(list, { map: map || {} }).disputes;
+}
+
+/**
+ * Write this venue's dispute record into its builder package directory.
+ * `packages/venue-builder/data/venues/<id>/imagery-disputes.json` — beside the
+ * other maintainer sidecars, nowhere near `apps/party-tracker/public/`.
+ *
+ * Silent when there is nothing in dispute: an empty file per venue per build
+ * would be diff noise, and no record is the same fact as an empty one.
+ */
+export function writeImageryDisputes({ meta, map, extractions, write } = {}) {
+  const id = meta?.id;
+  const disputes = imageryDisputesFor({ meta, map, extractions });
+  if (!id || !disputes.length) return { wrote: false, reason: 'nothing in dispute' };
+  const sink = write ?? ((doc) => writeJson(venueSidecar(id, DISPUTE_SIDECAR), doc, true));
+  return recordDisputes(id, disputes, { write: sink, asOf: new Date().toISOString().slice(0, 10) });
+}
+
 /**
  * Gaps this venue ships. Reads builder sidecars (attractions) and walkable
  * geometry; does not invent live ops. Phone-safe: one `{ type, target }` per fact.
+ *
+ * Imagery extractions are deliberately absent. They are routed by
+ * `writeImageryDisputes` into a builder-side record; nothing they produce is
+ * on the wire.
  */
-export function gapsDocumentFor({ meta, pois, map, extractions } = {}) {
+export function gapsDocumentFor({ meta, pois, map } = {}) {
   const id = meta?.id;
   const attractions = id ? readJson(venueSidecar(id, 'attractions.json')) : null;
-  const loaded = extractions ?? (id ? readJson(venueSidecar(id, 'extractions.json'), []) : []);
-  const list = Array.isArray(loaded)
-    ? loaded
-    : Array.isArray(loaded?.extractions) ? loaded.extractions : [];
-  const imagery = routeImageryExtractions(list, { map: map || {} });
   const catalog = id ? readSources(id) : null;
   const gapNotes = catalog?.data ? adapterGapNotes(catalog.data) : {};
   const adapterIds = catalog?.data ? externalAdaptersFromCatalog(catalog.data) : [];
@@ -108,7 +142,6 @@ export function gapsDocumentFor({ meta, pois, map, extractions } = {}) {
     pois: pois || [],
     map: map || {},
     attractions,
-    imageryGaps: imagery.gaps,
     adapterCaches,
     gapNotes,
   });
@@ -128,6 +161,10 @@ export function writeVenue({ meta, map, pois, gaps }) {
   // through the same serialiser the drift check reads with, so the two can
   // never disagree about what a venue looks like.
   const shipped = gaps ?? gapsDocumentFor({ meta, pois, map });
+  // The dispute record is written on the same pass that publishes the venue,
+  // so a build can never ship a venue whose disputes went unrecorded. It lands
+  // in the builder package, not under public/.
+  writeImageryDisputes({ meta, map });
   const bytes = serializeVenue({ meta, map, pois, gaps: shipped });
   mkdirSync(VENUE_DIR, { recursive: true });
   writeFileSync(path.join(VENUE_DIR, `${id}.map.json`), bytes.map);

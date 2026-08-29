@@ -14,6 +14,12 @@ import {
   writeOsmProposalFile,
 } from '../../packages/venue-builder/lib/osm-writeback.mjs';
 import { SHIPPED_GAP_TYPES } from '../../packages/venue-builder/lib/ship-gaps.mjs';
+import {
+  DISPUTE_KINDS,
+  assertNoDisputeKinds,
+  disputeRow,
+  recordDisputes,
+} from '../../packages/venue-builder/lib/imagery-disputes.mjs';
 
 const geoMap = {
   layers: {
@@ -46,14 +52,47 @@ assert.equal(routed.truth.length, 0, 'Lane A without a CI-proven pass never writ
 assert.equal(CI_PROVEN_PASSES.length, 0, 'no pass is proven until CI says so');
 assert.equal(typeof CI_PROVEN_PASSES.add, 'undefined', 'the proven-pass list cannot grow at runtime');
 assert.ok(routed.claims.some((c) => c.kind === 'path' && !c.dissent));
-assert.equal(routed.gaps.length, 1);
-assert.equal(routed.gaps[0].type, 'path_disputed');
-assert.equal(routed.gaps[0].target, null);
-assert.ok(SHIPPED_GAP_TYPES.includes('path_disputed'));
+
+// Owner decision (2026-08-22): a disputed path position is a maintainer
+// record, not something a guest is ever asked to settle. The router keeps the
+// dispute; it has no shipped-Gap channel to put it down.
+assert.equal(routed.gaps, undefined, 'the router must not emit a shipped Gap for a dispute');
+assert.equal(routed.disputes.length, 1, 'the dispute is still recorded builder-side');
+assert.equal(routed.disputes[0].kind, 'path_disputed');
+assert.equal(routed.disputes[0].target, null);
+assert.equal(routed.disputes[0].shipped, false, 'a dispute row states that it never ships');
+assert.ok(
+  routed.claims.some((c) => c.dissent === true),
+  'the dissenting claim survives alongside the dispute record',
+);
+assert.ok(
+  !SHIPPED_GAP_TYPES.includes('path_disputed'),
+  'path_disputed must not be a shipped Gap type (owner decision c, 2026-08-22)',
+);
+
+// The wall, exercised rather than described: every dispute kind is checked
+// against the allowlist that is actually shipped, and the guard is shown to
+// fire on a list that spells one.
+assert.ok(DISPUTE_KINDS.length > 1, 'the wall covers every dispute kind, not just the first one');
+for (const kind of DISPUTE_KINDS) {
+  assert.ok(!SHIPPED_GAP_TYPES.includes(kind), `dispute kind ${kind} is spellable as a shipped Gap type`);
+}
+assert.doesNotThrow(() => assertNoDisputeKinds(SHIPPED_GAP_TYPES, 'ship-gaps.mjs SHIPPED_GAP_TYPES'));
+assert.throws(
+  () => assertNoDisputeKinds(['height', 'path_disputed'], 'a re-added allowlist'),
+  /a re-added allowlist spells dispute kind\(s\) path_disputed/,
+  'the wall must reject an allowlist that re-adds a dispute kind',
+);
+assert.throws(
+  () => disputeRow({ kind: 'made_up_dispute' }),
+  /unknown dispute kind/,
+  'a dispute must be named from DISPUTE_KINDS, not invented at the call site',
+);
 
 const run = runImageryClaims('kings-island', { map: factoryMap, extractions: [] });
 assert.equal(run.venue, 'kings-island');
-assert.deepEqual(run.gaps, []);
+assert.equal(run.gaps, undefined, 'runImageryClaims has no shipped-Gap channel either');
+assert.deepEqual(run.disputes, []);
 
 const places = getAdapter('google-places');
 assert.ok(places);
@@ -97,16 +136,51 @@ const accepted = writeOsmProposalFile('kings-island', proposal, { accepted: true
 assert.equal(accepted.wrote, true);
 assert.equal(invoked, 1);
 
-const { gapsDocumentFor } = await import('../../packages/venue-builder/lib/venue-io.mjs');
-const shipped = gapsDocumentFor({
+const { gapsDocumentFor, imageryDisputesFor, writeImageryDisputes } = await import(
+  '../../packages/venue-builder/lib/venue-io.mjs'
+);
+
+// The dispute is found and recorded builder-side …
+const disputed = [{ lane: 'agent', kind: 'path', at: offset, label: 'moved-walk' }];
+const found = imageryDisputesFor({ meta: { id: 'fixture-park' }, map: factoryMap, extractions: disputed });
+assert.equal(found.length, 1, 'the build still finds the dispute');
+assert.equal(found[0].kind, 'path_disputed');
+
+let recorded = null;
+const wrote = writeImageryDisputes({
   meta: { id: 'fixture-park' },
-  pois: [],
   map: factoryMap,
-  extractions: [{ lane: 'agent', kind: 'path', at: offset, label: 'moved-walk' }],
+  extractions: disputed,
+  write: (doc) => { recorded = doc; },
 });
-assert.ok(
-  shipped.gaps.some((g) => g.type === 'path_disputed'),
-  'a disputed extraction reaches the document the phone fetches',
+assert.equal(wrote.wrote, true, 'a dispute is persisted to the maintainer sidecar');
+assert.equal(recorded.venue, 'fixture-park');
+assert.equal(recorded.shipped, false, 'the record states it never ships');
+assert.equal(recorded.disputes[0].kind, 'path_disputed');
+assert.equal(recorded.disputes[0].extraction?.label, 'moved-walk', 'the evidence rides along');
+
+let touched = 0;
+const quiet = writeImageryDisputes({
+  meta: { id: 'fixture-park' },
+  map: factoryMap,
+  extractions: [],
+  write: () => { touched += 1; },
+});
+assert.equal(quiet.wrote, false, 'no dispute, no sidecar');
+assert.equal(touched, 0, 'a venue with nothing in dispute must not touch the sink');
+
+const sinkless = recordDisputes('fixture-park', found, {});
+assert.equal(sinkless.wrote, false, 'without a sink the record refuses rather than writing nowhere');
+
+// … and the document the phone fetches knows nothing about it. `extractions`
+// is passed deliberately: it used to be the channel that carried a dispute
+// into `*.gaps.json`, and this asserts the door is closed rather than moved.
+const shipped = gapsDocumentFor({ meta: { id: 'fixture-park' }, pois: [], map: factoryMap });
+assert.ok(shipped.gaps.length > 0, 'guard: fixture-park still ships Gaps at all');
+assert.deepEqual(
+  gapsDocumentFor({ meta: { id: 'fixture-park' }, pois: [], map: factoryMap, extractions: disputed }),
+  shipped,
+  'no argument to gapsDocumentFor can put a disputed extraction on the wire',
 );
 
 console.log('imagery-claims: ok');
