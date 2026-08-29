@@ -16,15 +16,18 @@
     "kind": "theme-park",
     "pad": 0,
     "decorativeTolerance": 4,
-    "sources": "data/venues/cedar-point/sources.json"
+    "sources": "data/venues/cedar-point/sources.json",
+    "imagery": [
+      "data/venues/cedar-point/imagery.geojson"
+    ]
   },
   "built": {
-    "at": "2026-08-26",
+    "at": "2026-08-28",
     "counts": {
-      "pois": 427,
+      "pois": 425,
       "rides": 74,
       "heights": 73,
-      "shapes": 3300
+      "shapes": 3301
     }
   }
 }

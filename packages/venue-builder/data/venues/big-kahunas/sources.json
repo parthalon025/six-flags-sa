@@ -12,14 +12,14 @@
       "used_for": "Park geometry, named water slides, pools, paths, buildings, and the venue boundary."
     },
     {
-      "id": "okaloosa-ortho-2025",
+      "id": "naip-fl-20220123",
       "kind": "aerial_imagery",
-      "provider": "Okaloosa County GIS",
-      "served_via": "Esri World Imagery",
-      "capture_date": "2025-03-01",
-      "resolution_cm": 7.6,
-      "horizontal_accuracy_m": 0.19,
-      "used_for": "Walking paths OpenStreetMap does not draw, and ride positions where OSM names geometry but not the attraction."
+      "provider": "USDA FPAC-BC-GEO NAIP",
+      "served_via": "Microsoft Planetary Computer",
+      "capture_date": "2022-01-23",
+      "resolution_cm": 60,
+      "gsd_m": 0.6,
+      "used_for": "Walking paths OpenStreetMap does not draw, and ride positions where OSM names geometry but not the attraction. Re-derived from NAIP after okaloosa-ortho-2025 failed ADR-0020 clause 2 (Esri serving channel)."
     },
     {
       "id": "park-map-2026",

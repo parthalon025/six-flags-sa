@@ -10,9 +10,10 @@
  */
 
 import path from 'node:path';
+import { existsSync } from 'node:fs';
 // Imported from venue-fs.mjs, not venue-io.mjs: venue-io.mjs imports readSources
 // etc. from this file, so importing back from venue-io.mjs would be a cycle (#32).
-import { OVERRIDE_DIR, readJson, venueSidecar } from './venue-fs.mjs';
+import { OVERRIDE_DIR, readJson, resolveBuilderPath, venueSidecar } from './venue-fs.mjs';
 
 const ROOT = path.dirname(path.dirname(OVERRIDE_DIR));
 
@@ -142,22 +143,31 @@ const relativise = (value) => {
 
 /** Read a venue's source catalogue, if one exists. */
 export function readSources(id, explicit = null) {
-  const file = explicit ? path.resolve(String(explicit)) : sourcesFile(id);
-  const data = readJson(file);
+  let file = explicit ? path.resolve(String(explicit)) : sourcesFile(id);
+  let data = readJson(file);
+  if (!data && explicit) {
+    // Recipes record paths relative to the builder package root; cwd may be the monorepo root.
+    file = resolveBuilderPath(explicit);
+    data = readJson(file);
+  }
   if (!data) return { file: null, data: null };
   return { file: relativise(file), data };
 }
 
 /** Collect a flag that may be repeated on the command line or in a recipe. */
 function collect(existing, added) {
+  const resolveDataset = (value) => {
+    const resolved = resolveBuilderPath(value);
+    return relativise(existsSync(resolved) ? resolved : value);
+  };
   const have = new Set(
     []
       .concat(existing || [])
-      .map((f) => relativise(f)),
+      .map((f) => resolveDataset(f)),
   );
-  const out = existing ? [].concat(existing).map(relativise) : [];
+  const out = existing ? [].concat(existing).map(resolveDataset) : [];
   for (const file of [].concat(added || [])) {
-    const rel = relativise(file);
+    const rel = resolveDataset(file);
     if (have.has(rel)) continue;
     have.add(rel);
     out.push(rel);

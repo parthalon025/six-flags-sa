@@ -3,7 +3,7 @@
   "venue": "big-kahunas",
   "skin": "layered-atlas",
   "basedOn": {
-    "map": "2026-08-10"
+    "map": "2026-08-28"
   },
   "tokens": {
     "contrastFloor": 4.5,
@@ -112,10 +112,10 @@
     },
     "steepDegrees": 18,
     "constrained": {
-      "paths": 173,
+      "paths": 175,
       "water": 4,
       "pads": 69,
-      "nodes": 95619
+      "nodes": 95690
     }
   }
 }

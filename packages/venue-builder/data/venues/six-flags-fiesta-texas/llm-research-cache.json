@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "fetched": "2026-08-28",
+  "parkMaps": [
+    {
+      "imageUrl": "https://www.sixflags.com/fiestatexas/plan-your-visit/park-map",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/plan-your-visit/park-map",
+      "via": "a.href",
+      "mapish": true,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "moderate",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://www.sixflags.com/parkCallout-restaurants.svg?dpl=dpl_4AwVAYrP1FUfu4KijkA2FfQfLZPT",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/plan-your-visit/park-map",
+      "via": "img.src",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://www.sixflags.com/parkCallout-rides.svg?dpl=dpl_4AwVAYrP1FUfu4KijkA2FfQfLZPT",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/plan-your-visit/park-map",
+      "via": "img.src",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://www.sixflags.com/parkCallout-shows.svg?dpl=dpl_4AwVAYrP1FUfu4KijkA2FfQfLZPT",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/plan-your-visit/park-map",
+      "via": "img.src",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://www.sixflags.com/parkCallout-events.svg?dpl=dpl_4AwVAYrP1FUfu4KijkA2FfQfLZPT",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/plan-your-visit/park-map",
+      "via": "img.src",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://www.sixflags.com/apple-touch-icon.png",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/plan-your-visit/park-map",
+      "via": "a.href",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://www.sixflags.com/favicon-32x32.png",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/plan-your-visit/park-map",
+      "via": "a.href",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://www.sixflags.com/favicon-16x16.png",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/plan-your-visit/park-map",
+      "via": "a.href",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://www.sixflags.com/safari-pinned-tab.svg",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/plan-your-visit/park-map",
+      "via": "a.href",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    },
+    {
+      "imageUrl": "https://cdn.sanity.io/images/bsnrdz4t/production/c656be329a6a721d15eca5a132b59fac8e56064c-1440x1533.jpg?rect=0,391,1440,752&amp;w=1200&amp;h=627&amp;fit=crop&amp;auto=format",
+      "pageUrl": "https://www.sixflags.com/fiestatexas/plan-your-visit/park-map",
+      "via": "meta",
+      "mapish": false,
+      "source": "html_extract",
+      "mapKind": "schematic",
+      "confidence": "low",
+      "title": "fiesta-texas-map"
+    }
+  ],
+  "followUpUrls": [
+    "https://www.sixflags.com/fiestatexas/plan-your-visit/park-map"
+  ],
+  "searchQueries": [],
+  "notes": [
+    "10 park-map candidate(s) from catalogue/HTML",
+    "Deterministic park-map HTML scrape recorded candidates"
+  ],
+  "llmParkMapSearch": {
+    "model": "deterministic",
+    "fetched": "2026-08-28",
+    "required": true,
+    "skipped": false
+  },
+  "venue": "six-flags-fiesta-texas"
+}

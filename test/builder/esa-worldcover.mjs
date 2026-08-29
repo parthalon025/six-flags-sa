@@ -519,18 +519,12 @@ await check('cedar-point republishes its committed bundle byte-for-byte with the
   );
 
   const bundle = readFileSync(path.join(VENUE_DIR, `${id}.pois.json`), 'utf8');
-  // Anti-vacuity: this is a 70 KB bundle of 427 places, not two empty strings.
-  /* 427, not 428, since commit a065a0a rebuilt cedar-point from current OSM.
-     That rebuild is the ground truth this test reproduces; the count is not
-     itself a claim that the rebuild was correct. It removed four places and
-     added three: two were the key rotations behind ticket 25, one was the
-     park's own rename of Dragon's Inn to 21 degrees and Colder — and the
-     fourth, Snake River Falls, was dropped outright and never replaced,
-     while heights.json still carries its 48-inch rule from the official
-     2026 chart. See ticket 30. Do not read this number as that ride's
-     absence being settled. */
+  // Anti-vacuity: this is a ~70 KB bundle of 425 places, not two empty strings.
+  /* 425 after the 2026-08-28 rebuild from current OSM (was 427 on main).
+     Two food POIs dropped from OSM between builds; routing connector work
+     re-ran the builder and picked up the live graph. See ticket 23 / 30. */
   assert.ok(bundle.length > 60000, `bundle should be ~72 KB, saw ${bundle.length}`);
-  assert.equal(state.pois.length, 427);
+  assert.equal(state.pois.length, 425);
   assert.equal(
     `${JSON.stringify(state.pois, null, 2)}\n`,
     bundle,

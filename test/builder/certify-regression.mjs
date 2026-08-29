@@ -10,6 +10,7 @@ import {
   certificationFile,
   certifyFleetRegression,
 } from '../../packages/venue-builder/lib/venue-certify.mjs';
+import { venueSidecar } from '../../packages/venue-builder/lib/venue-io.mjs';
 
 const PASS = [];
 const FAIL = [];
@@ -49,22 +50,26 @@ try {
 
 // A venue that was certified but no longer passes must surface failing check keys.
 {
-  const file = certificationFile('big-kahunas');
+  const id = 'kings-island';
+  const file = certificationFile(id);
+  const cacheFile = venueSidecar(id, 'llm-research-cache.json');
   const prior = JSON.parse(fs.readFileSync(file, 'utf8'));
-  const backup = fs.readFileSync(file);
+  const certBackup = fs.readFileSync(file);
   try {
     fs.writeFileSync(
       file,
       JSON.stringify({ ...prior, version: CERT_VERSION, certified: true }, null, 2),
     );
+    fs.renameSync(cacheFile, `${cacheFile}.bak`);
     const gate = certifyFleetRegression({ write: false });
     assert.equal(gate.ok, false, 'de-certification must fail the regression gate');
     assert.equal(gate.regressions.length, 1);
-    assert.equal(gate.regressions[0].id, 'big-kahunas');
+    assert.equal(gate.regressions[0].id, id);
     assert.ok(gate.regressions[0].failedChecks.length >= 1, 'regression names failing check keys');
     ok('de-certified venue reports id and failing check keys');
   } finally {
-    fs.writeFileSync(file, backup);
+    fs.writeFileSync(file, certBackup);
+    if (fs.existsSync(`${cacheFile}.bak`)) fs.renameSync(`${cacheFile}.bak`, cacheFile);
   }
 }
 

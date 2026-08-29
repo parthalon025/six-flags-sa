@@ -3,7 +3,7 @@
   "venue": "cedar-point",
   "skin": "trail",
   "basedOn": {
-    "map": "2026-08-09"
+    "map": "2026-08-28"
   },
   "tokens": {
     "contrastFloor": 4.5,
@@ -209,10 +209,10 @@
     },
     "steepDegrees": 18,
     "constrained": {
-      "paths": 1032,
+      "paths": 1036,
       "water": 51,
-      "pads": 226,
-      "nodes": 110376
+      "pads": 225,
+      "nodes": 110737
     }
   }
 }
