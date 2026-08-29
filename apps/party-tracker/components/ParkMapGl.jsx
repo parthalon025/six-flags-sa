@@ -326,6 +326,11 @@ export default function ParkMapGl({
   }, [overlay, alternatives, routeDone, puck, heading, rotation, navId, planNextId, selectedId, laidOut, mapReady, world]);
 
   useEffect(() => {
+    if (!mapReady || !world?.geometry) return;
+    viewRef.current?.setWorldGeometry(world.geometry);
+  }, [world?.geometry, mapReady]);
+
+  useEffect(() => {
     applyCamera(camera);
   }, [camera, applyCamera, laidOut]);
 

@@ -763,7 +763,11 @@ await check("wearing a Skin repaints the World's Zones from its own display pack
      was not an input at all. This asserts the output of the run: the same
      Zone paths, under two different worn looks, carry different fills, and
      the fills are the ones this World's published `<skin>.visual.json` says
-     — not a table in app code and not a colour out of truth. */
+     — not a table in app code and not a colour out of truth.
+
+     ADR-0019 retired the SVG world viewer; Zone tones now ride on the
+     MapLibre `world-lands` source as feature `tint` properties once the
+     Visual factory's display pack lands (mapViewStyle.js). */
   const P = await openPhone(browser, {
     lat: 39.34395,
     lng: -84.2673,
@@ -775,15 +779,26 @@ await check("wearing a Skin repaints the World's Zones from its own display pack
   try {
     await p.evaluate(() => localStorage.setItem('parkbound-demo-skins', '1'));
     await p.reload({ waitUntil: 'domcontentloaded' });
-    await p.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
+    await p.waitForFunction(() => Boolean(document.querySelector('[data-testid="park-map-gl"] canvas')), null, {
       timeout: 40000,
     });
+    await p.waitForSelector('[data-testid="park-map-gl"][data-map-ready="1"]', { timeout: 20000 });
+    await p.waitForFunction(() => {
+      const data = globalThis.__parkMapLibre?.getSource('world-lands')?.serialize?.()?.data;
+      return (data?.features || []).filter((f) => f.properties?.tint).length >= 5;
+    }, null, { timeout: 20000 });
     await closeGate(p);
-    // Zone fills as drawn, keyed by nothing but paint order — the map is the
-    // same drawing either way, so position N is the same Zone either way.
-    const zoneFills = () => p.evaluate(() =>
-      [...document.querySelectorAll('.mapWorld .lyr-land path')].map((el) => el.getAttribute('fill')));
-    const palette = await zoneFills();
+    const zoneTintMap = () => p.evaluate(() => {
+      const data = globalThis.__parkMapLibre?.getSource('world-lands')?.serialize?.()?.data;
+      const features = data?.features || [];
+      return Object.fromEntries(
+        features
+          .filter((f) => f.properties?.name && f.properties?.tint)
+          .map((f) => [f.properties.name, String(f.properties.tint).toUpperCase()]),
+      );
+    });
+    const paletteMap = await zoneTintMap();
+    const palette = Object.values(paletteMap);
     if (palette.length < 5) throw new Error(`expected Kings Island's Zones, drew ${palette.length}`);
 
     await go(p, 'Collection');
@@ -816,11 +831,13 @@ await check("wearing a Skin repaints the World's Zones from its own display pack
     // that never paints its Zones times out here instead of passing, which is
     // the failure this check exists to catch.
     await p.waitForFunction((want) => {
-      const set = new Set(want);
-      const now = [...document.querySelectorAll('.mapWorld .lyr-land path')].map((el) => el.getAttribute('fill'));
-      return now.filter((f) => set.has(String(f).toUpperCase())).length >= 5;
+      const set = new Set(want.map((w) => String(w).toUpperCase()));
+      const data = globalThis.__parkMapLibre?.getSource('world-lands')?.serialize?.()?.data;
+      const now = (data?.features || []).map((f) => String(f.properties?.tint || '').toUpperCase());
+      return now.filter((f) => set.has(f)).length >= 5;
     }, declared, { timeout: 20000 });
-    const worn = await zoneFills();
+    const wornMap = await zoneTintMap();
+    const worn = Object.values(wornMap);
 
     // Every fill the Skin painted is one its own published spec declares.
     const declaredSet = new Set(declared);
@@ -829,7 +846,7 @@ await check("wearing a Skin repaints the World's Zones from its own display pack
       throw new Error(`only ${fromSpec.length} Zone fills came from the Skin's own spec`);
     }
     // …and they are genuinely a restyle, not the palette's own answer.
-    const changed = worn.filter((f, i) => f !== palette[i]).length;
+    const changed = Object.keys(paletteMap).filter((zone) => wornMap[zone] && wornMap[zone] !== paletteMap[zone]).length;
     if (changed < 5) throw new Error(`wearing the Skin repainted only ${changed} Zones`);
   } finally {
     await P.context.close();

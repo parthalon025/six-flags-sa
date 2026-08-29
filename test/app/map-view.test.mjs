@@ -59,6 +59,7 @@ function recordingRenderer(overrides = {}) {
     camera(camera) { calls.push({ call: 'camera', camera }); },
     paint(plan) { calls.push({ call: 'paint', plan }); },
     overlay(model) { calls.push({ call: 'overlay', model }); },
+    world(geometry) { calls.push({ call: 'world', geometry }); },
     pick(point) { calls.push({ call: 'pick', point }); return null; },
     detach() { calls.push({ call: 'detach' }); },
     ...overrides,
@@ -444,6 +445,28 @@ const OVERLAY = overlayGeoJson(
   assert.notEqual(sent.model.members, OVERLAY.members, 'the renderer gets a copy');
   assert.throws(() => { sent.model.members.features.push({}); }, TypeError, 'a frozen list');
   assert.throws(() => { sent.model.members.features[0].id = 'x'; }, TypeError, 'and frozen features');
+}
+
+{
+  const map = JSON.parse(
+    readFileSync(new URL('../../apps/party-tracker/public/venues/kings-island.map.json', import.meta.url)),
+  );
+  const base = worldFor(map);
+  const tinted = worldWithLandTints(base, 'watercolor-quest', {
+    Rivertown: { fill: '#C5BEAC', stroke: '#908779', label: '#2C2416' },
+  });
+  const renderer = recordingRenderer();
+  const view = mount({ renderer, skin: 'watercolor-quest' });
+  renderer.calls.length = 0;
+
+  view.setWorldGeometry(tinted.geometry);
+  const [sent] = renderer.calls.filter((c) => c.call === 'world');
+  assert.ok(sent, 'Zone tone updates reach the renderer after mount');
+  assert.equal(
+    sent.geometry.lands.features.find((f) => f.properties?.name === 'Rivertown')?.properties?.tint,
+    '#C5BEAC',
+    'the lands source carries the Visual factory tint',
+  );
 }
 
 // A draw call is not data. This is the one the seam exists for: hand it a

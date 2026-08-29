@@ -20,11 +20,13 @@ import { worldTierVisibility } from './worldLod.js';
 import {
   bandLayer,
   bandedWorldStyle,
+  emptyCollection,
   OVERLAY_SOURCES,
   PLACES_LAYER,
   bandSource,
   worldCaseLayer,
   worldLayer,
+  worldSource,
 } from './mapViewStyle.js';
 
 /** Same-origin worker the spike route already serves. Turbopack rewrites
@@ -254,6 +256,12 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
      *  features on screen with nothing to clear them. */
     overlay(model) {
       for (const name of OVERLAY_LAYERS) setData(OVERLAY_SOURCES[name], model[name]);
+    },
+
+    world(geometry) {
+      for (const [id, collection] of Object.entries(geometry ?? {})) {
+        setData(worldSource(id), collection ?? emptyCollection());
+      }
     },
 
     pick(point) {

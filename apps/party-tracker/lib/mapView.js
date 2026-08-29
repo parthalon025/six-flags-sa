@@ -46,6 +46,7 @@ export const RENDERER_METHODS = Object.freeze([
   'camera',
   'paint',
   'overlay',
+  'world',
   'pick',
   'detach',
 ]);
@@ -353,6 +354,14 @@ export function mountMapView(
     setOverlay: (model) => {
       assertAlive();
       renderer.overlay(normalizeOverlay(model));
+    },
+
+    /** Truth geometry when Zone tones or the worn Skin change after mount.
+     *  The initial style is built once; without this the lands source would
+     *  keep the name-hue fallbacks from the first frame forever. */
+    setWorldGeometry: (geometry) => {
+      assertAlive();
+      renderer.world(geometry ?? {});
     },
 
     /** What the device holds, as the cache learns it. ADR-0021 clause 5 has
