@@ -44,6 +44,7 @@ import { parseModulesArg, wantModule } from './lib/module-select.mjs';
 import { checkMapDecisions } from './lib/map-decisions.mjs';
 import {
   assertContributionConsolidatePipelineHttp,
+  contributionOperatorPathAvailable,
   contributionPostAvailable,
 } from './lib/contribution-pipeline-vertical.mjs';
 import { readFileSync } from 'node:fs';
@@ -112,7 +113,8 @@ console.log(`\nfunctional suite against ${BASE} (modules: ${running})\n`);
 if (want('contribution-pipeline')) {
   console.log('\n--- contribution pipeline (HTTP + consolidate dry-run) ---');
   const postOk = await contributionPostAvailable(BASE);
-  if (postOk === true) {
+  const operatorOk = await contributionOperatorPathAvailable(BASE);
+  if (postOk === true && operatorOk === true) {
     await check(
       'POST → accept → consolidate dry-run names venue, action, and contribution id',
       async () => {
@@ -124,9 +126,13 @@ if (want('contribution-pipeline')) {
         return true;
       },
     );
-  } else {
+  } else if (postOk !== true) {
     console.log(
       `  SKIP HTTP contribution pipeline — POST returned ${postOk.status} (memory backend or test Postgres with profiles; see #438)`,
+    );
+  } else {
+    console.log(
+      `  SKIP HTTP contribution pipeline — ${operatorOk.reason ?? `operator probe ${operatorOk.status}`} (#774)`,
     );
   }
   if (!want('smoke') && !want('heights') && !want('walk') && !want('party') && !want('intake') && !want('venues') && !want('offline') && !want('auth')) {

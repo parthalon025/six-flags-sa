@@ -102,6 +102,37 @@ export async function submitContributionViaApi(base) {
   return contribution;
 }
 
+function operatorTokenFromEnv() {
+  return process.env.GUEST_TRACES_TOKEN || process.env.METRICS_TOKEN || '';
+}
+
+function operatorAuthHeaders() {
+  const token = operatorTokenFromEnv();
+  return token ? { authorization: `Bearer ${token}` } : {};
+}
+
+/**
+ * Whether the running server exposes operator routes (steward accept, metrics).
+ * Production `next start` without METRICS_TOKEN / GUEST_TRACES_TOKEN returns 404 —
+ * the contribution-pipeline module should skip rather than fail (#774).
+ *
+ * @param {string} base origin without trailing slash
+ * @param {{ fetchFn?: typeof fetch }} [opts]
+ */
+export async function contributionOperatorPathAvailable(base, { fetchFn = globalThis.fetch } = {}) {
+  const res = await fetchFn(`${base}/api/metrics`, { headers: operatorAuthHeaders() });
+  if (res.ok) return true;
+  if (res.status === 404) {
+    return {
+      ok: false,
+      status: 404,
+      reason: 'operator routes gated (no METRICS_TOKEN / Clerk operator session)',
+    };
+  }
+  const body = typeof res.text === 'function' ? (await res.text()).slice(0, 120) : '';
+  return { ok: false, status: res.status, body };
+}
+
 /**
  * Whether the running server can accept a durable contribution POST.
  * Cloud agents with DATABASE_URL but no migrated test profiles get 500 — skip HTTP.
@@ -120,6 +151,7 @@ export async function contributionPostAvailable(base) {
 export async function acceptContributionViaApi(base, id) {
   const res = await fetch(`${base}/api/admin/contributions/${encodeURIComponent(id)}/accept`, {
     method: 'POST',
+    headers: operatorAuthHeaders(),
   });
   if (res.status !== 200) {
     throw new Error(`contribution accept ${res.status}: ${(await res.text()).slice(0, 200)}`);
