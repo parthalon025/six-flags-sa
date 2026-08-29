@@ -182,7 +182,10 @@ const FIXTURES = {
     ],
     after: {
       'packages/venue-builder/lib/display-bands.mjs': 'export function bandBakePlan() {}',
-      'packages/venue-builder/lib/display-bake.mjs': 'const bounds = gridBounds(cols, rows, toGeo);',
+      // Names cropModel in a comment, as the real module does: explaining what
+      // was removed is not the same as still calling it.
+      'packages/venue-builder/lib/display-bake.mjs':
+        '/* the old `cropModel` trimmed here; gridBounds replaces it */\nconst bounds = gridBounds(cols, rows, toGeo);',
     },
   },
   i18: {

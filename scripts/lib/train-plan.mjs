@@ -322,9 +322,14 @@ export const SLICES = Object.freeze([
     size: 'M',
     title: 'Stop trimming the bake — emit the full planned extent (owner decision: crop)',
     needs: ['h4'],
+    //  Asks whether cropModel is CALLED or DEFINED, not whether the word
+    //  appears. The first version grepped the bare name and so read "not built"
+    //  because the module kept a comment explaining what the crop used to do
+    //  and why it went — documentation that is worth having and must not make
+    //  the board lie about the code.
     probe: (t) =>
       t.has('packages/venue-builder/lib/display-bands.mjs')
-      && !t.read('packages/venue-builder/lib/display-bake.mjs').includes('cropModel'),
+      && !/cropModel\s*\(/.test(t.read('packages/venue-builder/lib/display-bake.mjs')),
   },
 
   // ---- Train I
