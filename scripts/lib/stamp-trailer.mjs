@@ -32,9 +32,11 @@
  *   readStampTrailers(cwd, { range })
  *   findStamp(cwd, { key, range, diffHash })
  *   preferMatchingStamp({ trailer, file, diffHash })
+ *   readStampFile(path)
  *   publishStamps({ cwd, stamps, subject })
  */
 import { execFileSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
 import { scrubGitEnv } from './git-env.mjs';
 
 export const LOCAL_CI_TRAILER = 'Local-Ci-Pass';
@@ -86,20 +88,45 @@ export function buildStampMessage({ subject = STAMP_SUBJECT_DEFAULT, stamps = {}
 }
 
 /**
- * Trailers found in one commit message. A key that is absent, or whose value
+ * Trailer-shaped line: a key, a colon, then the value. Deliberately loose on
+ * the key — a foreign trailer (`Signed-off-by`, `Co-authored-by`) still counts
+ * as part of the block, it just is not one of ours.
+ */
+const TRAILER_LINE = /^([A-Za-z][A-Za-z0-9-]*):[ \t]*(.*)$/;
+
+/**
+ * The message's trailing trailer paragraph, or [].
+ *
+ * Scanning the *whole* message for a `Key: {json}` line was wrong: any commit
+ * that merely quotes the stamp format — a doc commit explaining it, or a
+ * squash-merge that concatenates a PR description containing an example —
+ * parsed as a genuine stamp. (docs/agents/ci.md's own worked example is
+ * exactly that shape.) Git's rule is the one that holds: trailers are the
+ * final paragraph, so the block must run to the end of the message and be
+ * preceded by a blank line.
+ */
+function trailerBlock(message) {
+  const lines = String(message).replace(/\s+$/, '').split('\n');
+  let start = lines.length;
+  while (start > 0 && TRAILER_LINE.test(lines[start - 1])) start -= 1;
+  if (start === lines.length) return []; // the message does not end in trailers
+  if (start === 0) return []; // all trailers and no subject is not a commit message
+  if (lines[start - 1].trim() !== '') return []; // not a paragraph of its own
+  return lines.slice(start);
+}
+
+/**
+ * Stamps carried by one commit message. A key that is absent, or whose value
  * is not parseable JSON, reads as null — an unreadable stamp proves nothing,
  * and every caller already fails closed on null.
  */
 export function parseStampTrailers(message = '') {
-  const found = {};
-  for (const key of STAMP_TRAILERS) {
-    const match = String(message).match(new RegExp(`^${key}:[ \\t]*(\\{.*\\})[ \\t]*$`, 'm'));
-    if (!match) {
-      found[key] = null;
-      continue;
-    }
+  const found = Object.fromEntries(STAMP_TRAILERS.map((key) => [key, null]));
+  for (const line of trailerBlock(message)) {
+    const [, key, value] = line.match(TRAILER_LINE);
+    if (!STAMP_TRAILERS.includes(key)) continue;
     try {
-      found[key] = JSON.parse(match[1]);
+      found[key] = JSON.parse(value);
     } catch {
       found[key] = null;
     }
@@ -110,25 +137,45 @@ export function parseStampTrailers(message = '') {
 /**
  * Every stamp-carrying commit in `range`, newest first. `range` is a git
  * revision range — `stampRange()` builds the one callers want.
+ *
+ * A stamp is only read from a commit that carries no diff of its own, because
+ * that is what `publishStamps` writes and what makes a stamp safe: an empty
+ * commit cannot have moved the `diffHash` it certifies. It is also the second
+ * half of the answer to a commit that merely quotes the trailer format — such
+ * a commit has content, so its trailers are not stamps.
  */
 export function readStampTrailers(cwd, { range } = {}) {
   if (!range) return [];
   let out = '';
   try {
-    out = git(cwd, ['log', `--format=%H${FS}%B${RS}`, range]);
+    out = git(cwd, ['log', `--format=%H${FS}%T${FS}%P${FS}%B${RS}`, range]);
   } catch {
     // An unreadable range (shallow clone, missing base ref) is not an error
     // here: no trailer found means the caller falls back and CI runs in full.
     return [];
   }
-  const entries = [];
+  const candidates = [];
   for (const record of out.split(RS)) {
-    const [sha, message] = record.replace(/^\s+/, '').split(FS);
+    const [sha, tree, parents, message] = record.replace(/^\s+/, '').split(FS);
     if (!sha || message == null) continue;
+    const parentShas = (parents || '').split(' ').filter(Boolean);
+    if (parentShas.length !== 1) continue; // a root or a merge is never a stamp
     const stamps = parseStampTrailers(message);
-    if (STAMP_TRAILERS.some((key) => stamps[key] != null)) entries.push({ sha, stamps });
+    if (!STAMP_TRAILERS.some((key) => stamps[key] != null)) continue;
+    candidates.push({ sha, tree, parent: parentShas[0], stamps });
   }
-  return entries;
+  if (!candidates.length) return [];
+  let parentTrees = [];
+  try {
+    parentTrees = git(cwd, ['rev-parse', ...candidates.map((c) => `${c.parent}^{tree}`)])
+      .trim()
+      .split('\n');
+  } catch {
+    return [];
+  }
+  return candidates
+    .filter((c, i) => c.tree === parentTrees[i])
+    .map(({ sha, stamps }) => ({ sha, stamps }));
 }
 
 /**
@@ -149,6 +196,29 @@ export function findStamp(cwd, { key, range, diffHash } = {}) {
     if (exact) return exact.stamps[key];
   }
   return entries[0].stamps[key];
+}
+
+/** True while a merge is staged but not committed (MERGE_HEAD still resolves). */
+function mergeInProgress(cwd) {
+  try {
+    git(cwd, ['rev-parse', '--verify', '--quiet', 'MERGE_HEAD']);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * A stamp read from the local cache file. Shared so the two stamp modules do
+ * not each carry their own copy of "parse this JSON, null on any failure".
+ */
+export function readStampFile(path) {
+  if (!existsSync(path)) return null;
+  try {
+    return JSON.parse(readFileSync(path, 'utf8'));
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -186,6 +256,12 @@ export function publishStamps({ cwd, stamps = {}, subject = STAMP_SUBJECT_DEFAUL
   // staged (`git rm --cached`, a half-staged fix) swept that into the commit
   // and stopped being empty, which is the one property the stamp needs. This
   // reads neither the index nor the working tree.
+  // Mid-merge, HEAD is still the pre-merge commit and the merge's own result
+  // is only in the index, so a stamp published here splices an empty commit
+  // into first-parent history ahead of a merge that has not happened yet.
+  if (mergeInProgress(cwd)) {
+    throw new Error('stamp-trailer: a merge is in progress — finish or abort it before publishing a stamp');
+  }
   const tree = git(cwd, ['rev-parse', 'HEAD^{tree}']).trim();
   const sha = git(cwd, ['commit-tree', tree, '-p', 'HEAD', '-F', '-'], { input: message }).trim();
   git(cwd, ['update-ref', '-m', `commit: ${subject}`, 'HEAD', sha]);

@@ -54,6 +54,7 @@ import {
   LOCAL_CI_TRAILER,
   findStamp,
   preferMatchingStamp,
+  readStampFile,
   stampRange,
 } from './stamp-trailer.mjs';
 
@@ -245,15 +246,6 @@ export function buildLocalCiContext({
 export function readLocalCiPass(cwd = repoRootFrom(), { range, diffHash } = {}) {
   const trailer = range ? findStamp(cwd, { key: LOCAL_CI_TRAILER, range, diffHash }) : null;
   return preferMatchingStamp({ trailer, file: readStampFile(localCiPassPath(cwd)), diffHash });
-}
-
-function readStampFile(path) {
-  if (!existsSync(path)) return null;
-  try {
-    return JSON.parse(readFileSync(path, 'utf8'));
-  } catch {
-    return null;
-  }
 }
 
 /** The commit range a stamp for this context may be read from. */

@@ -13,7 +13,7 @@
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -29,8 +29,16 @@ import {
   readStampTrailers,
   stampRange,
 } from '../../scripts/lib/stamp-trailer.mjs';
-import { LOCAL_CI_PASS_REL } from '../../scripts/lib/local-ci-pass.mjs';
-import { MATT_REVIEW_REL } from '../../scripts/lib/matt-review.mjs';
+import {
+  LOCAL_CI_PASS_REL,
+  buildLocalCiContext,
+  writeLocalCiPass,
+} from '../../scripts/lib/local-ci-pass.mjs';
+import {
+  MATT_REVIEW_REL,
+  buildMattReviewContext,
+  writeMattReview,
+} from '../../scripts/lib/matt-review.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -50,6 +58,49 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
   assert.equal(buildStampMessage({ stamps: {} }), null, 'nothing to publish is not a commit');
   assert.equal(parseStampTrailers(`${LOCAL_CI_TRAILER}: {not json}`)[LOCAL_CI_TRAILER], null, 'a corrupt trailer reads as no stamp');
   assert.equal(parseStampTrailers('')[LOCAL_CI_TRAILER], null, 'an empty message carries no stamp');
+}
+
+// --- a commit that merely QUOTES the trailer format is not a stamp
+{
+  const doc = [
+    'docs(ci): explain the stamp format',
+    '',
+    'A published stamp commit looks like this:',
+    '',
+    `${LOCAL_CI_TRAILER}: {"schema":3,"tag":"local-ci-verified","diffHash":"deadbeef"}`,
+    '',
+    'which is why a merge can never conflict on it.',
+  ].join('\n');
+  assert.equal(
+    parseStampTrailers(doc)[LOCAL_CI_TRAILER],
+    null,
+    'scanning the whole message made docs/agents/ci.md’s own worked example parse as a stamp',
+  );
+
+  const noParagraph = [
+    'chore: something',
+    'body line right above the trailer',
+    `${LOCAL_CI_TRAILER}: {"diffHash":"x"}`,
+  ].join('\n');
+  assert.equal(parseStampTrailers(noParagraph)[LOCAL_CI_TRAILER], null, 'trailers must be their own paragraph');
+
+  assert.equal(
+    parseStampTrailers(`${LOCAL_CI_TRAILER}: {"diffHash":"x"}`)[LOCAL_CI_TRAILER],
+    null,
+    'all trailers and no subject is not a commit message',
+  );
+
+  const withForeign = [
+    'chore(ci): publish CI stamps',
+    '',
+    'Co-authored-by: Someone <s@e.st>',
+    `${LOCAL_CI_TRAILER}: {"diffHash":"real"}`,
+  ].join('\n');
+  assert.equal(
+    parseStampTrailers(withForeign)[LOCAL_CI_TRAILER]?.diffHash,
+    'real',
+    'a foreign trailer alongside ours does not break the block',
+  );
 }
 
 // --- which transport to believe when a branch holds both
@@ -190,6 +241,43 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
   git('rm', '-q', '-f', '--cached', 'staged.txt');
   rmSync(join(dir, 'staged.txt'));
 
+  // --- a trailer on a commit that carries a diff is not a stamp: an empty
+  // commit is what makes the stamp safe (it cannot have moved its own
+  // diffHash), so it is also the test for whether a trailer is genuine.
+  writeFileSync(join(dir, 'quotes-the-format.md'), 'docs\n');
+  git('add', 'quotes-the-format.md');
+  // Separate -m arguments become separate paragraphs, so the trailer lands in
+  // the final one — exactly the shape that would parse if content were ignored.
+  git('commit', '-q', '-m', 'docs: explain stamps', '-m', 'like this:', '-m',
+    `${LOCAL_CI_TRAILER}: {"schema":3,"diffHash":"forged12"}`);
+  const seen = readStampTrailers(dir, { range: stampRange({ mergeBase: base }) });
+  assert.equal(
+    seen.some((e) => e.stamps[LOCAL_CI_TRAILER]?.diffHash === 'forged12'),
+    false,
+    'a non-empty commit quoting the format is not honoured as a stamp',
+  );
+  assert.ok(seen.length >= 2, 'the genuine empty stamp commits are still read');
+  git('reset', '-q', '--hard', 'HEAD~1');
+
+  // --- publishing mid-merge would splice a stamp ahead of a merge that has
+  // not happened yet, so it refuses rather than producing that graph.
+  git('checkout', '-q', 'main');
+  writeFileSync(join(dir, 'conflict.txt'), 'main side\n');
+  git('add', '.');
+  git('commit', '-qm', 'main side');
+  git('checkout', '-qb', 'other-side', 'main~1');
+  writeFileSync(join(dir, 'conflict.txt'), 'other side\n');
+  git('add', '.');
+  git('commit', '-qm', 'other side');
+  assert.throws(() => git('merge', '--no-edit', '-q', 'main'), /.*/, 'the scratch merge conflicts, as set up');
+  assert.throws(
+    () => publishStamps({ cwd: dir, stamps: stampFor('dddd4444') }),
+    /merge is in progress/,
+    'publishing mid-merge is refused',
+  );
+  git('merge', '--abort');
+  git('checkout', '-q', 'feature-a');
+
   // --- Control: the transport this replaced. Same two branches, stamp as a
   // tracked file, and the merge that just ran clean conflicts instead.
   git('checkout', '-q', 'main');
@@ -208,6 +296,73 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
     'the tracked-file transport conflicts — that is what the trailer replaces',
   );
   git('merge', '--abort');
+
+  rmSync(dir, { recursive: true, force: true });
+}
+
+// --- The CLIs are what CI actually runs, and in CI the cache file does not
+// exist — it is gitignored, so only a published trailer can carry a stamp.
+// Without the wrappers threading a range through, both silently regress to
+// file-only reads and every code PR fails the review gate.
+{
+  const dir = mkdtempSync(join(tmpdir(), 'stamp-cli-'));
+  const git = (...args) =>
+    execFileSync('git', args, {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...scrubGitEnv(),
+        GIT_AUTHOR_NAME: 't',
+        GIT_AUTHOR_EMAIL: 't@t',
+        GIT_COMMITTER_NAME: 't',
+        GIT_COMMITTER_EMAIL: 't@t',
+      },
+    });
+  git('init', '-q', '-b', 'main');
+  mkdirSync(join(dir, 'scripts'), { recursive: true });
+  writeFileSync(join(dir, 'scripts/a.js'), 'export const a = 1;\n');
+  git('add', '.');
+  git('commit', '-qm', 'base');
+  git('checkout', '-qb', 'feature');
+  writeFileSync(join(dir, 'scripts/a.js'), 'export const a = 2;\n');
+  git('add', '.');
+  git('commit', '-qm', 'change');
+
+  const { runCheck: mattCheck } = await import('../../scripts/ci/matt-review.mjs');
+  assert.equal(mattCheck({ baseRef: 'main', cwd: dir }), 1, 'a code diff with no stamp anywhere is blocked');
+
+  const reviewCtx = buildMattReviewContext({ baseRef: 'main', cwd: dir });
+  writeMattReview({ context: reviewCtx, model: 'a-model', recordedAt: 'test' }, dir);
+  const ciCtx = buildLocalCiContext({ baseRef: 'main', cwd: dir });
+  writeLocalCiPass({ context: ciCtx, browserVertical: false, verticals: [], tag: null }, dir);
+
+  const { runStampCommit } = await import('../../scripts/ci/stamp-commit.mjs');
+  assert.equal(runStampCommit({ baseRef: 'main', cwd: dir, log: () => {} }), 0, 'stamp-commit publishes both caches');
+
+  // CI's condition: the caches are gitignored, so they are simply absent.
+  unlinkSync(join(dir, MATT_REVIEW_REL));
+  unlinkSync(join(dir, LOCAL_CI_PASS_REL));
+
+  assert.equal(
+    mattCheck({ baseRef: 'main', cwd: dir }),
+    0,
+    'matt-review check reads the published trailer with no cache file present',
+  );
+
+  const prevOut = process.env.GITHUB_OUTPUT;
+  delete process.env.GITHUB_OUTPUT;
+  try {
+    const { runCheck: ciCheck } = await import('../../scripts/ci/local-ci-pass.mjs');
+    const decision = ciCheck({ baseRef: 'main', anyUi: false, cwd: dir });
+    assert.equal(
+      decision.stamp?.diffHash,
+      ciCtx.diffHash,
+      'local-ci-pass check reads the published trailer with no cache file present',
+    );
+  } finally {
+    if (prevOut === undefined) delete process.env.GITHUB_OUTPUT;
+    else process.env.GITHUB_OUTPUT = prevOut;
+  }
 
   rmSync(dir, { recursive: true, force: true });
 }

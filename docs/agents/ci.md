@@ -169,5 +169,5 @@ Previews skip unless user-directed; production app merges on `main` use the auto
 ## Changing CI
 
 1. Extend `scripts/lib` or `scripts/ci` first; keep workflow YAML thin.
-2. Add a row to this file and `.cursor/rules/scripts-over-instructions.mdc` when you add a new entry point.
+2. Add a row to the `scripts/ci` table above when you add a new entry point. (The rule file `.cursor/rules/scripts-over-instructions.mdc` is a slim pointer and holds no rows — duplicating the table into it is the thing [scripts-over-instructions](./policies/scripts-over-instructions.md) forbids.)
 3. Wire fast guards into `scripts/ci/manifest.mjs` (run via `npm run test:ci-gate`) so PRs cannot merge broken deploy/skip logic.

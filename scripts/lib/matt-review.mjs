@@ -28,6 +28,7 @@ import {
   MATT_REVIEW_TRAILER,
   findStamp,
   preferMatchingStamp,
+  readStampFile,
   stampRange,
 } from './stamp-trailer.mjs';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -155,15 +156,6 @@ export function mattReviewStampRange(context) {
 export function readMattReview(cwd = root, { range, diffHash } = {}) {
   const trailer = range ? findStamp(cwd, { key: MATT_REVIEW_TRAILER, range, diffHash }) : null;
   return preferMatchingStamp({ trailer, file: readStampFile(mattReviewPath(cwd)), diffHash });
-}
-
-function readStampFile(path) {
-  if (!existsSync(path)) return null;
-  try {
-    return JSON.parse(readFileSync(path, 'utf8'));
-  } catch {
-    return null;
-  }
 }
 
 export function writeMattReview(
