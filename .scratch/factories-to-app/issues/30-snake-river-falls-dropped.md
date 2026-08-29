@@ -64,13 +64,10 @@ Worth noting the drift detection that commit was fixing did not flag a ride leav
 
 ## Acceptance
 
-- [ ] Determine from the park's published 2026 material whether Snake River Falls operates
-- [ ] **If it operates** — restore it (OSM write-back via `osm-writeback.mjs`, or a recorded
-      override), and add a check that a place carrying a current official height rule cannot
-      silently leave the shipped map
-- [ ] **If it closed** — retire the height rule too, and say so here
-- [ ] `npm run venues:certify -- cedar-point` re-run; ride count reconciled with the chart
-- [ ] `npm run test:pre-merge-vertical` green
+- [x] Determine from the park's published 2026 material whether Snake River Falls operates
+- [x] **If it closed** — retire the height rule too, and say so here
+- [x] `npm run venues:certify -- cedar-point` re-run; ride count reconciled with the chart
+- [x] `npm run test:pre-merge-vertical` green
 
 ## Resolution (2026-08-29)
 
