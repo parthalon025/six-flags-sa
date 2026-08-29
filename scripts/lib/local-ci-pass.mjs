@@ -2,14 +2,17 @@
  * Local CI pass stamp — the `local-ci-verified` tag.
  *
  * An agent that ran the full local CI (`npm run test:pre-merge-vertical`)
- * stamps `scripts/ci/local-ci-pass.json` and commits it with the branch. When
+ * stamps the run and publishes it with `node scripts/ci/stamp-commit.mjs`,
+ * which carries it in a commit trailer (scripts/lib/stamp-trailer.mjs). When
  * GitHub Actions sees a stamp carrying the tag for *this exact diff*, it skips
  * the jobs that stamp already proved instead of running them a second time.
  *
  * Two things make the tag safe to trust:
  *   identity  — `diffHash` is the branch diff vs merge-base with the stamp
- *               files excluded, so committing the stamp never invalidates it
- *               and any code change does (same recipe as matt-review).
+ *               files excluded, so publishing the stamp never invalidates it
+ *               and any code change does (same recipe as matt-review). The
+ *               trailer commit is empty, so it moves no hash at all; the
+ *               exclusion stays for branches whose stamp is still a file.
  *   coverage  — the stamp must record every static step in `STATIC_STEPS` and
  *               every vertical the diff owes. `pre-merge-vertical` writes it
  *               only after all of those pass, and the hand-written `write`
@@ -19,8 +22,9 @@
  * Interface:
  *   STATIC_STEPS / STATIC_STEP_IDS / LOCAL_CI_TAG
  *   buildLocalCiContext({ cwd, baseRef })
- *   readLocalCiPass(cwd)
+ *   readLocalCiPass(cwd, { range, diffHash })
  *   writeLocalCiPass(stamp, cwd)
+ *   localCiStampRange(context)
  *   stampCoversContext(stamp, context)
  *   shouldSkipLocalPreMerge(stamp, context, { skipBrowser })
  *   shouldSkipGithubUi(stamp, context, { anyUi })
@@ -46,6 +50,12 @@ import {
   selectModulesFromFiles,
 } from '../../test/app/lib/module-select.mjs';
 import { STAMP_FILES, requiredVerticals, stampCoversVerticals } from './vertical-e2e.mjs';
+import {
+  LOCAL_CI_TRAILER,
+  findStamp,
+  preferMatchingStamp,
+  stampRange,
+} from './stamp-trailer.mjs';
 
 function needsBrowserForFiles(files, manifest) {
   if (files == null) return true;
@@ -223,14 +233,32 @@ export function buildLocalCiContext({
   };
 }
 
-export function readLocalCiPass(cwd = repoRootFrom()) {
-  const path = localCiPassPath(cwd);
+/**
+ * The stamp for this run.
+ *
+ * `range` (from `stampRange(context)`) reads the commit trailer the stamp now
+ * travels in — see scripts/lib/stamp-trailer.mjs for why the tracked JSON file
+ * stopped being the transport. The file is still read when no trailer covers
+ * the range: it is the local cache `writeLocalCiPass` keeps between steps of
+ * one run, and it is how a branch that predates the trailers still verifies.
+ */
+export function readLocalCiPass(cwd = repoRootFrom(), { range, diffHash } = {}) {
+  const trailer = range ? findStamp(cwd, { key: LOCAL_CI_TRAILER, range, diffHash }) : null;
+  return preferMatchingStamp({ trailer, file: readStampFile(localCiPassPath(cwd)), diffHash });
+}
+
+function readStampFile(path) {
   if (!existsSync(path)) return null;
   try {
     return JSON.parse(readFileSync(path, 'utf8'));
   } catch {
     return null;
   }
+}
+
+/** The commit range a stamp for this context may be read from. */
+export function localCiStampRange(context) {
+  return stampRange({ mergeBase: context?.mergeBase, headRef: context?.headRef });
 }
 
 export function writeLocalCiPass(

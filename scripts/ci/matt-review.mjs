@@ -14,6 +14,7 @@ import {
   buildMattReviewContext,
   buildTwoAxisReview,
   mattReviewBlockReason,
+  mattReviewStampRange,
   readMattReview,
   writeMattReview,
 } from '../lib/matt-review.mjs';
@@ -30,7 +31,10 @@ export function runCheck({ baseRef = 'origin/main', cwd = root } = {}) {
   const reason = mattReviewBlockReason({
     files: context.files,
     context,
-    stamp: readMattReview(cwd),
+    stamp: readMattReview(cwd, {
+      range: mattReviewStampRange(context),
+      diffHash: context.diffHash,
+    }),
   });
   if (reason) {
     console.error(`matt-review: ${reason}`);

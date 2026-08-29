@@ -10,13 +10,15 @@ Matt-standard layout: **workflows orchestrate; scripts own policy.** Do not dupl
 | `gate-tests.mjs` | `runGateScriptTests()` | Gate job — runs manifest |
 | `stage-version-stamps.mjs` | `stageVersionStamps()` | Bump workflow — `git add` from `version-stamp-paths.json` |
 | `party-tracker-ui.mjs` | `unpackBuildArtifact()`, `waitForHealth()` | Playwright jobs — unpack artifact + health wait |
-| `pre-merge-vertical.mjs` | `runPreMergeVertical()` | Agent merge gate — static + browser vertical; writes `scripts/ci/local-ci-pass.json` |
+| `pre-merge-vertical.mjs` | `runPreMergeVertical()` | Agent merge gate — static + browser vertical; writes the `local-ci-pass` cache |
 | `../lib/clerk-e2e.mjs` | `clerkE2eBlockReason()` | Auth UI diffs require Clerk-on browser e2e before merge |
 | `../lib/app-test-origin.mjs` | `appOrigin()`, `allocateAppPort()`, `probeAppHealth()`, `watchOriginHealth()` | Less-contended default port (3118), ephemeral port allocation, and health probes for UI validation |
 | `../lib/ci-lane-plan.mjs` | `canonLanePlan()`, `staticStepsForFiles()`, `laneGithubOutputs()` | Canon lanes → static steps and GitHub job flags (GitHub mirrors this) |
 | `../lib/vertical-e2e.mjs` | `requiredVerticals()`, `verticalE2eBlockReason()` | Which verticals a diff owes, and what blocks a merge without them |
 | `local-ci-pass.mjs` | `runWrite()`, `runCheck()` | Writes the `local-ci-verified` stamp after a local vertical; tells GitHub which jobs it already proved |
 | `../lib/local-ci-pass.mjs` | `localCiDecision()`, `STATIC_STEPS` | The tag: what a local CI run covers, and when GitHub may honour it |
+| `stamp-commit.mjs` | `runStampCommit()` | Publishes both gate stamps as trailers on one empty commit |
+| `../lib/stamp-trailer.mjs` | `publishStamps()`, `findStamp()` | Stamps as commit trailers — the transport a merge cannot conflict on |
 | `matt-review.mjs` | `runCheck()`, `runWrite()`, `runPrompt()`, `runTwoAxis()` | Two-axis review prompts + Sonnet standards-review stamp (`scripts/lib/matt-review.mjs`) — code PRs fail without a fresh stamp |
 | `../lib/matt-standards.mjs` | `runMattStandardsChecks()` | Gate — scripts/lib test presence, functional↔modules sync, venue-builder path-literal lint |
 | `pre-push.mjs` | `main()` (`scripts/lib/pre-push.mjs`: `prePushDecision()`) | `.husky/pre-push` entry point — decides whether a `git push` owes a local CI run |
@@ -45,7 +47,24 @@ The run prints the verticals the diff owes (`scripts/lib/vertical-e2e.mjs`), run
 
 Canon lane plan (`scripts/lib/ci-lane-plan.mjs`) is the source of truth for which static steps and GitHub jobs a diff owes. GitHub `test-app.yml` reads `scripts/ci/lane-plan.mjs` outputs (`canon_*`) so workflow jobs mirror the same lanes. Policy: `scripts/lib/vertical-e2e.mjs`, `scripts/lib/ci-lane-plan.mjs`, and `scripts/lib/agent-policy-diff.mjs`. See [vertical-e2e policy](./policies/vertical-e2e.md).
 
-After a successful run, `scripts/ci/local-ci-pass.json` records the diff, the module selection, the static steps and the `verticals` that ran, tagged `local-ci-verified` (schema 3 — a stamp without the tag or without the verticals never covers a code diff). Commit that file with your branch. Use `--no-stamp` to validate without writing the file.
+After a successful run, `scripts/ci/local-ci-pass.json` records the diff, the module selection, the static steps and the `verticals` that ran, tagged `local-ci-verified` (schema 3 — a stamp without the tag or without the verticals never covers a code diff). That file is a **local cache**, gitignored; publish it with `node scripts/ci/stamp-commit.mjs`. Use `--no-stamp` to validate without writing the cache.
+
+### Stamps travel as commit trailers
+
+Both gate stamps are regenerated on every branch, so while they were tracked JSON, any two branches modified the same two files and every merge from `main` raised a conflict on them. Measured on 2026-08-29 with `git merge-tree --write-tree origin/main <pr head>` across the 13 open PRs: 7 conflicted on a stamp file, and for 2 of those the stamp was the *only* thing in the way. `.gitattributes merge=keep-ours` only hid that locally: a merge driver is a shell command registered in `.git/config`, so GitHub's server-side merge never runs one and still reported the PR unmergeable.
+
+`scripts/ci/stamp-commit.mjs` publishes both stamps as trailers on one **empty** commit instead:
+
+```
+chore(ci): publish CI stamps
+
+Local-Ci-Pass: {"schema":3,…}
+Matt-Review-Pass: {"schema":1,…}
+```
+
+Commit messages are per-commit facts and are never merged, so no merge path can conflict on a stamp. The commit is empty, so it cannot move `diffHash` either. Readers (`readLocalCiPass`, `readMattReview`) scan `mergeBase..HEAD` for a trailer and still judge by `diffHash`, so a trailer merged in from another branch is inert rather than trusted; when a branch holds both a trailer and a fresh local cache, whichever records *this* diff wins. Policy: `scripts/lib/stamp-trailer.mjs`.
+
+A branch that still carries the old tracked stamp files keeps working — the file is read when no trailer covers the range. Resolve that transition once, per branch, by merging `main` and `git rm`-ing both files.
 
 ## `local-ci-verified` — skipping GitHub CI
 
@@ -62,7 +81,7 @@ The tag means *local CI already ran everything the skipped jobs would have run, 
 
 `gitnexus` (soft) never skips either, on purpose: it exists to prove GitNexus still installs on a clean runner, which is exactly the thing a local run cannot vouch for — the agent's own session either has an index already or failed to build one.
 
-**The stamp is self-attested.** Anyone who can push to the branch can also write a `local-ci-verified` JSON by hand and skip those jobs; the checks above stop a *stale* or *incomplete* stamp, not a dishonest one. That is the same trust model as `matt-review-pass.json`, and it is why review and branch protection stay the real control on what merges. Label a PR `full-ci` when you want the jobs run regardless.
+**The stamp is self-attested.** Anyone who can push to the branch can also write a `local-ci-verified` JSON by hand and skip those jobs; the checks above stop a *stale* or *incomplete* stamp, not a dishonest one. That is the same trust model as the matt-review stamp, and it is why review and branch protection stay the real control on what merges. Label a PR `full-ci` when you want the jobs run regardless.
 
 Two things always run full CI regardless of the stamp:
 

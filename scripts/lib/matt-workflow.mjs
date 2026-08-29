@@ -125,7 +125,7 @@ export const SKILLS = Object.freeze({
     flow: 'main',
     invoke: '/code-review',
     label: 'Code review',
-    when: 'Pre-merge Standards + Spec axes; stamp matt-review-pass.json on code diffs.',
+    when: 'Pre-merge Standards + Spec axes; stamp matt-review on code diffs (stamp-commit.mjs publishes it).',
   },
   'domain-modeling': {
     flow: 'vocabulary',
@@ -253,7 +253,7 @@ const PHASE_META = Object.freeze({
   },
   review: {
     skill: 'code-review',
-    prompt: 'Run /code-review (Standards + Spec) and stamp matt-review-pass.json before merge.',
+    prompt: 'Run /code-review (Standards + Spec), stamp matt-review, and publish with scripts/ci/stamp-commit.mjs before merge.',
     forbid: [],
   },
   verify: {
