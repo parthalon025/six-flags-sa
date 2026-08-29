@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Evidence
 
@@ -41,12 +41,25 @@ ledger. Had it been committed, the fix and the next instance of the bug would ha
 
 ## Acceptance
 
-- [ ] `--reapply` leaves `osm` intact on every record it does not have a source for — carry the
-      prior ledger value forward rather than writing the field away
-- [ ] A test asserts a reapply over a ledger with `osm` provenance preserves it, and fails on its
-      own message before the fix
-- [ ] Re-running `npm run venues:overrides -- cedar-point` produces no `ids.json` diff
-- [ ] `npm run test:builder` green
+- [x] `--reapply` leaves `osm` intact on every record it does not have a source for. The run
+      wins where it has an element of its own; otherwise the prior record's is carried forward.
+      All 427 stripped fields are gone from the diff.
+- [x] A test asserts it and fails on its own message before the fix
+      (*"a reapply must carry provenance forward, not write it away"*), plus its other side —
+      a run that does have a source still outranks the ledger.
+- [x] Re-running `npm run venues:overrides -- cedar-point` produces no `ids.json` diff.
+      **Read this carefully**, because the commit's diff does change two records: the *first*
+      reapply after the fix writes `lake-eerie-nor-easter-2` and `watterin-hole-2`'s stored `n`
+      from the misspellings to the corrected names — the ledger catching up with ticket 25,
+      which corrected the shipped names and never restamped the ledger. `assignKeys` records
+      the name a place ended the build with, so that write is the documented behaviour and the
+      two records were stale, not overwritten. That corrected ledger is what is committed, and
+      running the verb against it is byte-identical — verified twice. The box is about the verb
+      being idempotent, and from HEAD it is.
+- [x] `npm run test:builder` green
+
+Whether the ledger should hold the *raw* OSM name instead — so step 2 is a genuine fallback
+rather than a trap after a rename — is the larger change this ticket's Notes flag. Untouched.
 
 ## Notes
 

@@ -38,6 +38,40 @@ export function estimateComponents(graph) {
   return { count, largest };
 }
 
+/** Map layers whose ways are a ride's own structure. */
+const RIDE_GEOMETRY_LAYERS = ['coaster', 'slide'];
+
+/**
+ * Where a guest could actually be standing to have reached this ride.
+ *
+ * Not the POI point alone. That point is a centroid, and the centroid of a big
+ * coaster is in the middle of its own footprint — Cedar Point's Siren's Curse
+ * measured 64 m from the nearest walkway by its centroid while its **track**
+ * runs 9.5 m from one, in this venue's own map. Snapping the centroid reported
+ * a ride a guest cannot reach, and a guest can walk right up to it (#23).
+ *
+ * So: the recorded queue entrance if the bundle carries one, else the ride's own
+ * mapped structure, else the point. A ride genuinely stranded on a routing
+ * island still fails — none of its points is near the network either.
+ */
+export function reachablePoints(ride, map) {
+  const entrance = (ride.e || []).find((e) => Number.isFinite(e?.lat) && Number.isFinite(e?.lng));
+  if (entrance) return [{ lat: entrance.lat, lng: entrance.lng }];
+
+  const own = [];
+  for (const layer of RIDE_GEOMETRY_LAYERS) {
+    for (const way of map?.[layer] || []) {
+      if (way?.n !== ride.n) continue;
+      for (const [lng, lat] of way.r || []) {
+        if (Number.isFinite(lat) && Number.isFinite(lng)) own.push({ lat, lng });
+      }
+    }
+  }
+  if (own.length) return own;
+
+  return [{ lat: ride.lat, lng: ride.lng }];
+}
+
 /**
  * @param {string} id venue id
  * @returns routing QA result for certify and CLI
@@ -50,9 +84,13 @@ export function qaVenueRouting(id) {
   const rides = pois.filter((p) => isRideable(p));
   const far = [];
   for (const ride of rides) {
-    const snap = routing.snapToGraph(graph, ride.lat, ride.lng);
-    const offset = snap?.offset ?? null;
-    if (!snap || offset > MAX_RIDE_SNAP_METRES) {
+    let offset = null;
+    for (const point of reachablePoints(ride, map)) {
+      const snap = routing.snapToGraph(graph, point.lat, point.lng);
+      if (snap?.offset == null) continue;
+      if (offset == null || snap.offset < offset) offset = snap.offset;
+    }
+    if (offset == null || offset > MAX_RIDE_SNAP_METRES) {
       far.push({ name: ride.n, metres: offset != null ? Math.round(offset) : null });
     }
   }

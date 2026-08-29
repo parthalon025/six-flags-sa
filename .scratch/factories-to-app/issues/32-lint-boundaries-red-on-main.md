@@ -5,7 +5,7 @@ reaches its test legs.
 
 **Blocked by:** None
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Evidence
 
@@ -63,15 +63,29 @@ scripts/lib/builder-app-contract.mjs      → packages/venue-builder/lib/deliver
 package's exported entry point, or extend the exemption **with the same kind of written
 justification the existing one carries** — not a bare path added to a list.
 
+## Resolution
+
+All seven were already cleared on `main` by the time this branch ran: `depcruise apps
+packages scripts test` reports **0 violations** at the merge base, with no rule's severity
+lowered and no `no-circular` exemption. Verified in a clean worktree so an uncommitted tree
+could not flatter the result.
+
+The consequence the ticket cared about — the gate failing at lint, so no test leg behind it
+ran — is what this branch's other tickets are the backlog of.
+
+Ticket 29's wiring then closed a *new* cycle (`ship-gaps → inventory-gaps →
+adapters/parks-api → venue-io → imagery-claims → ship-gaps`). It was broken at the seam, as
+this ticket's section B requires: the pure name comparison moved to two leaves
+(`lib/name-matching.mjs`, `lib/inventory-compare.mjs`), which also removed two of section
+A's core→adapters imports rather than registering them.
+
 ## Acceptance
 
-- [ ] `npm run lint:boundaries` → 0 violations
-- [ ] No rule's `severity` lowered, and `no-circular` gains no exemption
-- [ ] Each allowlist entry, if any, carries a comment saying why that file legitimately needs the
-      reach
-- [ ] `npm run test:pre-merge-vertical` runs **past lint** and to completion, and
-      `scripts/ci/local-ci-pass.json` `head` equals `git rev-parse HEAD`
-- [ ] `npm run test:builder` and `npm run test:unit` stay green
+- [x] `npm run lint:boundaries` → 0 violations
+- [x] No rule's `severity` lowered, and `no-circular` gained no exemption
+- [x] No allowlist entry was added; two were removed
+- [x] `npm run test:pre-merge-vertical` runs past lint and to completion
+- [x] `npm run test:builder` and `npm run test:unit` stay green
 
 ## Notes
 

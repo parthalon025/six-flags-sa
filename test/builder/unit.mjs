@@ -3223,6 +3223,7 @@ const { checklist, failures } = await import('../../packages/venue-builder/lib/v
 const {
   addressBook, assignKeys, keyAudit, osmRef, resolveOverride, seedLedger, serializeLedger,
 } = await import('../../packages/venue-builder/lib/venue-ids.mjs');
+const { applyHeightsSidecar } = await import('../../packages/venue-builder/lib/heights-sidecar.mjs');
 
 await check('no venue ships half-built', () => {
   /* The list of what a location has to carry, held to. A park that is *almost*
@@ -3716,6 +3717,66 @@ await check('every override is filed under a name the venue actually has', () =>
     // happen — usually the park renamed the ride and the alias was not moved.
     assert.deepEqual(orphans, [], `${id}: overrides with no POI to land on: ${orphans.join(', ')}`);
   });
+  return true;
+});
+
+await check('every height rule addresses a place the venue actually ships', () => {
+  /* The sibling of the overrides check above, and the guard #30 asked for.
+     A height rule that lands on nothing is one of two things and the build
+     cannot tell which: a ride the park still gates on that has fallen off the
+     shipped map — invisible to a guest, its height rule unable to reach anyone
+     — or a ride that closed while its rule stayed behind. Cedar Point's Snake
+     River Falls was the second; it went unnoticed because `applyHeightsSidecar`
+     skipped it in silence, and surfaced only when a place count in an unrelated
+     suite moved by one. A retired rule goes in `retired`, where it is neither
+     applied nor lost, and says why. */
+  const dir = new URL('../../packages/venue-builder/data/venues/', import.meta.url);
+  const venues = fs.readdirSync(dir).filter((name) => {
+    try {
+      return fs.statSync(new URL(`${name}/heights.json`, dir)).isFile();
+    } catch {
+      return false;
+    }
+  });
+  assert.ok(venues.length, 'no heights files to check');
+  for (const id of venues) {
+    const pois = readPois(`/venues/${id}.pois.json`);
+    // Through the applier the build itself uses, so this cannot go on passing
+    // after the build stops agreeing with it.
+    const { unresolved } = applyHeightsSidecar(pois, id);
+    assert.deepEqual(
+      unresolved,
+      [],
+      `${id}: height rule(s) addressing no place: ${unresolved.join(', ')} — restore the place, `
+        + 'or move the rule to "retired" with why',
+    );
+  }
+  return true;
+});
+
+await check('a retired height rule keeps its evidence and never reaches a place', () => {
+  const heights = JSON.parse(
+    fs.readFileSync(new URL('../../packages/venue-builder/data/venues/cedar-point/heights.json', import.meta.url)),
+  );
+  const snake = heights.retired?.['Snake River Falls'];
+  assert.ok(snake, 'Snake River Falls closed after 2024 — the rule belongs in retired, not deleted');
+  assert.equal(heights.rules['Snake River Falls'], undefined, 'a retired rule must not also be live');
+  assert.equal(snake.h.min, 48, 'the height it gated on is a fact about the park; keep it');
+  assert.ok(snake.retired, 'a retired rule says when');
+  assert.ok(
+    snake.evidence.length >= 2,
+    'one source saying a ride closed is a claim; the record carries what agreed',
+  );
+
+  // The applier reads `rules`, so nothing in `retired` can reach a place.
+  const pois = readPois('/venues/cedar-point.pois.json');
+  const { applied } = applyHeightsSidecar(pois, 'cedar-point');
+  assert.ok(applied > 0, 'the live rules still apply');
+  assert.equal(
+    pois.some((p) => p.n === 'Snake River Falls'),
+    false,
+    'the place is gone from the shipped map, which is why the rule is retired',
+  );
   return true;
 });
 
@@ -7429,17 +7490,17 @@ await check('a reapply with no OpenStreetMap source keeps the provenance already
   // And the ledger is byte-identical, so the verb leaves no diff to review.
   assert.equal(serializeLedger(second.ledger), serializeLedger(first.ledger));
 
-  // The point of keeping it: a rename after a reapply still rematches on the
-  // element rather than rotating the key.
-  const renamed = fromBundle.map((p) =>
-    p.i === 'orion' ? { ...p, i: undefined, n: 'Orion Reborn' } : { ...p, i: undefined },
+  // The point of keeping it: the next OSM rebuild after a reapply still rematches
+  // a renamed place on its element rather than rotating the key. That rebuild
+  // reads OSM, so it arrives keyless and carrying `osm` — exactly SOURCE(), with
+  // the park's new name on the sign.
+  const rebuilt = SOURCE().map((p) => (p.osm === 'w111' ? { ...p, n: 'Orion Reborn' } : p));
+  const third = assignKeys(rebuilt, second.ledger, { venue: 'v' });
+  assert.equal(
+    third.pois.find((p) => p.n === 'Orion Reborn').i,
+    'orion',
+    'the reapply stripped the provenance this rematch runs on',
   );
-  const third = assignKeys(
-    renamed.map(({ i, ...rest }) => ({ ...rest, osm: first.ledger.keys[keysOf(first.pois)[`${rest.lat},${rest.lng}`]]?.osm })),
-    second.ledger,
-    { venue: 'v' },
-  );
-  assert.equal(third.pois.find((p) => p.n === 'Orion Reborn').i, 'orion');
   return true;
 });
 
@@ -8492,6 +8553,8 @@ await check('kings-island passes certification except outstanding park-map image
   assert.equal(doc.certified, false);
   return true;
 });
+const { reachablePoints } = await import('../../packages/venue-builder/lib/venue-route-qa-core.mjs');
+
 await check('route QA enforces the Kings Island island standard', () => {
   const r = qaVenueRouting('kings-island');
   assert.ok(r.components <= MAX_ROUTING_ISLANDS);
@@ -8500,11 +8563,64 @@ await check('route QA enforces the Kings Island island standard', () => {
   return true;
 });
 
-await check('cedar point fails route gate when a ride is off the network', () => {
+await check('the route gate measures where a guest can stand, not a ride centroid', () => {
+  /* Cedar Point failed this gate on Siren's Curse, 45 m from the walk network —
+     read as an OpenStreetMap path gap stranding a ride. It is not one. That
+     distance is from the *centroid* of a 225-vertex coaster, which sits in the
+     middle of its own footprint; the ride's track runs 9.5 m from a walkway in
+     this venue's own map, and live OSM agrees (14.9 m). A guest can walk right
+     up to it. The gate was measuring the wrong point (#23). */
   const doc = certifyVenue('cedar-point', { write: false });
   const route = doc.checks.find((c) => c.key === 'route');
-  assert.equal(route.pass, false);
-  assert.ok(route.evidence.farRides?.length >= 1);
+  assert.equal(route.pass, true, `farRides: ${JSON.stringify(route.evidence.farRides)}`);
+  assert.deepEqual(route.evidence.farRides, []);
+
+  const map = JSON.parse(
+    fs.readFileSync(new URL('../../apps/party-tracker/public/venues/cedar-point.map.json', import.meta.url)),
+  );
+  const pois = readPois('/venues/cedar-point.pois.json');
+  const siren = pois.find((p) => p.n === "Siren's Curse");
+  const points = reachablePoints(siren, map);
+  assert.ok(points.length > 1, 'the coaster resolves to its own structure, not one centroid');
+  assert.ok(
+    points.some((pt) => pt.lat !== siren.lat || pt.lng !== siren.lng),
+    'the centroid is not what gets snapped when the ride has mapped structure',
+  );
+  return true;
+});
+
+await check('a ride with no structure and no entrance still snaps by its point', () => {
+  // The fallback, unchanged: most rides carry neither, and a flat ride's point
+  // is where it is. Widening what counts as reachable must not stop measuring
+  // the ones it was already measuring correctly.
+  const ride = { n: 'Nothing Mapped', lat: 41.4809, lng: -82.6851, c: 'ride' };
+  assert.deepEqual(reachablePoints(ride, { coaster: [], slide: [] }), [
+    { lat: 41.4809, lng: -82.6851 },
+  ]);
+  // A recorded entrance outranks both — it is literally where a guest queues.
+  const withGate = { ...ride, e: [{ lat: 41.4816, lng: -82.6852 }] };
+  assert.deepEqual(reachablePoints(withGate, { coaster: [{ n: 'Nothing Mapped', r: [[-82.7, 41.5]] }] }), [
+    { lat: 41.4816, lng: -82.6852 },
+  ]);
+  return true;
+});
+
+await check('a ride stranded off the network still fails the route gate', async () => {
+  /* The gate must still catch what it was built for. Same venue, same graph,
+     one ride moved a kilometre into Lake Erie — structure and all. */
+  const map = JSON.parse(
+    fs.readFileSync(new URL('../../apps/party-tracker/public/venues/cedar-point.map.json', import.meta.url)),
+  );
+  const stranded = { n: 'Stranded Ride', lat: 41.4909, lng: -82.6951, c: 'coaster' };
+  const points = reachablePoints(stranded, map);
+  assert.deepEqual(points, [{ lat: stranded.lat, lng: stranded.lng }]);
+  const routing = await import('../../apps/party-tracker/lib/routing.js');
+  const graph = routing.buildRouteGraph(map);
+  const snap = routing.snapToGraph(graph, stranded.lat, stranded.lng);
+  assert.ok(
+    snap == null || snap.offset > MAX_RIDE_SNAP_METRES,
+    `a ride in the lake must be off the network, got ${snap?.offset}`,
+  );
   return true;
 });
 

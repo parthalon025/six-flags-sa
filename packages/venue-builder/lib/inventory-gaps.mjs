@@ -6,8 +6,7 @@
  * Shared by venue-certify (asks) and ship-gaps (gaps + seeds).
  */
 
-import { compareParksApiToBundle } from './adapters/parks-api.mjs';
-import { compareQueueTimesToBundle } from './adapters/queue-times.mjs';
+import { compareParksApiToBundle, compareQueueTimesToBundle } from './inventory-compare.mjs';
 import { isRideable } from '@party-tracker/shared/ontology.js';
 
 export const INVENTORY_COVERAGE_THRESHOLD = 0.5;
