@@ -48,6 +48,13 @@ const {
   validateGrounding, groundKit, readVenueGrounding, groundingFile,
 } = await import('../../packages/venue-builder/lib/display-references.mjs');
 
+const {
+  groundingWithZoneCharacter, readZoneCharacter, validateZoneCharacter,
+} = await import('../../packages/venue-builder/lib/display-zone-character.mjs');
+
+const { readGrounding, runDisplayStage } =
+  await import('../../packages/venue-builder/lib/display-pack.mjs');
+
 const { impliedTerrainClasses } = await import('../../packages/venue-builder/lib/display-bake.mjs');
 const { rgbToLab, hexToRgb, deltaE } = await import('../../packages/venue-builder/lib/display-style-contract.mjs');
 const {
@@ -743,6 +750,70 @@ await check('a grounded profile still carries its Skin whole', () => {
     grounded.grounding.review.some((r) => /roof/i.test(r.prompt)),
     'the split the harvest found must reach the reviewer as a question',
   );
+  return true;
+});
+
+console.log('\nzone character — harvest-safe curation\n');
+
+await check('a re-harvest rewrite drops grounding zones but zone-character survives', () => {
+  const harvested = harvestSynth();
+  assert.equal(harvested.zones, undefined, 'harvest output must not carry zones');
+  const zoneCharacter = {
+    version: 1,
+    venue: 'synth-park',
+    zones: { Midway: { character: 'midway' } },
+  };
+  const merged = groundingWithZoneCharacter(harvested, zoneCharacter);
+  assert.deepEqual(merged.zones, zoneCharacter.zones);
+  return true;
+});
+
+await check('grounding.json must not carry zones once zone-character owns them', () => {
+  const problems = validateGrounding({
+    version: 1,
+    venue: 'synth-park',
+    bands: ['overview', 'mid'],
+    source: { source: 'planetary-computer:naip', license: 'public-domain', sha256: 'a'.repeat(64) },
+    classes: { grass: { sampleShare: 0.5, samples: 1, lightness: 0, redness: 0, warmth: 0, observed: '#808080' } },
+    zones: { Midway: { character: 'midway' } },
+  });
+  assert.ok(problems.some((p) => /zone-character\.json/.test(p)), problems.join('; '));
+  return true;
+});
+
+await check('kings-island character is read from zone-character.json, not grounding.json', () => {
+  const record = readVenueGrounding('kings-island');
+  assert.equal(record.zones, undefined, 'committed grounding must not carry zones');
+  const grounding = readGrounding('kings-island');
+  assert.ok(grounding?.zones?.Rivertown?.character === 'woodland');
+  assert.deepEqual(validateZoneCharacter(readZoneCharacter('kings-island')), []);
+  return true;
+});
+
+await check('every flagship declares zone character or an explicit uncharacterised policy', () => {
+  const flagships = ['kings-island', 'cedar-point', 'six-flags-fiesta-texas', 'big-kahunas'];
+  for (const venue of flagships) {
+    const record = readZoneCharacter(venue);
+    assert.ok(record, `${venue}: missing zone-character.json`);
+    assert.deepEqual(validateZoneCharacter(record, { venueId: venue }), [], `${venue}: zone-character invalid`);
+  }
+  return true;
+});
+
+await check('kings-island landTones still reproduce with character outside grounding.json', () => {
+  const { packs } = runDisplayStage('kings-island', { write: false });
+  const committed = JSON.parse(readFileSync(
+    new URL('../../packages/venue-builder/data/venues/kings-island/display/trail.visual.json', import.meta.url),
+    'utf8',
+  ));
+  const computed = packs.trail.spec.landTones;
+  for (const zone of Object.keys(committed.landTones || {})) {
+    assert.equal(
+      committed.landTones[zone]?.day?.fill,
+      computed[zone]?.day?.fill,
+      `trail ${zone} fill must still reproduce`,
+    );
+  }
   return true;
 });
 

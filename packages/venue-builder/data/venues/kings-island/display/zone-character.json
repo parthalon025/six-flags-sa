@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "venue": "kings-island",
+  "zones": {
+    "International Street": {
+      "character": "civic"
+    },
+    "Coney Mall": {
+      "character": "midway"
+    },
+    "Planet Snoopy": {
+      "character": "midway"
+    },
+    "Rivertown": {
+      "character": "woodland"
+    },
+    "Camp Snoopy": {
+      "character": "woodland"
+    },
+    "Action Zone": {
+      "character": "steel"
+    },
+    "Area 72": {
+      "character": "steel"
+    },
+    "Adventure Port": {
+      "character": "water"
+    },
+    "Soak City": {
+      "character": "water"
+    }
+  },
+  "_comment": "What each Zone IS, never what colour it should be (ADR-0020: design owns treatment, the venue owns relationships). Hand-authored curation, not harvest output — lives outside grounding.json so a re-harvest onto the classes schema (#26) cannot drop it (#35). Rivertown and Camp Snoopy are the wooded ones, Soak City and Adventure Port the water ones, Action Zone and Area 72 the steel quarter, Coney Mall and Planet Snoopy midway, International Street the civic boulevard you enter through. Oktoberfest stays deliberately unlisted: it has always taken whatever a Zone nobody characterised looks like."
+}

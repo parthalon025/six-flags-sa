@@ -25,6 +25,7 @@ import { materialTexturesRow, verifyCompiledMaterials } from './display-material
 import { crossRotationCoverageRow } from './display-style-contract.mjs';
 import { writeBundleManifest } from './venue-bundle.mjs';
 import { check } from './evidence.mjs';
+import { groundingWithZoneCharacter, readZoneCharacter } from './display-zone-character.mjs';
 
 export const DISPLAY_VERSION = 1;
 
@@ -381,10 +382,10 @@ export function readLandCover(id) {
  * looking like itself.
  */
 export function readGrounding(id) {
-  const file = path.join(venueSidecar(id, 'display'), 'grounding.json');
-  const grounding = readJson(file, null);
+  const grounding = readJson(path.join(venueSidecar(id, 'display'), 'grounding.json'), null);
   if (!grounding) return null;
-  for (const [zone, row] of Object.entries(grounding.zones || {})) {
+  const merged = groundingWithZoneCharacter(grounding, readZoneCharacter(id));
+  for (const [zone, row] of Object.entries(merged.zones || {})) {
     if (row?.character && !LAND_CHARACTERS[row.character]) {
       throw new Error(
         `${id}: Zone "${zone}" declares unknown character "${row.character}" — `
@@ -392,7 +393,7 @@ export function readGrounding(id) {
       );
     }
   }
-  return grounding;
+  return merged;
 }
 
 /**
