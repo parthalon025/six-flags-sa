@@ -92,6 +92,9 @@
     "edgeInk": {
       "anchor": "#2F4C7A",
       "deltaE": 24
+    },
+    "trackVsRoad": {
+      "sharedInk": "trackStyle 'mono' — a survey blueprint draws every line in one ink (edgeInk #2F4C7A) and carries hierarchy in weight and dash, not hue. Separation from the paper is style_road_hierarchy's centerlineVsPaper row (ΔE >= 25); separating track from midway by colour would break the design language rather than serve it."
     }
   },
   "hierarchy": {

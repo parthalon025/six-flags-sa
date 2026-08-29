@@ -41,6 +41,7 @@ import {
   waitForHeightsReady,
 } from './browser.mjs';
 import { parseModulesArg, wantModule } from './lib/module-select.mjs';
+import { checkMapDecisions } from './lib/map-decisions.mjs';
 import {
   assertContributionConsolidatePipelineHttp,
   contributionPostAvailable,
@@ -359,6 +360,37 @@ await check('park geometry is drawn', async () => {
   const canvas = await a.locator('[data-testid="park-map-gl"]:not(.mapMissing) canvas').count();
   if (!canvas) throw new Error('map not drawn (no MapLibre canvas)');
   if (!(await a.locator('.mePulse').count())) throw new Error('no own-position marker');
+  return true;
+});
+
+await check('the map still draws the decisions it was asked for', async () => {
+  /* The registry in test/app/map-decisions.json, against the style a real
+     MapLibre is drawing on a real phone — not against the module that built
+     it. Those are two different things whenever the renderer, a Skin's custom
+     map, or the adapter has a hand in the final style, and "the module says
+     the track is six pixels" is worth nothing if the glass disagrees.
+
+     map-decisions.test.mjs runs the same checker over every shipped venue
+     without a browser. This is the vertical: Kings Island, loaded, drawn, and
+     required to still have coaster track and a parking lot in it — so a green
+     result here cannot mean the layers were simply absent. */
+  await until(async () => {
+    const ids = await a.evaluate(() => (globalThis.__parkMapLibre?.getStyle?.()?.layers || []).map((l) => l.id));
+    return ids.includes('world-coaster');
+  }, { timeout: 20000, label: 'the World tier drawn by MapLibre' });
+
+  const style = await a.evaluate(() => {
+    const s = globalThis.__parkMapLibre?.getStyle?.();
+    // Only what the checker reads. The whole style carries every source's
+    // data, which is a park's worth of geometry across the CDP bridge.
+    return { layers: (s?.layers || []).map((l) => ({ id: l.id, type: l.type, paint: l.paint, layout: l.layout })) };
+  });
+
+  const { failures, checked } = checkMapDecisions(style, { require: ['coaster', 'parking', 'path', 'building'] });
+  if (failures.length) throw new Error(failures.join(' | '));
+  if (!checked.includes('coaster') || !checked.includes('parking')) {
+    throw new Error(`nothing checked the layers this was about (checked: ${checked.join(', ') || 'none'})`);
+  }
   return true;
 });
 
