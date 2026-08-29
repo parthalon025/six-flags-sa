@@ -67,6 +67,16 @@ never repositions.
    guests**. It ships on the existing `verify` Gap type, targeted at the ride, so ADR-0009's
    seven stay frozen and no eighth type is added. The final position, in one line: *path
    disputes internal; ride evidence conflicts visible via `verify`.*
+
+   *Shipped state, 2026-08-29:* the builder half of that ruling is delivered — the seed is
+   named in `shippedTypeForSeed`, mapped to `verify`, and targeted at the ride. **The guest
+   half is not.** `apps/party-tracker/lib/sideQuests.js` renders a Side Quest only for a type
+   present in its `GAP_CARD` map, which holds ADR-0009's seven and nothing else, so
+   `groupShippedGaps` drops a `verify` row on the floor. The word "existing" above was load
+   bearing and wrong: `verify` existed in the builder's vocabulary and in the phone's network
+   keep-list (`venue/store.js` `SHIPPED_GAP_TYPES`), never in the phone's renderer. A ride
+   evidence conflict therefore still reaches no guest. Tracked as #795; until that
+   lands, read this clause as the intended position, not the shipped one.
 6. **Sequencing: the grounding harvest rides Train H** (kings-island's banded worlds ship already
    grounded in that park's real relationships); the **evidence lane is Train I** after H —
    extraction passes, evidence-graph wiring, the steward gate, and the OSM feedback loop.

@@ -187,6 +187,20 @@ Closed 2026-08-22 so Trains H and I can finish. The answers:
   document changed: none of the four venues under `apps/party-tracker/public/venues/` currently
   produces an evidence conflict, and all four still regenerate byte-identical.
 
+  *Shipped state, 2026-08-29:* the re-route reaches the wire and stops there. The phone keeps
+  `verify` through `venue/store.js`'s network filter and then discards it at the renderer:
+  `sideQuests.js` `groupShippedGaps` skips any type absent from `GAP_CARD`, which holds
+  ADR-0009's seven only. `inventory` (added on main, #781) is dropped by the same line. So both
+  types that sit outside the frozen seven are emitted, transported, and never drawn — the
+  correction above moved evidence conflicts off a channel that was filtered out onto one that
+  is not rendered, which is visible progress on the builder side and none on the guest side.
+  Making `verify` guest-facing is a real slice, not a card entry: the type carries two seeds
+  with incompatible semantics (`adapter_stale` names an adapter id, with no Place to stand at,
+  while `evidence_conflict` names a ride), and `overlay.js` has neither a `FIELD_TYPES` member
+  nor an `HTTP_KIND` mapping for it, so a completed quest would record no Overlay fact.
+  Tracked as #795, with a tripwire in `test/builder/gaps-quests.mjs` that goes red when the
+  drift changes shape.
+
 Plus the crop question that building h1 surfaced. Answered **don't trim, use the large
 tiles**: a band plan describes the World, and so does the picture — the bake emits the
 projector's whole grid and `cert.bounds` is that grid's own four corners. `bandBakePlan` is

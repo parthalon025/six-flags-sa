@@ -519,6 +519,48 @@ await check('null-target path XP keys by a coarse Location cell so one walk does
   return true;
 });
 
+// ADR-0009 freezes the wire vocabulary at seven types. Two more — `verify` and
+// `inventory` — are emitted by the builder and kept by the phone's network
+// filter, but `sideQuests.js` draws a card only for a type in its private
+// GAP_CARD map, so both are discarded at the renderer. This pins where the loss
+// happens (renderer, not filter) and fails the moment the drift changes shape.
+// Fixing it should make this test red: shorten NEVER_DRAWN and update ADR-0020
+// and ADR-0021's "Shipped state" clauses.
+await check('every shipped Gap type is drawn, except the two known undrawn ones', () => {
+  const FROZEN_SEVEN = ['height', 'queue', 'path', 'restroom', 'food', 'gate', 'camping'];
+  const NEVER_DRAWN = ['verify', 'inventory'];
+
+  // Renderability read from behaviour, not from a private constant: one gap of
+  // each type in, does a durable card come out.
+  const draws = (type) =>
+    buildSideQuests({
+      gaps: [{ type, target: 'r1' }],
+      venueName: 'Park',
+      venueId: 'p',
+      scoredKeys: [],
+    }).durable.length > 0;
+
+  const drawn = SHIPPED_GAP_TYPES.filter(draws);
+  const undrawn = SHIPPED_GAP_TYPES.filter((t) => !draws(t));
+
+  assert.deepEqual(drawn, FROZEN_SEVEN, 'exactly ADR-0009’s seven types draw a Side Quest card');
+  assert.deepEqual(
+    undrawn,
+    NEVER_DRAWN,
+    'the undrawn set is exactly the tracked drift — a new one means a type was shipped that no guest can see',
+  );
+
+  // The loss is at the renderer. Both undrawn types survive the network filter,
+  // so a bundle carries them to the phone and the phone throws them away.
+  for (const type of NEVER_DRAWN) {
+    assert.ok(
+      PHONE_SHIPPED_GAP_TYPES.has(type),
+      `${type} is kept by the phone's network filter, so the drop is the renderer's`,
+    );
+  }
+  return true;
+});
+
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);
 if (FAIL.length) {
   FAIL.forEach((f) => console.log(' !', f));
