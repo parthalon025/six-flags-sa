@@ -46,21 +46,16 @@
     {
       "key": "route",
       "claim": "Path graph has ≤2 islands and every ride snaps to the network",
-      "pass": false,
+      "pass": true,
       "evidence": {
-        "numerator": 73,
+        "numerator": 74,
         "denominator": 74,
-        "detail": "1 component(s), 1 ride(s) >35 m from network",
+        "detail": "1 component(s), 0 ride(s) >35 m from network",
         "components": 1,
         "largestComponent": 4,
-        "farRides": [
-          {
-            "name": "Siren's Curse",
-            "metres": 45
-          }
-        ]
+        "farRides": []
       },
-      "confidence": "moderate",
+      "confidence": "high",
       "falsifier": "OpenStreetMap path gaps strand rides on routing islands",
       "soWhat": "Offline routing cannot reach a ride that is not on the walk network"
     },
@@ -161,7 +156,7 @@
       "evidence": {
         "numerator": 0,
         "denominator": 1,
-        "detail": "local_images=0; parkMap_candidates=0; llm_park_map_search=false",
+        "detail": "local_images=0; parkMap_candidates=0 (of 0 recorded); llm_park_map_search=false",
         "searchQueries": []
       },
       "confidence": "low",

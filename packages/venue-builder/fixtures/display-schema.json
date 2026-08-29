@@ -21,6 +21,23 @@
     "surfaces": {
       "type": "object",
       "minProperties": 1
+    },
+    "landTones": {
+      "description": "Zone name -> mode -> { fill, stroke, label }. The retired shape is a bare hex per mode; the renderer degrades that to no tone rather than throwing, so the gate rejects it here (ticket 31).",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "propertyNames": { "enum": ["day", "night"] },
+        "additionalProperties": {
+          "type": "object",
+          "required": ["fill", "stroke", "label"],
+          "properties": {
+            "fill": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+            "stroke": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+            "label": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+          }
+        }
+      }
     }
   }
 }

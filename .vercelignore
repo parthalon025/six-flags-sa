@@ -53,6 +53,12 @@ packages/venue-builder/lib/*
 !packages/venue-builder/lib/quest-seeds.mjs
 !packages/venue-builder/lib/ship-gaps.mjs
 !packages/venue-builder/lib/ambient-signal-seeds.mjs
+# Pulled in by ship-gaps.mjs since the inventory lane was wired (#29). All three
+# are pure — a coverage comparison and the name-similarity primitive under it —
+# so this is three small files, not the adapter tree they used to live in.
+!packages/venue-builder/lib/inventory-gaps.mjs
+!packages/venue-builder/lib/inventory-compare.mjs
+!packages/venue-builder/lib/name-matching.mjs
 !packages/venue-builder/lib/factory-types.mjs
 !packages/venue-builder/lib/postdb-seed-from-files.mjs
 

@@ -98,6 +98,7 @@ export const TEST_ESTATE = {
   'test/app/band-plan.test.mjs': ['test:unit'],
   'test/app/contributions-thanks.test.mjs': ['test:unit'],
   'test/app/contribution-consolidate-vertical.test.mjs': ['test:unit'],
+  'test/app/contribution-operator-path.test.mjs': ['test:unit'],
   'test/app/contributions-postgres.test.mjs': ['test:unit'],
   'test/app/postgres-probe.test.mjs': ['test:unit'],
   'test/app/ready-route.test.mjs': ['test:unit'],
@@ -139,6 +140,7 @@ export const TEST_ESTATE = {
   'test/app/validate-ui.mjs': ['app-vertical'],
   'test/app/venue-download.test.mjs': ['test:unit'],
   'test/app/venue-store.test.mjs': ['test:unit'],
+  'test/app/coverage-contract.test.mjs': ['test:unit'],
   'test/app/venue-delta-api.test.mjs': ['test:unit'],
   'test/app/visual.mjs': ['visual-job'],
   'test/app/weather-route.test.mjs': ['test:unit'],
@@ -277,6 +279,8 @@ export const TEST_ESTATE = {
   'test/scripts/factory-legs.test.mjs': ['ci-gate'],
   'test/scripts/pre-merge-vertical.test.mjs': ['ci-gate'],
   'test/scripts/wire-watch-target.test.mjs': ['ci-gate'],
+  'test/scripts/pre-install-closure.test.mjs': ['ci-gate'],
+  'test/scripts/tree-mutation.test.mjs': ['ci-gate'],
   'test/scripts/worktree.test.mjs': ['ci-gate', 'test:unit'],
 };
 
@@ -292,6 +296,8 @@ export const TEST_ESTATE_EXCLUDED = {
     'human-run screenshot tool, actively maintained. Overlap and tap-target usability audit; writes screenshots + a JSON report to test/audit/ for a person to read. Needs a running app and a system Chromium.',
   'test/app/audit-visual.mjs':
     'human-run screenshot tool, actively maintained. Captures every major UI state to test/audit/ for human review. Needs a running app.',
+  'test/app/coverage-contract.mjs':
+    'shared plumbing, not a suite: the critical-path contract library (loadContract, coverageFailures, contextFingerprint) plus the `--stamp` CLI that test/app/critical-paths.json points at. test/app/coverage-contract.test.mjs is what asserts on it, and test:unit runs that.',
   'test/app/browser.mjs':
     'shared plumbing, not a suite: the Playwright harness (launch, go, until, openPhone, signIn, IGNORABLE_CONSOLE) that functional.mjs, grandma.mjs, visual.mjs and the audit tools import. It runs whenever they do, and it is in modules.json fullSuitePaths so editing it forces the whole UI matrix.',
   'test/app/display-parity.mjs':

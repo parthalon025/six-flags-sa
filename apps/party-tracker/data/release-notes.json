@@ -660,5 +660,17 @@
     "items": [
       "Pin the map's drawn decisions so they stop reverting (#755)"
     ]
+  },
+  "1.35.11": {
+    "title": "What's new",
+    "items": [
+      "fix(test): skip contribution-pipeline when the operator path is gated (#779)"
+    ]
+  },
+  "1.35.12": {
+    "title": "What's new",
+    "items": [
+      "Close seven factory due-outs, and the gates that let them hide (#781)"
+    ]
   }
 }
