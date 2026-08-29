@@ -1,5 +1,6 @@
 {
   "$note": "Pinned section :: check names produced by the suites in `sources`. test/builder/check-names.mjs runs them and fails when the set moves. This exists so test/builder/unit.mjs can be split across files without silently losing a check: a split changes `sources`, never `checks`.",
+  "$added-2026-08-29": "ticket 27 added two venue/keys checks. `--reapply` runs the pipeline over the bundle on disk, which carries no `osm`, and the ledger was rebuilt from those places — writing the field away on 427 of Cedar Point's 434 records and leaving every one of them one rename away from rotating its key. The first check pins that a run with no source carries the recorded provenance forward and leaves the ledger byte-identical; the second pins the other side, that a run which does have a source still outranks the ledger. Nothing was renamed or removed.",
   "$rename-2026-08-27": "commit 5e2cebc (Visual factory owns Zone tone) renamed two 'venue selection' checks in place. 'a district is tinted by its own venue, or by its own name' -> 'a Zone is painted by the Visual factory, or by its own name': same assertion (landTint honours a supplied per-name table over the generated fallback), updated for the new per-World pack argument, coverage widened (asserts stroke/label too, and the empty-pack case). 'every named district is one this venue actually has' -> 'map truth carries no Zone treatment': NOT the same assertion — the old check asserted no stray tint entries in the retired v.lands/meta.lands table; the new check asserts that retired table stays gone from the manifest and map.json. That table no longer exists, so the old assertion has no target left to check. The coverage it protected — a named land/Zone tone must name a Zone the venue actually has — is still enforced against the mechanism that replaced v.lands (the compiled Visual-factory spec) by the pre-existing, untouched check `display :: a land tone naming a land the venue does not have fails` (test/builder/display.mjs), which predates and postdates this commit unchanged and runs unconditionally in `npm run test:builder` ahead of check-names.mjs. No coverage was dropped.",
   "sources": [
     "test/builder/unit.mjs"
@@ -442,6 +443,8 @@
     "venue/keys :: the same object coming back gets its own key back",
     "venue/keys :: a place with no OpenStreetMap element of its own still gets a stable key",
     "venue/keys :: the element id is kept as provenance and never reaches the phone",
+    "venue/keys :: a reapply with no OpenStreetMap source keeps the provenance already recorded",
+    "venue/keys :: a live source that has genuinely lost an element still outranks the ledger",
     "venue/keys :: a venue built before keys existed loads, and loads unchanged",
     "venue/keys :: a key in the bundle beats the name, and the fallback steps around it",
     "venue/keys :: a ledger that would not change is not rewritten",

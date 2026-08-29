@@ -7404,6 +7404,56 @@ await check('the element id is kept as provenance and never reaches the phone', 
   return true;
 });
 
+await check('a reapply with no OpenStreetMap source keeps the provenance already recorded', () => {
+  /* `venues:overrides` (build-venue.mjs --reapply) re-runs the pipeline over the
+     bundle on disk, and a bundle carries no `osm` — it is stripped on the way
+     out. Rebuilding each ledger record from those places wrote the field away
+     on 427 of Cedar Point's 434 records.
+
+     `osm` is step 1 of assignKeys, the only stable rematch path. Without it a
+     renamed place falls to step 2, which compares the ledger's stored (already
+     corrected) name against the incoming raw name, misses, retires the key and
+     issues a fresh one — the mechanism that reverted two Cedar Point spelling
+     corrections. So the repair verb re-armed the failure it exists to fix (#27). */
+  const first = assignKeys(SOURCE(), null, { venue: 'v' });
+  // What a reapply actually reads: the bundle it just wrote, keys and all.
+  const fromBundle = first.pois.map((p) => ({ ...p, lat: Number(p.lat), lng: Number(p.lng) }));
+  assert.equal(fromBundle.every((p) => p.osm === undefined), true, 'a bundle carries no osm');
+
+  const second = assignKeys(fromBundle, first.ledger, { venue: 'v' });
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(second.ledger.keys).map(([k, r]) => [k, r.osm])),
+    Object.fromEntries(Object.entries(first.ledger.keys).map(([k, r]) => [k, r.osm])),
+    'a reapply must carry provenance forward, not write it away',
+  );
+  // And the ledger is byte-identical, so the verb leaves no diff to review.
+  assert.equal(serializeLedger(second.ledger), serializeLedger(first.ledger));
+
+  // The point of keeping it: a rename after a reapply still rematches on the
+  // element rather than rotating the key.
+  const renamed = fromBundle.map((p) =>
+    p.i === 'orion' ? { ...p, i: undefined, n: 'Orion Reborn' } : { ...p, i: undefined },
+  );
+  const third = assignKeys(
+    renamed.map(({ i, ...rest }) => ({ ...rest, osm: first.ledger.keys[keysOf(first.pois)[`${rest.lat},${rest.lng}`]]?.osm })),
+    second.ledger,
+    { venue: 'v' },
+  );
+  assert.equal(third.pois.find((p) => p.n === 'Orion Reborn').i, 'orion');
+  return true;
+});
+
+await check('a live source that has genuinely lost an element still outranks the ledger', () => {
+  /* Carrying forward must not mean "the ledger always wins": when the run does
+     have a source and it reports a different element on that place, the run is
+     the newer fact. */
+  const first = assignKeys(SOURCE(), null, { venue: 'v' });
+  const remapped = SOURCE().map((p) => (p.osm === 'w111' ? { ...p, osm: 'w999' } : p));
+  const second = assignKeys(remapped, first.ledger, { venue: 'v' });
+  assert.equal(second.ledger.keys.orion.osm, 'w999');
+  return true;
+});
+
 await check('a venue built before keys existed loads, and loads unchanged', () => {
   /* The bundles on disk carry no key. A phone updates its app long before it
      updates its precached map, so the fallback has to hold — and it has to

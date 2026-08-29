@@ -47,6 +47,10 @@ const NOT_WIRED = Object.freeze({
   // A helper the browser modules import; modules.json names it, no script runs
   // it directly because it is not a suite.
   'test/app/browser.mjs': 'shared browser harness imported by the functional modules',
+  // The critical-path gate is a library plus a --stamp CLI; the suite that
+  // asserts on it is test/app/coverage-contract.test.mjs, which test:unit runs.
+  'test/app/coverage-contract.mjs':
+    'critical-path contract library and --stamp CLI, asserted by coverage-contract.test.mjs',
 });
 
 // test/scripts is deliberately absent: ci-module.test.mjs already asserts every

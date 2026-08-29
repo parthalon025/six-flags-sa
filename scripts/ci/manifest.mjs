@@ -60,6 +60,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/ci-lane-plan.test.mjs',
   'test/scripts/factory-legs.test.mjs',
   'test/scripts/pre-merge-vertical.test.mjs',
+  'test/scripts/tree-mutation.test.mjs',
   'test/scripts/dependency-boundaries.test.mjs',
   'test/scripts/map-performance-contract.test.mjs',
   'test/scripts/venues-env-file.test.mjs',

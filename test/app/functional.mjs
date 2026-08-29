@@ -339,6 +339,21 @@ await check('Settings sign-in card matches Clerk routes', async () => {
   if (!clerkAuthPages && card) {
     throw new Error('SignInCard mounted when /sign-in is not available');
   }
+  // The card mounting is half the capability; the other half is that it still
+  // offers the way in. AuthGate — the old Profile gate that carried Sign in and
+  // Guest together — is no longer mounted anywhere (in-place OAuth broke live),
+  // so this card is the shipped entry point to a Profile, and nothing asserted
+  // it had a Sign in on it (#24).
+  if (card) {
+    const login = a.locator('.signInCard .authGateLogin');
+    if ((await login.count()) < 1) {
+      throw new Error('sign-in card offers no Sign in action');
+    }
+    const href = await login.first().getAttribute('href');
+    if (href !== '/sign-in') {
+      throw new Error(`Sign in points at ${href ?? 'nothing'}, not the Clerk route`);
+    }
+  }
   await a.locator('.tabItem[data-tab="explore"]').click();
   await a.waitForTimeout(200);
   return true;
