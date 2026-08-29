@@ -49,6 +49,13 @@
       "check": "a Place that enters on a pinch or a pan fades in rather than snapping"
     },
     {
+      "id": "zone-label-declutter",
+      "slice": "Navigate",
+      "user_action": "Pan the park-wide map and see Zone names stay steady — no stacked overlap or edge clipping",
+      "suite": "functional",
+      "check": "park-wide Zone labels do not overlap or clip at the viewport edge"
+    },
+    {
       "id": "settings-credits",
       "slice": "Navigate",
       "user_action": "Tap the on-map OSM notice into Settings, see every sourced attribution with its license",

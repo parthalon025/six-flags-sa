@@ -6,6 +6,7 @@ import {
   fogMapStyle,
   markerDeclutterPriority,
   markerWantsLabel,
+  zoneDeclutterPriority,
   resolvePalette,
   rosterHasDeviceLess,
   SHIP_SKIN_IDS,
@@ -40,6 +41,17 @@ assert.equal(
   -850,
 );
 assert.ok(markerDeclutterPriority({ isNav: true }) < markerDeclutterPriority({ isPlanNext: true }));
+
+assert.ok(
+  zoneDeclutterPriority({ wasShown: true, area: 10, index: 0 })
+  < zoneDeclutterPriority({ wasShown: false, area: 1000, index: 0 }),
+  'a Zone already on screen outranks a larger newcomer',
+);
+assert.ok(
+  zoneDeclutterPriority({ wasShown: false, area: 1000, index: 0 })
+  < zoneDeclutterPriority({ wasShown: false, area: 10, index: 1 }),
+  'larger lands outrank smaller ones at the same shown state',
+);
 
 const fog = fogMapStyle(
   {
