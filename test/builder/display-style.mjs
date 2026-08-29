@@ -118,6 +118,53 @@ await check('stylePoints is deterministic, interior-only, class-correct', () => 
   return true;
 });
 
+await check('track and midway on one ink fails, even when each clears the ground', () => {
+  const points = stylePoints(model, { perClass: 8 });
+  const row = (res) => res.checks.find((c) => c.key === 'style_track_vs_path');
+
+  /* The hole this row was added for. `style_track_presence` compares track
+     to the terrain under it and `style_road_hierarchy` compares road ink to
+     the floor — both pass while the two are the same ink as each other, and
+     that is what watercolor-quest shipped (ΔE 0.0 between them). */
+  const merged = certifyStyleContract({
+    model, points, profile, kit,
+    samples: paint(points, { track: PALETTE.road }),
+  });
+  const bad = row(merged);
+  assert.ok(bad && !bad.pass, 'track painted in the midway ink must fail');
+  assert.match(bad.evidence, /track vs road ΔE 0/, `evidence names the measurement: ${bad?.evidence}`);
+
+  // And the rows that could not see it still pass, which is the point.
+  assert.equal(merged.checks.find((c) => c.key === 'style_track_presence')?.pass, true,
+    'track is still clear of the terrain under it — that row cannot catch this');
+
+  const apart = certifyStyleContract({ model, points, profile, kit, samples: paint(points) });
+  assert.equal(row(apart)?.pass, true, 'distinct inks pass');
+  return true;
+});
+
+await check('a kit may share ink between track and midway, but only by saying so', () => {
+  const points = stylePoints(model, { perClass: 8 });
+  const samples = paint(points, { track: PALETTE.road });
+
+  /* blueprint-survey is the real case: trackStyle 'mono', one survey ink,
+     hierarchy carried in weight and dash. The exemption is a stated reason
+     that still emits a row — a reader sees the choice rather than the
+     absence of a check. */
+  const exempt = certifyStyleContract({
+    model, points, samples, kit,
+    profile: {
+      ...profile,
+      structures: { ...profile.structures, trackVsRoad: { sharedInk: 'mono survey ink' } },
+    },
+  });
+  const row = exempt.checks.find((c) => c.key === 'style_track_vs_path');
+  assert.ok(row?.pass, 'a declared exemption passes');
+  assert.match(row.evidence, /exempt: mono survey ink/, 'and carries its reason as evidence');
+  assert.match(row.claim, /by design/, 'and reads as a choice, not a measurement');
+  return true;
+});
+
 await check('a faithful bake certifies; palette drift fails with the worst class named', () => {
   const points = stylePoints(model, { perClass: 8 });
   const good = certifyStyleContract({ model, points, samples: paint(points), profile, kit });
