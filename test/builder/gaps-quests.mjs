@@ -433,9 +433,13 @@ await check('normalizeGapsDocument ignores unknown types and a missing file is a
 
 await check('neither allowlist can spell a dispute kind, and no dispute seed can reach one', () => {
   // The phone list gets the same wall the builder list gets at module load —
-  // asserted here because store.js cannot import the builder package.
+  // asserted here because store.js cannot import the builder package. There is
+  // deliberately no companion call for SHIPPED_GAP_TYPES: ship-gaps.mjs runs
+  // the wall over its own list at module load, so a re-added dispute kind
+  // fails the `import` at the top of this file and an assertion down here
+  // could never be the thing that goes red. That the load-time call exists at
+  // all is proven in test/builder/imagery-claims.mjs.
   assertNoDisputeKinds(PHONE_SHIPPED_GAP_TYPES, 'store.js SHIPPED_GAP_TYPES');
-  assertNoDisputeKinds(SHIPPED_GAP_TYPES, 'ship-gaps.mjs SHIPPED_GAP_TYPES');
   for (const kind of DISPUTE_KINDS) {
     assert.equal(
       shippedTypeForSeed({ sourceGap: kind, target: 'maverick' }),

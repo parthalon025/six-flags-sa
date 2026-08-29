@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   CI_PROVEN_PASSES,
   compareToOsm,
@@ -13,13 +17,21 @@ import {
   buildOsmChangeProposal,
   writeOsmProposalFile,
 } from '../../packages/venue-builder/lib/osm-writeback.mjs';
-import { SHIPPED_GAP_TYPES } from '../../packages/venue-builder/lib/ship-gaps.mjs';
+// Loading the real module is the live half of the wall: ship-gaps.mjs runs
+// assertNoDisputeKinds over its SHIPPED_GAP_TYPES at module load, so this
+// import is what fails the moment a dispute kind is put back on the list.
+// That is also why an `assert.ok(!SHIPPED_GAP_TYPES.includes(...))` further
+// down could never go red — the file would die here instead. The load-time
+// call itself is proven below, on a copy of the module.
+import '../../packages/venue-builder/lib/ship-gaps.mjs';
 import {
   DISPUTE_KINDS,
+  DISPUTE_SIDECAR,
   assertNoDisputeKinds,
   disputeRow,
   recordDisputes,
 } from '../../packages/venue-builder/lib/imagery-disputes.mjs';
+import { ROUTING_COVERAGE_FILE } from '../../packages/venue-builder/src/paths.mjs';
 
 const geoMap = {
   layers: {
@@ -65,19 +77,9 @@ assert.ok(
   routed.claims.some((c) => c.dissent === true),
   'the dissenting claim survives alongside the dispute record',
 );
-assert.ok(
-  !SHIPPED_GAP_TYPES.includes('path_disputed'),
-  'path_disputed must not be a shipped Gap type (owner decision c, 2026-08-22)',
-);
 
-// The wall, exercised rather than described: every dispute kind is checked
-// against the allowlist that is actually shipped, and the guard is shown to
-// fire on a list that spells one.
+// The wall, exercised rather than described.
 assert.ok(DISPUTE_KINDS.length > 1, 'the wall covers every dispute kind, not just the first one');
-for (const kind of DISPUTE_KINDS) {
-  assert.ok(!SHIPPED_GAP_TYPES.includes(kind), `dispute kind ${kind} is spellable as a shipped Gap type`);
-}
-assert.doesNotThrow(() => assertNoDisputeKinds(SHIPPED_GAP_TYPES, 'ship-gaps.mjs SHIPPED_GAP_TYPES'));
 assert.throws(
   () => assertNoDisputeKinds(['height', 'path_disputed'], 'a re-added allowlist'),
   /a re-added allowlist spells dispute kind\(s\) path_disputed/,
@@ -87,6 +89,42 @@ assert.throws(
   () => disputeRow({ kind: 'made_up_dispute' }),
   /unknown dispute kind/,
   'a dispute must be named from DISPUTE_KINDS, not invented at the call site',
+);
+
+// And the wall is actually *wired* — the one fact about it that nothing else
+// would notice going missing. Deleting the `assertNoDisputeKinds(...)` call
+// from ship-gaps.mjs breaks no other assertion in this suite, so prove it by
+// importing a copy of the real module with a dispute kind put back: the
+// import itself must fail.
+const LIB_DIR = fileURLToPath(new URL('../../packages/venue-builder/lib/', import.meta.url));
+const shipGapsSource = readFileSync(path.join(LIB_DIR, 'ship-gaps.mjs'), 'utf8');
+const readded = shipGapsSource
+  // Relative specifiers have to survive the move out of lib/.
+  .replace(/from '\.\/([^']+)'/g, (_m, f) => `from '${pathToFileURL(path.join(LIB_DIR, f)).href}'`)
+  .replace(
+    /(export const SHIPPED_GAP_TYPES = Object\.freeze\(\[\n)/,
+    `$1  '${DISPUTE_KINDS[0]}',\n`,
+  );
+assert.ok(
+  readded.includes(`  '${DISPUTE_KINDS[0]}',`),
+  `guard: the fixture must actually put ${DISPUTE_KINDS[0]} back on SHIPPED_GAP_TYPES`,
+);
+const wallDir = mkdtempSync(path.join(tmpdir(), 'ship-gaps-wall-'));
+let wallError = null;
+try {
+  const fixture = path.join(wallDir, 'ship-gaps-readded.mjs');
+  writeFileSync(fixture, readded);
+  await import(pathToFileURL(fixture).href);
+} catch (err) {
+  wallError = err;
+} finally {
+  rmSync(wallDir, { recursive: true, force: true });
+}
+assert.ok(wallError, 'ship-gaps.mjs must refuse to load with a dispute kind on SHIPPED_GAP_TYPES');
+assert.match(
+  String(wallError.message),
+  /spells dispute kind\(s\)/,
+  'the refusal must come from assertNoDisputeKinds, not from an unrelated load error',
 );
 
 const run = runImageryClaims('kings-island', { map: factoryMap, extractions: [] });
@@ -136,9 +174,19 @@ const accepted = writeOsmProposalFile('kings-island', proposal, { accepted: true
 assert.equal(accepted.wrote, true);
 assert.equal(invoked, 1);
 
-const { gapsDocumentFor, imageryDisputesFor, writeImageryDisputes } = await import(
-  '../../packages/venue-builder/lib/venue-io.mjs'
-);
+const {
+  INDEX_FILE,
+  VENUE_DIR,
+  gapsDocumentFor,
+  imageryDisputesFor,
+  readJson,
+  reindex,
+  venuePkgDir,
+  venueSidecar,
+  writeImageryDisputes,
+  writeJson,
+  writeVenue,
+} = await import('../../packages/venue-builder/lib/venue-io.mjs');
 
 // The dispute is found and recorded builder-side …
 const disputed = [{ lane: 'agent', kind: 'path', at: offset, label: 'moved-walk' }];
@@ -182,5 +230,123 @@ assert.deepEqual(
   shipped,
   'no argument to gapsDocumentFor can put a disputed extraction on the wire',
 );
+
+// That equality alone is weaker than it looks: it only catches a leak that
+// produces a *new* `{ type, target }` pair. This venue already ships an
+// untargeted path Gap — the exact shape an imagery dispute used to take — so a
+// leaked row that collided with it would dedupe away and the two documents
+// would still match.
+assert.ok(
+  shipped.gaps.some((g) => g.type === 'path' && g.target === null),
+  'guard: the collision target the equality above can be blind to is really there',
+);
+// So assert the stronger fact the equality is standing in for: `gapsDocumentFor`
+// never so much as *reads* `extractions`. A dispute that collides with an
+// existing gap target still has to come through this property to get there.
+const poisoned = { meta: { id: 'fixture-park' }, pois: [], map: factoryMap };
+Object.defineProperty(poisoned, 'extractions', {
+  enumerable: true,
+  get() {
+    throw new Error(
+      'gapsDocumentFor read `extractions` — the channel from a dispute into *.gaps.json is open again',
+    );
+  },
+});
+assert.deepEqual(
+  gapsDocumentFor(poisoned),
+  shipped,
+  'gapsDocumentFor must ignore extractions entirely, not merely dedupe what leaks',
+);
+
+// ---------------------------------------------------------------------------
+// The production seam, end to end.
+//
+// Everything above injects a `write` sink and calls writeImageryDisputes /
+// recordDisputes directly, which proves the record is *shaped* right but not
+// that anything ever calls it. `writeVenue` is the one place a real build has
+// to record a dispute, and the slice's own requirement — the disputes
+// themselves must not be lost — lives or dies there. So publish a venue for
+// real and read the sidecar back off disk.
+//
+// The probe venue is created and removed here; every generated file this
+// touches is snapshotted first and restored in the `finally`, so a failure
+// cannot leave the tree dirty.
+const PROBE_ID = 'zz-dispute-probe';
+const probeMap = { path: [{ r: [[-84.268, 39.344], [-84.267, 39.345]] }] };
+const probeMeta = {
+  id: PROBE_ID,
+  name: 'Dispute Probe',
+  kind: 'theme-park',
+  center: { lat: 39.3445, lng: -84.2675 },
+  bounds: { north: 39.345, south: 39.344, east: -84.267, west: -84.268 },
+};
+const probeGapsFile = path.join(VENUE_DIR, `${PROBE_ID}.gaps.json`);
+const probeSidecar = venueSidecar(PROBE_ID, DISPUTE_SIDECAR);
+
+const generatedBefore = new Map();
+for (const name of readdirSync(VENUE_DIR)) {
+  if (name.endsWith('.json')) generatedBefore.set(path.join(VENUE_DIR, name), readFileSync(path.join(VENUE_DIR, name)));
+}
+for (const file of [INDEX_FILE, ROUTING_COVERAGE_FILE]) generatedBefore.set(file, readFileSync(file));
+const venueDirBefore = new Set(readdirSync(VENUE_DIR));
+
+try {
+  writeJson(
+    venueSidecar(PROBE_ID, 'extractions.json'),
+    [{ lane: 'agent', kind: 'path', at: offset, label: 'moved-walk' }],
+    true,
+  );
+
+  writeVenue({ meta: probeMeta, map: probeMap, pois: [] });
+
+  assert.ok(
+    existsSync(probeSidecar),
+    'publishing a venue must record its disputes — writeVenue is the seam where they would silently vanish',
+  );
+  const published = readJson(probeSidecar);
+  assert.equal(published.venue, PROBE_ID);
+  assert.equal(published.shipped, false);
+  assert.equal(published.disputes.length, 1, 'the dispute this build found is in the record');
+  assert.equal(published.disputes[0].kind, 'path_disputed');
+  assert.equal(
+    published.disputes[0].extraction?.label,
+    'moved-walk',
+    'the dissenting evidence is recorded with it, not just the fact of a dispute',
+  );
+  for (const gap of readJson(probeGapsFile).gaps) {
+    assert.ok(!DISPUTE_KINDS.includes(gap.type), `${gap.type} reached the published gaps file`);
+  }
+
+  // And the second path through the same directory: `reindex` republishes every
+  // venue's *.gaps.json but deliberately does not touch the dispute record.
+  // That is a guarantee, not an accident — reindex re-derives only what
+  // `gapsDocumentFor` produces, and `gapsDocumentFor` reads no extractions, so
+  // a republish has nothing new to say about disputes and no business
+  // overwriting what the build recorded. A steward's edit to the sidecar has to
+  // survive it; the sentinel below is what would be lost if reindex started
+  // regenerating the record behind the maintainer's back.
+  writeJson(probeSidecar, { ...published, stewardNote: 'kept across a reindex' }, true);
+  reindex();
+  const afterReindex = readJson(probeSidecar);
+  assert.equal(
+    afterReindex.stewardNote,
+    'kept across a reindex',
+    'reindex must not rewrite the dispute record — it republishes gaps, it does not re-derive disputes',
+  );
+  assert.deepEqual(
+    afterReindex.disputes,
+    published.disputes,
+    'the recorded disputes survive a republish unchanged',
+  );
+  for (const gap of readJson(probeGapsFile).gaps) {
+    assert.ok(!DISPUTE_KINDS.includes(gap.type), `${gap.type} reached the gaps file reindex republished`);
+  }
+} finally {
+  for (const [file, bytes] of generatedBefore) writeFileSync(file, bytes);
+  for (const name of readdirSync(VENUE_DIR)) {
+    if (!venueDirBefore.has(name)) rmSync(path.join(VENUE_DIR, name), { recursive: true, force: true });
+  }
+  rmSync(venuePkgDir(PROBE_ID), { recursive: true, force: true });
+}
 
 console.log('imagery-claims: ok');

@@ -197,6 +197,12 @@ export function reindex({ preferredDefault } = {}) {
       console.warn(`  ! ${id}.map.json has no meta block — skipped`);
       continue;
     }
+    // No `writeImageryDisputes` here, on purpose. A reindex re-derives only
+    // what `gapsDocumentFor` produces, and that reads no extractions — the
+    // dispute record's one input — so a republish has nothing new to say about
+    // disputes and no business overwriting what the build recorded. Disputes
+    // are written by `writeVenue`, the pass that has the extractions in hand;
+    // this pass must leave a maintainer's sidecar exactly as it found it.
     const shipped = gapsDocumentFor({ meta: map.meta, pois, map });
     writeJson(path.join(VENUE_DIR, `${id}.gaps.json`), shipped, true);
     // The bundle manifest is written after the gaps file so it hashes the
