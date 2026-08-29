@@ -25,6 +25,7 @@ import {
   bandSource,
   worldCaseLayer,
   worldLayer,
+  worldSource,
 } from './mapViewStyle.js';
 
 /** Same-origin worker the spike route already serves. Turbopack rewrites
@@ -254,6 +255,23 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
      *  features on screen with nothing to clear them. */
     overlay(model) {
       for (const name of OVERLAY_LAYERS) setData(OVERLAY_SOURCES[name], model[name]);
+    },
+
+    /** Correct the already-mounted `world-lands` source's tint, once a Skin's
+     *  own published palette lands. `attach()` builds every World source once,
+     *  inside the style handed to `new MapLibreMap`, and nothing else in this
+     *  file ever calls `setData` on a World source — `overlay()` above only
+     *  ever touches the live Overlay's sources. Without this, a Zone painted
+     *  before the fetch resolved stays in the generic name-hue fallback for
+     *  the rest of the session, which is the World a guest sees but not the
+     *  one the Skin declared. A World with no `lands` geometry (an unbuilt
+     *  venue, a World that never harvested one) is left alone: there is
+     *  nothing to correct, not an empty collection to write over what is
+     *  there. */
+    retint(world) {
+      const lands = world?.geometry?.lands;
+      if (!lands) return;
+      setData(worldSource('lands'), lands);
     },
 
     pick(point) {

@@ -576,6 +576,36 @@ const OVERLAY = overlayGeoJson(
 }
 
 // ---------------------------------------------------------------------------
+// Retinting. The World a caller mounted with is not the last World it ever
+// has: `useZoneTones`'s fetch for a Skin's published palette lands after the
+// mount effect already committed, so a corrected World — same id, same
+// bounds, a Zone's `tint` property now the Skin's own colour rather than the
+// generic name-hue fallback — has to reach an *already-built* renderer without
+// a remount. `retint` is that path. It is optional on the renderer, the way
+// `project` and `engine` are: a renderer with no live source to correct (a
+// future PBR tier, a test double) is not broken for lacking one.
+// ---------------------------------------------------------------------------
+
+{
+  // A renderer that never declares `retint` does not make the seam throw —
+  // the capability is optional, not every renderer owns a live source to
+  // correct in place.
+  const view = mount({ renderer: recordingRenderer() });
+  assert.doesNotThrow(() => view.retint({ id: 'kings-island', geometry: {} }));
+}
+
+{
+  const seen = [];
+  const renderer = recordingRenderer({ retint: (world) => seen.push(world) });
+  const view = mount({ renderer });
+  const corrected = { id: 'kings-island', geometry: { lands: { type: 'FeatureCollection', features: [] } } };
+
+  view.retint(corrected);
+  assert.equal(seen.length, 1, 'a renderer that owns retint is handed the corrected World');
+  assert.equal(seen[0], corrected, 'the World crosses whole, the way attach() hands one over');
+}
+
+// ---------------------------------------------------------------------------
 // Hit testing. The renderer knows where a pixel is; only the seam knows what a
 // Place is. So the renderer answers with an id and the Place comes back from
 // Truth — a renderer can never hand a caller a Place the venue does not have.
@@ -635,6 +665,7 @@ const OVERLAY = overlayGeoJson(
   assert.throws(() => view.setOverlay(OVERLAY), /destroyed/i);
   assert.throws(() => view.hitTest({ x: 1, y: 2 }), /destroyed/i);
   assert.throws(() => view.setAvailableBands(['mid']), /destroyed/i);
+  assert.throws(() => view.retint({ id: 'kings-island', geometry: {} }), /destroyed/i);
   assert.equal(
     renderer.calls.filter((c) => c.call !== 'attach' && c.call !== 'detach').length,
     0,
