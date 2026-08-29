@@ -798,6 +798,21 @@ export const POI_BADGES = { gate: 'gate', food: 'food', restroom: 'restroom', sh
  * The far corner is `toGeo([cols, rows])` rather than `[cols - 1, rows - 1]`
  * because these are cell EDGES, not cell centres — the last cell's far side is
  * where the image ends.
+ *
+ * NO COMMITTED VENUE PLACEMENT MOVES because of this. kings-island is the only
+ * venue in the repo with a committed bake — six `*.world.json` sidecars under
+ * `data/venues/kings-island/display/`, two of them published to
+ * `apps/party-tracker/public/venues/kings-island/display/` — and its boundary
+ * fills its bbox, so the crop was already a no-op there. Both revisions were
+ * run against the shipped map: the old `cropModel` and this `gridBounds` each
+ * bake 240x197 cells at the default column budget and each state
+ * `{west: -84.2775, south: 39.3364963, east: -84.2595, north: 39.348}`, which
+ * is byte for byte what those six sidecars already carry (and 240x197 cells is
+ * what their PNGs measure: 2880x2364 at 12 px, 3840x3152 at 16). Checked by
+ * running both, not by reading them; pinned by "the only committed bake keeps
+ * its placement" in `test/builder/display-bands.mjs`. Every other venue's
+ * picture does change size — that is the point of the change — but none of
+ * them has a baked artifact in the tree to invalidate.
  */
 function gridBounds(cols, rows, toGeo) {
   const [west, north] = toGeo([0, 0]);

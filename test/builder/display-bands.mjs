@@ -18,7 +18,7 @@
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -40,7 +40,7 @@ async function check(name, fn) {
 console.log('\ndisplay bands\n');
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const { bandBakePlan, bandPlansFor, venueSpanMetres } = await import(
+const { bandBakePlan, bandPlansFor, venueSpanMetres, CANVAS_MAX_AXIS_PX } = await import(
   '../../packages/venue-builder/lib/display-bands.mjs'
 );
 const { BANDS, bandResolution } = await import('../../packages/shared/zoomBands.js');
@@ -83,6 +83,57 @@ await check('every shipped venue plans to its known band dimensions', () => {
       assert.equal(plan.height, height, `${id}/${bandId} height`);
     }
   }
+  return true;
+});
+
+await check('every shipped venue’s bands fit inside the canvas ceiling', () => {
+  // The bake paints a band into ONE Chromium <canvas> sized cols*px by
+  // rows*px, and a canvas asked for more than the browser gives does not
+  // throw — it clamps or loses its context and the PNG comes out blank or
+  // truncated. So the cost of not trimming the bake is measured here rather
+  // than assumed: it roughly doubled the emitted picture at the three venues
+  // whose boundary leaves slack inside their bbox (cedar-point's close band
+  // was ~79 Mpx cropped and is 152 Mpx whole), and this says the doubled
+  // pictures still fit.
+  //
+  // The live assertion is that planning SUCCEEDS: `bandBakePlan` refuses an
+  // over-ceiling plan, so a venue whose bounds grow — or a fourth, finer band
+  // — fails right here with the ceiling's own message rather than at bake
+  // time. Nothing is read back out of EXPECTED; these are the real bounds.
+  const measured = [];
+  for (const id of Object.keys(EXPECTED)) {
+    const meta = mapMetaFor(id);
+    for (const band of BANDS) {
+      let plan;
+      try {
+        plan = bandBakePlan(meta, band.id);
+      } catch (e) {
+        throw new Error(`${id}/${band.id}: ${e.message}`);
+      }
+      measured.push({ id, band: band.id, width: plan.width, height: plan.height });
+    }
+  }
+  // The widest plan the repo makes, reported so the headroom is a number
+  // someone can read rather than a claim: cedar-point at close.
+  const worst = measured.reduce((a, b) => (Math.max(b.width, b.height) > Math.max(a.width, a.height) ? b : a));
+  const long = Math.max(worst.width, worst.height);
+  console.log(`      widest shipped plan: ${worst.id}/${worst.band} ${worst.width}x${worst.height}`
+    + ` = ${((worst.width * worst.height) / 1e6).toFixed(0)} Mpx, ${CANVAS_MAX_AXIS_PX - long} px of headroom`);
+  assert.equal(`${worst.id}/${worst.band} ${worst.width}x${worst.height}`, 'cedar-point/close 11904x12752',
+    'the widest shipped plan moved — recheck the ceiling headroom deliberately');
+  return true;
+});
+
+await check('a plan past the canvas ceiling is refused, not baked', () => {
+  // The guard has to be reachable, so drive it: a ~10 km square venue. Its
+  // overview band is a comfortable 4175 px and plans fine; its close band is
+  // 66792 px, four times the ceiling, and must be refused at plan time rather
+  // than handed to a canvas that will quietly clamp it.
+  const huge = { id: 'too-big', bounds: { n: 0.09, s: 0, e: 0.09, w: 0 } };
+  const overview = bandBakePlan(huge, 'overview');
+  assert.ok(overview.width < CANVAS_MAX_AXIS_PX, `overview ${overview.width} should still plan`);
+  assert.throws(() => bandBakePlan(huge, 'close'), /canvas ceiling/, 'close must be refused');
+  assert.throws(() => bandPlansFor(huge), /canvas ceiling/, 'and refused through bandPlansFor too');
   return true;
 });
 
@@ -215,6 +266,31 @@ const { bandGeneralizationRow, bandNestingRow } = await import(
 
 const mapFor = (id) =>
   JSON.parse(readFileSync(path.join(REPO, 'apps/party-tracker/public/venues', `${id}.map.json`), 'utf8'));
+
+await check('the only committed bake keeps its placement', () => {
+  // Dropping the crop changes no committed venue placement, and that is worth
+  // a test rather than a memory. kings-island is the ONLY venue with a baked
+  // artifact in the tree, and its boundary fills its bbox, so the crop was
+  // already a no-op there: the same 240x197 cells and the same four corners
+  // before and after. Pois are not read — badges cannot move a grid or its
+  // bounds — so this is the extent and the georeference, nothing else.
+  const venuesDir = path.join(REPO, 'packages/venue-builder/data/venues');
+  const worldsIn = (id) => {
+    const dir = path.join(venuesDir, id, 'display');
+    return existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.world.json')) : [];
+  };
+  const baked = readdirSync(venuesDir).filter((id) => worldsIn(id).length > 0);
+  assert.deepEqual(baked, ['kings-island'], 'kings-island is the only venue with a committed bake');
+
+  const model = bakeModel(mapFor('kings-island'), [], {});
+  assert.equal(model.cols, 240, 'cols, cropped or not');
+  assert.equal(model.rows, 197, 'rows, cropped or not');
+  for (const file of worldsIn('kings-island')) {
+    const world = JSON.parse(readFileSync(path.join(venuesDir, 'kings-island/display', file), 'utf8'));
+    assert.deepEqual(world.bounds, model.bounds, `${file} bounds must still be what the bake states`);
+  }
+  return true;
+});
 
 await check('the projector lands on the plan grid, every venue, every band', () => {
   for (const id of Object.keys(EXPECTED)) {
