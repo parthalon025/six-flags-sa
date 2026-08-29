@@ -14,6 +14,13 @@
   },
   "paths": [
     {
+      "id": "intro-scroll-story",
+      "slice": "Navigate",
+      "user_action": "Scroll the first-run intro through the brand story and the Party pitch; the footer's Skip intro becomes Get started once it is read, and a returning guest never sees it again",
+      "suite": "functional",
+      "check": "the intro is a scroll story: Skip becomes Get started once read, and a returning guest never sees it"
+    },
+    {
       "id": "intake-welcome",
       "slice": "Navigate",
       "user_action": "See what the app is for, and the nearest-World offer",
@@ -33,6 +40,13 @@
       "user_action": "Read a park map that still draws what was asked for — coaster track heavy enough to navigate by, walkways and broad areas as shapes with smooth bends rather than hairlines",
       "suite": "functional",
       "check": "the map still draws the decisions it was asked for"
+    },
+    {
+      "id": "map-marks-fade-in",
+      "slice": "Navigate",
+      "user_action": "Pinch or pan the map and have Places arrive rather than pop",
+      "suite": "functional",
+      "check": "a Place that enters on a pinch or a pan fades in rather than snapping"
     },
     {
       "id": "settings-credits",

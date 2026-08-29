@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "diffHash": "eb479e80624ab6bf",
-  "mergeBase": "3a2c62b93dc208d0c76436cf7dfd11142cfd5fe0",
+  "diffHash": "c8e3836391ba063c",
+  "mergeBase": "b48adfec545ed8aef89acd5ecf5b068f83553177",
   "model": "claude-sonnet-5",
-  "gitnexus": "unavailable",
-  "recordedAt": "2026-08-29T15:25:19.319Z"
+  "gitnexus": "ok",
+  "recordedAt": "2026-08-29T19:41:30.942Z"
 }
