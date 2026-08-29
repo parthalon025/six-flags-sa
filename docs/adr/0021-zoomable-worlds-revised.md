@@ -187,9 +187,23 @@ Closed 2026-08-22 so Trains H and I can finish. The answers:
   document changed: none of the four venues under `apps/party-tracker/public/venues/` currently
   produces an evidence conflict, and all four still regenerate byte-identical.
 
-Plus the crop question that building h1 surfaced: **a band plan describes the World; the
-pyramid georeferences against the cropped PNG** (`cert.bounds`). `bandBakePlan` stays
-independent of `cropModel`.
+Plus the crop question that building h1 surfaced. Answered **don't trim, use the large
+tiles**: a band plan describes the World, and so does the picture — the bake emits the
+projector's whole grid and `cert.bounds` is that grid's own four corners. `bandBakePlan` is
+still independent of any cropping, because there is none: `cropModel` and its `margin`
+option are deleted rather than taught about plans. The pyramid keeps georeferencing against
+`cert.bounds` (a plan says what a bake was asked for; only the artifact says what it
+emitted), which now names the same World the plan does.
+
+  *First answered 2026-08-21* as "the plan describes the World; the pyramid georeferences
+  against the cropped PNG" — which left the mismatch in place rather than closing it, and
+  the owner reversed it on 2026-08-22. The mismatch it left: the bake trimmed itself to the
+  boundary ring's box plus a 6-cell margin, so big-kahunas planned 244x276 and emitted
+  157x191, while kings-island matched its plan only because its boundary happens to fill its
+  bbox. Two consequences of not trimming, both deliberate: the map bbox is the World, so
+  neighbouring geometry inside it (big-kahunas keeps 74 building footprints where the crop
+  left 32) is drawn rather than dropped; and every mark sits at the projector's own cell,
+  because there is no window origin left to subtract.
 
   *Corrected 2026-08-21:* this list originally named "the `GOOGLE_MAPS_API` key's exposure through
   public workflow triggers" as an open risk. Checked, and it was overstated on both counts. The key
