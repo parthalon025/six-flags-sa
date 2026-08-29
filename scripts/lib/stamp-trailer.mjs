@@ -164,18 +164,21 @@ export function readStampTrailers(cwd, { range } = {}) {
     if (!STAMP_TRAILERS.some((key) => stamps[key] != null)) continue;
     candidates.push({ sha, tree, parent: parentShas[0], stamps });
   }
-  if (!candidates.length) return [];
-  let parentTrees = [];
-  try {
-    parentTrees = git(cwd, ['rev-parse', ...candidates.map((c) => `${c.parent}^{tree}`)])
-      .trim()
-      .split('\n');
-  } catch {
-    return [];
-  }
+  // Resolved one at a time on purpose. Batching the rev-parse made a single
+  // unresolvable parent — a truncated clone, a missing object — discard every
+  // candidate in the range rather than just its own, which is fail-closed but
+  // throws away healthy stamps alongside the bad one.
   return candidates
-    .filter((c, i) => c.tree === parentTrees[i])
+    .filter((c) => c.tree === treeOf(cwd, c.parent))
     .map(({ sha, stamps }) => ({ sha, stamps }));
+}
+
+function treeOf(cwd, sha) {
+  try {
+    return git(cwd, ['rev-parse', `${sha}^{tree}`]).trim();
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -198,14 +201,33 @@ export function findStamp(cwd, { key, range, diffHash } = {}) {
   return entries[0].stamps[key];
 }
 
-/** True while a merge is staged but not committed (MERGE_HEAD still resolves). */
-function mergeInProgress(cwd) {
-  try {
-    git(cwd, ['rev-parse', '--verify', '--quiet', 'MERGE_HEAD']);
-    return true;
-  } catch {
-    return false;
+/**
+ * The sequencer states that leave HEAD standing somewhere other than where
+ * the branch is going. Publishing into any of them writes a stamp into a
+ * history that is still being rewritten — mid-merge it lands ahead of a merge
+ * that has not happened, and mid-rebase it lands on a detached replay that the
+ * finished branch may not even contain.
+ */
+const IN_PROGRESS_REFS = ['MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD', 'REBASE_HEAD'];
+const IN_PROGRESS_DIRS = ['rebase-merge', 'rebase-apply'];
+
+function sequencerInProgress(cwd) {
+  for (const ref of IN_PROGRESS_REFS) {
+    try {
+      git(cwd, ['rev-parse', '--verify', '--quiet', ref]);
+      return ref;
+    } catch {
+      // not this one
+    }
   }
+  for (const dir of IN_PROGRESS_DIRS) {
+    try {
+      if (existsSync(git(cwd, ['rev-parse', '--git-path', dir]).trim())) return dir;
+    } catch {
+      // no git dir to ask about
+    }
+  }
+  return null;
 }
 
 /**
@@ -256,11 +278,11 @@ export function publishStamps({ cwd, stamps = {}, subject = STAMP_SUBJECT_DEFAUL
   // staged (`git rm --cached`, a half-staged fix) swept that into the commit
   // and stopped being empty, which is the one property the stamp needs. This
   // reads neither the index nor the working tree.
-  // Mid-merge, HEAD is still the pre-merge commit and the merge's own result
-  // is only in the index, so a stamp published here splices an empty commit
-  // into first-parent history ahead of a merge that has not happened yet.
-  if (mergeInProgress(cwd)) {
-    throw new Error('stamp-trailer: a merge is in progress — finish or abort it before publishing a stamp');
+  const pending = sequencerInProgress(cwd);
+  if (pending) {
+    throw new Error(
+      `stamp-trailer: ${pending} is in progress — finish or abort it before publishing a stamp`,
+    );
   }
   const tree = git(cwd, ['rev-parse', 'HEAD^{tree}']).trim();
   const sha = git(cwd, ['commit-tree', tree, '-p', 'HEAD', '-F', '-'], { input: message }).trim();

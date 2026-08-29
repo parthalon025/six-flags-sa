@@ -62,9 +62,15 @@ Local-Ci-Pass: {"schema":3,…}
 Matt-Review-Pass: {"schema":1,…}
 ```
 
-Commit messages are per-commit facts and are never merged, so no merge path can conflict on a stamp. The commit is empty, so it cannot move `diffHash` either. Readers (`readLocalCiPass`, `readMattReview`) scan `mergeBase..HEAD` for a trailer and still judge by `diffHash`, so a trailer merged in from another branch is inert rather than trusted; when a branch holds both a trailer and a fresh local cache, whichever records *this* diff wins. Policy: `scripts/lib/stamp-trailer.mjs`.
+Commit messages are per-commit facts and are never merged, so once a branch is on this transport no merge path can conflict on its stamps. (A branch still carrying the old tracked files is not there yet — see the transition note below.) The commit is empty, so it cannot move `diffHash` either. Readers (`readLocalCiPass`, `readMattReview`) scan `mergeBase..HEAD` for a trailer and still judge by `diffHash`, so a trailer merged in from another branch is inert rather than trusted; when a branch holds both a trailer and a fresh local cache, whichever records *this* diff wins. Policy: `scripts/lib/stamp-trailer.mjs`.
 
-A branch that still carries the old tracked stamp files keeps working — the file is read when no trailer covers the range. Resolve that transition once, per branch, by merging `main` and `git rm`-ing both files.
+A branch that still carries the old tracked stamp files keeps working — the file is read when no trailer covers the range. Crossing over costs one conflict, once:
+
+```
+CONFLICT (modify/delete): scripts/ci/local-ci-pass.json deleted in main and modified in HEAD
+```
+
+Resolve it with `git rm scripts/ci/local-ci-pass.json scripts/ci/matt-review-pass.json`, then re-stamp. Every merge after that is clean, which is the trade: one modify/delete per in-flight branch, instead of a content conflict on every branch↔main merge forever.
 
 ## `local-ci-verified` — skipping GitHub CI
 
@@ -169,5 +175,5 @@ Previews skip unless user-directed; production app merges on `main` use the auto
 ## Changing CI
 
 1. Extend `scripts/lib` or `scripts/ci` first; keep workflow YAML thin.
-2. Add a row to the `scripts/ci` table above when you add a new entry point. (The rule file `.cursor/rules/scripts-over-instructions.mdc` is a slim pointer and holds no rows — duplicating the table into it is the thing [scripts-over-instructions](./policies/scripts-over-instructions.md) forbids.)
+2. Add a row to the `scripts/ci` table above when you add a new entry point. (This step used to also say "and `.cursor/rules/scripts-over-instructions.mdc`". That file is generated — `renderCursorRule` in `scripts/lib/agent-docs/compose.mjs` always emits a slim pointer — so a hand-added row there is silently clobbered by the next `npm run agent-docs:build`.)
 3. Wire fast guards into `scripts/ci/manifest.mjs` (run via `npm run test:ci-gate`) so PRs cannot merge broken deploy/skip logic.

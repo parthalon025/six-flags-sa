@@ -272,10 +272,20 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
   assert.throws(() => git('merge', '--no-edit', '-q', 'main'), /.*/, 'the scratch merge conflicts, as set up');
   assert.throws(
     () => publishStamps({ cwd: dir, stamps: stampFor('dddd4444') }),
-    /merge is in progress/,
+    /MERGE_HEAD is in progress/,
     'publishing mid-merge is refused',
   );
   git('merge', '--abort');
+
+  // A conflicted rebase leaves HEAD on a detached replay the finished branch
+  // may not even contain, so it is refused for the same reason.
+  assert.throws(() => git('rebase', 'main'), /.*/, 'the scratch rebase conflicts, as set up');
+  assert.throws(
+    () => publishStamps({ cwd: dir, stamps: stampFor('eeee5555') }),
+    /is in progress/,
+    'publishing mid-rebase is refused',
+  );
+  git('rebase', '--abort');
   git('checkout', '-q', 'feature-a');
 
   // --- Control: the transport this replaced. Same two branches, stamp as a
