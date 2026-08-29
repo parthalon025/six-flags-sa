@@ -40,7 +40,7 @@ async function check(name, fn) {
 console.log('\ndisplay bands\n');
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const { bandBakePlan, bandPlansFor, venueSpanMetres } = await import(
+const { bandBakePlan, bandPlansFor, venueSpanMetres, CANVAS_MAX_AXIS_PX } = await import(
   '../../packages/venue-builder/lib/display-bands.mjs'
 );
 const { BANDS, bandResolution } = await import('../../packages/shared/zoomBands.js');
@@ -82,6 +82,38 @@ await check('every shipped venue plans to its known band dimensions', () => {
       assert.equal(plan.height, height, `${id}/${bandId} height`);
     }
   }
+  return true;
+});
+
+await check('every shipped venue’s bands fit inside the canvas ceiling', () => {
+  const measured = [];
+  for (const id of Object.keys(EXPECTED)) {
+    const meta = mapMetaFor(id);
+    for (const band of BANDS) {
+      let plan;
+      try {
+        plan = bandBakePlan(meta, band.id);
+      } catch (e) {
+        throw new Error(`${id}/${band.id}: ${e.message}`);
+      }
+      measured.push({ id, band: band.id, width: plan.width, height: plan.height });
+    }
+  }
+  const worst = measured.reduce((a, b) => (Math.max(b.width, b.height) > Math.max(a.width, a.height) ? b : a));
+  const long = Math.max(worst.width, worst.height);
+  console.log(`      widest shipped plan: ${worst.id}/${worst.band} ${worst.width}x${worst.height}`
+    + ` = ${((worst.width * worst.height) / 1e6).toFixed(0)} Mpx, ${CANVAS_MAX_AXIS_PX - long} px of headroom`);
+  assert.equal(`${worst.id}/${worst.band} ${worst.width}x${worst.height}`, 'cedar-point/close 11904x12752',
+    'the widest shipped plan moved — recheck the ceiling headroom deliberately');
+  return true;
+});
+
+await check('a band plan past the canvas ceiling is refused, not baked', () => {
+  const huge = { id: 'too-big', bounds: { n: 0.09, s: 0, e: 0.09, w: 0 } };
+  const overview = bandBakePlan(huge, 'overview');
+  assert.ok(overview.width < CANVAS_MAX_AXIS_PX, `overview ${overview.width} should still plan`);
+  assert.throws(() => bandBakePlan(huge, 'close'), /canvas ceiling/, 'close must be refused');
+  assert.throws(() => bandPlansFor(huge), /canvas ceiling/, 'and refused through bandPlansFor too');
   return true;
 });
 
@@ -534,6 +566,36 @@ await check('--band resolves to the plan tileMetres and px, per venue', () => {
   assert.equal(plain.tileMetres, null, 'no band, no tileMetres');
   assert.equal(plain.maxCols, DEFAULT_MAX_COLS);
   assert.equal(plain.px, DEFAULT_PX);
+  return true;
+});
+
+await check('legacy --max-cols/--px past the canvas ceiling is refused, not baked', () => {
+  const huge = { id: 'too-big', bounds: { n: 0.09, s: 0, e: 0.09, w: 0 } };
+  assert.doesNotThrow(() => resolveBakeGrid(huge, { maxCols: 500, px: 16 }), 'a modest grid still plans');
+  assert.throws(
+    () => resolveBakeGrid(huge, { maxCols: 5000, px: 32 }),
+    /canvas ceiling/,
+    'an oversized legacy grid must be refused at plan time',
+  );
+  return true;
+});
+
+await check('the bin survives one over-ceiling legacy grid in a batch', () => {
+  const BIN = path.join(REPO, 'packages/venue-builder/bin/display-bake.mjs');
+  const run = (args) => {
+    try {
+      execFileSync(process.execPath, [BIN, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+      return { status: 0, stderr: '' };
+    } catch (err) {
+      return { status: err.status, stderr: err.stderr ?? '' };
+    }
+  };
+  const batch = run([
+    'kings-island', 'cedar-point', '--kit', 'rpg-overworld', '--max-cols', '5000', '--px', '32',
+  ]);
+  assert.equal(batch.status, 1, 'one refusal should fail the run, not abort it');
+  assert.match(batch.stderr, /canvas ceiling/);
+  assert.match(batch.stderr, /kings-island/);
   return true;
 });
 

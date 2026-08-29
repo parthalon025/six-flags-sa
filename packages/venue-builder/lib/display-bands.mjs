@@ -30,6 +30,33 @@ import { BANDS, bandPixels, bandResolution } from '@party-tracker/shared/zoomBan
 export const METRES_PER_DEGREE_LONGITUDE_AT_EQUATOR = 111320;
 export const METRES_PER_DEGREE_LATITUDE = 110574;
 
+/** The canvas ceiling a bake plan must stay under, per axis.
+ *
+ *  `bin/display-bake.mjs` paints into ONE `<canvas>` in headless Chromium
+ *  (`display-bake-page.html`: `c.width = cols * px`), so emitted width and
+ *  height ARE the canvas dimensions. Ask a canvas for more than the browser
+ *  will give and nothing throws — the element clamps or the context is lost,
+ *  and the bake writes a blank or truncated PNG that still passes downstream
+ *  shape checks. Plan time is the only place the failure can be loud.
+ *
+ *  Source: Chrome's measured caps are 32767 px per axis and 268,435,456 px of
+ *  area. The number below is the tighter 16384 — Skia's maximum texture
+ *  dimension. It also subsumes the area cap: 16384 * 16384 = 268,435,456
+ *  exactly, so one per-axis check is the whole ceiling.
+ */
+export const CANVAS_MAX_AXIS_PX = 16384;
+
+/** Refuse a canvas larger than {@link CANVAS_MAX_AXIS_PX} on either axis. */
+export function refuseOverCeilingCanvas(width, height, label) {
+  if (width > CANVAS_MAX_AXIS_PX || height > CANVAS_MAX_AXIS_PX) {
+    throw new Error(
+      `${label} plans ${width}x${height} px `
+        + `(${(width * height / 1e6).toFixed(0)} Mpx), past the ${CANVAS_MAX_AXIS_PX} px canvas ceiling — `
+        + 'the bake would emit a blank or truncated picture rather than fail',
+    );
+  }
+}
+
 function readBounds(mapMeta) {
   const b = mapMeta?.bounds ?? mapMeta?.meta?.bounds ?? {};
   const north = b.n ?? b.north;
@@ -69,6 +96,7 @@ export function bandBakePlan(mapMeta, bandId) {
   const metresPerPixel = bandResolution(bandId); // throws on an unknown band
   const span = venueSpanMetres(mapMeta);
   const { width, height } = bandPixels(bandId, span);
+  refuseOverCeilingCanvas(width, height, `band ${bandId}`);
 
   // The cell grid is the coarsest band's pixel grid: one cell, one pixel at
   // 2.4 m/px. Finer bands draw the same cells larger rather than adding cells,
