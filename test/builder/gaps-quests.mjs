@@ -41,6 +41,7 @@ const { questSeedsFromRequests, questSeedsFromEntrances } = await import(
 );
 const { buildSideQuests, isOnWalkway, sortByProximity } = await import('../../apps/party-tracker/lib/sideQuests.js');
 const { normalizeGapsDocument, gapsUrlFor, SHIPPED_GAP_TYPES: PHONE_SHIPPED_GAP_TYPES } = await import('../../apps/party-tracker/lib/venue/store.js');
+const { DISPUTE_KINDS, assertNoDisputeKinds } = await import('../../packages/venue-builder/lib/imagery-disputes.mjs');
 
 await check('rankFromXp follows the Scout / Ranger / Cartographer / Steward ladder', () => {
   assert.equal(rankFromXp(0), 'visitor');
@@ -401,6 +402,9 @@ await check('sortByProximity keeps camping last even when it has no pin', () => 
 
 await check('normalizeGapsDocument ignores unknown types and a missing file is an empty list', () => {
   assert.deepEqual(normalizeGapsDocument(null), []);
+  // `path_disputed` is here on purpose: a bundle published while it was a
+  // shipped type can still be sitting in a phone's cache, and the phone drops
+  // it on load rather than waiting for the cache to turn over.
   assert.deepEqual(
     normalizeGapsDocument({
       version: 1,
@@ -415,7 +419,6 @@ await check('normalizeGapsDocument ignores unknown types and a missing file is a
     [
       { type: 'height', target: 'a' },
       { type: 'path', target: null },
-      { type: 'path_disputed', target: null },
     ],
   );
   assert.equal(gapsUrlFor({ id: 'kings-island' }), '/venues/kings-island.gaps.json');
@@ -424,6 +427,62 @@ await check('normalizeGapsDocument ignores unknown types and a missing file is a
     [...PHONE_SHIPPED_GAP_TYPES].sort(),
     [...SHIPPED_GAP_TYPES].sort(),
     'the phone keep-list and the builder allowlist must stay the same set',
+  );
+  return true;
+});
+
+await check('neither allowlist can spell a dispute kind, and no dispute seed can reach one', () => {
+  // The phone list gets the same wall the builder list gets at module load —
+  // asserted here because store.js cannot import the builder package. There is
+  // deliberately no companion call for SHIPPED_GAP_TYPES: ship-gaps.mjs runs
+  // the wall over its own list at module load, so a re-added dispute kind
+  // fails the `import` at the top of this file and an assertion down here
+  // could never be the thing that goes red. That the load-time call exists at
+  // all is proven in test/builder/imagery-claims.mjs.
+  assertNoDisputeKinds(PHONE_SHIPPED_GAP_TYPES, 'store.js SHIPPED_GAP_TYPES');
+  for (const kind of DISPUTE_KINDS) {
+    assert.equal(
+      shippedTypeForSeed({ sourceGap: kind, target: 'maverick' }),
+      null,
+      `sourceGap ${kind} must not map onto a shipped Gap type`,
+    );
+    assert.equal(
+      shippedTypeForSeed({ type: kind, target: 'maverick' }),
+      null,
+      `seed type ${kind} must not map onto a shipped Gap type`,
+    );
+  }
+  // And nothing gets through the document builder either — including the
+  // untargeted imagery shape that used to be shipped as-is.
+  // No declared height, so this venue ships one real Gap. Without it the
+  // "nothing got through" sweep below would pass over an empty list.
+  const pois = [{ n: 'Maverick', i: 'maverick', c: 'coaster' }];
+  const pathDisputes = [
+    { sourceGap: 'path_disputed', target: null },
+    { type: 'path_disputed', target: 'maverick' },
+  ];
+  const doc = shippedGapsDocument({
+    venueId: 'demo',
+    pois,
+    seeds: [...pathDisputes, { sourceGap: 'evidence_conflict', target: 'maverick' }],
+  });
+  assert.ok(doc.gaps.length > 0, 'guard: the document is not empty for unrelated reasons');
+  for (const gap of doc.gaps) {
+    assert.ok(!DISPUTE_KINDS.includes(gap.type), `${gap.type} reached the shipped document`);
+  }
+  // A path dispute contributes nothing at all — not a row under some other
+  // spelling either. Stated as an equality against the same venue with no
+  // seeds so a leak cannot hide behind a type the sweep above allows.
+  assert.deepEqual(
+    shippedGapsDocument({ venueId: 'demo', pois, seeds: pathDisputes }),
+    shippedGapsDocument({ venueId: 'demo', pois, seeds: [] }),
+    'a path dispute must add nothing to the shipped document, under any type',
+  );
+  // The ride evidence conflict is the one that does reach a guest, on the
+  // existing `verify` type and pinned to the ride (owner ruling, 2026-08-23).
+  assert.ok(
+    doc.gaps.some((g) => g.type === 'verify' && g.target === 'maverick'),
+    'a ride evidence conflict must reach the shipped document as a verify Gap on the ride',
   );
   return true;
 });
@@ -457,6 +516,48 @@ await check('null-target path XP keys by a coarse Location cell so one walk does
   });
   assert.equal(otherCell.reason, 'first');
   assert.ok(otherCell.deltaXp > 0);
+  return true;
+});
+
+// ADR-0009 freezes the wire vocabulary at seven types. Two more — `verify` and
+// `inventory` — are emitted by the builder and kept by the phone's network
+// filter, but `sideQuests.js` draws a card only for a type in its private
+// GAP_CARD map, so both are discarded at the renderer. This pins where the loss
+// happens (renderer, not filter) and fails the moment the drift changes shape.
+// Fixing it should make this test red: shorten NEVER_DRAWN and update ADR-0020
+// and ADR-0021's "Shipped state" clauses.
+await check('every shipped Gap type is drawn, except the two known undrawn ones', () => {
+  const FROZEN_SEVEN = ['height', 'queue', 'path', 'restroom', 'food', 'gate', 'camping'];
+  const NEVER_DRAWN = ['verify', 'inventory'];
+
+  // Renderability read from behaviour, not from a private constant: one gap of
+  // each type in, does a durable card come out.
+  const draws = (type) =>
+    buildSideQuests({
+      gaps: [{ type, target: 'r1' }],
+      venueName: 'Park',
+      venueId: 'p',
+      scoredKeys: [],
+    }).durable.length > 0;
+
+  const drawn = SHIPPED_GAP_TYPES.filter(draws);
+  const undrawn = SHIPPED_GAP_TYPES.filter((t) => !draws(t));
+
+  assert.deepEqual(drawn, FROZEN_SEVEN, 'exactly ADR-0009’s seven types draw a Side Quest card');
+  assert.deepEqual(
+    undrawn,
+    NEVER_DRAWN,
+    'the undrawn set is exactly the tracked drift — a new one means a type was shipped that no guest can see',
+  );
+
+  // The loss is at the renderer. Both undrawn types survive the network filter,
+  // so a bundle carries them to the phone and the phone throws them away.
+  for (const type of NEVER_DRAWN) {
+    assert.ok(
+      PHONE_SHIPPED_GAP_TYPES.has(type),
+      `${type} is kept by the phone's network filter, so the drop is the renderer's`,
+    );
+  }
   return true;
 });
 
