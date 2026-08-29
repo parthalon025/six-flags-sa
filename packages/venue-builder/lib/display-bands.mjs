@@ -30,6 +30,41 @@ import { BANDS, bandPixels, bandResolution } from '@party-tracker/shared/zoomBan
 export const METRES_PER_DEGREE_LONGITUDE_AT_EQUATOR = 111320;
 export const METRES_PER_DEGREE_LATITUDE = 110574;
 
+/** The canvas ceiling a band plan must stay under, per axis.
+ *
+ *  `bin/display-bake.mjs` paints a band into ONE `<canvas>` in a headless
+ *  Chromium (`display-bake-page.html`: `c.width = cols * px`), so `plan.width`
+ *  and `plan.height` ARE the canvas dimensions. Ask a canvas for more than the
+ *  browser will give and nothing throws — the element clamps or the context is
+ *  lost, and the bake writes a blank or truncated PNG that still passes every
+ *  downstream shape check. Plan time is the only place the failure can be loud.
+ *
+ *  Source: Chrome's measured caps are 32767 px per axis and 268,435,456 px of
+ *  area (jhildenbiddle/canvas-size's browser matrix, which tests rather than
+ *  quotes: https://github.com/jhildenbiddle/canvas-size#test-results). The
+ *  number below is the tighter 16384 — Skia's maximum texture dimension, the
+ *  first ceiling a large bake actually meets. It also subsumes the area cap:
+ *  16384 * 16384 = 268,435,456 exactly, so two axes inside this bound can
+ *  never make an over-area canvas, and one check is the whole ceiling.
+ *
+ *  Headroom today, at `close` (the largest plan any shipped venue makes):
+ *  cedar-point 11904x12752 = 152 Mpx, six-flags-fiesta-texas 10608x11264 =
+ *  120 Mpx, kings-island 10336x8480 = 88 Mpx, big-kahunas 3904x4416 = 17 Mpx.
+ *  Not trimming the bake (ADR-0021's crop answer) roughly doubled the first
+ *  three; all four still clear the ceiling by more than 3000 px on the long
+ *  axis. A fourth, finer band — or a venue much wider than cedar-point —
+ *  would not, and now says so here instead of at bake time.
+ *  `test/builder/display-bands.mjs` pins those numbers.
+ *
+ *  This is not a paper bound. The largest of those plans was baked for real
+ *  through this same Playwright Chromium — `venues:bake -- cedar-point --kit
+ *  rpg-overworld --band close` — and emitted 11904x12752, a 32 MB PNG, style
+ *  contract passing, in about four minutes. The 152 Mpx canvas renders; what
+ *  it is close to is the machine's memory, not Chromium's ceiling (one of
+ *  three attempts died with a Node fatal error partway through).
+ */
+export const CANVAS_MAX_AXIS_PX = 16384;
+
 function readBounds(mapMeta) {
   const b = mapMeta?.bounds ?? mapMeta?.meta?.bounds ?? {};
   const north = b.n ?? b.north;
@@ -69,6 +104,13 @@ export function bandBakePlan(mapMeta, bandId) {
   const metresPerPixel = bandResolution(bandId); // throws on an unknown band
   const span = venueSpanMetres(mapMeta);
   const { width, height } = bandPixels(bandId, span);
+  if (width > CANVAS_MAX_AXIS_PX || height > CANVAS_MAX_AXIS_PX) {
+    throw new Error(
+      `band ${bandId} plans ${width}x${height} px `
+        + `(${(width * height / 1e6).toFixed(0)} Mpx), past the ${CANVAS_MAX_AXIS_PX} px canvas ceiling — `
+        + 'the bake would emit a blank or truncated picture rather than fail',
+    );
+  }
 
   // The cell grid is the coarsest band's pixel grid: one cell, one pixel at
   // 2.4 m/px. Finer bands draw the same cells larger rather than adding cells,
