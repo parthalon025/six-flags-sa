@@ -654,5 +654,11 @@
     "items": [
       "fix(deploy): unbreak production uploads, stop agent previews burning budget, end CI-stamp conflicts (#759)"
     ]
+  },
+  "1.35.10": {
+    "title": "What's new",
+    "items": [
+      "Pin the map's drawn decisions so they stop reverting (#755)"
+    ]
   }
 }
