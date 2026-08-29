@@ -3,7 +3,7 @@ import { json } from '@/app/api/_lib/http';
 export const dynamic = 'force-dynamic';
 
 /**
- * App Store Server Notifications v2 → profile_entitlements writer (ADR-0011).
+ * App Store Server Notifications v2 → profile_entitlements writer (ADR-0028).
  * Stub until StoreKit purchase UI ships; verifies and upserts on original_transaction_id.
  */
 export async function POST() {

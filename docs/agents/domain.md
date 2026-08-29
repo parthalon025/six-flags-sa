@@ -31,7 +31,7 @@ Long-form decision write-ups also live under `docs/superpowers/specs/` (pre–Ma
 │   │   ├── 0005-store-capacitor-shell.md
 │   │   ├── 0006-invisible-host.md
 │   │   ├── 0007-park-wide-second-party.md
-│   │   ├── 0008-plan-one-list.md
+│   │   ├── 0027-plan-one-list.md
 │   │   └── 0009-ship-gaps.md
 │   ├── agents/          ← skill config (this folder)
 │   │   ├── matt-standards.md
