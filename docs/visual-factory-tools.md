@@ -24,7 +24,7 @@ the reason — do not relitigate casually).
 
 | Tool | Buys | Status |
 |---|---|---|
-| tippecanoe | vector tiles → PMTiles | **in** |
+| tippecanoe | vector tiles → PMTiles | **in** — export escape hatch; inline `map.json` ships per [ADR-0026](./adr/0026-venue-geometry-inline-vs-tiles.md) |
 | PMTiles (protomaps) | single-file tile archives over HTTP ranges — vector tier today; zoom-band raster pyramids with viewport streaming per ADR-0019 | **in** |
 | maplibre-gl (app renderer) | the one map view: banded raster worlds, vector tier, pitch-eases-with-zoom camera, GL overlay layers | adopt: Train H (decided, ADR-0019) |
 | raster tiler (sharp-based, in-repo) | banded bake PNG → deterministic raster tile pyramid → PMTiles | adopt: Train H (ADR-0019) — deterministic and seeded like every certified stage |
