@@ -25,7 +25,9 @@ import { materialTexturesRow, verifyCompiledMaterials } from './display-material
 import { crossRotationCoverageRow } from './display-style-contract.mjs';
 import { writeBundleManifest } from './venue-bundle.mjs';
 import { check } from './evidence.mjs';
-import { groundingWithZoneCharacter, readZoneCharacter } from './display-zone-character.mjs';
+import {
+  groundingWithZoneCharacter, readZoneCharacter, zoneCharacterProblemsForWorld,
+} from './display-zone-character.mjs';
 
 export const DISPLAY_VERSION = 1;
 
@@ -384,6 +386,10 @@ export function readLandCover(id) {
 export function readGrounding(id) {
   const grounding = readJson(path.join(venueSidecar(id, 'display'), 'grounding.json'), null);
   if (!grounding) return null;
+  const problems = zoneCharacterProblemsForWorld(id);
+  if (problems.length) {
+    throw new Error(problems.join('; '));
+  }
   const merged = groundingWithZoneCharacter(grounding, readZoneCharacter(id));
   for (const [zone, row] of Object.entries(merged.zones || {})) {
     if (row?.character && !LAND_CHARACTERS[row.character]) {

@@ -88,6 +88,20 @@ export function validateZoneCharacter(record, { venueId = record?.venue, landCov
   return problems;
 }
 
+/** Zone names from the WorldCover land cache — what the Visual factory can tone. */
+export function landCoverZoneNames(venueId) {
+  const cache = readJson(path.join(OVERRIDE_DIR, venueId, 'esa-worldcover-lands-cache.json'), { lands: {} });
+  return Object.keys(cache.lands || {});
+}
+
+/** Gate one World's zone-character curation; empty means green. */
+export function zoneCharacterProblemsForWorld(venueId) {
+  return validateZoneCharacter(readZoneCharacter(venueId), {
+    venueId,
+    landCoverZones: landCoverZoneNames(venueId),
+  });
+}
+
 /** True when a flagship carries an explicit zone-character record on disk. */
 export function hasZoneCharacterRecord(venueId) {
   return existsSync(zoneCharacterFile(venueId));

@@ -50,6 +50,7 @@ const {
 
 const {
   groundingWithZoneCharacter, readZoneCharacter, validateZoneCharacter,
+  zoneCharacterProblemsForWorld,
 } = await import('../../packages/venue-builder/lib/display-zone-character.mjs');
 
 const { readGrounding, runDisplayStage } =
@@ -817,6 +818,40 @@ await check('kings-island landTones still reproduce with character outside groun
   return true;
 });
 
+await check('every flagship recompiles landTones that match committed packs', () => {
+  const flagships = ['kings-island', 'cedar-point', 'six-flags-fiesta-texas', 'big-kahunas'];
+  for (const venue of flagships) {
+    const { packs } = runDisplayStage(venue, { write: false });
+    const displayDir = new URL(`../../packages/venue-builder/data/venues/${venue}/display/`, import.meta.url);
+    for (const [skinId, { spec }] of Object.entries(packs)) {
+      const visualPath = new URL(`${skinId}.visual.json`, displayDir);
+      if (!existsSync(visualPath)) continue;
+      const committed = JSON.parse(readFileSync(visualPath, 'utf8'));
+      for (const zone of Object.keys(committed.landTones || {})) {
+        assert.equal(
+          committed.landTones[zone]?.day?.fill,
+          spec.landTones[zone]?.day?.fill,
+          `${venue} ${skinId} ${zone} day fill must reproduce`,
+        );
+      }
+    }
+  }
+  return true;
+});
+
+await check('readGrounding fails when zone-character is missing for a grounded World', () => {
+  const problems = validateZoneCharacter(null, {
+    venueId: 'synth-park',
+    landCoverZones: ['Midway'],
+  });
+  assert.ok(
+    problems.some((p) => /missing/.test(p)),
+    problems.join('; '),
+  );
+  assert.deepEqual(zoneCharacterProblemsForWorld('kings-island'), []);
+  return true;
+});
+
 console.log('\ncommitted grounding records\n');
 
 await check('every committed record validates and still matches the truth it was measured on', () => {
@@ -828,6 +863,11 @@ await check('every committed record validates and still matches the truth it was
   for (const venue of venues) {
     const record = JSON.parse(readFileSync(new URL(`${venue}/display/grounding.json`, dir), 'utf8'));
     assert.deepEqual(validateGrounding(record), [], `${venue}: committed grounding does not validate`);
+    assert.deepEqual(
+      zoneCharacterProblemsForWorld(venue),
+      [],
+      `${venue}: zone-character curation does not validate`,
+    );
     assert.equal(record.venue, venue, `${venue}: record names a different World`);
 
     // Grounding is keyed to footprints. If truth moved, the record is stale —

@@ -28,6 +28,7 @@ import {
 } from '../lib/adapters/naip-planetary.mjs';
 import { harvestGrounding, regionsFromMap } from '../lib/display-grounding.mjs';
 import { groundingFile, readVenueGrounding, validateGrounding } from '../lib/display-references.mjs';
+import { zoneCharacterProblemsForWorld } from '../lib/display-zone-character.mjs';
 import { VENUE_DIR, readJson, writeJson } from '../lib/venue-io.mjs';
 
 const argv = process.argv.slice(2);
@@ -47,12 +48,14 @@ function describe(id) {
   const record = readVenueGrounding(id);
   if (!record) return console.log(`  ${id}: no grounding harvested yet`);
   const problems = validateGrounding(record);
+  const zoneProblems = zoneCharacterProblemsForWorld(id);
   const groups = Object.entries(record.groups || {})
     .map(([cls, block]) => `${cls}×${block.groups.length}`)
     .join(' ');
   console.log(`  ${id}: ${record.source.tile} (${record.source.captured}) — ${groups}`);
   for (const p of problems) console.log(`    ! ${p}`);
-  return problems.length;
+  for (const p of zoneProblems) console.log(`    ! ${p}`);
+  return problems.length + zoneProblems.length;
 }
 
 /**
