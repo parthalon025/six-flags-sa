@@ -42,6 +42,7 @@ import {
 } from './browser.mjs';
 import { parseModulesArg, wantModule } from './lib/module-select.mjs';
 import { checkMapDecisions } from './lib/map-decisions.mjs';
+import { checkMarkerFade, startFadeWatch, stopFadeWatch } from './lib/marker-fade.mjs';
 import {
   assertContributionConsolidatePipelineHttp,
   contributionPostAvailable,
@@ -52,6 +53,8 @@ import { distance, formatDistance } from '../../apps/party-tracker/lib/geo.js';
 import { FOLLOW_RESUME_MS } from '../../apps/party-tracker/lib/parkMapView.js';
 import { RIDE_STALE_AFTER_MS } from '../../apps/party-tracker/lib/core/state.js';
 import { PRECISE_MAX_MS } from '../../apps/party-tracker/lib/location.js';
+import { labelZoomFor, LABEL_ZOOM_HYSTERESIS } from '../../packages/shared/mapSymbols.js';
+import { zoomForResolution } from '../../packages/shared/zoomBands.js';
 
 const PASS = [];
 const FAIL = [];
@@ -390,6 +393,130 @@ await check('the map still draws the decisions it was asked for', async () => {
   if (failures.length) throw new Error(failures.join(' | '));
   if (!checked.includes('coaster') || !checked.includes('parking')) {
     throw new Error(`nothing checked the layers this was about (checked: ${checked.join(', ') || 'none'})`);
+  }
+  return true;
+});
+
+/** A zoom, at this latitude, whose zPlan — the px/m scale `labelWantedAtZoom`
+ *  reads, via `overlayMarks.js`'s `labelPlanZoom` and `mapVisual.js`'s
+ *  `markerWantsLabel` — sits comfortably under every LABEL_ZOOM rank's enter
+ *  threshold, hysteresis included. Below it, every zoom-gated .poiPin loses
+ *  its pin. Derived rather than a fixed zoom delta: a raw zoom offset only
+ *  ever "dwarfed LABEL_ZOOM's max" by accident, since a zoom level and a
+ *  zPlan unit are not the same space — `zoomForResolution` is the actual
+ *  inverse of the metres-per-pixel math `labelPlanZoom` runs forward. */
+function zoomClearOfEveryLabelRank(latitude) {
+  const lowestEnter = Math.min(...[1, 2, 3, 4, 5].map(labelZoomFor));
+  const safeZPlan = (lowestEnter - LABEL_ZOOM_HYSTERESIS) / 2;
+  return zoomForResolution(1 / safeZPlan, { latitude });
+}
+
+await check('a Place that enters on a pinch or a pan fades in rather than snapping', async () => {
+  /* The snap this fixes lives on the disc, not the wrapper: ParkMapGl mounts
+     one <g> per Place under a stable `kind:id` key that lasts the life of the
+     overlay, and it is the .poiPin inside that unmounts and remounts as a
+     pinch crosses `markerWantsLabel`'s zoom rank — or as a pan carries its
+     label box on- or off-screen, since `tryLabel`'s `visible(box)` gate
+     (overlayMarks.js) feeds the same `mark.pin`. A marker that has just
+     mounted has no previous opacity for a transition to animate from, so it
+     painted at full strength on its first frame — that is the snap. Checking
+     .poiMarker instead would prove nothing: it never remounts, so it could
+     not tell a fixed bug from a still-broken one.
+
+     First read off the glass rather than off the stylesheet text — a real
+     .poiPin in a real document resolves to an animation, and the keyframes
+     it names actually start from transparent. That catches a rule deleted,
+     renamed, or quietly re-pointed at something that does not fade, but not
+     a rule sitting on an element the app never remounts, which is exactly
+     the first bug. So then force the remount for real, twice — once by
+     zoom, once by pan — and catch a freshly-inserted .poiPin each time with
+     a MutationObserver installed before the jump, recording its opacity the
+     instant it lands in the document. Every `until()` below polls the real
+     .poiPin count rather than sleeping a guessed duration, so a phase that
+     stalls says which one rather than false-failing under load. */
+  const entry = await a.evaluate(checkMarkerFade, ['.poiPin', '.poiLabel']);
+  for (const got of entry) {
+    if (!got.found) throw new Error(`no ${got.selector} on the map to check`);
+    if (!got.seconds) throw new Error(`${got.selector} enters with no animation (${got.name})`);
+    if (!got.fades) throw new Error(`${got.selector} animates "${got.name}", which does not start transparent`);
+  }
+
+  const home = await a.evaluate(() => {
+    const map = globalThis.__parkMapLibre;
+    return { zoom: map.getZoom(), center: map.getCenter() };
+  });
+
+  // --- by zoom: drop below every rank's threshold, then zoom back in -----
+  const lowZoom = zoomClearOfEveryLabelRank(home.center.lat);
+  const zoomHomeCount = await a.locator('.poiPin').count();
+  await a.evaluate((zoom) => {
+    const map = globalThis.__parkMapLibre;
+    map.jumpTo({ zoom, center: map.getCenter() });
+  }, lowZoom);
+  await until(async () => (await a.locator('.poiPin').count()) < zoomHomeCount, {
+    timeout: 8000,
+    label: `.poiPin count dropping below ${zoomHomeCount} after zooming out`,
+  });
+  const zoomAwayCount = await a.locator('.poiPin').count();
+
+  await a.evaluate(startFadeWatch, '.poiPin');
+  await a.evaluate((cam) => {
+    const map = globalThis.__parkMapLibre;
+    map.jumpTo({ zoom: cam.zoom, center: cam.center });
+  }, home);
+  await until(async () => (await a.locator('.poiPin').count()) > zoomAwayCount, {
+    timeout: 8000,
+    label: `.poiPin count rising above ${zoomAwayCount} after zooming back in`,
+  });
+  const zoomBackCount = await a.locator('.poiPin').count();
+  const zoomSamples = await a.evaluate(stopFadeWatch);
+
+  if (!zoomSamples.length) {
+    throw new Error(
+      `zooming ${zoomHomeCount} -> ${zoomAwayCount} -> ${zoomBackCount} mounted no new .poiPin — the remount this bug depends on did not happen`,
+    );
+  }
+  if (!zoomSamples.every((opacity) => opacity < 1)) {
+    throw new Error(`a .poiPin mounted by a zoom was already at full opacity (${zoomSamples.join(', ')}) — it snapped`);
+  }
+
+  // --- by pan: shift a full screen width off the current view, then back -
+  const away = await a.evaluate(() => {
+    const map = globalThis.__parkMapLibre;
+    const el = map.getContainer();
+    const shifted = map.unproject([el.clientWidth * 2, el.clientHeight / 2]);
+    return { lng: shifted.lng, lat: shifted.lat };
+  });
+  const panHomeCount = await a.locator('.poiPin').count();
+  await a.evaluate((there) => {
+    const map = globalThis.__parkMapLibre;
+    map.jumpTo({ center: [there.lng, there.lat], zoom: map.getZoom() });
+  }, away);
+  await until(async () => (await a.locator('.poiPin').count()) !== panHomeCount, {
+    timeout: 8000,
+    label: `.poiPin count changing from ${panHomeCount} after panning away`,
+  });
+  const panAwayCount = await a.locator('.poiPin').count();
+
+  await a.evaluate(startFadeWatch, '.poiPin');
+  await a.evaluate((cam) => {
+    const map = globalThis.__parkMapLibre;
+    map.jumpTo({ zoom: cam.zoom, center: cam.center });
+  }, home);
+  await until(async () => (await a.locator('.poiPin').count()) !== panAwayCount, {
+    timeout: 8000,
+    label: `.poiPin count changing from ${panAwayCount} after panning back`,
+  });
+  const panBackCount = await a.locator('.poiPin').count();
+  const panSamples = await a.evaluate(stopFadeWatch);
+
+  if (!panSamples.length) {
+    throw new Error(
+      `panning ${panHomeCount} -> ${panAwayCount} -> ${panBackCount} mounted no new .poiPin — panning does not remount Places here`,
+    );
+  }
+  if (!panSamples.every((opacity) => opacity < 1)) {
+    throw new Error(`a .poiPin mounted by a pan was already at full opacity (${panSamples.join(', ')}) — it snapped`);
   }
   return true;
 });

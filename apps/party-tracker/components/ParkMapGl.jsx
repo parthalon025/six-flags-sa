@@ -423,14 +423,20 @@ export default function ParkMapGl({
               <>
                 <title>{mark.name}</title>
                 {mark.kind === 'place' && mark.pin !== false ? (
-                  <PoiMarker
-                    category={mark.category}
-                    colour={pinPalette?.categories?.[mark.category] || '#888'}
-                    barredInk={pinPalette?.barred}
-                    r={mark.radius}
-                    state={state}
-                    selected={mark.id === selectedId}
-                  />
+                  // .poiPin, not a class on PoiMarker itself: PoiMarker also
+                  // draws the legend's static swatches (MapLegend.jsx), which
+                  // mount and unmount with the key panel and would pick up an
+                  // enter animation that has nothing to do with the map.
+                  <g className="poiPin">
+                    <PoiMarker
+                      category={mark.category}
+                      colour={pinPalette?.categories?.[mark.category] || '#888'}
+                      barredInk={pinPalette?.barred}
+                      r={mark.radius}
+                      state={state}
+                      selected={mark.id === selectedId}
+                    />
+                  </g>
                 ) : style.drawsPin && mark.pin !== false ? (
                   mark.kind === 'car' ? (
                     <g>

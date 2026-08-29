@@ -35,6 +35,13 @@
       "check": "the map still draws the decisions it was asked for"
     },
     {
+      "id": "map-marks-fade-in",
+      "slice": "Navigate",
+      "user_action": "Pinch or pan the map and have Places arrive rather than pop",
+      "suite": "functional",
+      "check": "a Place that enters on a pinch or a pan fades in rather than snapping"
+    },
+    {
       "id": "settings-credits",
       "slice": "Navigate",
       "user_action": "Tap the on-map OSM notice into Settings, see every sourced attribution with its license",

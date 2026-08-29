@@ -555,6 +555,19 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .poiBarredRing { fill: none; stroke-width: 2.2; opacity: .45; }
 .poiMarker { transition: opacity var(--t2) var(--easeOut); }
 .poiMarker circle.pin { transition: r var(--t2) var(--easeOut); }
+/* The disc is what mounts on a pinch, not the outer <g> — ParkMapGl keys that
+ * `kind:id` for the life of the overlay, so it never remounts and .poiMarker
+ * alone could never see the snap. .poiPin wraps the disc at the render site
+ * for exactly this animation.
+ *
+ * Place labels are safe to fade alongside it: LABEL_ZOOM_HYSTERESIS already
+ * gives them 0.18 of dead zone around their zoom threshold, so a pinch that
+ * crosses it does not flap. Zone labels get no such guard — their declutter
+ * pass (`tryLabel`, unpinned) can win and lose a box on any frame of a pan —
+ * so they stay off this rule for the reason .lyr-detail above stays off it:
+ * an animation on a coordinate that thrashes is the flash, not the fix. */
+.poiPin,
+.poiLabel { animation: fadeIn var(--t2) var(--easeOut) both; }
 .poiHalo {
   fill: none; stroke: var(--blue); stroke-width: 2.5;
   transform-box: fill-box; transform-origin: 50% 50%;
