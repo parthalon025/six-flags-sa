@@ -172,6 +172,34 @@ const FIXTURES = {
       'apps/party-tracker/lib/mapLibreConfigured.js': "const PARK_MAP_RENDERERS = ['gl'];",
     },
   },
+  h19: {
+    before: [
+      { 'packages/venue-builder/lib/display-bands.mjs': 'export function bandBakePlan() {}',
+        'packages/venue-builder/lib/display-bake.mjs': 'const m = cropModel(model, 6);' },
+      // trimming gone, but on a tree from before band plans existed: a removal
+      // is true of any tree predating the thing, which is not the same as done
+      { 'packages/venue-builder/lib/display-bake.mjs': 'export function bakeModel() {}' },
+    ],
+    after: {
+      'packages/venue-builder/lib/display-bands.mjs': 'export function bandBakePlan() {}',
+      'packages/venue-builder/lib/display-bake.mjs': 'const bounds = gridBounds(cols, rows, toGeo);',
+    },
+  },
+  i18: {
+    before: [
+      { 'packages/venue-builder/lib/imagery-claims.mjs': 'export function claims() {}',
+        'packages/venue-builder/lib/ship-gaps.mjs': "export const SHIPPED_GAP_TYPES = ['path', 'path_disputed'];" },
+      // type gone, but the builder-side lane that replaces it never landed
+      { 'packages/venue-builder/lib/ship-gaps.mjs': "export const SHIPPED_GAP_TYPES = ['path'];" },
+      // lane landed, but ship-gaps declares no vocabulary at all
+      { 'packages/venue-builder/lib/imagery-claims.mjs': 'export function claims() {}',
+        'packages/venue-builder/lib/ship-gaps.mjs': 'export const NOTHING = 1;' },
+    ],
+    after: {
+      'packages/venue-builder/lib/imagery-claims.mjs': 'export function claims() {}',
+      'packages/venue-builder/lib/ship-gaps.mjs': "export const SHIPPED_GAP_TYPES = ['height', 'path'];",
+    },
+  },
   h14: {
     before: [
       // ledger binds pixel-tycoon, but the kit it points at was never authored
