@@ -596,6 +596,7 @@ await check('the bin survives one over-ceiling legacy grid in a batch', () => {
   assert.equal(batch.status, 1, 'one refusal should fail the run, not abort it');
   assert.match(batch.stderr, /canvas ceiling/);
   assert.match(batch.stderr, /kings-island/);
+  assert.match(batch.stderr, /cedar-point/, 'the batch must continue past the first refusal');
   return true;
 });
 
