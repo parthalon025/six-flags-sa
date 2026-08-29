@@ -46,6 +46,8 @@ const BUILDER_PATHS = [
 const BACKSIDE_PATHS = [
   'scripts/**',
   'test/scripts/**',
+  'test/app/coverage-contract.mjs',
+  'test/app/critical-paths.json',
   'test/app/postgres-probe.test.mjs',
   '.github/workflows/**',
   '.dependency-cruiser.cjs',
