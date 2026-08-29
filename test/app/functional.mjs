@@ -3077,6 +3077,15 @@ await check(
       }
     }
 
+    // The flip trails the last dot rather than coinciding with it: right at
+    // the scroll position where the last claim's own dot just lit (still
+    // inside the read-margin buffer), Skip intro must still be the offer —
+    // this fails if the flip ever regresses to firing on the same frame as
+    // the last dot.
+    if (!(await p.locator('.gate:has(#intro-splash-title) .introSkip').count())) {
+      throw new Error('Get started appeared at the same scroll position the last dot lit');
+    }
+
     // Scroll to the end of the story — the footer should flip on its own,
     // with no click needed.
     await scroll.evaluate((el) => {

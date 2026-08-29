@@ -53,20 +53,37 @@ function centerFraction(el, scroller, scrollable) {
 }
 
 /**
- * The scroll fraction at which `el` has fully passed the viewport centre —
- * not just its middle, its trailing edge. Used for "read": called on the
- * last claim, it lands a little past that claim's own centre-fraction by
- * however tall the claim itself measures, which is the real, un-invented
- * amount of "a bit more scrolling" between "looking at the last claim" and
- * "done with it" — not a step past the invite card, whose natural resting
- * position (this deep into a story this short against a phone-sized
- * viewport) can need more scroll than the story actually has, and land
- * unreachably past 1.
+ * Extra scroll, on top of the last claim's own dot, before the footer
+ * offers "Get started" — enough that the flip reads as "just after" the
+ * last dot rather than the same instant, small enough to still feel
+ * prompt. A pixel amount rather than a fraction of the range: a fixed
+ * fraction shrinks to nothing on a story this short and swells on a much
+ * longer one, where a fixed screen distance stays the same felt gap
+ * either way. 20px is not derived from anything; it is picked to read,
+ * on an ordinary phone, about like the design's own 0.78 -> 0.82 gap.
  */
-function passedFraction(el, scroller, scrollable) {
-  if (!el || !scroller || scrollable <= 0) return 0;
-  const { top, height } = contentRectOf(el, scroller);
-  return fractionForOffset(top + height, scroller, scrollable);
+const READ_MARGIN_PX = 20;
+
+/**
+ * However close the last claim's own centre-fraction already sits to 1,
+ * the read threshold is never allowed past this — a fully scrolled guest
+ * (`scrollFraction` reaching exactly 1) must always end up strictly past
+ * the threshold, on every viewport, including one so short that centring
+ * the last claim already needs nearly all the scroll room there is. Purely
+ * a reachability floor, not a design number: it only ever binds in that
+ * degenerate case, where it leaves a sliver of scroll rather than none.
+ */
+const READ_THRESHOLD_CEILING = 0.99;
+
+/**
+ * The read threshold: the last claim's own centre-fraction (the same
+ * measurement that lights its dot) plus {@link READ_MARGIN_PX} converted to
+ * a fraction of this scroller's actual range, capped at
+ * {@link READ_THRESHOLD_CEILING}.
+ */
+function readThresholdFor(lastClaimCenter, scrollable) {
+  const withMargin = lastClaimCenter + READ_MARGIN_PX / scrollable;
+  return Math.min(withMargin, READ_THRESHOLD_CEILING);
 }
 
 /**
@@ -124,10 +141,10 @@ function IntroReleaseNotes({ version, onBack }) {
  * "Read" is measured from real layout, not counted: on mount, on resize, and
  * whenever the story's own height changes (a font swap re-wrapping copy),
  * each claim's centre-of-viewport scroll fraction is remeasured directly
- * off the DOM (`centerFraction`) for the dots, and the footer flips once
- * the reader has scrolled the *last* claim fully past that same centre
- * (`passedFraction`) — a little further than its own dot, by exactly that
- * claim's own measured height, with no picked constant involved.
+ * off the DOM (`centerFraction`) for the dots, and the footer flips a small
+ * fixed distance past the *last* claim's own dot (`readThresholdFor`) —
+ * close enough behind it to read as "right after", never at the same
+ * instant, and never past the point a full scroll can actually reach.
  */
 function IntroStory({ version, onContinue, onOpenNotes }) {
   const scrollRef = useRef(null);
@@ -169,8 +186,9 @@ function IntroStory({ version, onContinue, onOpenNotes }) {
       return;
     }
     const claims = claimRefs.current;
-    setDotThresholds(claims.map((el) => centerFraction(el, scroller, scrollable)));
-    setReadThreshold(passedFraction(claims[claims.length - 1], scroller, scrollable));
+    const dots = claims.map((el) => centerFraction(el, scroller, scrollable));
+    setDotThresholds(dots);
+    setReadThreshold(readThresholdFor(dots[dots.length - 1], scrollable));
   }, []);
 
   useLayoutEffect(() => {
