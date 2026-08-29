@@ -360,14 +360,14 @@ export default function ParkMapGl({
     if (!mapReady) return undefined;
     const map = viewRef.current?.engine?.();
     if (!map?.on) return undefined;
-    const guest = (event) => event?.originalEvent;
+    const isGuestGesture = (event) => event?.originalEvent;
     const started = (event) => {
-      if (!guest(event)) return;
+      if (!isGuestGesture(event)) return;
       awaitSettleRef.current = true;
       handlers.current.onUserPan?.();
     };
     const moved = (event) => {
-      if (!guest(event)) return;
+      if (!isGuestGesture(event)) return;
       handlers.current.onUserPan?.();
     };
     const settled = () => {

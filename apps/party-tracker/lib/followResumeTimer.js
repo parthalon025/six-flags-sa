@@ -78,9 +78,6 @@ export function createFollowResumeTimer({
     stamp(at = now()) {
       gesturedAt = at;
     },
-    get gesturedAt() {
-      return gesturedAt;
-    },
     clearGesture() {
       gesturedAt = null;
       clearTimer();
