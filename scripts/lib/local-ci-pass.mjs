@@ -84,6 +84,11 @@ export const STATIC_STEPS = [
     npm: ['run', 'test:module-select'],
     covers: ['module-select-unit'],
   },
+  {
+    id: 'test:coverage-contract',
+    npm: ['run', 'test:coverage-contract'],
+    covers: [],
+  },
   { id: 'build', npm: ['run', 'build', '-w', '@party-tracker/app'], covers: ['app-build'] },
 ];
 

@@ -27,6 +27,7 @@ export const CANON_STATIC_STEP_IDS = [
   'test:unit',
   'lint',
   'test:module-select',
+  'test:coverage-contract',
   'build',
 ];
 
@@ -72,6 +73,14 @@ export function staticStepsForFiles(files, manifest = loadModulesManifest()) {
   }
   if (verticals.includes('backside')) {
     steps.add('test:ci-gate');
+    if (
+      files?.some(
+        (f) =>
+          f.endsWith('test/app/critical-paths.json') || f.endsWith('test/app/coverage-contract.mjs'),
+      )
+    ) {
+      steps.add('test:coverage-contract');
+    }
   }
 
   return ALL_STATIC.filter((id) => steps.has(id));
