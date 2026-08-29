@@ -106,6 +106,11 @@ function operatorTokenFromEnv() {
   return process.env.GUEST_TRACES_TOKEN || process.env.METRICS_TOKEN || '';
 }
 
+function operatorAuthHeaders() {
+  const token = operatorTokenFromEnv();
+  return token ? { authorization: `Bearer ${token}` } : {};
+}
+
 /**
  * Whether the running server exposes operator routes (steward accept, metrics).
  * Production `next start` without METRICS_TOKEN / GUEST_TRACES_TOKEN returns 404 —
@@ -115,9 +120,7 @@ function operatorTokenFromEnv() {
  * @param {{ fetchFn?: typeof fetch }} [opts]
  */
 export async function contributionOperatorPathAvailable(base, { fetchFn = globalThis.fetch } = {}) {
-  const token = operatorTokenFromEnv();
-  const headers = token ? { authorization: `Bearer ${token}` } : {};
-  const res = await fetchFn(`${base}/api/metrics`, { headers });
+  const res = await fetchFn(`${base}/api/metrics`, { headers: operatorAuthHeaders() });
   if (res.ok) return true;
   if (res.status === 404) {
     return {
@@ -146,11 +149,9 @@ export async function contributionPostAvailable(base) {
 
 /** Steward accept through the operator route so the server store is exercised. */
 export async function acceptContributionViaApi(base, id) {
-  const token = operatorTokenFromEnv();
-  const headers = token ? { authorization: `Bearer ${token}` } : {};
   const res = await fetch(`${base}/api/admin/contributions/${encodeURIComponent(id)}/accept`, {
     method: 'POST',
-    headers,
+    headers: operatorAuthHeaders(),
   });
   if (res.status !== 200) {
     throw new Error(`contribution accept ${res.status}: ${(await res.text()).slice(0, 200)}`);
