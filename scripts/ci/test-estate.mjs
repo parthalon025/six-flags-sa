@@ -60,6 +60,11 @@ export const TEST_RUNNERS = {
     npmScript: 'test:module-select',
     job: 'module-select-unit',
   },
+  'test:coverage-contract': {
+    label:
+      'npm run test:coverage-contract — static gate prepended to test:app; every critical-path row must name a live check.',
+    npmScript: 'test:coverage-contract',
+  },
   'ci-gate': {
     label:
       'npm run test:ci-gate — the `gate` GitHub job, which runs before any workspace install, and the `automation` vertical.',
@@ -105,6 +110,7 @@ export const TEST_ESTATE = {
   'test/app/displaySpike.test.mjs': ['test:unit'],
   'test/app/eligibility.test.mjs': ['test:unit'],
   'test/app/election.test.mjs': ['test:unit'],
+  'test/app/coverage-contract.mjs': ['test:coverage-contract'],
   'test/app/functional.mjs': ['ui-matrix', 'app-vertical'],
   'test/app/geo.test.mjs': ['test:unit'],
   'test/app/godmode.test.mjs': ['test:unit'],
