@@ -5,6 +5,12 @@
 import path from 'node:path';
 import * as routing from '../../../apps/party-tracker/lib/routing.js';
 import { isRideable } from '@party-tracker/shared/ontology.js';
+// The normalisation the builder already joins ride names on. `osmGaps` walks
+// these same coaster/slide layers and lowercases both sides before comparing,
+// because raw OpenStreetMap names and POI names diverge — Cedar Point ships
+// aliases for exactly that. Matching raw strings here would have silently
+// dropped a ride back to its centroid on nothing worse than a case change.
+import { normaliseRideName } from '@party-tracker/shared/mapSymbols.js';
 import { readJson, VENUE_DIR } from './venue-io.mjs';
 
 /** Kings Island standard — at most this many disconnected path islands. */
@@ -54,22 +60,33 @@ const RIDE_GEOMETRY_LAYERS = ['coaster', 'slide'];
  * mapped structure, else the point. A ride genuinely stranded on a routing
  * island still fails — none of its points is near the network either.
  */
-export function reachablePoints(ride, map) {
+export function reachablePoints(ride, map, rides = [ride]) {
   const entrance = (ride.e || []).find((e) => Number.isFinite(e?.lat) && Number.isFinite(e?.lng));
   if (entrance) return [{ lat: entrance.lat, lng: entrance.lng }];
+
+  const point = [{ lat: ride.lat, lng: ride.lng }];
+  const key = normaliseRideName(ride.n);
+  if (!key) return point;
+
+  /* A name two rides share cannot attribute geometry to either of them, and the
+     normalisation is lossy enough to create that case on its own — it drops a
+     leading article, so "The Beast" and "Beast" land on the same key. Where the
+     venue is ambiguous the ride falls back to its point rather than snapping to
+     a structure that may belong to its twin. Pass the venue's rides to get this
+     guard; the default only ever sees one, where no ambiguity can exist. */
+  const wearingKey = (rides || []).filter((r) => normaliseRideName(r?.n) === key).length;
+  if (wearingKey > 1) return point;
 
   const own = [];
   for (const layer of RIDE_GEOMETRY_LAYERS) {
     for (const way of map?.[layer] || []) {
-      if (way?.n !== ride.n) continue;
+      if (normaliseRideName(way?.n) !== key) continue;
       for (const [lng, lat] of way.r || []) {
         if (Number.isFinite(lat) && Number.isFinite(lng)) own.push({ lat, lng });
       }
     }
   }
-  if (own.length) return own;
-
-  return [{ lat: ride.lat, lng: ride.lng }];
+  return own.length ? own : point;
 }
 
 /**
@@ -85,7 +102,7 @@ export function qaVenueRouting(id) {
   const far = [];
   for (const ride of rides) {
     let offset = null;
-    for (const point of reachablePoints(ride, map)) {
+    for (const point of reachablePoints(ride, map, rides)) {
       const snap = routing.snapToGraph(graph, point.lat, point.lng);
       if (snap?.offset == null) continue;
       if (offset == null || snap.offset < offset) offset = snap.offset;

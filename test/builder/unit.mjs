@@ -3754,6 +3754,43 @@ await check('every height rule addresses a place the venue actually ships', () =
   return true;
 });
 
+await check('every retired height rule is a well-formed record, at every venue', () => {
+  /* The `retired` block was validated by one hardcoded assertion about Cedar
+     Point's single entry, so a second venue could add a malformed one and pass
+     in silence — the same shape of gap the block exists to close. */
+  const dir = new URL('../../packages/venue-builder/data/venues/', import.meta.url);
+  const venues = fs.readdirSync(dir).filter((name) => {
+    try {
+      return fs.statSync(new URL(`${name}/heights.json`, dir)).isFile();
+    } catch {
+      return false;
+    }
+  });
+  let seen = 0;
+  for (const id of venues) {
+    const heights = JSON.parse(fs.readFileSync(new URL(`${id}/heights.json`, dir)));
+    for (const [name, rule] of Object.entries(heights.retired || {})) {
+      const at = `${id}/heights.json retired["${name}"]`;
+      seen += 1;
+      assert.equal(heights.rules?.[name], undefined, `${at}: also live in rules — it is one or the other`);
+      assert.ok(rule?.retired, `${at}: says nothing about when it retired`);
+      assert.ok(
+        Number.isFinite(rule?.h?.min),
+        `${at}: dropped the height it gated on — that is the fact worth keeping`,
+      );
+      assert.ok(
+        Array.isArray(rule?.evidence) && rule.evidence.length >= 2,
+        `${at}: one source saying a ride closed is a claim, not a record`,
+      );
+      for (const row of rule.evidence) {
+        assert.ok(row?.source && row?.date, `${at}: an evidence row needs a source and a date`);
+      }
+    }
+  }
+  assert.ok(seen >= 1, 'no retired rules found — did the block move?');
+  return true;
+});
+
 await check('a retired height rule keeps its evidence and never reaches a place', () => {
   const heights = JSON.parse(
     fs.readFileSync(new URL('../../packages/venue-builder/data/venues/cedar-point/heights.json', import.meta.url)),
@@ -8602,6 +8639,55 @@ await check('a ride with no structure and no entrance still snaps by its point',
   assert.deepEqual(reachablePoints(withGate, { coaster: [{ n: 'Nothing Mapped', r: [[-82.7, 41.5]] }] }), [
     { lat: 41.4816, lng: -82.6852 },
   ]);
+  return true;
+});
+
+await check('the ride-to-geometry join survives a name that only drifted in case or spacing', () => {
+  /* The join used raw string equality while `osmGaps` — walking these same
+     coaster/slide layers — has always lowercased both sides, because raw
+     OpenStreetMap names and POI names diverge (Cedar Point ships aliases for
+     exactly that). A case change alone would have dropped a ride silently back
+     to its centroid, which is the behaviour the gate was fixed to stop. */
+  const ride = { n: "Siren's Curse", lat: 41.4809, lng: -82.6851, c: 'coaster' };
+  const map = { coaster: [{ n: "SIREN'S  CURSE", r: [[-82.6852, 41.4817]] }] };
+  assert.deepEqual(reachablePoints(ride, map), [{ lat: 41.4817, lng: -82.6852 }]);
+  return true;
+});
+
+await check('two rides sharing a name fall back to their points, not each other\'s track', () => {
+  /* The normalisation is lossy on purpose — it drops a leading article — so it
+     manufactures this collision itself: "The Beast" and "Beast" land on one
+     key. Geometry that could belong to either ride is attributed to neither. */
+  const beast = { n: 'The Beast', lat: 39.3400, lng: -84.2700, c: 'coaster' };
+  const twin = { n: 'Beast', lat: 39.3500, lng: -84.2800, c: 'coaster' };
+  const map = { coaster: [{ n: 'Beast', r: [[-84.2650, 39.3450]] }] };
+
+  // Told about both, the join refuses: each ride keeps its own point.
+  assert.deepEqual(reachablePoints(beast, map, [beast, twin]), [{ lat: beast.lat, lng: beast.lng }]);
+  assert.deepEqual(reachablePoints(twin, map, [beast, twin]), [{ lat: twin.lat, lng: twin.lng }]);
+  // And qaVenueRouting always tells it about the whole venue.
+  assert.match(
+    fs.readFileSync(new URL('../../packages/venue-builder/lib/venue-route-qa-core.mjs', import.meta.url), 'utf8'),
+    /reachablePoints\(ride, map, rides\)/,
+    'the routing gate must pass the venue rides, or the collision guard never runs',
+  );
+  return true;
+});
+
+await check('an unnamed way is never attributed to a ride', () => {
+  const ride = { n: 'Orion', lat: 39.3441, lng: -84.2681, c: 'coaster' };
+  for (const way of [{ r: [[-84.2680, 39.3442]] }, { n: '', r: [[-84.2680, 39.3442]] }, { n: '   ' }]) {
+    assert.deepEqual(
+      reachablePoints(ride, { coaster: [way] }),
+      [{ lat: ride.lat, lng: ride.lng }],
+      `an unnamed way (${JSON.stringify(way.n)}) must not become a ride's reachable point`,
+    );
+  }
+  // A ride with no usable name of its own cannot join either.
+  assert.deepEqual(
+    reachablePoints({ n: '  ', lat: 1, lng: 2, c: 'ride' }, { coaster: [{ n: 'Orion', r: [[3, 4]] }] }),
+    [{ lat: 1, lng: 2 }],
+  );
   return true;
 });
 
