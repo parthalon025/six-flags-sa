@@ -11,6 +11,7 @@
 import {
   assertContributionConsolidatePipeline,
   assertContributionConsolidatePipelineHttp,
+  contributionOperatorPathAvailable,
   contributionPostAvailable,
   submitContributionViaStoreSeam,
 } from './lib/contribution-pipeline-vertical.mjs';
@@ -56,15 +57,22 @@ await check('validate+insert → accept → consolidate dry-run (store seam)', a
 
 if (await serverHealthy()) {
   const postOk = await contributionPostAvailable(BASE);
-  if (postOk === true) {
+  const operatorOk = await contributionOperatorPathAvailable(BASE);
+  if (postOk === true && operatorOk === true) {
     await check('POST /api/contributions → accept → consolidate dry-run (HTTP seam)', async () => {
       await assertContributionConsolidatePipelineHttp(BASE);
     });
-  } else {
+  } else if (postOk !== true) {
     console.log(
       '  SKIP POST /api/contributions seam — server returned',
       postOk.status,
       '(needs memory backend or test Postgres with profiles; see #438)',
+    );
+  } else {
+    console.log(
+      '  SKIP steward accept seam —',
+      operatorOk.reason ?? `operator probe ${operatorOk.status}`,
+      '(#774)',
     );
   }
 } else {
