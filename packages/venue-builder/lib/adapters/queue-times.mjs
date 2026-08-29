@@ -5,6 +5,11 @@
 
 import { cachePath, readCache, writeCache, fetchJson } from './_cache.mjs';
 import { pairSuggestions } from '../venue-judge.mjs';
+// Pure name work, moved to a leaf so callers that only want the comparison do
+// not inherit this module's venue reads (#29). Re-exported for existing callers.
+import { compareQueueTimesToBundle } from '../inventory-compare.mjs';
+
+export { compareQueueTimesToBundle };
 
 const PARKS_URL = 'https://queue-times.com/parks.json';
 
@@ -72,32 +77,6 @@ export async function loadQueueTimesData(venueId, { venueName, fetch = false, of
   };
   writeCache(venueId, 'queue-times', out);
   return out;
-}
-
-export function compareQueueTimesToBundle({ queueTimes = {}, pois = [] } = {}) {
-  const rides = pois.filter((p) => ['ride', 'coaster', 'slide'].includes(p.c));
-  const bundleNames = rides.map((p) => p.n);
-  const apiNames = (queueTimes.rides || []).map((r) => r.name);
-  const matched = new Set();
-  const pairs = [];
-  for (const name of bundleNames) {
-    const best = pairSuggestions([name], apiNames, { floor: 0.72, limit: 1 })[0];
-    if (best) {
-      matched.add(best.right);
-      pairs.push({ bundle: name, api: best.right, score: best.score });
-    }
-  }
-  return {
-    apiCount: apiNames.length,
-    bundleRideCount: bundleNames.length,
-    matched: pairs.length,
-    pairs,
-    onlyOnApi: apiNames.filter((n) => !matched.has(n)).sort(),
-    onlyInBundle: bundleNames.filter((n) => {
-      const hit = pairSuggestions([n], apiNames, { floor: 0.72, limit: 1 })[0];
-      return !hit;
-    }).sort(),
-  };
 }
 
 export async function run(ctx = {}) {

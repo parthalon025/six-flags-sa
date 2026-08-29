@@ -666,5 +666,11 @@
     "items": [
       "fix(test): skip contribution-pipeline when the operator path is gated (#779)"
     ]
+  },
+  "1.35.12": {
+    "title": "What's new",
+    "items": [
+      "Close seven factory due-outs, and the gates that let them hide (#781)"
+    ]
   }
 }

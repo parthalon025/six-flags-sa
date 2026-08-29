@@ -345,6 +345,21 @@ await check('Settings sign-in card matches Clerk routes', async () => {
   if (!clerkAuthPages && card) {
     throw new Error('SignInCard mounted when /sign-in is not available');
   }
+  // The card mounting is half the capability; the other half is that it still
+  // offers the way in. AuthGate — the old Profile gate that carried Sign in and
+  // Guest together — is no longer mounted anywhere (in-place OAuth broke live),
+  // so this card is the shipped entry point to a Profile, and nothing asserted
+  // it had a Sign in on it (#24).
+  if (card) {
+    const login = a.locator('.signInCard .authGateLogin');
+    if ((await login.count()) < 1) {
+      throw new Error('sign-in card offers no Sign in action');
+    }
+    const href = await login.first().getAttribute('href');
+    if (href !== '/sign-in') {
+      throw new Error(`Sign in points at ${href ?? 'nothing'}, not the Clerk route`);
+    }
+  }
   await a.locator('.tabItem[data-tab="explore"]').click();
   await a.waitForTimeout(200);
   return true;
@@ -761,9 +776,17 @@ await check("wearing a Skin repaints the World's Zones from its own display pack
      Visual factory owned Zone tone, every Skin of a World painted its Zones
      identically — the tints came from map truth (`meta.lands`) and the Skin
      was not an input at all. This asserts the output of the run: the same
-     Zone paths, under two different worn looks, carry different fills, and
-     the fills are the ones this World's published `<skin>.visual.json` says
-     — not a table in app code and not a colour out of truth. */
+     `world-lands` source, under two different worn looks, carries different
+     feature tints, and the tints are the ones this World's published
+     `<skin>.visual.json` says — not a table in app code and not a colour out
+     of truth.
+
+     The shipped renderer is MapLibre (ADR-0019/h18) — `svg.mapSvg path` and
+     `.mapWorld .lyr-land path` are ParkMapSvg.jsx's retired DOM and never
+     exist on this branch, so the assertion reads the real mechanism instead:
+     the `world-lands` GeoJSON source's `tint` feature property, which
+     `mapViewStyle.js`'s `lands` layer paints with
+     `['coalesce', ['get','tint'], grassFill]`. */
   const P = await openPhone(browser, {
     lat: 39.34395,
     lng: -84.2673,
@@ -775,16 +798,31 @@ await check("wearing a Skin repaints the World's Zones from its own display pack
   try {
     await p.evaluate(() => localStorage.setItem('parkbound-demo-skins', '1'));
     await p.reload({ waitUntil: 'domcontentloaded' });
-    await p.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
+    await p.waitForFunction(() => Boolean(document.querySelector('[data-testid="park-map-gl"] canvas')), null, {
       timeout: 40000,
     });
     await closeGate(p);
-    // Zone fills as drawn, keyed by nothing but paint order — the map is the
-    // same drawing either way, so position N is the same Zone either way.
-    const zoneFills = () => p.evaluate(() =>
-      [...document.querySelectorAll('.mapWorld .lyr-land path')].map((el) => el.getAttribute('fill')));
-    const palette = await zoneFills();
-    if (palette.length < 5) throw new Error(`expected Kings Island's Zones, drew ${palette.length}`);
+    await until(async () => {
+      const layers = await p.evaluate(() => (globalThis.__parkMapLibre?.getStyle?.()?.layers || []).map((l) => l.id));
+      return layers.includes('world-lands');
+    }, { timeout: 20000, label: 'world-lands layer built' });
+
+    // Zone tints as the source actually holds them, keyed by Zone name so a
+    // feature reordered by a later `setData` still matches its own before.
+    const zoneTints = () => p.evaluate(async () => {
+      const source = globalThis.__parkMapLibre?.getSource?.('world-lands');
+      if (!source) return null;
+      const data = await source.getData();
+      return Object.fromEntries(
+        (data.features || [])
+          .filter((f) => f.properties?.name)
+          .map((f) => [f.properties.name, String(f.properties.tint || '').toUpperCase()]),
+      );
+    });
+    const before = await zoneTints();
+    if (!before || Object.keys(before).length < 5) {
+      throw new Error(`expected Kings Island's Zones on world-lands, got ${JSON.stringify(before)}`);
+    }
 
     await go(p, 'Collection');
     const row = p.locator('.worldSkinRow .row', { hasText: 'Watercolor quest' }).first();
@@ -793,13 +831,13 @@ await check("wearing a Skin repaints the World's Zones from its own display pack
       throw new Error('Watercolor quest still locked after demo grant');
     }
     // Read the spec before wearing, because it is what the wait below waits
-    // FOR. Waiting on "any fill changed" instead raced the thing under test:
+    // FOR. Waiting on "any tint changed" instead races the thing under test:
     // switching Skin re-runs landTint immediately, and with no tones in hand
     // yet that already repaints every Zone in the generated name-hue. The
-    // wait therefore fired on the fallback repaint and `worn` was read in the
-    // window before the spec landed — reporting 0 Zone fills from the Skin on
-    // a build where the Skin paints all ten, whenever the fetch lost the race
-    // (which is to say, whenever the box was busy).
+    // wait would then fire on that fallback repaint and `worn` would be read
+    // before the spec's fetch — and, before the app fix, before the retint
+    // that pushes it into the already-built map — landed at all, reporting 0
+    // Zone tints from the Skin on a build where the Skin paints all ten.
     const spec = await p.evaluate(async () => {
       const res = await fetch('/venues/kings-island/display/watercolor-quest.visual.json');
       return res.ok ? res.json() : null;
@@ -812,24 +850,28 @@ await check("wearing a Skin repaints the World's Zones from its own display pack
     if (declared.length < 5) throw new Error(`spec declares ${declared.length} Zone fills`);
 
     await row.click();
-    // Wait for the tones the spec declares to be the ones on the map. A Skin
-    // that never paints its Zones times out here instead of passing, which is
-    // the failure this check exists to catch.
-    await p.waitForFunction((want) => {
-      const set = new Set(want);
-      const now = [...document.querySelectorAll('.mapWorld .lyr-land path')].map((el) => el.getAttribute('fill'));
-      return now.filter((f) => set.has(String(f).toUpperCase())).length >= 5;
-    }, declared, { timeout: 20000 });
-    const worn = await zoneFills();
+    // Wait for the tones the spec declares to be the ones on the source. A
+    // Skin that never pushes its own palette into the live map — because the
+    // mount race stuck it with the fallback and nothing corrected it after —
+    // times out here instead of passing, which is the failure this check
+    // exists to catch.
+    const declaredUpper = declared.map((f) => f.toUpperCase());
+    await until(async () => {
+      const now = await zoneTints();
+      if (!now) return false;
+      const set = new Set(declaredUpper);
+      return Object.values(now).filter((tint) => set.has(tint)).length >= 5;
+    }, { timeout: 20000, label: "world-lands tints matching the Skin's declared spec" });
+    const worn = await zoneTints();
 
-    // Every fill the Skin painted is one its own published spec declares.
-    const declaredSet = new Set(declared);
-    const fromSpec = worn.filter((f) => declaredSet.has(String(f).toUpperCase()));
+    // Every tint the Skin painted is one its own published spec declares.
+    const declaredSet = new Set(declaredUpper);
+    const fromSpec = Object.values(worn).filter((tint) => declaredSet.has(tint));
     if (fromSpec.length < 5) {
-      throw new Error(`only ${fromSpec.length} Zone fills came from the Skin's own spec`);
+      throw new Error(`only ${fromSpec.length} Zone tints came from the Skin's own spec`);
     }
     // …and they are genuinely a restyle, not the palette's own answer.
-    const changed = worn.filter((f, i) => f !== palette[i]).length;
+    const changed = Object.keys(worn).filter((name) => worn[name] !== before[name]).length;
     if (changed < 5) throw new Error(`wearing the Skin repainted only ${changed} Zones`);
   } finally {
     await P.context.close();

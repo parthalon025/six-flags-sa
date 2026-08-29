@@ -16,10 +16,18 @@
       "kind": "aerial_imagery",
       "provider": "Okaloosa County GIS",
       "served_via": "Esri World Imagery",
-      "capture_date": "2025-03-01",
+      "service_url": "https://okgis.myokaloosa.com/arcgis/rest/services/imagery/Aerial2025_dynamic/MapServer",
+      "flown_by": "Pictometry International Corp (EagleView)",
+      "capture_window": {
+        "from": "2024-12-01",
+        "to": "2025-02-02"
+      },
       "resolution_cm": 7.6,
-      "horizontal_accuracy_m": 0.19,
-      "used_for": "Walking paths OpenStreetMap does not draw, and ride positions where OSM names geometry but not the attraction."
+      "horizontal_accuracy_m": null,
+      "licence_class": null,
+      "used_for": "Walking paths OpenStreetMap does not draw, and ride positions where OSM names geometry but not the attraction.",
+      "notes": "served_via records the channel THIS SURVEY actually used and is left alone — imagery.geojson is a hand-surveyed record and rewriting how it was made would falsify it, not correct it. What is new is county_service_url: Okaloosa County serves this same imagery directly, verified by exporting a 2048x2048 TIFF over Big Kahuna's and confirming the slide complex, wave pool and go-kart loop. That is the admissible channel a re-survey or an ingest should use (the _dynamic service, not the cached one, which sets exportTilesAllowed=false). capture_date said 2025-03-01, outside the window the county publishes (\"collected from 12-01-2024 through 02-02-2025\"). horizontal_accuracy_m said 0.19 with no source behind it, against a Florida county ortho standard of 0.76 m at 95% CI. Both corrected rather than left as unevidenced claims. licence_class stays null: the raster is a Pictometry/EagleView product the county licensed in, not a county work. Okaloosa GIS publishes its Chapter 119 public-domain sentence on 13 vector items and zero imagery items across all 193 in its ArcGIS org, and every imagery service publishes licenseInfo: \"\". Chapter 119 is a right of access, not a redistribution grant.",
+      "county_service_url": "https://okgis.myokaloosa.com/arcgis/rest/services/imagery/Aerial2025_dynamic/MapServer"
     },
     {
       "id": "park-map-2026",
@@ -27,7 +35,7 @@
       "map_kind": "schematic",
       "url": "https://bigkahunas.com/destin/park-map/",
       "image": "data/venues/big-kahunas/maps/2026-parkmap.webp",
-      "used_for": "Food, restroom, and river labels; walking paths and ride entrances when georeferenced (illustrated / not-to-scale \u2014 use TPS). Primary map for builder testing and production georef."
+      "used_for": "Food, restroom, and river labels; walking paths and ride entrances when georeferenced (illustrated / not-to-scale — use TPS). Primary map for builder testing and production georef."
     },
     {
       "id": "park-site-2026",

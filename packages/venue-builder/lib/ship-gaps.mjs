@@ -33,6 +33,7 @@
 import { questSeedsFromEntrances } from './quest-seeds.mjs';
 import { ambientSignalShipArtifacts } from './ambient-signal-seeds.mjs';
 import { assertNoDisputeKinds, isDisputeKind } from './imagery-disputes.mjs';
+import { inventoryShipArtifacts } from './inventory-gaps.mjs';
 
 export const SHIPPED_GAP_TYPES = Object.freeze([
   'height',
@@ -296,17 +297,38 @@ export function shippedGapsForVenue({
   gapNotes = {},
   asOf,
 } = {}) {
+  const caches = adapterCaches || {};
   const signals = ambientSignalShipArtifacts({
     venueId,
-    adapterCaches: adapterCaches || {},
+    adapterCaches: caches,
     attractions,
     gapNotes,
     asOf,
+  });
+  /* Inventory under-coverage. The lane was built and tested but never called
+     from here, so a real build could not emit a `type: 'inventory'` row however
+     bad its adapter coverage got, and the allowlist entry on both sides was
+     inert (#29). It is a floor, not routine output: nothing is emitted until an
+     adapter matches fewer than half this venue's rideables, which none of the
+     four flagships does (74-80% at the time of wiring). */
+  const inventory = inventoryShipArtifacts({
+    venueId,
+    pois,
+    parksApiCache: caches['parks-api'] || null,
+    qtCache: caches['queue-times'] || null,
+    gapNotes,
   });
   const seeds = [
     ...questSeedsFromEntrances(venueId, attractions),
     ...presenceAndCampingSeeds(meta, pois),
     ...signals.seeds,
+    ...inventory.seeds,
   ];
-  return shippedGapsDocument({ venueId, seeds, pois, map: map ?? {} });
+  return shippedGapsDocument({
+    venueId,
+    seeds,
+    pois,
+    map: map ?? {},
+    inventoryGaps: inventory.gaps,
+  });
 }

@@ -159,21 +159,60 @@ delete process.env.GOOGLE_MAPS_API;
 const missingKey = await runGooglePlaces({ venueId: 'fixture-park' });
 assert.equal(missingKey.gap, true);
 assert.equal(missingKey.ok, false);
+assert.equal(
+  missingKey.claims[0]?.displayName,
+  'Front Gate',
+  'without a key the adapter serves the venue cache sidecar it read from disk',
+);
 if (prevKey) process.env.GOOGLE_MAPS_API_KEY = prevKey;
 
+// The cache sink is stubbed, so this exercises the real fetch path without
+// rewriting `fixture-park/google-places-cache.json` — a suite that mutates
+// tracked builder input makes its own second run start from other inputs, and
+// trains everyone to discard a dirty tree unread (#34).
+const wrote = [];
+const sink = (venueId, suffix, data) => {
+  wrote.push({ venueId, suffix, data });
+  return `memory://${venueId}/${suffix}`;
+};
+const okFetch = async () => ({
+  ok: true,
+  json: async () => ({ id: 'ChIJtest', displayName: { text: 'Front Gate' } }),
+});
+
 process.env.GOOGLE_MAPS_API_KEY = 'test-key';
+const before = Date.now();
 const fetched = await runGooglePlaces(
   { venueId: 'fixture-park', placeIds: ['ChIJtest'] },
-  {
-    fetchFn: async () => ({
-      ok: true,
-      json: async () => ({ id: 'ChIJtest', displayName: { text: 'Front Gate' } }),
-    }),
-  },
+  { fetchFn: okFetch, writeCacheFn: sink },
+);
+const after = Date.now();
+
+const pinned = new Date('2020-01-02T03:04:05.000Z');
+await runGooglePlaces(
+  { venueId: 'fixture-park', placeIds: ['ChIJtest'] },
+  { fetchFn: okFetch, writeCacheFn: sink, now: () => pinned },
 );
 delete process.env.GOOGLE_MAPS_API_KEY;
+
 assert.equal(fetched.ok, true);
 assert.equal(fetched.claims[0].displayName, 'Front Gate');
+assert.equal(wrote.length, 2, 'a genuine run still writes its cache — through the sink it was given');
+assert.equal(wrote[0].venueId, 'fixture-park');
+assert.equal(wrote[0].suffix, 'google-places');
+assert.deepEqual(wrote[0].data.placeIds, ['ChIJtest']);
+
+// Only the sink is stubbed on the first run, so its stamp is the real clock.
+const stamped = Date.parse(wrote[0].data.fetched);
+assert.ok(
+  stamped >= before && stamped <= after,
+  `a genuine run records real fetch time, got ${wrote[0].data.fetched}`,
+);
+assert.equal(
+  wrote[1].data.fetched,
+  pinned.toISOString(),
+  'an injected clock is what a caller uses to pin the stamp — the default is not pinned',
+);
 
 const proposal = buildOsmChangeProposal({ venueId: 'kings-island', claim: { note: 'path position disputed' } });
 assert.equal(proposal.status, 'draft');

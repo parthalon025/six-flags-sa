@@ -21,9 +21,18 @@ function metadataClaims(details) {
 }
 
 /**
+ * A genuine run stamps the wall clock and writes the venue's cache sidecar.
+ * Both are injectable so a caller that is not a genuine run — a test driving a
+ * stubbed `fetchFn` — can exercise the fetch path without writing tracked
+ * builder input. Same shape as `writeOsmProposalFile`'s `write` sink (#34).
+ *
  * @param {{ venueId?: string, offline?: boolean, placeIds?: string[] }} ctx
+ * @param {{ fetchFn?: typeof fetch, writeCacheFn?: typeof writeCache, now?: () => Date }} deps
  */
-export async function run(ctx = {}, { fetchFn = fetch } = {}) {
+export async function run(
+  ctx = {},
+  { fetchFn = fetch, writeCacheFn = writeCache, now = () => new Date() } = {},
+) {
   const id = ctx.venueId || 'unknown';
   const key = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API;
   const cached = readCache(id, 'google-places') || { placeIds: [], claims: [] };
@@ -71,10 +80,10 @@ export async function run(ctx = {}, { fetchFn = fetch } = {}) {
 
   const claims = metadataClaims(details);
   const out = {
-    fetched: new Date().toISOString(),
+    fetched: now().toISOString(),
     placeIds,
     claims,
   };
-  writeCache(id, 'google-places', out);
+  writeCacheFn(id, 'google-places', out);
   return { ok: true, claims };
 }

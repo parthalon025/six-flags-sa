@@ -49,5 +49,59 @@ export function validateDisplaySpec(spec) {
   if (!spec?.surfaces || typeof spec.surfaces !== 'object' || !Object.keys(spec.surfaces).length) {
     errors.push('surfaces must be a non-empty object');
   }
+  errors.push(...landToneErrors(spec?.landTones));
   return errors.length ? { ok: false, errors } : { ok: true };
+}
+
+/** The modes a Zone tone may be keyed by — one Skin paints one of them. */
+const TONE_MODES = ['day', 'night'];
+
+/** The roles a Zone tone carries, since 5e2cebc gave the Visual factory Zone tone. */
+const TONE_ROLES = ['fill', 'stroke', 'label'];
+
+const isHex = (v) => typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v);
+
+/**
+ * `landTones` in the shape the renderer reads: zone → mode → {fill, stroke, label}.
+ *
+ * The retired shape is zone → mode → hex, and `apps/party-tracker/lib/zoneTones.js`
+ * degrades a tone it cannot read to "no tone" rather than throwing. So a spec
+ * compiled before 5e2cebc renders its Zones untinted — a silent visual
+ * downgrade no test could see, which is how pixel-tycoon's pack sat on the old
+ * shape unnoticed (#31). A retired shape is a gate failure here instead.
+ */
+export function landToneErrors(landTones) {
+  if (landTones === undefined) return [];
+  if (!landTones || typeof landTones !== 'object' || Array.isArray(landTones)) {
+    return ['landTones must be an object keyed by Zone name'];
+  }
+  const errors = [];
+  for (const [zone, byMode] of Object.entries(landTones)) {
+    if (!byMode || typeof byMode !== 'object' || Array.isArray(byMode)) {
+      errors.push(`landTones["${zone}"] must be keyed by mode (${TONE_MODES.join(' or ')})`);
+      continue;
+    }
+    for (const [mode, tone] of Object.entries(byMode)) {
+      const at = `landTones["${zone}"].${mode}`;
+      if (!TONE_MODES.includes(mode)) {
+        errors.push(`${at}: "${mode}" is not a mode a Skin paints`);
+        continue;
+      }
+      if (isHex(tone)) {
+        errors.push(
+          `${at}: retired flat shape — a bare hex, not { ${TONE_ROLES.join(', ')} }. `
+            + 'Recompile the pack (venues:display); the renderer degrades this to no tone rather than throwing.',
+        );
+        continue;
+      }
+      if (!tone || typeof tone !== 'object' || Array.isArray(tone)) {
+        errors.push(`${at}: must be an object of ${TONE_ROLES.join(', ')}`);
+        continue;
+      }
+      for (const role of TONE_ROLES) {
+        if (!isHex(tone[role])) errors.push(`${at}.${role}: not a #rrggbb hex`);
+      }
+    }
+  }
+  return errors;
 }
