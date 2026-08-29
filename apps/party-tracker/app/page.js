@@ -68,7 +68,7 @@ import {
 import { newMemberId } from '@/lib/core/ids';
 import { clearPendingInvite } from '@/lib/party/inviteStash';
 import { mapDisplayPosition } from '@/lib/gps/display';
-import { FOLLOW_RESUME_MS, followShouldResume } from '@/lib/parkMapView';
+import { createFollowResumeTimer } from '@/lib/followResumeTimer';
 import { resolveSession, readLocalSession } from '@/lib/auth/session';
 import { listManagedGuests, upsertManagedGuest } from '@/lib/auth/profileCache';
 import { useAuth } from '@clerk/nextjs';
@@ -468,7 +468,7 @@ function ParkApp({ isSignedIn }) {
   /* When the guest last moved the camera themselves. Null means they have
      not — an explicit look-at (a Place, a Member, the car) is not a gesture,
      so the resume clock must not steal it. */
-  const gesturedAtRef = useRef(null);
+  const followTimerRef = useRef(null);
   const [armMeet, setArmMeet] = useState(false);
   /* A patch of ground the visitor tapped and named — see lib/spot.js. Three
      pieces of state, not one, because they answer three different questions and
@@ -548,12 +548,12 @@ function ParkApp({ isSignedIn }) {
   }, []);
   const [focusPoint, setFocusPoint] = useState(null);
   const resumeFollow = useCallback(() => {
-    gesturedAtRef.current = null;
+    followTimerRef.current?.clearGesture();
     setFocusPoint(null);
     setFollow(true);
   }, []);
   const holdFollow = useCallback((lookAt = null) => {
-    gesturedAtRef.current = null;
+    followTimerRef.current?.clearGesture();
     setFollow(false);
     if (lookAt && Number.isFinite(lookAt.lat) && Number.isFinite(lookAt.lng)) {
       setFocusPoint({ lat: lookAt.lat, lng: lookAt.lng });
@@ -2720,32 +2720,29 @@ function ParkApp({ isSignedIn }) {
   );
 
   const onUserPan = useCallback(() => {
-    gesturedAtRef.current = Date.now();
+    followTimerRef.current?.stamp(Date.now());
     setFollow(false);
     /* A leftover focus point (Locate used to write one) would ease the
        camera back to a stale coordinate and fight the pan. Free look
        leaves the camera where the finger put it. */
     setFocusPoint(null);
-  }, []);
+    if (!previewing) followTimerRef.current?.arm(false);
+  }, [previewing]);
 
-  /* Free look is a pause. Once the guest has been still long enough, Follow
-     snaps back to this phone so the next fix recentres them. Previewing a
-     route is not free look — framing the walk must not be undone. */
+  const onUserGestureSettled = useCallback(() => {
+    followTimerRef.current?.stamp(Date.now());
+    if (!previewing) followTimerRef.current?.arm(false);
+  }, [previewing]);
+
   useEffect(() => {
-    if (follow || previewing) return undefined;
-    const gesturedAt = gesturedAtRef.current;
-    if (gesturedAt == null) return undefined;
-    const due = (at, clock) => followShouldResume({ gesturedAt: at, now: clock, previewing });
-    if (due(gesturedAt, Date.now())) {
-      resumeFollow();
-      return undefined;
-    }
-    const wait = Math.max(0, FOLLOW_RESUME_MS - (Date.now() - gesturedAt));
-    const timer = setTimeout(() => {
-      if (due(gesturedAtRef.current, Date.now())) resumeFollow();
-    }, wait);
-    return () => clearTimeout(timer);
-  }, [follow, previewing, resumeFollow]);
+    const timer = createFollowResumeTimer({ onResume: resumeFollow });
+    followTimerRef.current = timer;
+    return () => timer.dispose();
+  }, [resumeFollow]);
+
+  useEffect(() => {
+    if (previewing) followTimerRef.current?.clearGesture();
+  }, [previewing]);
 
   const headerLine = () => {
     if (venueStatus === 'loading') return 'Loading the map…';
@@ -2961,6 +2958,7 @@ function ParkApp({ isSignedIn }) {
           armMeet={armMeet}
           follow={follow}
           onUserPan={onUserPan}
+          onUserGestureSettled={onUserGestureSettled}
           heading={heading}
           eligibility={eligibilityView}
           visibleCategories={categories}

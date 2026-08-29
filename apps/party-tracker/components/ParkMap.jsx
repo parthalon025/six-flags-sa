@@ -119,6 +119,7 @@ function ParkMap(props) {
     onSelectPoi,
     onMapTap,
     onUserPan,
+    onUserGestureSettled,
   } = props;
 
   const { surface, pins } = useMemo(() => parkMapPalettes(theme), [theme]);
@@ -265,6 +266,7 @@ function ParkMap(props) {
         onSelectPlace={onSelectPoi}
         onMapTap={onMapTap}
         onUserPan={onUserPan}
+        onUserGestureSettled={onUserGestureSettled}
       >
         {legend}
       </ParkMapGl>
