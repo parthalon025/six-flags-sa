@@ -22,7 +22,7 @@
  *   node test/builder/display-grounding.mjs
  */
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, renameSync } from 'node:fs';
 
 const PASS = [];
 const FAIL = [];
@@ -794,9 +794,11 @@ await check('kings-island character is read from zone-character.json, not ground
 await check('every flagship declares zone character or an explicit uncharacterised policy', () => {
   const flagships = ['kings-island', 'cedar-point', 'six-flags-fiesta-texas', 'big-kahunas'];
   for (const venue of flagships) {
-    const record = readZoneCharacter(venue);
-    assert.ok(record, `${venue}: missing zone-character.json`);
-    assert.deepEqual(validateZoneCharacter(record, { venueId: venue }), [], `${venue}: zone-character invalid`);
+    assert.deepEqual(
+      zoneCharacterProblemsForWorld(venue),
+      [],
+      `${venue}: zone-character curation does not validate`,
+    );
   }
   return true;
 });
@@ -840,14 +842,17 @@ await check('every flagship recompiles landTones that match committed packs', ()
 });
 
 await check('readGrounding fails when zone-character is missing for a grounded World', () => {
-  const problems = validateZoneCharacter(null, {
-    venueId: 'synth-park',
-    landCoverZones: ['Midway'],
-  });
-  assert.ok(
-    problems.some((p) => /missing/.test(p)),
-    problems.join('; '),
+  const zoneCharacterPath = new URL(
+    '../../packages/venue-builder/data/venues/kings-island/display/zone-character.json',
+    import.meta.url,
   );
+  const backupPath = `${zoneCharacterPath.pathname}.test-bak`;
+  renameSync(zoneCharacterPath, backupPath);
+  try {
+    assert.throws(() => readGrounding('kings-island'), /missing/);
+  } finally {
+    renameSync(backupPath, zoneCharacterPath);
+  }
   assert.deepEqual(zoneCharacterProblemsForWorld('kings-island'), []);
   return true;
 });

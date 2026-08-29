@@ -5,7 +5,7 @@ drop it again, and restore it for the three venues still missing it.
 
 **Blocked by:** None
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Evidence
 

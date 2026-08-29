@@ -7,7 +7,6 @@
  */
 
 import path from 'node:path';
-import { existsSync } from 'node:fs';
 import { OVERRIDE_DIR, readJson } from './venue-io.mjs';
 
 /** Closed vocabulary — must stay aligned with `LAND_CHARACTERS` in display-pack.mjs. */
@@ -102,7 +101,3 @@ export function zoneCharacterProblemsForWorld(venueId) {
   });
 }
 
-/** True when a flagship carries an explicit zone-character record on disk. */
-export function hasZoneCharacterRecord(venueId) {
-  return existsSync(zoneCharacterFile(venueId));
-}
