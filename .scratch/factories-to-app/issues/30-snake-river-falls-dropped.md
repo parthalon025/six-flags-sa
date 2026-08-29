@@ -5,7 +5,7 @@ shipped map if it does.
 
 **Blocked by:** None
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Evidence
 
@@ -72,8 +72,10 @@ Worth noting the drift detection that commit was fixing did not flag a ride leav
 - [ ] `npm run venues:certify -- cedar-point` re-run; ride count reconciled with the chart
 - [ ] `npm run test:pre-merge-vertical` green
 
-## Notes
+## Resolution (2026-08-29)
 
-Related: cedar-point already fails `route` certification on Siren's Curse being 45 m off the walk
-network (ticket 23). Both are the shipped map disagreeing with the park. Ticket 25 came out of the
-same rebuild — `a065a0a` is worth auditing for the other three venues too.
+Snake River Falls **closed permanently** on 2024-09-02 (announced 2024-08-02; demolished
+offseason). The OSM rebuild that dropped it from the shipped map was correct. Retired the stale
+`heights.json` rule and gated committed sidecars with `test/builder/heights-retired.mjs` so a rule
+with no live place cannot sit quietly again.
+
