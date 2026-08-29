@@ -140,7 +140,7 @@ available as the escape hatch for the entries a name cannot address on its own, 
 of twenty-six places called "Restrooms".
 
 Each build writes `apps/party-tracker/public/venues/<id>.map.json`, `apps/party-tracker/public/venues/<id>.pois.json`, and `apps/party-tracker/public/venues/<id>.gaps.json`, then
-rebuilds `apps/party-tracker/public/venues/manifest.json` and the generated `apps/party-tracker/lib/venueIndex.js`. Gaps are facts the builder cannot settle (height, queue, path, path_disputed, restroom, food, gate, camping, verify); `verify` rows name a stale adapter id in `target`. The phone ranks them by Location and does not invent them from POI fields. The client
+rebuilds `apps/party-tracker/public/venues/manifest.json` and the generated `apps/party-tracker/lib/venueIndex.js`. Gaps are facts the builder cannot settle (height, queue, path, restroom, food, gate, camping, verify, inventory); `verify` rows name either a stale adapter id or a ride whose evidence sources disagree in `target`. The phone ranks them by Location and does not invent them from POI fields. Where imagery contradicts OSM the build records a dispute in `packages/venue-builder/data/venues/<id>/imagery-disputes.json` for a maintainer and ships nothing — no guest is asked to settle where a path runs (owner decision, 2026-08-22; ADR-0021 Open). A ride evidence conflict is the other way round: a guest at the ride can settle it, so it ships as a `verify` Gap on that ride (owner ruling, 2026-08-23) rather than as a Gap type of its own — reaching the wire, but not yet a guest: the phone keeps `verify` and then draws no card for it (#795). `ship-gaps.mjs` fails to load if a dispute kind is ever added back to the shipped allowlist. The client
 *fetches* those files rather than importing them, which is the point: a venue added to the
 manifest reaches a phone that already has the app installed, and the service worker caches
 whichever one gets opened. A missing Gaps file is an empty list — it must not fail the park load.
@@ -569,7 +569,8 @@ passing it without having run `venues:bake` fails the pack on purpose.
 Tile export writes GeoJSON from the shipped contract and wraps Tippecanoe into
 `display/base.pmtiles` — a recorded gap, not a crash, when the binary is absent,
 though a Tippecanoe that runs and produces a broken or oversized archive still
-fails certification. Each Skin also gets a compiled MapLibre `<skin>.style.json`;
+fails certification. Inline `map.json` remains the shipped geometry path; tiles are
+the escape hatch ([ADR-0026](../adr/0026-venue-geometry-inline-vs-tiles.md)). Each Skin also gets a compiled MapLibre `<skin>.style.json`;
 `venues:render` serves the pack to headless Chromium and screenshots every
 Skin at the certification's truth-derived visual points — the builder-side
 descendant of the reference-skin visual matrix.

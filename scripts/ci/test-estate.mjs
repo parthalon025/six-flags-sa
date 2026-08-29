@@ -151,6 +151,7 @@ export const TEST_ESTATE = {
   // --- test/builder: assertions over generated venue output ----------------
   'test/builder/ambient-signal-seeds.mjs': ['test:builder'],
   'test/builder/attractions-sidecar.mjs': ['test:builder'],
+  'test/builder/catalog-allow-no-heights.mjs': ['test:builder'],
   'test/builder/check-names.mjs': ['test:builder'],
   'test/builder/compare.mjs': ['test:builder'],
   'test/builder/delivery-bundle-revision-gate.mjs': ['test:builder'],
@@ -211,6 +212,7 @@ export const TEST_ESTATE = {
   'test/scripts/apple-developer.test.mjs': ['ci-gate'],
   'test/scripts/bake-drift-watch.test.mjs': ['ci-gate'],
   'test/scripts/build-venue-workflow.test.mjs': ['ci-gate'],
+  'test/scripts/build-top100-workflow.test.mjs': ['ci-gate'],
   'test/scripts/builder-app-contract.test.mjs': ['ci-gate'],
   'test/scripts/builder-certify-ci.test.mjs': ['ci-gate'],
   'test/scripts/billing-sync-check.test.mjs': ['ci-gate', 'test:unit'],

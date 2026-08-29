@@ -153,14 +153,71 @@ Closed 2026-08-22 so Trains H and I can finish. The answers:
   is the parent-placeholder functional check (playbook row 5 / slice h9), not a correctness
   gate — clause 1 already removed that rationale. A pinned real device is a later addition,
   not a ship blocker.
-- **Train I.** A disputed path position ships as Gap type `path_disputed` (extends the frozen
-  seven; ADR-0020 clause 5 names this Gap). OSM write-back is steward-gated proposal files,
-  never an automatic upload. Google Places is back-office metadata corroboration only (clause
-  7 already). Mapillary share-alike stays attribution-gated and does not write truth.
+- **Train I.** A disputed path position **never reaches a guest**. It stays builder-side: a
+  maintainer record (`packages/venue-builder/data/venues/<id>/imagery-disputes.json`, written by
+  `imagery-disputes.mjs`) plus a dissenting claim in the evidence graph, for steward review. A
+  **ride evidence conflict is not covered by that** and **does** reach a guest: it ships on the
+  existing `verify` type, targeted at the ride (owner ruling, 2026-08-23). The shipped Gap
+  vocabulary stays ADR-0009's frozen seven plus `verify` and `inventory` either way; no dispute
+  kind may be spelled as a shipped Gap type, and `ship-gaps.mjs` asserts that at module load.
+  OSM write-back is steward-gated proposal files, never an automatic upload. Google Places is
+  back-office metadata corroboration only (clause 7 already). Mapillary share-alike stays
+  attribution-gated and does not write truth.
 
-Plus the crop question that building h1 surfaced: **a band plan describes the World; the
-pyramid georeferences against the cropped PNG** (`cert.bounds`). `bandBakePlan` stays
-independent of `cropModel`.
+  *Corrected 2026-08-29:* this bullet previously recorded the opposite answer — "ships as Gap
+  type `path_disputed` (extends the frozen seven)". That was written from ADR-0020 clause 5's
+  word "Gap" before the owner had answered, and `path_disputed` was already in
+  `SHIPPED_GAP_TYPES` and on the phone's keep-list by the time the answer came back. The owner
+  chose the third option on 2026-08-22 — *keep it internal, never show guests* — so the eighth
+  type this bullet added to the frozen seven is unshipped. No published bundle under
+  `apps/party-tracker/public/venues/` ever carried a `path_disputed` row, so nothing reached a
+  guest's cache; the phone's keep-list drops the type anyway, which is what covers a bundle
+  cached from a preview build.
+
+  *Corrected again 2026-08-23 (recorded 2026-08-29):* unshipping `path_disputed` also unshipped
+  `evidence_conflict`, because the conflict seed had been routed onto `path_disputed`'s channel
+  and inherited its fate — a ride whose sources disagreed reached no guest at all. The owner's
+  decision was about **a disputed path position**, not about ride evidence, and the owner has
+  since ruled: **keep ride evidence conflicts visible**, on `verify`. So `evidence_conflict` is
+  no longer classified as a dispute kind (`DISPUTE_KINDS` holds `path_disputed` alone, and every
+  member of it is stamped `shipped: false`); it is named in `shippedTypeForSeed` in full and
+  mapped to `verify` rather than riding another kind's route, which is how it shipped
+  unexamined the first time. Its builder-side record is where it always was — the certification
+  brief's durable seeds. The frozen seven are untouched by all of this. No published gaps
+  document changed: none of the four venues under `apps/party-tracker/public/venues/` currently
+  produces an evidence conflict, and all four still regenerate byte-identical.
+
+  *Shipped state, 2026-08-29:* the re-route reaches the wire and stops there. The phone keeps
+  `verify` through `venue/store.js`'s network filter and then discards it at the renderer:
+  `sideQuests.js` `groupShippedGaps` skips any type absent from `GAP_CARD`, which holds
+  ADR-0009's seven only. `inventory` (added on main by 3273b97d, 2026-08-27) is dropped by the same line. So both
+  types that sit outside the frozen seven are emitted, transported, and never drawn — the
+  correction above moved evidence conflicts off a channel that was filtered out onto one that
+  is not rendered, which is visible progress on the builder side and none on the guest side.
+  Making `verify` guest-facing is a real slice, not a card entry: the type carries two seeds
+  with incompatible semantics (`adapter_stale` names an adapter id, with no Place to stand at,
+  while `evidence_conflict` names a ride), and `overlay.js` has neither a `FIELD_TYPES` member
+  nor an `HTTP_KIND` mapping for it, so a completed quest would record no Overlay fact.
+  Tracked as #795, with a tripwire in `test/builder/gaps-quests.mjs` that goes red when the
+  drift changes shape.
+
+Plus the crop question that building h1 surfaced. Answered **don't trim, use the large
+tiles**: a band plan describes the World, and so does the picture — the bake emits the
+projector's whole grid and `cert.bounds` is that grid's own four corners. `bandBakePlan` is
+still independent of any cropping, because there is none: `cropModel` and its `margin`
+option are deleted rather than taught about plans. The pyramid keeps georeferencing against
+`cert.bounds` (a plan says what a bake was asked for; only the artifact says what it
+emitted), which now names the same World the plan does.
+
+  *First answered 2026-08-21* as "the plan describes the World; the pyramid georeferences
+  against the cropped PNG" — which left the mismatch in place rather than closing it, and
+  the owner reversed it on 2026-08-22. The mismatch it left: the bake trimmed itself to the
+  boundary ring's box plus a 6-cell margin, so big-kahunas planned 244x276 and emitted
+  157x191, while kings-island matched its plan only because its boundary happens to fill its
+  bbox. Two consequences of not trimming, both deliberate: the map bbox is the World, so
+  neighbouring geometry inside it (big-kahunas keeps 74 building footprints where the crop
+  left 32) is drawn rather than dropped; and every mark sits at the projector's own cell,
+  because there is no window origin left to subtract.
 
   *Corrected 2026-08-21:* this list originally named "the `GOOGLE_MAPS_API` key's exposure through
   public workflow triggers" as an open risk. Checked, and it was overstated on both counts. The key
