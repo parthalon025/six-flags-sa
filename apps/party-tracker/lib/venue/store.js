@@ -350,9 +350,13 @@ async function fetchOptionalJson(url, { refresh = false } = {}) {
 /* ADR-0009's frozen seven plus verify and inventory. Dispute kinds are not on
  * this list and must never be: where imagery contradicts OSM about a path the
  * builder keeps a private record and asks no guest about it (owner decision,
- * 2026-08-22). A ride whose evidence sources disagree does reach a guest, but
- * on `verify` — already here — not under a name of its own (owner ruling,
- * 2026-08-23). This Set is also the reason a bundle already sitting in a
+ * 2026-08-22). A ride whose evidence sources disagree is meant to reach a
+ * guest on `verify` — already here — rather than under a name of its own
+ * (owner ruling, 2026-08-23), but it does not reach one yet: this Set keeps
+ * `verify` on the wire and `sideQuests.js` then drops it, because its
+ * GAP_CARD map holds ADR-0009's seven only. Same for `inventory`. See #795;
+ * until it lands, both types arrive on the phone and are never drawn.
+ * This Set is also the reason a bundle already sitting in a
  * phone's cache is safe — a `path_disputed` row in a stale `*.gaps.json` is
  * filtered out on load rather than surviving until the cache turns over. */
 export const SHIPPED_GAP_TYPES = new Set(['height', 'queue', 'path', 'restroom', 'food', 'gate', 'camping', 'verify', 'inventory']);
