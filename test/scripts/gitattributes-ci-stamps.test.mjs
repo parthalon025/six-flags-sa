@@ -37,6 +37,11 @@ assert.match(
 );
 assert.match(
   pkg.scripts.prepare,
+  /git config core\.hooksPath \.husky/,
+  'prepare must point core.hooksPath at tracked .husky scripts, not husky\'s generated .husky/_ shims',
+);
+assert.match(
+  pkg.scripts.prepare,
   /git config merge\.keep-ours\.driver true/,
   'prepare must register the keep-ours merge driver, or .gitattributes has nothing to point at on a fresh clone',
 );

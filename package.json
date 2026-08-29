@@ -12,7 +12,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "prepare": "husky && (git config merge.keep-ours.driver true || true)",
+    "prepare": "husky && git config core.hooksPath .husky && (git config merge.keep-ours.driver true || true)",
     "dev": "npm run dev -w @party-tracker/app",
     "prototype:q10": "npm run dev -w @party-tracker/app -- --port 3000",
     "build": "npm run build -w @party-tracker/app",

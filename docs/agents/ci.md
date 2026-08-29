@@ -79,6 +79,12 @@ Re-run `npm run test:pre-merge-vertical` after changing code or dependencies —
 
 Emergency bypass: `HUSKY=0 git push`. That skips the hook, not the requirement — GitHub runs full CI on that push instead of skipping the jobs a local run would have covered.
 
+`npm install` runs husky, then pins `core.hooksPath` to the tracked `.husky/` scripts (not husky's generated `.husky/_` shims, which are gitignored and absent in fresh worktrees). If `node_modules` is missing, `.husky/pre-push` refuses with a message instead of silently skipping — see `scripts/lib/git-hooks.mjs` (`test/scripts/git-hooks.test.mjs`).
+
+#### Worktrees and the pre-push hook
+
+`npm run worktree:create` calls `ensureWorktreeHooks()` (`scripts/lib/git-hooks.mjs`): it sets `core.hooksPath=.husky` in the new tree and symlinks `node_modules` from the primary checkout when the worktree does not already have one. A push from that worktree therefore runs the same gate as the primary checkout. Raw `git worktree add` without that setup still has the tracked `.husky/pre-push` hook (git checks out tracked files), but without `node_modules` the hook refuses loudly rather than no-oping.
+
 #### The hook's repository does not belong to the suite
 
 Git resolves the repository *before* running a hook and passes it down in the environment (`GIT_DIR`, `GIT_INDEX_FILE`, and the rest — `scripts/lib/git-env.mjs` has the list). Those variables outrank `cwd`: with `GIT_DIR` set and no `GIT_WORK_TREE`, git treats the current directory as the work tree and the inherited `GIT_DIR` as the repository. Several script tests build a throwaway repo in a tmpdir, so unscrubbed they stage the tmpdir's fixtures and commit them onto the branch being pushed.

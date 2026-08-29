@@ -65,8 +65,10 @@ function initRepo() {
   git(dir, ['config', 'user.email', 'test@example.com']);
   git(dir, ['config', 'user.name', 'Test']);
   git(dir, ['config', 'commit.gpgsign', 'false']);
+  mkdirSync(join(dir, '.husky'));
+  writeFileSync(join(dir, '.husky', 'pre-push'), '#!/bin/sh\nexit 0\n');
   writeFileSync(join(dir, 'README.md'), 'hi\n');
-  git(dir, ['add', 'README.md']);
+  git(dir, ['add', '.']);
   git(dir, ['commit', '-m', 'init']);
   return dir;
 }
@@ -96,6 +98,8 @@ try {
   assert.equal(existsSync(join(wt, 'README.md')), true);
   assert.equal(git(wt, ['branch', '--show-current']), 'worktree-fix-auth');
   assert.equal(git(wt, ['rev-parse', 'HEAD']), git(repo, ['rev-parse', 'HEAD']));
+  assert.equal(git(wt, ['config', '--get', 'core.hooksPath']), '.husky');
+  assert.equal(existsSync(join(wt, '.husky', 'pre-push')), true);
 
   const listed = run(repo, ['list']);
   assert.match(listed, /fix-auth/);

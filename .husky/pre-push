@@ -5,4 +5,11 @@
 #
 # Escape hatch for an emergency push: `HUSKY=0 git push`. GitHub then runs
 # full CI on that push since no stamp covers it.
+[ "${HUSKY-}" = "0" ] && exit 0
+if [ ! -d node_modules ]; then
+  echo "pre-push: refusing silent skip — node_modules missing in this checkout."
+  echo "  Run npm ci here, or use HUSKY=0 git push to bypass deliberately."
+  echo "  See docs/agents/ci.md#pre-push-hook and docs/agents/policies/worktree.md"
+  exit 1
+fi
 node scripts/ci/pre-push.mjs
