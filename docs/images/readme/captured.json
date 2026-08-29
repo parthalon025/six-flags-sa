@@ -1,32 +1,32 @@
 {
   "height-filter.png": {
-    "commit": "d9ee106b8246698fe3d21689828e0ed2b1b8050f",
-    "capturedAt": "2026-08-28T13:23:01.202Z",
-    "sha256": "b9e0ecc3ffbf126ec3063767be755f465c1dac16d8f6d72714480c30b4e5c271"
+    "commit": "995fd250e1fb776a5e49534ed5ded2dbeae0dbd9",
+    "capturedAt": "2026-08-29T17:41:01.259Z",
+    "sha256": "d2d725b314c28d460ac308039508b5280310f77de05686b68093b0c46491a500"
   },
   "map-day.png": {
-    "commit": "d9ee106b8246698fe3d21689828e0ed2b1b8050f",
-    "capturedAt": "2026-08-28T13:22:32.536Z",
-    "sha256": "38225997b63e17be6b041b5e6d0765a462fa27cf51c73651cc72139a0dd51d07"
+    "commit": "995fd250e1fb776a5e49534ed5ded2dbeae0dbd9",
+    "capturedAt": "2026-08-29T17:40:33.201Z",
+    "sha256": "560ef0247d6e588c8143681449f1163fe812100c177e62cd68c51006c2a948a7"
   },
   "map-night.png": {
-    "commit": "d9ee106b8246698fe3d21689828e0ed2b1b8050f",
-    "capturedAt": "2026-08-28T13:22:35.222Z",
-    "sha256": "84530068203f16d460a64f50f45bb02c914b34cf5860ca4bcf248a45ad38f3be"
+    "commit": "995fd250e1fb776a5e49534ed5ded2dbeae0dbd9",
+    "capturedAt": "2026-08-29T17:40:35.735Z",
+    "sha256": "478bb8a81ecc44ebe040faa28b17f697bd61f859468343dc13af49516deb5787"
   },
   "party.png": {
-    "commit": "d9ee106b8246698fe3d21689828e0ed2b1b8050f",
-    "capturedAt": "2026-08-28T13:24:08.344Z",
-    "sha256": "b336e4e53df87cef986414d65afd918967391d9ec7091075c14160f83a64f2a0"
+    "commit": "995fd250e1fb776a5e49534ed5ded2dbeae0dbd9",
+    "capturedAt": "2026-08-29T17:41:48.935Z",
+    "sha256": "dd7836dfee8cd7a48c2f647e5ed36230d89c8d22f0bf1090bbda5c672d5fa6fc"
   },
   "ride-callout.png": {
-    "commit": "d9ee106b8246698fe3d21689828e0ed2b1b8050f",
-    "capturedAt": "2026-08-28T13:22:56.220Z",
-    "sha256": "91f0fe0303d6b017fa43b854b43032da248273a5562c57b6d9285bf33d6330a7"
+    "commit": "995fd250e1fb776a5e49534ed5ded2dbeae0dbd9",
+    "capturedAt": "2026-08-29T17:40:55.963Z",
+    "sha256": "a5dbfb52687b8d9dfbff5a9c372d01efa5106bb35a2f44599eed20b1320548f8"
   },
   "walking.png": {
-    "commit": "d9ee106b8246698fe3d21689828e0ed2b1b8050f",
-    "capturedAt": "2026-08-28T13:23:08.511Z",
-    "sha256": "431e8df990634dad1aa13202143dc9f5d28679356bf1c008a3ea0436a85e3d6c"
+    "commit": "995fd250e1fb776a5e49534ed5ded2dbeae0dbd9",
+    "capturedAt": "2026-08-29T17:41:07.661Z",
+    "sha256": "9de448c059f45f39d6ec1335aa563eb25b623283652b866b7d5a63f2d410b456"
   }
 }
