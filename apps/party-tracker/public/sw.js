@@ -9,7 +9,7 @@
    lives in the client's own replica and its outbox instead, which are
    versioned and know how to catch up. */
 /* Replaced by scripts/inject-version.mjs from package.json on prebuild/predev. */
-const CACHE = 'tracker-1.35.13';
+const CACHE = 'tracker-1.35.14';
 /* Hash-verified venue bundles, written by the page's download manager
    (lib/venue/download.js — the name must match VENUE_BUNDLE_CACHE there).
    Deliberately not version-stamped: bundle content is addressed by the
