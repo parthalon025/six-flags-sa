@@ -106,7 +106,12 @@ export const DECISIONS = Object.freeze({
     source: 'ADR-0021 Open',
     resolved: 'Owner, 2026-08-22: disputes stay BUILDER-SIDE and are NEVER shown to guests; the seven '
       + 'shipped Gap types stay frozen. An eighth type, `path_disputed`, was shipped before this answer '
-      + 'was given and is still live — slice i18 removes it.',
+      + 'was given and is still live — slice i18 removes it.\n\n'
+      + 'FOLLOW-UP, owner 2026-08-23: `path_disputed` shared its channel with '
+      + '`evidence_conflict` (two sources disagreeing about a RIDE, not a path). Removing the '
+      + 'channel silently removed that too, which decision (c) never covered — it was about a '
+      + 'disputed path position. The owner ruled: KEEP ride evidence conflicts visible to '
+      + 'guests, re-routed onto the existing `verify` type. Only path disputes go internal.',
   },
   crop: {
     question: 'Does a band plan describe the World, or the cropped PNG?',
