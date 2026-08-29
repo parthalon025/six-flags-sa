@@ -111,7 +111,12 @@ export const DECISIONS = Object.freeze({
       + '`evidence_conflict` (two sources disagreeing about a RIDE, not a path). Removing the '
       + 'channel silently removed that too, which decision (c) never covered — it was about a '
       + 'disputed path position. The owner ruled: KEEP ride evidence conflicts visible to '
-      + 'guests, re-routed onto the existing `verify` type. Only path disputes go internal.',
+      + 'guests, re-routed onto the existing `verify` type. Only path disputes go internal.\n\n'
+      + 'DRIFT NOTE: "the seven stay frozen" was true when the answer was given. The shipped '
+      + 'list has since grown to nine — `verify` predated this, and `inventory` arrived with '
+      + 'PR #781 — for reasons unrelated to disputes. The decision constrains what DISPUTES '
+      + 'may become, not whether the list may ever grow; recorded so the count reads as drift '
+      + 'rather than as this decision being ignored.',
   },
   crop: {
     question: 'Does a band plan describe the World, or the cropped PNG?',

@@ -250,13 +250,16 @@ assert.equal(found.length, 1, 'the build still finds the dispute');
 assert.equal(found[0].kind, 'path_disputed');
 
 let recorded = null;
-const wrote = writeImageryDisputes({
+// Named for what it is rather than `wrote`, which this file already uses at
+// module scope for the stubbed cache sink (#781). Two legitimate additions
+// collided on one name when the branches merged.
+const persisted = writeImageryDisputes({
   meta: { id: 'fixture-park' },
   map: factoryMap,
   extractions: disputed,
   write: (doc) => { recorded = doc; },
 });
-assert.equal(wrote.wrote, true, 'a dispute is persisted to the maintainer sidecar');
+assert.equal(persisted.wrote, true, 'a dispute is persisted to the maintainer sidecar');
 assert.equal(recorded.venue, 'fixture-park');
 assert.equal(recorded.shipped, false, 'the record states it never ships');
 assert.equal(recorded.disputes[0].kind, 'path_disputed');
