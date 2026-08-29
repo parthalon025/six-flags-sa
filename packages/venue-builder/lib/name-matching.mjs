@@ -13,7 +13,13 @@
  *   pairSuggestions(left, right, opts)   → best pairings above a floor
  */
 
-import { normaliseRideName } from '@party-tracker/shared/mapSymbols.js';
+// Relative, not '@party-tracker/shared/…': ship-gaps.mjs reaches this module
+// through inventory-gaps.mjs, and ship-gaps is inside venue-io.mjs's import
+// closure — which scripts/lib/venue-report-gate.mjs loads in the CI gate that
+// runs BEFORE `npm ci` links the workspaces. A bare specifier there is an
+// ERR_MODULE_NOT_FOUND on a runner. Same reason venue-ids.mjs reaches the app's
+// slug() by path.
+import { normaliseRideName } from '../../shared/mapSymbols.js';
 
 const WORD = (s) => String(s || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
 
