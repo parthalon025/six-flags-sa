@@ -8,9 +8,17 @@ scripts/lib/clerk-google-connection.json
 scripts/lib/clerk-apple-connection.json
 .DS_Store
 
-# scratch harnesses agents drop at the root while verifying
+# scratch harnesses agents drop at the root while verifying.
+# They land here rather than /tmp because a script outside the repo cannot
+# resolve `playwright` or the workspace packages, so a runnable throwaway has
+# to sit where node's resolution reaches node_modules. These patterns are the
+# names that actually show up; `*.tmp.mjs` alone missed `scratch-run-full.mjs`
+# and `scratch-debug-follow.mjs.tmp.497.<hash>`, which is how four of them ended
+# up as untracked noise in one session.
 .drive-tmp.mjs
 *.tmp.mjs
+*.mjs.tmp.*
+scratch-*.mjs
 .scratch/*
 
 # Wayfinder efforts — committed so macro / Cloud resume can track fog
