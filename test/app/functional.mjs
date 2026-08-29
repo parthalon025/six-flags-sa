@@ -3086,6 +3086,39 @@ await check(
       throw new Error('Get started appeared at the same scroll position the last dot lit');
     }
 
+    // The flip must not linger near the very bottom either: sample a point
+    // derived from where the last claim's own centre actually measured
+    // (not a hardcoded scroll fraction) — comfortably past that centre, but
+    // comfortably short of the end of the story. 50px clears the read
+    // margin with room to spare against sub-pixel rounding, and this
+    // viewport leaves tens of pixels of story after the last claim's
+    // centre for the sample to land short of the floor. This is what a
+    // threshold drifting back toward "only flips essentially at the floor"
+    // — the defect this suite exists to guard against — would catch.
+    await p.locator('.introClaim').last().evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    const lastClaimCentreTop = await scroll.evaluate((el) => el.scrollTop);
+    const midReadPoint = await scroll.evaluate((el, base) => {
+      const scrollable = el.scrollHeight - el.clientHeight;
+      return { scrollTop: Math.min(scrollable, base + 50), scrollable };
+    }, lastClaimCentreTop);
+    if (midReadPoint.scrollable - midReadPoint.scrollTop < 15) {
+      throw new Error(
+        `sample point ${midReadPoint.scrollTop} leaves only ${midReadPoint.scrollable - midReadPoint.scrollTop}px ` +
+          'before the floor — too close to distinguish this check from the full-scroll one below',
+      );
+    }
+    await scroll.evaluate((el, st) => {
+      el.scrollTop = st;
+      el.dispatchEvent(new Event('scroll'));
+    }, midReadPoint.scrollTop);
+    await until(
+      async () => (await p.locator('.gate:has(#intro-splash-title) .introStart').count()) > 0,
+      {
+        timeout: 4000,
+        label: `Get started well short of the floor (scrollTop=${midReadPoint.scrollTop} of ${midReadPoint.scrollable})`,
+      },
+    );
+
     // Scroll to the end of the story — the footer should flip on its own,
     // with no click needed.
     await scroll.evaluate((el) => {
