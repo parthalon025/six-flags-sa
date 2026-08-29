@@ -1,4 +1,4 @@
-# 34: h18 reads BUILT, but MapLibre is never mounted
+# 36: h18 reads BUILT, but MapLibre is never mounted
 
 **What to build:** Reconcile slice `h18` with the app. Either mount the MapLibre renderer it claims shipped, or correct the record and the probe.
 

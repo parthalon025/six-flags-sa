@@ -8,11 +8,21 @@ Factories publish versioned truth and display packs through PostDB; the app cons
 
 Committed wayfinder map for macro / Cloud resume fog tracking. Supersedes GitHub #625–630.
 
-## Decisions so far
+## Live status — run the tooling, don't read a stale snapshot here
+
+This file used to hand-list ticket numbers and statuses. It drifted twice: once by a
+few tickets (#19), once by sixteen (#20–35) — because nothing regenerates it when a
+ticket is filed or resolved. The tickets themselves, and the tools that read them, are
+the source of truth:
+
+- `npm run workflow:next -- --effort factories-to-app` — current phase, frontier ticket, one-line epic summary
+- `npm run train:next` — Trains H/I slice progress
+- [`issues/`](issues/) — one file per ticket, `Status:` field per file, in filing order
+
+## Stable decisions
 
 - Owner Round 1: PostDB bus ([ADR-0024](../../docs/adr/0024-postdb-factory-bus.md)), factory module seams ([ADR-0025](../../docs/adr/0025-factory-module-seams.md)), operating stack ([`scripts/lib/operating-stack.json`](../../scripts/lib/operating-stack.json)).
-- Trains H and I: **built** (18/18 slices). Do not restart — factory epic is PostDB → Delivery (tickets 15–19).
-- Epic NOW (machine-readable): tickets 15–19 all **resolved**. Ticket 19 ([`issues/19-delivery-closeout.md`](issues/19-delivery-closeout.md)), answered 2026-08-25: Q20 delivery authority → same-origin static; Q21 export trigger → steward publish; Q22 bundle shape → delta via `?since=`.
+- Trains H and I: **built**. Do not restart.
 
 ## Out of scope
 
