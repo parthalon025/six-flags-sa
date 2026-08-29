@@ -304,6 +304,15 @@ export default function SettingsPanel({
                     <span className="rowText">
                       {item.name}
                       {item.detail ? ` — ${item.detail}` : ''}
+                      {/* The generator emits a `credit` line for rows whose licence asks
+                          for a specific wording. Rows attributed `on-map` already meet
+                          that obligation over the map (MapAttribution), so only
+                          `credits-screen` rows need it said here — otherwise a required
+                          credit like ESA WorldCover's CC BY line is generated and never
+                          shown to anyone. */}
+                      {item.attribution === 'credits-screen' && item.credit ? (
+                        <span className="fine">{item.credit}</span>
+                      ) : null}
                     </span>
                     <span className="rowValue">{item.license}</span>
                   </a>
