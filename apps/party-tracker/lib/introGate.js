@@ -54,34 +54,3 @@ export function planYourDayTitle(visitorName) {
   if (!name) return 'Plan your day';
   return `Plan your day, ${name}`;
 }
-
-/**
- * Scroll-fraction thresholds for the intro's progress dots, one per claim in
- * `INTRO_CLAIMS`. Evenly spaced at `i / (count + 1)` so a claim never lands
- * exactly at the top or bottom of the story — the first dot lights partway
- * in, the last partway before the end, the same way the claims themselves
- * sit inside the scroll rather than flush against its edges.
- *
- * @param {number} count usually `INTRO_CLAIMS.length`
- * @returns {number[]}
- */
-export function introDotThresholds(count) {
-  if (!Number.isFinite(count) || count <= 0) return [];
-  return Array.from({ length: count }, (_, i) => (i + 1) / (count + 1));
-}
-
-/**
- * Scroll fraction past which the footer swaps "Skip intro" for "Get
- * started" — half a dot-interval beyond the last claim, so the footer
- * flips once the story is behind the reader rather than the instant the
- * last claim scrolls past. Falls out of the same `1 / (count + 1)` spacing
- * as {@link introDotThresholds} rather than a threshold picked by eye, so
- * it moves if the claim count ever does.
- *
- * @param {number} count usually `INTRO_CLAIMS.length`
- * @returns {number}
- */
-export function introReadFraction(count) {
-  if (!Number.isFinite(count) || count <= 0) return 1;
-  return (count + 0.5) / (count + 1);
-}

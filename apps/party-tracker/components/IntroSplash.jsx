@@ -4,89 +4,205 @@ import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import BrandMark from '@/components/BrandMark';
 import Icon from '@/components/Icon';
 import { BRAND, INTRO_CLAIMS } from '@/lib/brand';
-import { introDotThresholds, introReadFraction } from '@/lib/introGate';
 import { pendingReleaseNotes } from '@/lib/releaseNotes';
 import { APP_VERSION } from '@/lib/version';
 
-const DOT_THRESHOLDS = introDotThresholds(INTRO_CLAIMS.length);
-const READ_FRACTION = introReadFraction(INTRO_CLAIMS.length);
-
 /**
- * How far down `el` has been scrolled, 0..1. A container with no scroll room
- * — a short intro on a tall phone, a guest zoomed in, or reduced content —
- * reads as fully read: there is nothing further scrolling could reveal, so
- * the footer must not sit stuck on "Skip intro" with no way to clear it.
+ * How far down `scroller` has been scrolled, 0..1. A container with no
+ * scroll room — a short intro on a tall phone, a guest zoomed in, or
+ * reduced content — reads as fully read: there is nothing further
+ * scrolling could reveal, so the footer must not sit stuck on "Skip
+ * intro" with no way to clear it.
  */
-function readFractionFor(el) {
-  if (!el) return 0;
-  const scrollable = el.scrollHeight - el.clientHeight;
+function scrollFraction(scroller) {
+  if (!scroller) return 0;
+  const scrollable = scroller.scrollHeight - scroller.clientHeight;
   if (scrollable <= 0) return 1;
-  return Math.max(0, Math.min(1, el.scrollTop / scrollable));
+  return Math.max(0, Math.min(1, scroller.scrollTop / scrollable));
 }
 
 /**
- * First-run onboarding — a scroll story, not a tap-to-continue card: brand,
- * three claims (`INTRO_CLAIMS`), the Party pitch, then a sticky footer that
- * tracks how much of it the guest has read and swaps "Skip intro" for "Get
- * started" once they have. The version line still opens release notes in
- * place, exactly as it did on the old splash.
+ * The scroll fraction at which content-relative position `offset` sits in
+ * the centre of `scroller`'s viewport.
+ */
+function fractionForOffset(offset, scroller, scrollable) {
+  if (scrollable <= 0) return 0;
+  const target = offset - scroller.clientHeight / 2;
+  return Math.max(0, Math.min(1, target / scrollable));
+}
+
+/**
+ * `el`'s position within `scroller`'s total (unscrolled) content, measured
+ * from real layout (`getBoundingClientRect`), which sees what a claim count
+ * cannot: the hero's actual height, how the copy wrapped, and the viewport
+ * size. `elRect.top` already carries the current scroll offset; adding
+ * `scroller.scrollTop` removes it again, leaving a position that reads the
+ * same no matter where the scroller happened to be when this ran.
+ */
+function contentRectOf(el, scroller) {
+  const scrollerTop = scroller.getBoundingClientRect().top;
+  const elRect = el.getBoundingClientRect();
+  return { top: elRect.top - scrollerTop + scroller.scrollTop, height: elRect.height };
+}
+
+/** The scroll fraction at which `el`'s centre reaches the viewport centre — "the reader is looking at this element right now." Drives the progress dots, one call per claim. */
+function centerFraction(el, scroller, scrollable) {
+  if (!el || !scroller || scrollable <= 0) return 0;
+  const { top, height } = contentRectOf(el, scroller);
+  return fractionForOffset(top + height / 2, scroller, scrollable);
+}
+
+/**
+ * The scroll fraction at which `el` has fully passed the viewport centre —
+ * not just its middle, its trailing edge. Used for "read": called on the
+ * last claim, it lands a little past that claim's own centre-fraction by
+ * however tall the claim itself measures, which is the real, un-invented
+ * amount of "a bit more scrolling" between "looking at the last claim" and
+ * "done with it" — not a step past the invite card, whose natural resting
+ * position (this deep into a story this short against a phone-sized
+ * viewport) can need more scroll than the story actually has, and land
+ * unreachably past 1.
+ */
+function passedFraction(el, scroller, scrollable) {
+  if (!el || !scroller || scrollable <= 0) return 0;
+  const { top, height } = contentRectOf(el, scroller);
+  return fractionForOffset(top + height, scroller, scrollable);
+}
+
+/**
+ * First-run onboarding. Switches between the scroll story and the
+ * release-notes reader — two distinct components, not two branches of one
+ * function returning the same `div` shape: React tells components apart
+ * by type and unmounts one before mounting the other on its own, so
+ * neither has to inherit the other's leftover DOM (a scroll position, a
+ * focused element).
  */
 export default function IntroSplash({ version = APP_VERSION, onContinue }) {
   const [showNotes, setShowNotes] = useState(false);
+  return showNotes ? (
+    <IntroReleaseNotes version={version} onBack={() => setShowNotes(false)} />
+  ) : (
+    <IntroStory version={version} onContinue={onContinue} onOpenNotes={() => setShowNotes(true)} />
+  );
+}
+
+/** The sub-view behind the version line — unchanged from the old splash. */
+function IntroReleaseNotes({ version, onBack }) {
   const notes = pendingReleaseNotes(version);
+  return (
+    <div className="gate gateFirstRun" role="dialog" aria-labelledby="intro-notes-title">
+      <div className="gateCard">
+        <div className="gateEyebrow">{BRAND.nameUpper}</div>
+        <h2 id="intro-notes-title">What&apos;s new</h2>
+        {notes.length > 0 ? (
+          notes.map((block) => (
+            <section key={block.version} className="updateNotesBlock">
+              <p className="fine updateNotesVersion">Version {block.version}</p>
+              <div className="introList">
+                {block.items.map((line) => (
+                  <p key={line}>{line}</p>
+                ))}
+              </div>
+            </section>
+          ))
+        ) : (
+          <p>You are on version {version}. Release notes will appear here after future updates.</p>
+        )}
+        <button type="button" className="btn primary rect" onClick={onBack}>
+          Back
+        </button>
+      </div>
+    </div>
+  );
+}
 
+/**
+ * The scroll story: brand, the three `INTRO_CLAIMS`, the Party pitch, then a
+ * sticky footer that tracks how much of it the guest has read and swaps
+ * "Skip intro" for "Get started" once they have.
+ *
+ * "Read" is measured from real layout, not counted: on mount, on resize, and
+ * whenever the story's own height changes (a font swap re-wrapping copy),
+ * each claim's centre-of-viewport scroll fraction is remeasured directly
+ * off the DOM (`centerFraction`) for the dots, and the footer flips once
+ * the reader has scrolled the *last* claim fully past that same centre
+ * (`passedFraction`) — a little further than its own dot, by exactly that
+ * claim's own measured height, with no picked constant involved.
+ */
+function IntroStory({ version, onContinue, onOpenNotes }) {
   const scrollRef = useRef(null);
-  const [readFraction, setReadFraction] = useState(0);
+  const pageRef = useRef(null);
+  // INTRO_CLAIMS is a static, module-level list — the same claims in the
+  // same order every render — so each index's ref callback can just assign
+  // in place with no reset-then-repopulate dance (which would mean writing
+  // to the ref during render, not just in the callback React invokes after
+  // committing the DOM).
+  const claimRefs = useRef([]);
 
+  const [readFraction, setReadFraction] = useState(0);
+  const [dotThresholds, setDotThresholds] = useState(() => INTRO_CLAIMS.map(() => 1));
+  const [readThreshold, setReadThreshold] = useState(1);
+
+  // No hysteresis here: a claim near either end of the story can have a
+  // measured threshold close to 0 or 1, and a guard against small deltas
+  // (the previous version required a jump of more than 0.02) silently ate
+  // exactly those crossings — a slow scroll, or a single instant jump from
+  // a keyboard Home/End, could land inside the dead zone and never register.
+  // A plain state set costs a comparison and a possible re-render of three
+  // dots; nothing here is expensive enough to need throttling.
   const measure = useCallback(() => {
-    const next = readFractionFor(scrollRef.current);
-    setReadFraction((prev) => (Math.abs(next - prev) > 0.02 || next === 0 || next === 1 ? next : prev));
+    setReadFraction(scrollFraction(scrollRef.current));
   }, []);
 
-  // Measure on mount (and on resize/rotate) as well as on scroll: a short
-  // viewport may already have no scroll room before the guest touches it.
+  const measureThresholds = useCallback(() => {
+    const scroller = scrollRef.current;
+    if (!scroller) return;
+    const scrollable = scroller.scrollHeight - scroller.clientHeight;
+    if (scrollable <= 0) {
+      // Nothing to scroll: every claim is already on screen at once, so
+      // there is no "reader is looking at claim N" moment to measure —
+      // treat the whole story as already read (scrollFraction agrees,
+      // returning 1 in this same case) rather than leaving the dots stuck
+      // dark and Skip intro with no scroll gesture that could clear it.
+      setDotThresholds(INTRO_CLAIMS.map(() => 0));
+      setReadThreshold(0);
+      return;
+    }
+    const claims = claimRefs.current;
+    setDotThresholds(claims.map((el) => centerFraction(el, scroller, scrollable)));
+    setReadThreshold(passedFraction(claims[claims.length - 1], scroller, scrollable));
+  }, []);
+
   useLayoutEffect(() => {
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [measure]);
+    const remeasure = () => {
+      measureThresholds();
+      measure();
+    };
+    remeasure();
 
-  if (showNotes) {
-    return (
-      // Keyed distinctly from the story view below: both return a bare `div`
-      // at the same position, and without a key React patches one gate into
-      // the other in place rather than unmounting it — carrying the scroll
-      // story's DOM (and its scrollTop) into what should be a fresh subtree.
-      <div key="notes" className="gate gateFirstRun" role="dialog" aria-labelledby="intro-notes-title">
-        <div className="gateCard">
-          <div className="gateEyebrow">{BRAND.nameUpper}</div>
-          <h2 id="intro-notes-title">What&apos;s new</h2>
-          {notes.length > 0 ? (
-            notes.map((block) => (
-              <section key={block.version} className="updateNotesBlock">
-                <p className="fine updateNotesVersion">Version {block.version}</p>
-                <div className="introList">
-                  {block.items.map((line) => (
-                    <p key={line}>{line}</p>
-                  ))}
-                </div>
-              </section>
-            ))
-          ) : (
-            <p>You are on version {version}. Release notes will appear here after future updates.</p>
-          )}
-          <button type="button" className="btn primary rect" onClick={() => setShowNotes(false)}>
-            Back
-          </button>
-        </div>
-      </div>
-    );
-  }
+    window.addEventListener('resize', remeasure);
 
-  const introRead = readFraction > READ_FRACTION;
+    // A font swap changes wrapped-copy height without a window resize —
+    // watch the content wrapper itself so any reflow of the story (a late
+    // font, a dynamic-type setting) re-measures where each claim actually
+    // sits, not just where it sat at mount.
+    let observer;
+    if (typeof ResizeObserver !== 'undefined' && pageRef.current) {
+      observer = new ResizeObserver(remeasure);
+      observer.observe(pageRef.current);
+    }
+    document.fonts?.ready?.then(remeasure).catch(() => {});
+
+    return () => {
+      window.removeEventListener('resize', remeasure);
+      observer?.disconnect();
+    };
+  }, [measure, measureThresholds]);
+
+  const introRead = readFraction > readThreshold;
 
   return (
-    <div key="story" className="gate gateFirstRun introGate" role="dialog" aria-labelledby="intro-splash-title">
+    <div className="gate gateFirstRun introGate" role="dialog" aria-labelledby="intro-splash-title">
       <div
         ref={scrollRef}
         className="introScroll"
@@ -94,7 +210,7 @@ export default function IntroSplash({ version = APP_VERSION, onContinue }) {
         tabIndex={0}
         aria-label={`${BRAND.name} introduction`}
       >
-        <div className="introPage">
+        <div className="introPage" ref={pageRef}>
           <div className="introHero">
             <BrandMark variant="lockup" size={44} title={BRAND.name} className="introMark" />
             <div>
@@ -110,8 +226,14 @@ export default function IntroSplash({ version = APP_VERSION, onContinue }) {
             </div>
           </div>
 
-          {INTRO_CLAIMS.map((claim) => (
-            <div className="introClaim" key={claim.num}>
+          {INTRO_CLAIMS.map((claim, i) => (
+            <div
+              className="introClaim"
+              key={claim.num}
+              ref={(el) => {
+                claimRefs.current[i] = el;
+              }}
+            >
               <span className="introClaimNum">{claim.num}</span>
               <h2 className="introClaimTitle">{claim.title}</h2>
               <p className="introClaimCopy">{claim.copy}</p>
@@ -135,7 +257,7 @@ export default function IntroSplash({ version = APP_VERSION, onContinue }) {
             {!introRead && (
               <>
                 <div className="introDots" aria-hidden="true">
-                  {DOT_THRESHOLDS.map((at, i) => (
+                  {dotThresholds.map((at, i) => (
                     <span key={i} className={`introDot${readFraction >= at ? ' on' : ''}`} />
                   ))}
                 </div>
@@ -157,7 +279,7 @@ export default function IntroSplash({ version = APP_VERSION, onContinue }) {
             className="gateVersionBtn"
             onClick={(e) => {
               e.stopPropagation();
-              setShowNotes(true);
+              onOpenNotes();
             }}
             aria-label={`Version ${version}. Tap to see updates.`}
           >

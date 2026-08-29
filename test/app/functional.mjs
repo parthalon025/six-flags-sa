@@ -3026,6 +3026,57 @@ await check(
       throw new Error('Get started should not be offered before the story is read');
     }
 
+    // The progress dots: one per claim, lighting in order as each claim is
+    // reached. Thresholds are measured from real layout (not a formula on
+    // claim count), so this drives the assertion off the actual DOM —
+    // scrolling each claim to centre and checking its own dot lights, with
+    // no dot for a claim further down the story lit early — rather than
+    // hardcoding the fractions at which that happens.
+    const claimCount = await p.locator('.introClaim').count();
+    if (claimCount !== INTRO_CLAIMS.length) {
+      throw new Error(`expected ${INTRO_CLAIMS.length} claims, found ${claimCount}`);
+    }
+    const dotsAtRest = await p
+      .locator('.introDot')
+      .evaluateAll((els) => els.map((el) => el.classList.contains('on')));
+    if (dotsAtRest.length !== claimCount) {
+      throw new Error(`expected ${claimCount} dots, found ${dotsAtRest.length}`);
+    }
+    if (dotsAtRest.every(Boolean)) {
+      throw new Error('every dot is already lit before any scrolling happened');
+    }
+    for (let i = 0; i < claimCount; i++) {
+      // scrollIntoView centres the claim exactly — which can land within a
+      // sub-pixel of the app's own measured threshold for that same centred
+      // position (two independent centring calculations rounding a hair
+      // apart). An 8px nudge past centre clears that without meaningfully
+      // risking the next claim's own threshold: the gap between successive
+      // claims measures in the hundreds of pixels on a phone-sized story.
+      await p.locator('.introClaim').nth(i).evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      await p.locator('.introScroll').evaluate((el) => {
+        el.scrollTop = Math.min(el.scrollHeight - el.clientHeight, el.scrollTop + 8);
+      });
+      await until(
+        async () => {
+          const states = await p
+            .locator('.introDot')
+            .evaluateAll((els) => els.map((el) => el.classList.contains('on')));
+          return states[i] === true;
+        },
+        { timeout: 4000, label: `dot ${i + 1} lights once claim ${i + 1} is centred` },
+      );
+      const states = await p
+        .locator('.introDot')
+        .evaluateAll((els) => els.map((el) => el.classList.contains('on')));
+      for (let j = i + 1; j < claimCount; j++) {
+        if (states[j]) {
+          throw new Error(
+            `dot ${j + 1} lit before claim ${j + 1} was reached (states: ${JSON.stringify(states)})`,
+          );
+        }
+      }
+    }
+
     // Scroll to the end of the story — the footer should flip on its own,
     // with no click needed.
     await scroll.evaluate((el) => {
