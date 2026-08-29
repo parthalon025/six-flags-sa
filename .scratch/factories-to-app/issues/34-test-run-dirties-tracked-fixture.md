@@ -40,13 +40,13 @@ than its first.
 
 ## Acceptance
 
-- [ ] `npm run test:builder` leaves `git status --porcelain` empty
-- [ ] The fix is in how the fixture run reaches the adapter — take the existing `offline` path, or
+- [x] `npm run test:builder` leaves `git status --porcelain` empty
+- [x] The fix is in how the fixture run reaches the adapter — take the existing `offline` path, or
       inject the clock — not by gitignoring the file or by reverting it in a test teardown, both of
       which keep the write and only hide it
-- [ ] `fetched` still records real fetch time on a genuine (non-fixture) run, and a test proves
+- [x] `fetched` still records real fetch time on a genuine (non-fixture) run, and a test proves
       that distinction rather than assuming it
-- [ ] `npm run test:pre-merge-vertical` green
+- [x] `npm run test:pre-merge-vertical` green
 
 ## Notes
 
