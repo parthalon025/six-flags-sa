@@ -391,7 +391,15 @@ export function certifyVenue(id, opts = {}) {
       const abs = resolveBuilderPath(s.image);
       return abs && fs.existsSync(abs);
     }).length;
-    const parkMapHits = Array.isArray(llmResearch?.parkMaps) ? llmResearch.parkMaps.length : 0;
+    /* Not every candidate: the deterministic HTML extract records every asset
+       URL on the park's map page, which at Cedar Point and Kings Island is nine
+       SVG legend icons and the page's own link. Counting those would pass this
+       check on a page nobody can georeference — the shape of green gate, absent
+       capability this certification exists to refuse. A candidate counts when it
+       is a local image on disk or the extract judged it map-like (#23). */
+    const parkMapHits = (Array.isArray(llmResearch?.parkMaps) ? llmResearch.parkMaps : [])
+      .filter((m) => m?.localExists || m?.mapish || m?.source === 'llm_park_map_search')
+      .length;
     const llmMapRan = Boolean(
       llmResearch?.llmParkMapSearch
       && !llmResearch.llmParkMapSearch.skipped
@@ -406,7 +414,8 @@ export function certifyVenue(id, opts = {}) {
         evidence: {
           numerator: localImages + (llmMapRan ? 1 : 0),
           denominator: Math.max(maps.length, 1),
-          detail: `local_images=${localImages}; parkMap_candidates=${parkMapHits}; llm_park_map_search=${llmMapRan}`,
+          detail: `local_images=${localImages}; parkMap_candidates=${parkMapHits}`
+            + ` (of ${(llmResearch?.parkMaps || []).length} recorded); llm_park_map_search=${llmMapRan}`,
           searchQueries: llmResearch?.searchQueries || [],
         },
         confidence: localImages > 0 ? 'high' : llmMapRan ? 'moderate' : 'low',

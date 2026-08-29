@@ -1715,6 +1715,14 @@ async function buildOne(args, { previous = null } = {}) {
   if (heightsApplied.applied) {
     console.error(`  · heights sidecar: ${heightsApplied.applied} rule(s) from data/venues/${id}/heights.json`);
   }
+  for (const miss of heightsApplied.unresolved) {
+    // Said out loud, not counted: a rule that lands on nothing is either a ride
+    // the map has lost or one the park has closed, and the build cannot tell
+    // which — but it can refuse to be the last place that knew (#30).
+    console.error(
+      `    ? height rule "${miss}" addresses no place — restore the place, or move the rule to "retired" with why`,
+    );
+  }
   if (overrideFile) {
     console.error(
       `  · overrides from ${overrideFile.replace(process.cwd() + '/', '')}: ${merged.applied} applied` +

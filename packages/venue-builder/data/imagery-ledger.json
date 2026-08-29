@@ -9,18 +9,20 @@
       "source": "okaloosa-county-gis",
       "provider": "Okaloosa County GIS",
       "served_via": "Esri World Imagery",
-      "captured": "2025-03-01",
+      "captured": "2024-12-01/2025-02-02",
       "sha256": null,
       "license": null,
       "path": null,
       "gsd": 0.076,
-      "horizontal_accuracy_m": 0.19,
+      "horizontal_accuracy_m": null,
       "used_by": [
         "big-kahunas"
       ],
       "used_for": "Walking paths OpenStreetMap does not draw, and ride positions where OSM names geometry but not the attraction.",
       "recorded_from": "data/venues/big-kahunas/sources.json",
-      "review": "UNADJUDICATED. Copied verbatim from the venue's sources.json, which is the only record of this imagery that exists. Three things are true at once and only a human can weigh them. (a) ADR-0020 clause 2 rejects Esri for derivation, and this row says its pixels were served via Esri World Imagery. (b) The imagery is attributed to a county GIS programme, and a county ortho reached through an Esri endpoint is a different thing from Esri's own basemap — that reading may well be defensible. (c) Neither reading is evidenced: no licence class was ever recorded for the county programme, and the tile bytes were never ingested, so clause 1's sha256 pin does not exist either. Nothing in this repo adjudicated any of it before this row existed. Resolving it means finding the county's imagery licence and its direct download, not editing this file."
+      "review": "UNADJUDICATED — the question sharpened, it did not close. Re-recorded from the venue's corrected sources.json, not edited to pass a gate: the row still fails, and should. (a) The owner ruled a county programme reached through an Esri endpoint is not Esri's basemap, and the evidence supports it — Okaloosa County serves this same imagery itself at county_service_url, verified by export. served_via is deliberately UNCHANGED: it records the channel this survey actually used, and imagery.geojson is a hand-surveyed record, so rewriting how it was made would falsify it rather than correct it. county_service_url is the admissible channel a re-survey or an ingest should use. (b) The deeper blocker is new: the raster is \"flown in 2025 by Pictometry International Corp\" — a vendor product the county licensed in, not a county work. Okaloosa GIS publishes \"created by Okaloosa County GIS and is in the public domain pursuant to Chapter 119, Florida Statutes\" on 13 vector items and zero imagery items across all 193 in its ArcGIS org; every imagery service publishes licenseInfo: \"\". Chapter 119 is a right of access, not a redistribution grant over a third party's copyrighted raster, so no licence class is recorded and none should be inferred from state law. (c) captured and horizontal_accuracy_m were both wrong and are corrected above. (d) sha256 stays null. Pin it from credentialed FTP tiles, not a server-side /export render, which is a derived product. Resolve (b) and (d) together with Okaloosa County GIS (webgis@myokaloosa.com). Coverage caveat: Eglin/Hurlburt AFB areas in this mosaic are 2013 9-inch fill.",
+      "flown_by": "Pictometry International Corp (EagleView)",
+      "county_service_url": "https://okgis.myokaloosa.com/arcgis/rest/services/imagery/Aerial2025_dynamic/MapServer"
     }
   }
 }

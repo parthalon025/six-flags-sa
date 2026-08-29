@@ -152,7 +152,7 @@
       "evidence": {
         "numerator": 0,
         "denominator": 1,
-        "detail": "local_images=0; parkMap_candidates=0; llm_park_map_search=false",
+        "detail": "local_images=0; parkMap_candidates=0 (of 0 recorded); llm_park_map_search=false",
         "searchQueries": []
       },
       "confidence": "low",

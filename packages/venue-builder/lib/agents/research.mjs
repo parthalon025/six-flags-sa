@@ -41,8 +41,16 @@ export async function runResearchAgent(venueId, opts = {}) {
     const pois = readJson(path.join(VENUE_DIR, `${venueId}.pois.json`), []) || [];
     try {
       openResearch = await runOpenResearch(venueId, pois, {
-        fetch: false,
-        offline: true,
+        /* Pinned offline until #23: every other step above takes the caller's
+           `fetch`, and this one refused it, so the park-map lane could not run
+           by any route — not through `--ai`, not through the deterministic HTML
+           extract that needs no model at all. `park_map_research` then read
+           `searchQueries: []` on three venues and was read as "never run", which
+           was true and could not have been otherwise. Default stays offline, so
+           a build is still reproducible unless a caller asks for the network. */
+        fetch: opts.fetch ?? false,
+        offline: opts.offline ?? !(opts.fetch || opts.fetchMaps || opts.ai),
+        fetchMaps: opts.fetchMaps,
         browser: false,
         ai: opts.ai ?? false,
         applyAliases: opts.applyAliases ?? false,
