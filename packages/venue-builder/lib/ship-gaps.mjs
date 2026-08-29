@@ -4,16 +4,24 @@
  * Builder ask seeds and low-confidence queue evidence stay in certification
  * sidecars. This module is the seam that ships what guests can settle:
  * height, queue, path, restroom, food, gate, camping (ADR-0009's frozen
- * seven), verify (stale adapter cache), inventory (adapter under-coverage,
- * from inventory-gaps.mjs). Credits, aliases, locality, and live ops never go
- * in `*.gaps.json`.
+ * seven), verify (stale adapter cache, and a ride whose evidence sources
+ * disagree), inventory (adapter under-coverage, from inventory-gaps.mjs).
+ * Credits, aliases, locality, and live ops never go in `*.gaps.json`.
  *
- * Disputes are not on that list and cannot be added to it. Where sources
- * disagree the builder keeps a maintainer record (imagery-disputes.mjs) and
- * ships nothing — the owner's answer, 2026-08-22, to "how does a disputed path
- * position reach a guest?" was that it does not. `assertNoDisputeKinds` runs
- * over the allowlist below at module load, so putting a dispute kind back into
- * it fails the builder instead of reaching a phone.
+ * Dispute *kinds* are not on that list and cannot be added to it. A disputed
+ * path position is settled by the builder, not a guest: it becomes a
+ * maintainer record (imagery-disputes.mjs) and ships nothing — the owner's
+ * answer, 2026-08-22. `assertNoDisputeKinds` runs over the allowlist below at
+ * module load, so putting a dispute kind back into it fails the builder
+ * instead of reaching a phone.
+ *
+ * A ride evidence conflict is the deliberate exception, and it is an exception
+ * about the *audience*, not about the list: the owner ruled on 2026-08-23 that
+ * a ride whose sources disagree stays visible, so `evidence_conflict` seeds
+ * ship on the existing `verify` type. The seven stay frozen and no new type is
+ * added; `evidence_conflict` is not a member of DISPUTE_KINDS and is never
+ * spelled as a Gap type — the guest is asked to verify a ride, which is what
+ * `verify` already means.
  *
  * Place keys `i` are unique. Invent one Gap per `i`. A display name is only
  * a fallback when exactly one Place has that title; an ambiguous title is
@@ -57,6 +65,11 @@ const RIDE = (p) => p && (p.c === 'coaster' || p.c === 'ride');
 export function shippedTypeForSeed(seed) {
   if (!seed) return null;
   if (seed.sourceGap === 'adapter_stale') return 'verify';
+  // A ride whose evidence sources disagree is asked about on the ground, on
+  // the existing `verify` type (owner ruling, 2026-08-23). Named here in full
+  // rather than routed through some other kind's branch — that indirection is
+  // exactly how this seed shipped once without anyone deciding it should.
+  if (seed.sourceGap === 'evidence_conflict') return 'verify';
   // A dispute seed has no shipped type by construction, whatever it is called.
   // The seed still exists — questSeedsForVenue keeps it in the certification
   // brief and imagery-disputes.mjs keeps the imagery half — it simply has no
@@ -234,6 +247,16 @@ export function shippedGapsDocument({ venueId, seeds = [], pois = [], map = null
       continue;
     }
     if (type === 'verify') {
+      // Two seeds arrive on this type and they name different things. A stale
+      // adapter names the adapter id — there is no Place to stand at. A ride
+      // evidence conflict names the ride, and resolves to one Place key under
+      // resolveGapTarget's contract (ambiguous or unmatched targets are
+      // skipped, not forked) so the phone can rank it by Location.
+      if (seed.sourceGap === 'evidence_conflict') {
+        const target = resolveGapTarget(pois, seed.target);
+        if (target) add(type, target);
+        continue;
+      }
       add(type, seed.adapterId || null);
       continue;
     }

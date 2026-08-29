@@ -56,9 +56,17 @@ never repositions.
    *Clarified 2026-08-29 by [ADR-0021](./0021-zoomable-worlds-revised.md)'s closed Open
    section:* "**Gap**" here meant the steward's review queue, not the guest-facing **Gap** type
    in [ADR-0009](./0009-ship-gaps.md), and the two were conflated while Train I was built. The
-   owner's answer of 2026-08-22 is that a dispute is builder-side only — recorded in
-   `imagery-disputes.json` beside the venue's other maintainer sidecars, and never a Side
-   Quest, a shipped Gap, or anything else a guest is asked to settle.
+   owner's answer of 2026-08-22 is that *a disputed path position* is builder-side only —
+   recorded in `imagery-disputes.json` beside the venue's other maintainer sidecars, and never a
+   Side Quest, a shipped Gap, or anything else a guest is asked to settle. This clause is about
+   imagery versus OSM geometry, and that is the whole of what goes internal.
+
+   *Owner ruling, 2026-08-23:* the internal treatment is **path disputes only**. A **ride
+   evidence conflict** — two evidence sources disagreeing about a ride feature, which is a
+   different question with a guest standing in front of the answer — **stays visible to
+   guests**. It ships on the existing `verify` Gap type, targeted at the ride, so ADR-0009's
+   seven stay frozen and no eighth type is added. The final position, in one line: *path
+   disputes internal; ride evidence conflicts visible via `verify`.*
 6. **Sequencing: the grounding harvest rides Train H** (kings-island's banded worlds ship already
    grounded in that park's real relationships); the **evidence lane is Train I** after H —
    extraction passes, evidence-graph wiring, the steward gate, and the OSM feedback loop.

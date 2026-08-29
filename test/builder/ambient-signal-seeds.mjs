@@ -106,7 +106,7 @@ await check('converging attractions emit no conflict seeds', () => {
   return true;
 });
 
-await check('a stale adapter ships a verify Gap; a conflict ships nothing and stays in the brief', () => {
+await check('a stale adapter and a ride evidence conflict both ship verify Gaps, targeted differently', () => {
   const pois = [{ n: 'Maverick', i: 'maverick', c: 'coaster', h: { min: 52 } }];
   const attractions = {
     attractions: [{
@@ -136,11 +136,18 @@ await check('a stale adapter ships a verify Gap; a conflict ships nothing and st
     asOf: '2026-08-27',
   });
   assert.ok(doc.gaps.some((g) => g.type === 'verify' && g.target === 'parks-api'));
-  // The conflict is real and still seeded — it just has no way onto a phone.
-  // It reaches the certification brief instead (durable quest seeds below).
+  // The owner ruled on 2026-08-23 that a ride whose sources disagree stays
+  // visible to guests. It reaches the phone on `verify` — targeted at the ride
+  // it is about, not at an adapter id, because that is where the guest stands.
+  assert.ok(
+    doc.gaps.some((g) => g.type === 'verify' && g.target === 'maverick'),
+    'a ride evidence conflict must reach the phone as a verify Gap on the ride (owner ruling, 2026-08-23)',
+  );
+  // On `verify`, though — not on a dispute spelling. `path_disputed` is gone
+  // and no new type joined the frozen seven to carry this.
   assert.ok(
     !doc.gaps.some((g) => g.type === 'path_disputed'),
-    'an evidence conflict must not reach the phone as a Gap (owner decision, 2026-08-22)',
+    'the retired dispute type must not come back to carry the conflict',
   );
   const brief = questSeedsForVenue({
     venueId: 'cedar-point',
@@ -152,7 +159,7 @@ await check('a stale adapter ships a verify Gap; a conflict ships nothing and st
   });
   assert.ok(
     brief.durable.some((seed) => seed.sourceGap === 'evidence_conflict' && seed.target === 'maverick'),
-    'the conflict is still on the builder-side seed list, not lost',
+    'the conflict is still on the builder-side seed list too, not lost',
   );
   return true;
 });
@@ -194,8 +201,8 @@ await check('shipped type mapping and allowlists include verify', () => {
   assert.equal(shippedTypeForSeed({ sourceGap: 'adapter_stale' }), 'verify');
   assert.equal(
     shippedTypeForSeed({ sourceGap: 'evidence_conflict', target: 'x' }),
-    null,
-    'a dispute seed has no shipped Gap type',
+    'verify',
+    'a ride evidence conflict ships on verify — an existing type, not an eighth one',
   );
   assert.ok(SHIPPED_GAP_TYPES.includes('verify'));
   assert.ok(PHONE_GAP_TYPES.has('verify'));

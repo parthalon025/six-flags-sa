@@ -454,21 +454,36 @@ await check('neither allowlist can spell a dispute kind, and no dispute seed can
   }
   // And nothing gets through the document builder either — including the
   // untargeted imagery shape that used to be shipped as-is.
+  // No declared height, so this venue ships one real Gap. Without it the
+  // "nothing got through" sweep below would pass over an empty list.
+  const pois = [{ n: 'Maverick', i: 'maverick', c: 'coaster' }];
+  const pathDisputes = [
+    { sourceGap: 'path_disputed', target: null },
+    { type: 'path_disputed', target: 'maverick' },
+  ];
   const doc = shippedGapsDocument({
     venueId: 'demo',
-    // No declared height, so this venue ships one real Gap. Without it the
-    // "nothing got through" sweep below would pass over an empty list.
-    pois: [{ n: 'Maverick', i: 'maverick', c: 'coaster' }],
-    seeds: [
-      { sourceGap: 'path_disputed', target: null },
-      { sourceGap: 'evidence_conflict', target: 'maverick' },
-      { type: 'path_disputed', target: 'maverick' },
-    ],
+    pois,
+    seeds: [...pathDisputes, { sourceGap: 'evidence_conflict', target: 'maverick' }],
   });
   assert.ok(doc.gaps.length > 0, 'guard: the document is not empty for unrelated reasons');
   for (const gap of doc.gaps) {
     assert.ok(!DISPUTE_KINDS.includes(gap.type), `${gap.type} reached the shipped document`);
   }
+  // A path dispute contributes nothing at all — not a row under some other
+  // spelling either. Stated as an equality against the same venue with no
+  // seeds so a leak cannot hide behind a type the sweep above allows.
+  assert.deepEqual(
+    shippedGapsDocument({ venueId: 'demo', pois, seeds: pathDisputes }),
+    shippedGapsDocument({ venueId: 'demo', pois, seeds: [] }),
+    'a path dispute must add nothing to the shipped document, under any type',
+  );
+  // The ride evidence conflict is the one that does reach a guest, on the
+  // existing `verify` type and pinned to the ride (owner ruling, 2026-08-23).
+  assert.ok(
+    doc.gaps.some((g) => g.type === 'verify' && g.target === 'maverick'),
+    'a ride evidence conflict must reach the shipped document as a verify Gap on the ride',
+  );
   return true;
 });
 

@@ -78,12 +78,28 @@ assert.ok(
   'the dissenting claim survives alongside the dispute record',
 );
 
-// The wall, exercised rather than described.
-assert.ok(DISPUTE_KINDS.length > 1, 'the wall covers every dispute kind, not just the first one');
+// The wall, exercised rather than described. Every kind on the list, not just
+// the first one — a wall that only knows one spelling stops one spelling.
+assert.ok(DISPUTE_KINDS.length > 0, 'guard: there is a dispute kind for the wall to stop');
+for (const kind of DISPUTE_KINDS) {
+  assert.throws(
+    () => assertNoDisputeKinds(['height', kind], 'a re-added allowlist'),
+    new RegExp(`a re-added allowlist spells dispute kind\\(s\\) ${kind}`),
+    `the wall must reject an allowlist that re-adds ${kind}`,
+  );
+}
+// `evidence_conflict` is deliberately not one of them. The owner ruled on
+// 2026-08-23 that a ride whose sources disagree stays visible to guests, so it
+// ships on `verify` (ship-gaps.mjs) and cannot be a member of a list whose
+// every member is stamped `shipped: false`.
+assert.ok(
+  !DISPUTE_KINDS.includes('evidence_conflict'),
+  'a kind that reaches a guest must not be enrolled as a builder-side-only dispute',
+);
 assert.throws(
-  () => assertNoDisputeKinds(['height', 'path_disputed'], 'a re-added allowlist'),
-  /a re-added allowlist spells dispute kind\(s\) path_disputed/,
-  'the wall must reject an allowlist that re-adds a dispute kind',
+  () => disputeRow({ kind: 'evidence_conflict' }),
+  /unknown dispute kind/,
+  'a ride evidence conflict cannot be written into the never-shipped dispute record',
 );
 assert.throws(
   () => disputeRow({ kind: 'made_up_dispute' }),

@@ -4,21 +4,31 @@
  * ADR-0020 clause 5 says imagery that contradicts OSM raises a dispute "for
  * steward review". ADR-0021's Open section then read that as a shipped Gap
  * type and `path_disputed` was added to SHIPPED_GAP_TYPES before the owner had
- * answered. The owner's answer, 2026-08-22, was the third option: keep them
- * internal, never show guests. This module is where that answer lives.
+ * answered. The owner's answer, 2026-08-22, was the third option for *a
+ * disputed path position*: keep it internal, never show guests. This module is
+ * where that answer lives.
+ *
+ * It is a narrower answer than the first cut of this module assumed. The owner
+ * ruled again on 2026-08-23, after `path_disputed` was unshipped: a *ride
+ * evidence conflict* — two sources disagreeing about a ride feature — stays
+ * visible to guests, on the existing `verify` Gap type. So `evidence_conflict`
+ * is deliberately not a member of `DISPUTE_KINDS`; see the list below.
  *
  * Two things live here and nowhere else:
  *
- *   1. `DISPUTE_KINDS` — the whole vocabulary of "sources disagree". Anything
- *      that wants to name a dispute names it from this list.
+ *   1. `DISPUTE_KINDS` — the vocabulary of "sources disagree, and the builder
+ *      settles it, not a guest". Anything builder-side-only names itself here.
  *   2. `assertNoDisputeKinds` — the wall. Every shipped-Gap allowlist is run
  *      through it at module load, so re-adding a dispute kind to a guest-facing
  *      list does not ship a Gap, it fails the builder on the spot.
  *
  * Keeping the vocabulary and the wall in one place is the point: a wall that
- * only knows one spelling stops one spelling. `evidence_conflict` slipped
- * through exactly that way — it was routed to `path_disputed` months after
- * `path_disputed` was invented, and nothing had to be re-argued for it to ship.
+ * only knows one spelling stops one spelling. `evidence_conflict` once shipped
+ * without anyone deciding it should — it was routed onto `path_disputed`'s
+ * channel months after `path_disputed` was invented, so it inherited a
+ * guest-facing route nobody had argued for. It has one again now, but by an
+ * owner ruling and by its own name (ship-gaps.mjs maps it to `verify`), not by
+ * riding another kind's coat-tails.
  *
  * No filesystem here. The sidecar sink is injected (see `recordDisputes`), the
  * same discipline as osm-writeback.mjs: this module decides *what* is recorded,
@@ -27,17 +37,26 @@
  */
 
 /**
- * Every way this codebase can say "sources disagree about this fact".
+ * Every way this codebase can say "sources disagree, and the builder keeps it
+ * to itself".
  *
  * `path_disputed` — imagery puts a walkway somewhere OSM does not
  *                   (imagery-claims.mjs, ADR-0020 clause 5).
- * `evidence_conflict` — two evidence sources disagree about a ride feature
- *                   (ambient-signal-seeds.mjs, #420).
  *
- * A new dispute kind belongs on this list. That is the whole enrolment: the
- * wall below then keeps it off every guest-facing allowlist automatically.
+ * Membership is not "sources disagree"; it is "sources disagree *and no guest
+ * is asked about it*". Every member is stamped `shipped: false` by
+ * `disputeRow`, the sidecar says `shipped: false`, and the wall keeps the name
+ * off every guest-facing allowlist. A kind that does reach a guest cannot hold
+ * all three of those and must not be on this list: `evidence_conflict` is the
+ * worked example. Its builder-side record is the certification brief's durable
+ * seeds (quest-seeds.mjs), where it has always been, and its guest-facing route
+ * is `verify` (owner ruling, 2026-08-23; ADR-0020 clause 5, ADR-0021 Open).
+ *
+ * A new builder-side-only kind belongs on this list. That is the whole
+ * enrolment: the wall below then keeps it off every guest-facing allowlist
+ * automatically.
  */
-export const DISPUTE_KINDS = Object.freeze(['path_disputed', 'evidence_conflict']);
+export const DISPUTE_KINDS = Object.freeze(['path_disputed']);
 
 /** Builder-side sidecar filename. Under data/venues/<id>/, never under public/. */
 export const DISPUTE_SIDECAR = 'imagery-disputes.json';
