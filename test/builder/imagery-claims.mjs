@@ -287,7 +287,12 @@ assert.deepEqual(
 // The probe venue is created and removed here; every generated file this
 // touches is snapshotted first and restored in the `finally`, so a failure
 // cannot leave the tree dirty.
-const PROBE_ID = 'zz-dispute-probe';
+// Suffixed with the pid because cleanup is a shared-filesystem `finally` keyed
+// on this string alone. test:builder chains its files sequentially today, so
+// nothing races — but a parallel runner, a manual double-run or a retry would
+// have two invocations sharing VENUE_DIR and clobbering each other's cleanup,
+// and the tree this test writes into is the real apps/party-tracker/public one.
+const PROBE_ID = `zz-dispute-probe-${process.pid}`;
 const probeMap = { path: [{ r: [[-84.268, 39.344], [-84.267, 39.345]] }] };
 const probeMeta = {
   id: PROBE_ID,
