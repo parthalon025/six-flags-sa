@@ -153,10 +153,39 @@ Closed 2026-08-22 so Trains H and I can finish. The answers:
   is the parent-placeholder functional check (playbook row 5 / slice h9), not a correctness
   gate — clause 1 already removed that rationale. A pinned real device is a later addition,
   not a ship blocker.
-- **Train I.** A disputed path position ships as Gap type `path_disputed` (extends the frozen
-  seven; ADR-0020 clause 5 names this Gap). OSM write-back is steward-gated proposal files,
-  never an automatic upload. Google Places is back-office metadata corroboration only (clause
-  7 already). Mapillary share-alike stays attribution-gated and does not write truth.
+- **Train I.** A disputed path position **never reaches a guest**. It stays builder-side: a
+  maintainer record (`packages/venue-builder/data/venues/<id>/imagery-disputes.json`, written by
+  `imagery-disputes.mjs`) plus a dissenting claim in the evidence graph, for steward review. A
+  **ride evidence conflict is not covered by that** and **does** reach a guest: it ships on the
+  existing `verify` type, targeted at the ride (owner ruling, 2026-08-23). The shipped Gap
+  vocabulary stays ADR-0009's frozen seven plus `verify` and `inventory` either way; no dispute
+  kind may be spelled as a shipped Gap type, and `ship-gaps.mjs` asserts that at module load.
+  OSM write-back is steward-gated proposal files, never an automatic upload. Google Places is
+  back-office metadata corroboration only (clause 7 already). Mapillary share-alike stays
+  attribution-gated and does not write truth.
+
+  *Corrected 2026-08-29:* this bullet previously recorded the opposite answer — "ships as Gap
+  type `path_disputed` (extends the frozen seven)". That was written from ADR-0020 clause 5's
+  word "Gap" before the owner had answered, and `path_disputed` was already in
+  `SHIPPED_GAP_TYPES` and on the phone's keep-list by the time the answer came back. The owner
+  chose the third option on 2026-08-22 — *keep it internal, never show guests* — so the eighth
+  type this bullet added to the frozen seven is unshipped. No published bundle under
+  `apps/party-tracker/public/venues/` ever carried a `path_disputed` row, so nothing reached a
+  guest's cache; the phone's keep-list drops the type anyway, which is what covers a bundle
+  cached from a preview build.
+
+  *Corrected again 2026-08-23 (recorded 2026-08-29):* unshipping `path_disputed` also unshipped
+  `evidence_conflict`, because the conflict seed had been routed onto `path_disputed`'s channel
+  and inherited its fate — a ride whose sources disagreed reached no guest at all. The owner's
+  decision was about **a disputed path position**, not about ride evidence, and the owner has
+  since ruled: **keep ride evidence conflicts visible**, on `verify`. So `evidence_conflict` is
+  no longer classified as a dispute kind (`DISPUTE_KINDS` holds `path_disputed` alone, and every
+  member of it is stamped `shipped: false`); it is named in `shippedTypeForSeed` in full and
+  mapped to `verify` rather than riding another kind's route, which is how it shipped
+  unexamined the first time. Its builder-side record is where it always was — the certification
+  brief's durable seeds. The frozen seven are untouched by all of this. No published gaps
+  document changed: none of the four venues under `apps/party-tracker/public/venues/` currently
+  produces an evidence conflict, and all four still regenerate byte-identical.
 
 Plus the crop question that building h1 surfaced: **a band plan describes the World; the
 pyramid georeferences against the cropped PNG** (`cert.bounds`). `bandBakePlan` stays
