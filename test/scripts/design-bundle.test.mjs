@@ -238,13 +238,24 @@ for (const [file] of PAGES) {
   );
 }
 
+/* The manifest indexes the WHOLE bundle, and the bundle has two halves now: the
+   eight design-system pages here, plus the page-per-screen the twin contributes
+   from a capture. `model.pageIndex` is that union — asserting against PAGES
+   alone would have quietly stopped checking exactly the half that is new.
+   test/scripts/design-twin.test.mjs holds the twin's own end up. */
 const manifest = JSON.parse(pages.get('_ds_manifest.json'));
-assert.equal(manifest.cards.length, PAGES.length, 'manifest lists every card');
+assert.equal(manifest.cards.length, model.pageIndex.length, 'manifest lists every card');
 assert.deepEqual(
   manifest.cards.map((c) => c.file).sort(),
-  PAGES.map(([f]) => f).sort(),
-  'manifest and pages agree',
+  model.pageIndex.map(([f]) => f).sort(),
+  'manifest and the page index agree',
 );
+for (const [file] of PAGES) {
+  assert.ok(
+    manifest.cards.some((c) => c.file === file),
+    `${file} is still a card — the twin joining the bundle must not displace it`,
+  );
+}
 
 // Real values reached the pages rather than placeholders.
 assert.match(pages.get('tokens-color.html'), /#FF6B35/, 'a real brand hex is on the colour page');

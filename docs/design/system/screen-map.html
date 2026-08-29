@@ -367,6 +367,32 @@
   nav.bundle a[aria-current] { background: var(--aqua); color: #0B1829; border-color: transparent; }
   footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--sep); font-size: 12px; color: var(--label3); }
 
+
+  .shots { display: flex; gap: 16px; flex-wrap: wrap; margin: 18px 0 8px; }
+  .shot { margin: 0; flex: 1 1 260px; max-width: 320px; }
+  .shot img {
+    display: block; width: 100%; height: auto;
+    border-radius: var(--r4); border: 1px solid var(--sep); box-shadow: var(--shadow1);
+  }
+  .shot figcaption { margin-top: 8px; font-size: 12px; color: var(--label2); }
+  .shot figcaption .fine { display: block; color: var(--label3); font-size: 11px; }
+  .shot.missing {
+    border: 1px dashed var(--sep); border-radius: var(--r4); padding: 40px 12px;
+    text-align: center; color: var(--label3);
+  }
+  .grid.screens { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+  .screenCard { text-decoration: none; }
+  .screenCard img {
+    display: block; width: 100%; height: auto;
+    border-radius: var(--r2); border: 1px solid var(--sep); margin-bottom: 10px;
+  }
+  .screenCard .gap {
+    border: 1px dashed var(--sep); border-radius: var(--r2); padding: 34px 8px;
+    text-align: center; color: var(--label3); font-size: 12px; margin-bottom: 10px;
+  }
+  .screenCard h3 { margin: 0 0 4px; font-family: var(--display); font-size: 16px; color: var(--label); }
+  .fine { font-size: 12px; line-height: 17px; color: var(--label3); margin: 0; }
+
 </style>
 </head>
 <body>
@@ -394,6 +420,7 @@
     <a href="icons.html">Glyphs</a>
     <a href="vocabulary.html">Vocabulary</a>
     <a href="screen-map.html" aria-current="page">Screen map</a>
+    <a href="screens.html">Screens</a>
   </nav>
 
 

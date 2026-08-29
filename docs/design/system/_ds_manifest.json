@@ -80,6 +80,150 @@
       "derivedFrom": [
         "(working tree)"
       ]
+    },
+    {
+      "file": "screens.html",
+      "group": "Screens",
+      "title": "Screens",
+      "derivedFrom": [
+        "(the running app, via scripts/design-twin.mjs)"
+      ]
+    },
+    {
+      "file": "screen-explore-resting.html",
+      "group": "Screens",
+      "title": "Explore — resting",
+      "derivedFrom": [
+        "(the running app, via scripts/design-twin.mjs)"
+      ]
+    },
+    {
+      "file": "screen-explore-browse.html",
+      "group": "Screens",
+      "title": "Explore — browse list",
+      "derivedFrom": [
+        "(the running app, via scripts/design-twin.mjs)"
+      ]
+    },
+    {
+      "file": "screen-place-detail.html",
+      "group": "Screens",
+      "title": "Place detail",
+      "derivedFrom": [
+        "(the running app, via scripts/design-twin.mjs)"
+      ]
+    },
+    {
+      "file": "screen-walking.html",
+      "group": "Screens",
+      "title": "Walking chrome",
+      "derivedFrom": [
+        "(the running app, via scripts/design-twin.mjs)"
+      ]
+    },
+    {
+      "file": "screen-plan-stops.html",
+      "group": "Screens",
+      "title": "Plan — stops",
+      "derivedFrom": [
+        "(the running app, via scripts/design-twin.mjs)"
+      ]
+    },
+    {
+      "file": "screen-plan-heights.html",
+      "group": "Screens",
+      "title": "Plan — heights",
+      "derivedFrom": [
+        "(the running app, via scripts/design-twin.mjs)"
+      ]
+    },
+    {
+      "file": "screen-party.html",
+      "group": "Screens",
+      "title": "Party",
+      "derivedFrom": [
+        "(the running app, via scripts/design-twin.mjs)"
+      ]
+    },
+    {
+      "file": "screen-party-live.html",
+      "group": "Screens",
+      "title": "Party — started",
+      "derivedFrom": [
+        "(the running app, via scripts/design-twin.mjs)"
+      ]
+    },
+    {
+      "file": "screen-side-quests.html",
+      "group": "Screens",
+      "title": "Side Quests",
+      "derivedFrom": [
+        "(the running app, via scripts/design-twin.mjs)"
+      ]
+    },
+    {
+      "file": "screen-me.html",
+      "group": "Screens",
+      "title": "Me",
+      "derivedFrom": [
+        "(the running app, via scripts/design-twin.mjs)"
+      ]
+    },
+    {
+      "file": "screen-collection.html",
+      "group": "Screens",
+      "title": "Collection",
+      "derivedFrom": [
+        "(the running app, via scripts/design-twin.mjs)"
+      ]
+    },
+    {
+      "file": "screen-marks.html",
+      "group": "Screens",
+      "title": "Marks",
+      "derivedFrom": [
+        "(the running app, via scripts/design-twin.mjs)"
+      ]
+    },
+    {
+      "file": "screen-settings-you.html",
+      "group": "Screens",
+      "title": "Settings — You",
+      "derivedFrom": [
+        "(the running app, via scripts/design-twin.mjs)"
+      ]
+    },
+    {
+      "file": "screen-settings-map.html",
+      "group": "Screens",
+      "title": "Settings — Map",
+      "derivedFrom": [
+        "(the running app, via scripts/design-twin.mjs)"
+      ]
+    },
+    {
+      "file": "screen-settings-phone.html",
+      "group": "Screens",
+      "title": "Settings — Phone",
+      "derivedFrom": [
+        "(the running app, via scripts/design-twin.mjs)"
+      ]
+    },
+    {
+      "file": "screen-settings-credits.html",
+      "group": "Screens",
+      "title": "Settings — Credits",
+      "derivedFrom": [
+        "(the running app, via scripts/design-twin.mjs)"
+      ]
+    },
+    {
+      "file": "screen-settings-more.html",
+      "group": "Screens",
+      "title": "Settings — More",
+      "derivedFrom": [
+        "(the running app, via scripts/design-twin.mjs)"
+      ]
     }
   ]
 }

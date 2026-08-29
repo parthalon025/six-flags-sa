@@ -21,7 +21,12 @@
    be a guess about someone else's parser. */
 const dsCard = (group) => `<!-- @dsCard group="${group}" -->`;
 
-const esc = (s) =>
+/* The card group the twin's pages land in. Named here rather than in the twin
+   so the two halves of one bundle cannot drift into two spellings of the same
+   group and split the card index in the project. */
+export const PAGE_GROUP_SCREENS = 'Screens';
+
+export const esc = (s) =>
   String(s ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -227,8 +232,13 @@ const PAGES = [
   ['screen-map.html', 'Overview', 'Screen map'],
 ];
 
-function page({ file, group, title, lede, source, body, model }) {
-  const nav = PAGES.map(
+export function page({ file, group, title, lede, source, body, model }) {
+  /* The nav is the bundle's own contents, and the bundle grew a second half:
+     the twin contributes a page per screen, so the list can no longer be a
+     module constant. `model.navIndex` is that list — PAGES plus whatever else
+     was composed in — and it falls back to PAGES so a caller that has no twin
+     (a test, a bundle built before a capture exists) still renders. */
+  const nav = (model.navIndex ?? PAGES).map(
     ([href, , label]) =>
       `<a href="${href}"${href === file ? ' aria-current="page"' : ''}>${esc(label)}</a>`,
   ).join('\n    ');
@@ -252,6 +262,7 @@ function page({ file, group, title, lede, source, body, model }) {
 ${paletteCss(model.tokens.rows)}
 
 ${SHELL_CSS}
+${model.extraCss ?? ''}
 </style>
 </head>
 <body>
@@ -894,7 +905,11 @@ function screenMapPage(model) {
 }
 
 function indexPage(model) {
-  const cards = PAGES.filter(([f]) => f !== 'index.html')
+  /* Every page in the index that has a blurb of its own. The twin contributes
+     one such page (its Screens contents) and seventeen that are reached from
+     it — listing all eighteen here would bury the eight the design system is
+     made of, so carrying a blurb is what earns a card. */
+  const cards = (model.navIndex ?? PAGES).filter(([f]) => f !== 'index.html' && model.blurbs[f])
     .map(
       ([href, group, label]) => `<a class="card" href="${href}" style="text-decoration:none;display:block">
       <div class="eyebrow">${esc(group)}</div>
@@ -968,7 +983,7 @@ function manifest(model) {
       note:
         'Generated. The repo is authoritative — edit the source a card derives ' +
         'from, then run `npm run design:build`.',
-      cards: PAGES.map(([file, group, title]) => ({
+      cards: (model.pageIndex ?? PAGES).map(([file, group, title]) => ({
         file,
         group,
         title,

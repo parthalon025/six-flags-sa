@@ -56,8 +56,10 @@ instructions:
    paths) → `write_files` with a `localPath` and `mimeType` per file. The
    wizard prints every path and mime type, read out of `design:plan --json`, so
    nothing has to be derived by hand.
-5. **Verification.** Nine cards in the right groups, and the type actually
-   rendering in Plus Jakarta Sans rather than a fallback.
+5. **Verification.** Every card in the right group — the wizard prints the
+   expected count and grouping out of `_ds_manifest.json`, so it moves with the
+   bundle rather than with this paragraph — and the type actually rendering in
+   Plus Jakarta Sans rather than a fallback.
 
 It is safe to re-run. It rebuilds rather than assumes, remembers the project
 name, and `write_files` overwrites by path.
@@ -150,6 +152,108 @@ separate thing and is not the push unit.
 It also cross-checks a few things the app has no other assertion for, and prints
 what it finds. Those are reported, never thrown — a mirror that refuses to
 render because the thing it reflects has a blemish is no use to anybody.
+
+### The twin: the app's own screens
+
+The bundle above is the design system — tokens, glyphs, words. What it was
+missing is the app. `npm run design:twin` supplies it: it boots the real app,
+drives it, photographs every screen it can reach in both palettes, and writes
+those out as pages that join the same push unit.
+
+    npm run build && npm run start &          # a server, on any port
+    BASE_URL=http://127.0.0.1:3000 \
+      CHROMIUM_PATH=/opt/pw-browsers/chromium \
+      npm run design:twin
+
+One command. It refuses to run against a server whose `/app-version.json` does
+not name this tree's `HEAD`, because a screenshot of another build filed as this
+one is the drift the twin exists to stop — and that has already happened on this
+repo's own boxes.
+
+**A photograph is not the point; the four tables under it are.** For each screen
+the page carries what a mockup can never have, and none of it is written by hand:
+
+| On the page | Read from |
+| --- | --- |
+| What renders this | the class names the app put on screen, traced to the files that declare them, weighted so an exclusive class counts for more than a shared one |
+| The tokens it is painted with | every CSS rule that *matched a visible element*, harvested for `var(--…)` — the engine that painted the shot answering the question |
+| Every word on it | the visible text and the accessible names, each traced back to the file it is written in — with comments stripped first, and a phrase found in too many files reported as too common to attribute rather than given an arbitrary source |
+| What this shot does not show | the branches the owning components can render and this capture did not contain — derived by subtraction, so a new branch appears without anyone updating a list |
+
+**Nothing on a twin page was retyped.** Copy that traces to no file is listed
+under *Traced to nothing* rather than being quietly presented as sourced, and a
+screen the tour could not reach gets a page saying why, with nothing drawn in
+its place. That is the whole discipline: the last twin's `PB-4K9T` and
+`Search 100+ Worlds` were believable, and each sent an implementer down a wrong
+path. An absence you can see costs an afternoon; a plausible invention costs a
+session.
+
+#### What it does not capture, and why
+
+**A real sign-in.** There are no Clerk keys on the machines these captures are
+taken on, so the sign-in card and the OAuth buttons cannot be reached at all and
+are drawn nowhere. They are shipped features. Per *Absence is not removal*
+above, a screen missing from the twin is a gap in the twin — not a decision.
+
+**The map, as design.** It is factory output from the venue builder — see the
+section above. The twin photographs it because it is what the screen looks like,
+not because it is up for redesign.
+
+**Anything behind a second phone.** Party screens are captured from the host's
+side, with a party this capture really created and a code the server really
+minted. A joined roster needs two phones and is not part of the tour.
+
+#### What a seeded session does reach
+
+The signed-in *rendering* is a different thing from a sign-in, and it is
+reached. After the main tour the capture writes a session into the key
+`lib/auth/session.js` reads — the same mechanism `test/app/functional.mjs` uses,
+and for the same reason: without a Profile, Marks answers “Sign in” before it
+ever reaches the screen you wanted to look at. It then re-walks the tour and
+keeps an extra shot only where a branch appeared or a line of real copy changed.
+(Not where a string changed: the app draws a clock, and a clock ticking is not a
+Profile doing anything.)
+
+That seeded Profile carries an id and a label that says what it is, and nothing
+else — rank, Title and XP are left out so the app derives them with its own
+functions rather than being handed numbers. **It is not a sign-in**, every page
+carrying one of those shots says so on its face, and the real sign-in screens
+remain undrawn.
+
+The leg re-runs on its own, because the signed-out evidence is already in the
+record and does not need taking again:
+
+    npm run design:twin:profile
+
+#### Improving a reader without re-photographing
+
+    npm run design:twin:resolve
+
+The shots are the expensive half; the annotations are cheap and pure. `resolve`
+re-derives every screen's components, tokens, copy and unshown branches from the
+evidence already in the capture record — no server, no browser, images
+byte-identical — and re-keys the staleness fingerprint, because a better reader
+reads a different set of files.
+
+#### Staleness
+
+    npm run design:twin:check
+
+Hashing the image would be useless: the app draws a live clock, live weather, a
+breathing GPS pulse and map labels placed by a layout pass, so two captures of
+an unchanged app differ in thousands of pixels. The check is keyed on the
+**inputs** instead — every file the twin renders an annotation from, recorded at
+capture time — and fails when one of them has changed. A component appearing or
+disappearing is reported but never thrown, because a component on disk is not
+yet a screen.
+
+It is deliberately **not** wired into `test:unit` or CI. Fixing a stale twin
+means re-photographing, which needs a built app and a browser; a gate that fires
+in an environment that cannot clear it is a gate that gets switched off, which is
+how the last twin came to be trusted while being wrong. Run it when you change a
+screen, and before a push. What *is* in `test:unit` is
+`test/scripts/design-twin.test.mjs`, which proves the check fires on real drift
+and that no page renders a string the capture did not record.
 
 ### The bundle is only as good as its readers
 
@@ -353,7 +457,9 @@ at 2.45:1".
 
 ## Doing a round of work
 
-1. `npm run design:build`, then read the findings it prints.
+1. `npm run design:build`, then read the findings it prints. If a screen has
+   moved since the last capture, `npm run design:twin` (with a current server up)
+   re-photographs it; `npm run design:twin:check` says whether that is needed.
 2. Do the design work in Claude Design, against `docs/design/system/`.
 3. Run the pre-flight above on anything the mock proposes.
 4. Implement in `apps/party-tracker`, reusing the existing classes in
@@ -363,7 +469,8 @@ at 2.45:1".
    that differs**, in the stylesheet's own voice: explain why, and tie the number
    to the thing that owns it. That comment is what stops the next round
    re-proposing the same change.
-6. `npm run design:check`, `npm run lint`, `npm run test:unit`.
+6. `npm run design:check`, `npm run design:twin:check`, `npm run lint`,
+   `npm run test:unit`.
 7. `npm run design:push` if the Design project needs the refreshed bundle —
    from your own machine, since nothing else can authenticate.
 8. Update the sync contract's screen map and its timestamp.

@@ -25,7 +25,6 @@ import {
   DESIGN_SYNC_LIMITS,
   OUT_DIR,
 } from './lib/design-bundle/compose.mjs';
-import { renderPages } from './lib/design-bundle/render.mjs';
 
 const arg = process.argv[2] || 'check';
 const mode = arg.replace(/^--/, '');
@@ -68,8 +67,8 @@ if (mode === 'check') {
    list that is wrong once. */
 if (mode === 'plan') {
   const plan = await designSyncPlan();
-  const { model } = await composeDesignBundle();
-  const problems = auditPushReadiness(plan, renderPages(model));
+  const { model, pages } = await composeDesignBundle();
+  const problems = auditPushReadiness(plan, pages, model.pageIndex);
   const asJson = process.argv.includes('--json');
 
   /* --json puts NOTHING but JSON on stdout. The wizard pipes this straight into

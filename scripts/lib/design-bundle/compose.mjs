@@ -40,6 +40,8 @@ import {
   CONTRAST_PAIRS,
 } from './sources.mjs';
 import { renderPages, PAGES, FONT_WEIGHTS, FONT_DIR, fontFile } from './render.mjs';
+import { readRecord, SHOT_DIR } from '../design-twin/record.mjs';
+import { twinPages, twinPageIndex, TWIN_CSS, SHOT_SUBDIR } from '../design-twin/render.mjs';
 
 export const OUT_DIR = 'docs/design/system';
 
@@ -65,6 +67,7 @@ const BLURBS = {
   'icons.html': 'The whole glyph set, plus the Kit and Mark maps that name them.',
   'vocabulary.html': 'The words a screen has to get right, from CONTEXT.md.',
   'screen-map.html': 'Which repo files each screen stands on, every path verified.',
+  'screens.html': 'The app’s own screens, photographed in both palettes and annotated from the code.',
 };
 
 const DERIVED_FROM = {
@@ -78,6 +81,11 @@ const DERIVED_FROM = {
   'vocabulary.html': [SOURCES.context],
   'screen-map.html': ['(working tree)'],
 };
+
+/* Every page the twin contributes derives from the same thing: a capture of the
+   running app. Named once here rather than per screen, because seventeen copies
+   of one provenance string is seventeen chances to write sixteen of them. */
+const TWIN_DERIVED_FROM = ['(the running app, via scripts/design-twin.mjs)'];
 
 /** Split the type tokens into the `size / leading / tracking` triples they were written as. */
 function typeModel(tokens) {
@@ -213,7 +221,22 @@ export async function buildModel() {
     );
   }
 
+  /* The twin's capture record, if one has been taken. `null` is a legitimate
+     state — a fresh clone has no capture yet — and the bundle renders its eight
+     design-system pages exactly as before when it is null, so `design:build`
+     never depends on a browser having been run. */
+  const twin = readRecord();
+  const twinIndex = twinPageIndex(twin);
+  const navIndex = [...PAGES, ...twinIndex.slice(0, 1)];
+  const pageIndex = [...PAGES, ...twinIndex];
+  const derivedFrom = { ...DERIVED_FROM };
+  for (const [file] of twinIndex) derivedFrom[file] = TWIN_DERIVED_FROM;
+
   return {
+    twin,
+    navIndex,
+    pageIndex,
+    extraCss: TWIN_CSS,
     tokens,
     skins,
     icons,
@@ -230,7 +253,7 @@ export async function buildModel() {
        here — a radius added there appears here without this file changing. */
     radii: tokens.rows.filter((t) => t.group === 'radii'),
     blurbs: BLURBS,
-    derivedFrom: DERIVED_FROM,
+    derivedFrom,
     findings,
   };
 }
@@ -276,6 +299,7 @@ const MIME = {
   '.html': 'text/html',
   '.json': 'application/json',
   '.woff2': 'font/woff2',
+  '.webp': 'image/webp',
 };
 
 export const mimeFor = (relPath) => MIME[relPath.slice(relPath.lastIndexOf('.'))] ?? 'text/plain';
@@ -296,13 +320,43 @@ function vendoredFonts() {
   return out;
 }
 
+/**
+ * The twin's screenshots, copied INTO the push unit.
+ *
+ * Same argument as the typeface: DesignSync writes to project-relative paths,
+ * so a page whose `<img src>` reaches back to `../twin-capture/` shows a broken
+ * image the moment it is pushed — and unlike a missing webfont, that one at
+ * least announces itself. The bytes live under docs/design/twin-capture/ because
+ * that is the capture record, which is input; the push root gets a copy, because
+ * the push root has to stand alone. `auditPushReadiness` proves it does.
+ */
+function twinShots(record) {
+  const out = new Map();
+  if (!record) return out;
+  for (const screen of record.screens) {
+    const shots = [...Object.values(screen.shots), ...(screen.profile?.shown ? [screen.profile.shot] : [])];
+    for (const shot of shots) {
+      const from = join(root, SHOT_DIR, shot.file);
+      if (!existsSync(from)) {
+        throw new Error(
+          `design-bundle: the capture record names ${SHOT_DIR}/${shot.file} for screen ` +
+            `"${screen.id}" and the file is not there. Re-photograph the app: npm run design:twin`,
+        );
+      }
+      out.set(posix.join(OUT_DIR, SHOT_SUBDIR, shot.file), readFileSync(from));
+    }
+  }
+  return out;
+}
+
 export async function composeDesignBundle() {
   const model = await buildModel();
-  const pages = renderPages(model);
+  const pages = new Map([...renderPages(model), ...twinPages(model.twin, model)]);
   const out = new Map();
   for (const [name, contents] of pages) out.set(posix.join(OUT_DIR, name), contents);
   for (const [rel, bytes] of vendoredFonts()) out.set(rel, bytes);
-  return { outputs: out, model };
+  for (const [rel, bytes] of twinShots(model.twin)) out.set(rel, bytes);
+  return { outputs: out, model, pages };
 }
 
 /**
@@ -425,14 +479,28 @@ export function pageReferences(html) {
  * Shared by `design:plan` and test/scripts/design-bundle.test.mjs so the gate
  * and its proof are the same code.
  */
-export function auditPushReadiness(plan, pages) {
+export function auditPushReadiness(plan, pages, pageIndex = PAGES) {
   const problems = [];
   const inPlan = new Set(plan.map((f) => f.projectPath));
+  const groupOf = new Map(pageIndex.map(([file, group]) => [file, group]));
 
-  for (const [file, group] of PAGES) {
-    const html = pages.get(file);
-    if (!html) {
-      problems.push(`${file} is in PAGES but was not rendered`);
+  for (const [file] of pageIndex) {
+    if (!pages.has(file)) problems.push(`${file} is in PAGES but was not rendered`);
+  }
+
+  /* Every rendered page, not every page on a list. The bundle grew a second
+     half — the twin contributes a page per screen, and that list is derived
+     from a capture rather than written down — so an audit anchored to a
+     constant would have stopped checking exactly the pages that are new. The
+     rule is now stated over what was actually produced, which is the thing
+     being pushed. */
+  for (const [file, html] of pages) {
+    if (!file.endsWith('.html')) continue;
+    const group = groupOf.get(file);
+    if (group === undefined) {
+      problems.push(
+        `${file} was rendered but is in no page index, so the project would have no card for it`,
+      );
       continue;
     }
     if (html.split('\n')[0] !== `<!-- @dsCard group="${group}" -->`) {
