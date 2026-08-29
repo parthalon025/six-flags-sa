@@ -173,10 +173,8 @@ export function layoutOverlayLabels(marks, layout = null) {
     if (!visible(box)) return;
     if (grid.claim(box, pinned)) {
       mark.label = true;
-      if (anchor) {
-        mark.x = x;
-        mark.y = y;
-      }
+      mark.x = x;
+      mark.y = y;
     }
   };
 
@@ -199,13 +197,13 @@ export function layoutOverlayLabels(marks, layout = null) {
 
   for (const { mark } of zones) {
     if (!mark.name) continue;
-    const anchor = hasViewport ? clampZoneAnchor(mark, width, height) : null;
-    const qx = quantizeLabelCoord(anchor?.x ?? mark.x);
-    const qy = quantizeLabelCoord(anchor?.y ?? mark.y);
+    const anchor = hasViewport ? clampZoneAnchor(mark, width, height) : { x: mark.x, y: mark.y };
+    const qx = quantizeLabelCoord(anchor.x);
+    const qy = quantizeLabelCoord(anchor.y);
     tryLabel(mark, false, { x: qx, y: qy });
-    if (mark.label && anchor) {
-      mark.x = anchor.x;
-      mark.y = anchor.y;
+    if (mark.label) {
+      mark.x = qx;
+      mark.y = qy;
     }
   }
 

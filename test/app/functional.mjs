@@ -722,6 +722,39 @@ await check('park-wide Zone labels do not overlap or clip at the viewport edge',
   }));
   const after = await a.locator('svg.mapSvg .landLabel').count();
   if (before > 0 && after === 0) throw new Error('Zone labels vanished on a small pan');
+  const afterPan = await a.evaluate(() => {
+    const svg = document.querySelector('svg.mapSvg');
+    const labels = [...svg.querySelectorAll('.landLabel')];
+    const rects = labels.map((el) => {
+      const r = el.getBoundingClientRect();
+      const root = svg.getBoundingClientRect();
+      return {
+        name: el.textContent?.trim() || '',
+        x0: r.left - root.left,
+        x1: r.right - root.left,
+        y0: r.top - root.top,
+        y1: r.bottom - root.top,
+        width: root.width,
+        height: root.height,
+      };
+    });
+    const overlaps = [];
+    for (let i = 0; i < rects.length; i += 1) {
+      for (let j = i + 1; j < rects.length; j += 1) {
+        const one = rects[i];
+        const two = rects[j];
+        if (one.x0 < two.x1 && two.x0 < one.x1 && one.y0 < two.y1 && two.y0 < one.y1) {
+          overlaps.push(`${one.name}/${two.name}`);
+        }
+      }
+    }
+    const clipped = rects.filter((r) => (
+      r.x0 < 1 || r.y0 < 1 || r.x1 > r.width - 1 || r.y1 > r.height - 1
+    ));
+    return { overlaps, clipped: clipped.map((r) => r.name) };
+  });
+  if (afterPan.overlaps.length) throw new Error(`Zone labels overlap after pan: ${afterPan.overlaps.join(', ')}`);
+  if (afterPan.clipped.length) throw new Error(`Zone labels clip after pan: ${afterPan.clipped.join(', ')}`);
   return true;
 });
 
