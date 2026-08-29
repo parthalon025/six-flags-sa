@@ -17,7 +17,7 @@ Portions of this app derive from third-party sources under their own licenses.
 - **ESA WorldCover** — CC BY 4.0 — https://esa-worldcover.org
   Credit line: "© ESA WorldCover project 2021"
 - **USGS 3DEP** — US Government Work — public domain — https://www.usgs.gov/3d-elevation-program
-- **Okaloosa County 2025 orthophotography** — Unresolved — no redistribution grant identified; see note — https://okgis.myokaloosa.com/arcgis/rest/services/imagery/Aerial2025_dynamic/MapServer
+- **Okaloosa County 2025 orthophotography** — Unresolved — no redistribution grant identified — https://okgis.myokaloosa.com/arcgis/rest/services/imagery/Aerial2025_dynamic/MapServer
   Credit line: "Okaloosa County GIS 2025 orthophotography, flown by Pictometry International Corp (EagleView), served via Esri World Imagery"
 
 ## Art & materials

@@ -45,7 +45,7 @@
       "id": "okaloosa-ortho-2025",
       "name": "Okaloosa County 2025 orthophotography",
       "role": "imagery & terrain",
-      "license": "Unresolved — no redistribution grant identified; see note",
+      "license": "Unresolved — no redistribution grant identified",
       "url": "https://okgis.myokaloosa.com/arcgis/rest/services/imagery/Aerial2025_dynamic/MapServer",
       "attribution": "credits-screen",
       "credit": "Okaloosa County GIS 2025 orthophotography, flown by Pictometry International Corp (EagleView), served via Esri World Imagery",

@@ -703,12 +703,14 @@ await check('the on-map OSM notice opens Settings straight to Credits, listing s
     throw new Error(`imagery row does not name who flew it: ${imageryText}`);
   }
   // CC BY 4.0 requires the credit line, so ESA's must render for the same reason.
+  // Unconditional on purpose: guarding this on the row existing would let the
+  // check quietly pass if ESA ever fell out of the registry, which is the case
+  // where a required attribution silently stops shipping.
   const esaRow = a.locator('.rowList a.row', { hasText: 'ESA WorldCover' });
-  if (await esaRow.count()) {
-    const esaText = (await esaRow.first().innerText()).trim();
-    if (!/©\s*ESA WorldCover project/i.test(esaText)) {
-      throw new Error(`ESA WorldCover row missing its required CC BY credit line: ${esaText}`);
-    }
+  if (!(await esaRow.count())) throw new Error('Credits screen missing the ESA WorldCover row');
+  const esaText = (await esaRow.first().innerText()).trim();
+  if (!/©\s*ESA WorldCover project/i.test(esaText)) {
+    throw new Error(`ESA WorldCover row missing its required CC BY credit line: ${esaText}`);
   }
 
   await a.locator('.tabItem[data-tab="explore"]').click();
