@@ -373,15 +373,14 @@ export function readLandCover(id) {
 }
 
 /**
- * One World's grounding harvest — the Visual factory's per-World relationship
- * input (ADR-0020 clauses 1 and 4), living beside the WorldCover cache in the
- * World's own display pack rather than in `map.json`.
+ * One World's grounding harvest merged with its zone-character sidecar — the
+ * Visual factory's per-World relationship input (ADR-0020 clauses 1 and 4).
  *
- * It states what each Zone IS, never what colour it should be: this is where
- * a park's hand-tuned character goes once treatment leaves truth. An unknown
- * character throws here rather than resolving to nothing, so a typo in a
- * committed harvest is a build failure and not a Zone that quietly stops
- * looking like itself.
+ * `grounding.json` holds measured land-cover classes (harvest output).
+ * `zone-character.json` holds hand-authored Zone→character maps or an explicit
+ * `policy: "uncharacterised"` declaration; the harvest cannot overwrite it.
+ * `readGrounding` merges both and throws when curation is missing for a
+ * grounded World or when a Zone declares an unknown character.
  */
 export function readGrounding(id) {
   const grounding = readJson(path.join(venueSidecar(id, 'display'), 'grounding.json'), null);
