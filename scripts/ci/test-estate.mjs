@@ -140,6 +140,7 @@ export const TEST_ESTATE = {
   'test/app/validate-ui.mjs': ['app-vertical'],
   'test/app/venue-download.test.mjs': ['test:unit'],
   'test/app/venue-store.test.mjs': ['test:unit'],
+  'test/app/coverage-contract.test.mjs': ['test:unit'],
   'test/app/venue-delta-api.test.mjs': ['test:unit'],
   'test/app/visual.mjs': ['visual-job'],
   'test/app/weather-route.test.mjs': ['test:unit'],
@@ -278,6 +279,8 @@ export const TEST_ESTATE = {
   'test/scripts/factory-legs.test.mjs': ['ci-gate'],
   'test/scripts/pre-merge-vertical.test.mjs': ['ci-gate'],
   'test/scripts/wire-watch-target.test.mjs': ['ci-gate'],
+  'test/scripts/pre-install-closure.test.mjs': ['ci-gate'],
+  'test/scripts/tree-mutation.test.mjs': ['ci-gate'],
   'test/scripts/worktree.test.mjs': ['ci-gate', 'test:unit'],
 };
 
@@ -293,6 +296,8 @@ export const TEST_ESTATE_EXCLUDED = {
     'human-run screenshot tool, actively maintained. Overlap and tap-target usability audit; writes screenshots + a JSON report to test/audit/ for a person to read. Needs a running app and a system Chromium.',
   'test/app/audit-visual.mjs':
     'human-run screenshot tool, actively maintained. Captures every major UI state to test/audit/ for human review. Needs a running app.',
+  'test/app/coverage-contract.mjs':
+    'shared plumbing, not a suite: the critical-path contract library (loadContract, coverageFailures, contextFingerprint) plus the `--stamp` CLI that test/app/critical-paths.json points at. test/app/coverage-contract.test.mjs is what asserts on it, and test:unit runs that.',
   'test/app/browser.mjs':
     'shared plumbing, not a suite: the Playwright harness (launch, go, until, openPhone, signIn, IGNORABLE_CONSOLE) that functional.mjs, grandma.mjs, visual.mjs and the audit tools import. It runs whenever they do, and it is in modules.json fullSuitePaths so editing it forces the whole UI matrix.',
   'test/app/display-parity.mjs':
@@ -307,6 +312,8 @@ export const TEST_ESTATE_EXCLUDED = {
     'library, not a suite: in-memory stand-in for the Upstash REST API (GET/SET/EXPIRE/INCR, sorted sets, hashes, lists, and EVAL dispatched by exact script text) for tests that need the Redis path with no real credentials. Asserted through server-store-redis, world-marks, and guest-traces.',
   'test/app/lib/map-decisions.mjs':
     'library, not a suite: the map decision registry\'s checker, run over the style module by map-decisions.test.mjs and over a live MapLibre style by functional.mjs.',
+  'test/app/lib/marker-fade.mjs':
+    'library, not a suite: the marker fade-in checks functional.mjs runs inside the browser — animation facts read off computed style and the stylesheet\'s own keyframes, plus the MutationObserver that catches a freshly-mounted .poiPin\'s opacity. Playwright serializes an evaluate callback by its source text, so these live in a module rather than inline in the check.',
   'test/app/lib/module-select.mjs':
     'library, not a suite: the module manifest loader and path matcher that select-modules.mjs, validate-ui.mjs, functional.mjs and the CI scripts import. Asserted by test/app/module-select.test.mjs.',
   'test/app/lib/partyBus.mjs':

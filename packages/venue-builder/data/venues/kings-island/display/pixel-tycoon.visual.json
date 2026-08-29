@@ -86,45 +86,75 @@
     }
   },
   "landTones": {
-    "Soak City": {
-      "day": "#E4EEF1",
-      "night": "#1D272A"
-    },
-    "Coney Mall": {
-      "day": "#F1EAE4",
-      "night": "#2A231D"
-    },
-    "International Street": {
-      "day": "#F1EEE4",
-      "night": "#2A271D"
-    },
-    "Rivertown": {
-      "day": "#E4F1E4",
-      "night": "#1D2A1D"
-    },
-    "Planet Snoopy": {
-      "day": "#F1EFE4",
-      "night": "#2A281D"
-    },
     "Action Zone": {
-      "day": "#E4ECF1",
-      "night": "#1D252A"
-    },
-    "Camp Snoopy": {
-      "day": "#ECF1E4",
-      "night": "#252A1D"
-    },
-    "Oktoberfest": {
-      "day": "#C9B79E",
-      "night": "#39323F"
+      "day": {
+        "fill": "#A7855C",
+        "stroke": "#765D40",
+        "label": "#1C140C"
+      }
     },
     "Adventure Port": {
-      "day": "#E4F1EF",
-      "night": "#1D2A28"
+      "day": {
+        "fill": "#BC9A70",
+        "stroke": "#846B4D",
+        "label": "#1C140C"
+      }
     },
     "Area 72": {
-      "day": "#EAE4F1",
-      "night": "#231D2A"
+      "day": {
+        "fill": "#BC9A70",
+        "stroke": "#846B4D",
+        "label": "#1C140C"
+      }
+    },
+    "Camp Snoopy": {
+      "day": {
+        "fill": "#BC9A70",
+        "stroke": "#846B4D",
+        "label": "#1C140C"
+      }
+    },
+    "Coney Mall": {
+      "day": {
+        "fill": "#A7855C",
+        "stroke": "#765D40",
+        "label": "#1C140C"
+      }
+    },
+    "International Street": {
+      "day": {
+        "fill": "#B69164",
+        "stroke": "#806545",
+        "label": "#1C140C"
+      }
+    },
+    "Oktoberfest": {
+      "day": {
+        "fill": "#B69164",
+        "stroke": "#806545",
+        "label": "#1C140C"
+      }
+    },
+    "Planet Snoopy": {
+      "day": {
+        "fill": "#BC9A70",
+        "stroke": "#846B4D",
+        "label": "#1C140C"
+      }
+    },
+    "Rivertown": {
+      "day": {
+        "fill": "#A7855C",
+        "stroke": "#765D40",
+        "label": "#1C140C"
+      }
+    },
+    "Soak City": {
+      "day": {
+        "fill": "#A7855C",
+        "stroke": "#765D40",
+        "label": "#1C140C"
+      }
     }
   },
   "fallback": {

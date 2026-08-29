@@ -5,7 +5,7 @@ in the working tree.
 
 **Blocked by:** None
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Evidence
 
@@ -38,15 +38,40 @@ unintended change riding alongside it would have been discarded with the same re
 A test that mutates tracked state is also a test whose second run starts from different inputs
 than its first.
 
+## The sibling adapters — checked, and what was done about them
+
+`writeCache` is called non-injectably, with an inline `new Date().toISOString()`, by
+`parks-api`, `queue-times`, `mapillary-api`, `mapillary-video`, `guest-traces`,
+`open-meteo`, `openhistoricalmap`, `openrouteservice`, `project-sidewalk`, `rcdb`,
+`ropedrop`, `wikidata`, `accessibility-cloud`, `esa-worldcover`, `naip-planetary` and
+`overture-buildings`. So the *shape* is everywhere.
+
+None of them dirties the tree: a full `npm run test:builder` leaves
+`git status --porcelain` empty once google-places is fixed, because no suite drives them
+against a tracked venue with a live-looking key. Retrofitting a sink into sixteen adapters
+no test exercises would be sixteen seams added for a need nothing has — the speculative
+generality the standards pass exists to catch.
+
+So the pattern is closed by a gate rather than by a sweep. `scripts/lib/tree-mutation.mjs`
+snapshots tracked state around pre-merge-vertical's test legs and refuses to stamp a pass
+over a run that rewrote its inputs, naming the files and saying to inject the sink. That
+covers every adapter in the list above, and every one written after it — including the case
+this ticket could not have anticipated. The adapter that *did* write gets the seam; the
+fifteen that might get the alarm.
+
 ## Acceptance
 
-- [ ] `npm run test:builder` leaves `git status --porcelain` empty
-- [ ] The fix is in how the fixture run reaches the adapter — take the existing `offline` path, or
-      inject the clock — not by gitignoring the file or by reverting it in a test teardown, both of
-      which keep the write and only hide it
-- [ ] `fetched` still records real fetch time on a genuine (non-fixture) run, and a test proves
-      that distinction rather than assuming it
-- [ ] `npm run test:pre-merge-vertical` green
+- [x] `npm run test:builder` leaves `git status --porcelain` empty
+- [x] The fix is in how the fixture run reaches the adapter — the cache sink and the clock are
+      injectable, same shape as `writeOsmProposalFile`'s `write`, and the suite passes a sink.
+      The `offline` path was not usable: the test asserts the fetch path's claims, which that
+      path skips. Nothing is gitignored and nothing is reverted in a teardown.
+- [x] `fetched` still records real fetch time on a genuine run — the first run stubs only the
+      sink, and the stamp it captures is asserted to fall between a `Date.now()` taken before
+      and after the call; a second run with an injected clock is asserted to carry that instant
+      instead. The default is proven unpinned rather than assumed.
+- [x] `npm run test:pre-merge-vertical` green
+- [x] Sibling adapters checked — see above; closed with a gate, not a sweep
 
 ## Notes
 

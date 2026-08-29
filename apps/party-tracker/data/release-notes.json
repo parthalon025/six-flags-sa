@@ -666,5 +666,17 @@
     "items": [
       "fix(test): skip contribution-pipeline when the operator path is gated (#779)"
     ]
+  },
+  "1.35.12": {
+    "title": "What's new",
+    "items": [
+      "Close seven factory due-outs, and the gates that let them hide (#781)"
+    ]
+  },
+  "1.35.13": {
+    "title": "What's new",
+    "items": [
+      "Places fade in on a pinch or a pan, and the Claude Design intro screen is wired up (#785)"
+    ]
   }
 }

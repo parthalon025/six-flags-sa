@@ -32,6 +32,7 @@ import {
   writeLocalCiPass,
 } from '../lib/local-ci-pass.mjs';
 import { canonLanePlan } from '../lib/ci-lane-plan.mjs';
+import { trackedTreeSnapshot, treeMutationReason } from '../lib/tree-mutation.mjs';
 import { clerkE2eBlockReason } from '../lib/clerk-e2e.mjs';
 import { ensureClerkEnvForCi } from '../lib/cloud-agent-clerk-env.mjs';
 import {
@@ -178,6 +179,11 @@ export async function runPreMergeVertical({
   const ran = [];
   const factoryLegsRan = [];
 
+  // Anything the legs below rewrite in tracked files is compared against this.
+  // Taken here, after the cheap refusals, so the snapshot spans exactly the
+  // steps that run tests.
+  const treeBefore = trackedTreeSnapshot(cwd);
+
   for (const args of staticNpm) {
     if (args[1] === 'build') {
       const clerkEnv = ensureClerkEnvForCi(cwd);
@@ -265,6 +271,14 @@ export async function runPreMergeVertical({
   const block = verticalE2eBlockReason({ files, ran, skipBrowser });
   if (block) {
     console.error(`pre-merge-vertical: ${block}`);
+    return 1;
+  }
+
+  // Checked before the pass is stamped: a stamp over a run that rewrote its own
+  // inputs certifies a tree nobody has actually tested.
+  const mutation = treeMutationReason(treeBefore, trackedTreeSnapshot(cwd));
+  if (mutation) {
+    console.error(`pre-merge-vertical: ${mutation}`);
     return 1;
   }
 

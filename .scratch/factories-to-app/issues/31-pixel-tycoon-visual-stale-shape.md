@@ -5,7 +5,7 @@ the current Visual-factory output shape.
 
 **Blocked by:** None
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Evidence
 
@@ -50,16 +50,34 @@ they did not mean to touch — better to regenerate deliberately and say so.
 surfacing a real gap it had been silently excluding, not a regression — do not "fix" it by
 removing pixel-tycoon from the ledger.
 
+## What the recompile turned up — and why it was not deferred
+
+The first bare `npm run venues:display -- kings-island` changed **all seven** skins, not
+pixel-tycoon alone: every Zone tone flattened toward bare ground. That traced to ticket 26's
+grounding re-harvest dropping the hand-authored per-Zone `character` map the Visual factory's
+`lean` term reads. Restoring it was not optional here — this ticket's own acceptance is that
+the recompiled packs agree with what ships, and without the character map a recompile
+rewrites six packs nobody asked to change. With it restored, five of seven reproduce byte
+for byte and the only diffs left are the two this ticket is about: pixel-tycoon onto the
+current shape, and watercolor-quest catching up with the `structureEdge` edit commit 5437a6a
+made to `skins.json` and never recompiled.
+
+The out-of-scope half — the other three venues, still missing their character maps, and the
+mechanism that let a harvest silently overwrite curation — is filed as
+[ticket 35](35-grounding-reharvest-dropped-zone-character.md) rather than fixed here.
+
 ## Acceptance
 
-- [ ] `npm run venues:display -- kings-island` (or the narrower skin-scoped verb) regenerates
-      pixel-tycoon's `visual.json` and `style.json` onto the per-role `landTones` shape
-- [ ] Builder-side and published copies agree, and bundle hashes/byte totals are refreshed through
-      the export path — no hand-edits to `public/venues/*` (builder-app-contract policy)
-- [ ] `node test/builder/display.mjs`, `display-style.mjs`, `skin-distinct.mjs` stay green
-- [ ] `node test/builder/delivery-bundle-revision-gate.mjs` still passes — the cursor must survive
-- [ ] Consider a check that a committed `visual.json` cannot carry a retired token shape; the
-      degrade-to-no-tone path is exactly the kind of silence that let this sit
+- [x] `npm run venues:display -- kings-island` regenerates pixel-tycoon's `visual.json` and
+      `style.json` onto the per-role `landTones` shape
+- [x] Builder-side and published copies agree (`display-publish.mjs --specs`), and bundle
+      hashes/byte totals refreshed through `venues:export` — no hand-edits to `public/venues/*`
+- [x] `display.mjs`, `display-style.mjs`, `skin-distinct.mjs` green
+- [x] `delivery-bundle-revision-gate.mjs` passes — the cursor survives
+- [x] A committed `visual.json` carrying a retired token shape now fails: `landToneErrors` in
+      `display-schema-gate.mjs` rejects the flat `{day: hex}` form and names the recompile verb,
+      and the suite sweeps all 50 committed specs rather than one hand-picked fixture. Verified
+      against the pre-fix pack: it fails on that file, by name.
 
 ## Notes
 

@@ -6,7 +6,7 @@
 
 **Blocked by:** None
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Evidence
 
@@ -38,16 +38,30 @@ and absent coverage reported as shipped. The second is the dangerous one.
 
 ## Acceptance
 
-- [ ] A test asserts every `suite: functional` row's `check` appears verbatim in
-      `test/app/functional.mjs`, and fails on its own message before the fix makes it pass
-- [ ] Rows naming a suite other than `functional` are checked against that suite's file, or the
-      gate states plainly which suites it does not cover
-- [ ] `clerk-profile-oauth` either gets its real check written, or the row is corrected to name
-      the check that does cover it
-- [ ] `iso-custom-map` is removed if the iso Custom map is retired (`h14`), or restored to a real
-      check if it still ships
-- [ ] Registered in `scripts/ci/test-estate.mjs` and in the suite that runs it
-- [ ] `npm run test:pre-merge-vertical` green
+- [x] `test/app/coverage-contract.mjs` asserts every row's `check` appears verbatim in the file
+      its suite names, and fails on its own message before the fix — verified by running it
+      against the pre-fix contract, which refuses both rows by id.
+- [x] Rows naming another suite are checked against **that suite's** file, not the first one:
+      the gate resolves through the contract's own `suites` map and refuses a row whose suite the
+      map does not resolve, saying so by name. `grandma`'s `check_includes` is matched as a
+      substring against `grandma.mjs`. A suite is covered by being in the map; nothing is
+      silently skipped.
+- [x] `clerk-profile-oauth`: **the row named a shape the app retired.** `AuthGate` — the Profile
+      gate that carried Sign in and Guest together — is mounted nowhere (in-place OAuth on it
+      broke live; `functional.mjs` asserts it is absent at first paint). So there was no gate to
+      write a check for. The row is split into the two entry points that do ship — the Settings
+      sign-in card, and Google/Apple on `/sign-in` — and the Settings check it now names was
+      strengthened to assert the card actually offers Sign in bound to `/sign-in`, which nothing
+      asserted before. The EP sign-in path is covered rather than merely renamed.
+- [x] `iso-custom-map`: the iso Custom map is retired (ADR-0021 clause 6, slice h14) and
+      `functional.mjs` asserts the iso layer is *gone* after the Wear. The Wear itself still
+      ships, so the row names that check instead of being deleted.
+- [x] Registered in `scripts/ci/test-estate.mjs` and run by `test:unit`; the library beside it is
+      declared in both exclusion lists with its reason.
+- [x] `npm run test:pre-merge-vertical` green
+
+The `--stamp` CLI the contract's own note pointed at did not exist either. It does now, and
+restamps in place rather than re-serializing the file.
 
 ## Notes
 

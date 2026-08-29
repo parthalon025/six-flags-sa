@@ -10,9 +10,16 @@
       "CONTEXT.md",
       "docs/adr"
     ],
-    "sha256": "03b3c7a24d33955d51013fd90c93c9f225f29002729cfa182a2dc07c15996dad"
+    "sha256": "7fca0f05747cb6d6bc9c487b04539a05b2a117dc092d6e5d079652d01eb79a1f"
   },
   "paths": [
+    {
+      "id": "intro-scroll-story",
+      "slice": "Navigate",
+      "user_action": "Scroll the first-run intro through the brand story and the Party pitch; the footer's Skip intro becomes Get started once it is read, and a returning guest never sees it again",
+      "suite": "functional",
+      "check": "the intro is a scroll story: Skip becomes Get started once read, and a returning guest never sees it"
+    },
     {
       "id": "intake-welcome",
       "slice": "Navigate",
@@ -33,6 +40,13 @@
       "user_action": "Read a park map that still draws what was asked for — coaster track heavy enough to navigate by, walkways and broad areas as shapes with smooth bends rather than hairlines",
       "suite": "functional",
       "check": "the map still draws the decisions it was asked for"
+    },
+    {
+      "id": "map-marks-fade-in",
+      "slice": "Navigate",
+      "user_action": "Pinch or pan the map and have Places arrive rather than pop",
+      "suite": "functional",
+      "check": "a Place that enters on a pinch or a pan fades in rather than snapping"
     },
     {
       "id": "settings-credits",
@@ -140,11 +154,19 @@
       "check": "anonymous can start a party by name"
     },
     {
-      "id": "clerk-profile-oauth",
+      "id": "clerk-profile-sign-in",
       "slice": "EP",
-      "user_action": "Sign in or Guest from the Profile gate; Google/Apple on /sign-in",
+      "user_action": "Reach a Profile from Settings \u2014 the sign-in card offers Sign in, which opens the Clerk route",
       "suite": "functional",
-      "check": "Profile gate shows Sign in and Guest"
+      "check": "Settings sign-in card matches Clerk routes",
+      "note": "Was clerk-profile-oauth, naming a Profile gate that carried Sign in and Guest together. That gate (AuthGate) is mounted nowhere \u2014 in-place OAuth on it broke live \u2014 so the row named a shape the app retired and a check nothing had written (#24). Google/Apple on /sign-in is the row below."
+    },
+    {
+      "id": "clerk-sign-in-oauth",
+      "slice": "EP",
+      "user_action": "Sign in with Google or Apple from /sign-in",
+      "suite": "functional",
+      "check": "sign-in route shows Google and Apple logo buttons"
     },
     {
       "id": "ep5-sharing",
@@ -301,11 +323,12 @@
       "check": "leaving removes the member from the other phone\u2019s roster"
     },
     {
-      "id": "iso-custom-map",
+      "id": "pixel-tycoon-map",
       "slice": "Adventure",
-      "user_action": "Wear the Pixel tycoon Skin and see its isometric Custom map",
+      "user_action": "Wear the Pixel tycoon Skin and keep a map to navigate by",
       "suite": "functional",
-      "check": "wearing Pixel tycoon draws the isometric custom map"
+      "check": "wearing Pixel tycoon keeps the MapLibre map (OSM until a bake exists)",
+      "note": "Was iso-custom-map. ADR-0021 clause 6 converted the kit off iso and slice h14 retired the iso Custom map; the row outlived the capability it claimed. The Wear still ships, so the row names what it does now \u2014 the check asserts the iso layer is gone (#24)."
     },
     {
       "id": "baked-world-map",
