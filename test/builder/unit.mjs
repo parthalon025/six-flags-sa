@@ -8111,27 +8111,49 @@ await check('The World pick is one component, mounted by both intake paths', () 
   return true;
 });
 
-await check('The intro is a tap-to-continue splash and never invents a party code', async () => {
-  const { BRAND } = await import('../../apps/party-tracker/lib/brand.js');
-  assert.equal(typeof BRAND.introPitch, 'string');
-  assert.equal(typeof BRAND.gatePitch, 'string');
-  assert.notEqual(BRAND.introPitch, BRAND.shortDescription);
-  const src = fs.readFileSync(
-    new URL('../../apps/party-tracker/components/IntroSplash.jsx', import.meta.url),
-    'utf8',
-  );
-  assert.doesNotMatch(src, /PB-/, 'the mock party code must not ship');
-  // Tap the card to advance — do not make the reader scroll a story first.
-  assert.match(src, /introSplashCard/);
-  assert.match(src, /onContinue/);
-  assert.doesNotMatch(src, /introScroll/);
-  assert.doesNotMatch(src, /Skip intro/);
-  // Still a .gate: the first-run hold hides the app behind anything that is not
-  // one, so dropping the class would leak the map through the intro.
-  assert.match(src, /gate gateFirstRun/);
-  assert.match(src, /gateVersionBtn/);
-  return true;
-});
+await check(
+  'The intro is the Claude Design scroll story and never invents a party code',
+  async () => {
+    // docs/agents/policies/claude-design.md makes Claude Design canon for
+    // structure and information architecture — the intro is a scroll story
+    // that tracks how much of it the guest has read, not the tap-to-continue
+    // card this check used to pin. That is a deliberate decision swap, so
+    // this pins the decision now in force rather than the one it replaced.
+    const { BRAND, INTRO_CLAIMS } = await import('../../apps/party-tracker/lib/brand.js');
+    assert.equal(typeof BRAND.introPitch, 'string');
+    assert.equal(typeof BRAND.gatePitch, 'string');
+    assert.notEqual(BRAND.introPitch, BRAND.shortDescription);
+    const src = fs.readFileSync(
+      new URL('../../apps/party-tracker/components/IntroSplash.jsx', import.meta.url),
+      'utf8',
+    );
+    assert.doesNotMatch(src, /PB-/, 'the mock party code must not ship');
+    // The scroll story itself, and the footer that tracks reading it.
+    assert.match(src, /introScroll/);
+    assert.match(src, /Skip intro/);
+    assert.match(src, /Get started/);
+    assert.match(src, /introDot/, 'the reading-progress dots must exist');
+    // The three claims come from lib/brand.js's INTRO_CLAIMS, not retyped
+    // here — a fourth claim should be one edit to that list, not this file
+    // too. Asserting the import, and that a claim's own copy is not also a
+    // literal in the component, is what keeps that true.
+    assert.match(src, /INTRO_CLAIMS/);
+    assert.ok(
+      !src.includes(INTRO_CLAIMS[0].title),
+      'claim copy should come from INTRO_CLAIMS, not be retyped in the component',
+    );
+    assert.match(src, /onContinue/);
+    // Still a .gate: the first-run hold hides the app behind anything that is
+    // not one, so dropping the class would leak the map through the intro.
+    assert.match(src, /gate gateFirstRun/);
+    assert.match(src, /gateVersionBtn/);
+    // The scroll story and the release-notes reader are split into separate
+    // components (not separate files) — pin that the split kept both.
+    assert.match(src, /function IntroStory/);
+    assert.match(src, /function IntroReleaseNotes/);
+    return true;
+  },
+);
 
 await check('first-run splash does not wait for the Profile gate', () => {
   const page = fs.readFileSync(new URL('../../apps/party-tracker/app/page.js', import.meta.url), 'utf8');
