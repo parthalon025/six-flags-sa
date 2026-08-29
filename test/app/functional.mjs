@@ -50,6 +50,7 @@ import {
 } from './lib/contribution-pipeline-vertical.mjs';
 import { readFileSync } from 'node:fs';
 import { pointInCoverage } from '../../packages/venue-builder/src/routing-coverage.mjs';
+import { INTRO_CLAIMS } from '../../apps/party-tracker/lib/brand.js';
 import { distance, formatDistance } from '../../apps/party-tracker/lib/geo.js';
 import { FOLLOW_RESUME_MS } from '../../apps/party-tracker/lib/parkMapView.js';
 import { RIDE_STALE_AFTER_MS } from '../../apps/party-tracker/lib/core/state.js';
@@ -2898,12 +2899,18 @@ await check('the logo splash opens first and a tap moves to the welcome gate', a
     timeout: 8000,
     label: 'back to the splash',
   });
-  await p.locator('.introSplashCard').click();
+  // Fresh open: nothing has been scrolled yet, so the footer's move-on
+  // control is still labelled Skip intro.
+  const advance = p.locator('.gate:has(#intro-splash-title) .introSkip');
+  if ((await advance.innerText()).trim() !== 'Skip intro') {
+    throw new Error('unread intro should offer Skip intro, not Get started');
+  }
+  await advance.click();
   await until(
     async () =>
       (await p.locator('#intro-splash-title').count()) === 0 &&
       (await p.locator('.gate h2').count()) > 0,
-    { timeout: 10000, label: 'welcome after splash tap' },
+    { timeout: 10000, label: 'welcome after skipping the intro' },
   );
   const next = (await p.locator('.gate h2').innerText()).trim();
   if (next !== 'Plan your day') throw new Error(`tap advanced to: "${next}"`);
@@ -2929,7 +2936,7 @@ await check('GPS already granted still reaches the welcome gate after the splash
   });
   // A returning phone — often already signed in — usually has GPS on before
   // the splash yields; closing the gate on 'live' used to skip the welcome step.
-  await p.locator('.introSplashCard').click();
+  await p.locator('.gate:has(#intro-splash-title) .introSkip').click();
   await until(
     async () => {
       if (!(await p.locator('.gate h2').count())) return false;
@@ -2942,7 +2949,7 @@ await check('GPS already granted still reaches the welcome gate after the splash
   return true;
 });
 
-await check('the welcome intro greets a signed-in Profile by name', async () => {
+await check('the welcome gate greets a signed-in Profile by name after the intro', async () => {
   const fresh = await browser.newContext({
     viewport: { width: 390, height: 844 },
     permissions: ['geolocation'],
@@ -2968,9 +2975,11 @@ await check('the welcome intro greets a signed-in Profile by name', async () => 
     timeout: 10000,
     label: 'the logo splash',
   });
-  const eyebrow = (await p.locator('.gate:has(#intro-splash-title) .gateEyebrow').innerText()).trim();
-  if (!/^Welcome,\s*Ava$/i.test(eyebrow)) throw new Error(`splash eyebrow: "${eyebrow}"`);
-  await p.locator('.introSplashCard').click();
+  // The intro is the same brand story for every guest — the personal
+  // greeting belongs to the welcome gate one screen later, not this one.
+  const heading = (await p.locator('#intro-splash-title').innerText()).trim();
+  if (heading !== 'PARKBOUND') throw new Error(`intro heading should stay generic: "${heading}"`);
+  await p.locator('.gate:has(#intro-splash-title) .introSkip').click();
   await until(
     async () => {
       if (!(await p.locator('.gate h2').count())) return false;
@@ -2982,6 +2991,82 @@ await check('the welcome intro greets a signed-in Profile by name', async () => 
   await fresh.close();
   return true;
 });
+
+await check(
+  'the intro is a scroll story: Skip becomes Get started once read, and a returning guest never sees it',
+  async () => {
+    const fresh = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      permissions: ['geolocation'],
+      geolocation: { latitude: 30.2672, longitude: -97.7431 },
+    });
+    await fresh.addInitScript(() => {
+      localStorage.removeItem('tracker-intro-seen');
+    });
+    const p = await fresh.newPage();
+    await p.goto(BASE, { waitUntil: 'domcontentloaded' });
+    await hydrated(p);
+    await until(async () => (await p.locator('#intro-splash-title').count()) > 0, {
+      timeout: 10000,
+      label: 'the intro',
+    });
+
+    // The scroll story itself: the three claims from lib/brand.js, unread.
+    const scroll = p.locator('.introScroll');
+    const firstClaim = INTRO_CLAIMS[0];
+    const claimTitle = (
+      await p.locator('.introClaimTitle').first().innerText()
+    ).trim();
+    if (claimTitle !== firstClaim.title) {
+      throw new Error(`first claim reads "${claimTitle}", expected "${firstClaim.title}"`);
+    }
+    const before = p.locator('.gate:has(#intro-splash-title) .introSkip');
+    if (!(await before.count())) throw new Error('unread intro should show Skip intro');
+    if (await p.locator('.gate:has(#intro-splash-title) .introStart').count()) {
+      throw new Error('Get started should not be offered before the story is read');
+    }
+
+    // Scroll to the end of the story — the footer should flip on its own,
+    // with no click needed.
+    await scroll.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+      el.dispatchEvent(new Event('scroll'));
+    });
+    await until(
+      async () => (await p.locator('.gate:has(#intro-splash-title) .introStart').count()) > 0,
+      { timeout: 10000, label: 'Get started once the story is read' },
+    );
+    if (await p.locator('.gate:has(#intro-splash-title) .introSkip').count()) {
+      throw new Error('Skip intro should be gone once the story is read');
+    }
+
+    await p.locator('.gate:has(#intro-splash-title) .introStart').click();
+    await until(async () => (await p.locator('#intro-splash-title').count()) === 0, {
+      timeout: 10000,
+      label: 'Get started moves on',
+    });
+    await fresh.close();
+
+    // A returning guest — intro already marked seen — never sees any of this.
+    const back = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      permissions: ['geolocation'],
+      geolocation: { latitude: 30.2672, longitude: -97.7431 },
+    });
+    await back.addInitScript(() => {
+      localStorage.setItem('tracker-intro-seen', '1');
+    });
+    const p2 = await back.newPage();
+    await p2.goto(BASE, { waitUntil: 'domcontentloaded' });
+    await hydrated(p2);
+    await p2.waitForTimeout(1500);
+    if (await p2.locator('#intro-splash-title').count()) {
+      throw new Error('a returning guest saw the intro again');
+    }
+    await back.close();
+    return true;
+  },
+);
 
 await dismissIntroSplash(e);
 await dismissUpdateSplash(e);

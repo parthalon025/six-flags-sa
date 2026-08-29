@@ -3020,9 +3020,24 @@ html:not([data-intro="seen"]) .app[data-gate-map] > .mapWrap {
 .gate.gateFirstRun.introGate .introSkip {
   background: rgba(247, 244, 236, .08);
   border: 1px solid rgba(247, 244, 236, .28);
+  border-radius: 13px;
   color: var(--label);
   font-size: 14.5px; font-weight: 600;
   padding: 11px 16px;
+}
+/* The loud way out, once the story is behind the reader: filled rather than
+   outlined, and the palette's own highest-contrast pair (--label on --bg2 —
+   the same pairing .settingsTopic.on uses, at 11.4:1 by day / 12.6:1 at
+   night) rather than the adventure orange .btn.primary wears elsewhere,
+   because on this scrim orange is the claims' own accent colour, not a
+   button's. */
+.gate.gateFirstRun.introGate .introStart {
+  width: 100%;
+  border-radius: 16px;
+  background: var(--label);
+  color: var(--bg2);
+  font-size: 16.5px; font-weight: 700;
+  padding: 15px 0;
 }
 .gate.gateFirstRun.introGate .introFootHint { color: var(--label2); }
 /* One gradient across the footer itself, .96 at the controls fading to nothing
@@ -4602,6 +4617,21 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
     --lens: none; --lensLite: none; --lensDeep: none;
     --blur: none; --blurLite: none;
     --lensEdge: inset 0 0 0 1px var(--sep);
+  }
+  /* .gate.gateFirstRun.introGate re-declares --label2/--sep/--sun as flat
+     literals at three-class specificity (0,3,0) — a hundred lines up, so its
+     Trail-day scrim and its SCROLL nudge do not inherit the wrong palette.
+     That beats this media query's :root override outright: a :root selector
+     is (0,1,0) no matter what @media it sits inside, and higher specificity
+     wins regardless of source order or media-query nesting. Reordering the
+     two rules would not change that; only matching the winning rule's
+     specificity does. So this restates the same three tokens at the same
+     (0,3,0) specificity, scoped to the same subtree, which — being later in
+     the cascade at equal specificity — wins when the preference is on. */
+  .gate.gateFirstRun.introGate {
+    --label2: rgba(247, 244, 236, .82);
+    --sep: rgba(247, 244, 236, .42);
+    --sun: #FFD56A;
   }
 }
 

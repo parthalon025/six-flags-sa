@@ -14,6 +14,13 @@
   },
   "paths": [
     {
+      "id": "intro-scroll-story",
+      "slice": "Navigate",
+      "user_action": "Scroll the first-run intro through the brand story and the Party pitch; the footer's Skip intro becomes Get started once it is read, and a returning guest never sees it again",
+      "suite": "functional",
+      "check": "the intro is a scroll story: Skip becomes Get started once read, and a returning guest never sees it"
+    },
+    {
       "id": "intake-welcome",
       "slice": "Navigate",
       "user_action": "See what the app is for, and the nearest-World offer",
