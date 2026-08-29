@@ -1,34 +1,23 @@
 {
   "schema": 3,
   "tag": "local-ci-verified",
-  "diffHash": "983ee5831b63da91",
-  "head": "551a3ebbb75caed502ce4b13c9619d8e7d5a0ea9",
-  "mergeBase": "c109e321c36dbe91504627c9c03a50e39a5d8763",
+  "diffHash": "32785b32b301b7f3",
+  "head": "c1b26a0af214ac8061e4c4d136377683ea284439",
+  "mergeBase": "2a97bdcc859431017ca951bb98a024431dbe34fb",
   "baseRef": "origin/main",
   "modules": [
-    "auth",
     "builder",
-    "contribution-pipeline",
-    "grandma",
-    "heights",
-    "intake",
-    "lint",
-    "offline",
-    "party",
-    "selector",
-    "smoke",
-    "venues",
-    "walk"
+    "venues"
   ],
   "browserVertical": false,
   "verticals": [
-    "backside"
+    "builder"
   ],
-  "staticSteps": [
-    "test:ci-gate"
+  "staticSteps": [],
+  "factoryLegs": [
+    "delivery"
   ],
-  "factoryLegs": [],
-  "lockHash": "e1195488d3356efc",
+  "lockHash": "d8692c9ad06f9853",
   "manifestHash": "a67c7a6044e34a63",
-  "recordedAt": "2026-08-28T15:28:42.818Z"
+  "recordedAt": "2026-08-29T13:49:27.283Z"
 }
