@@ -6,7 +6,7 @@
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, chmodSync, unlinkSync, lstatSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -59,17 +59,30 @@ function git(cwd, args) {
   }).trim();
 }
 
-function initRepo() {
+function initRepo({ productionPrePush = false, withNodeModules = false } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'wt-'));
   git(dir, ['init', '-b', 'main']);
   git(dir, ['config', 'user.email', 'test@example.com']);
   git(dir, ['config', 'user.name', 'Test']);
   git(dir, ['config', 'commit.gpgsign', 'false']);
   mkdirSync(join(dir, '.husky'));
-  writeFileSync(join(dir, '.husky', 'pre-push'), '#!/bin/sh\nexit 0\n');
+  const hookPath = join(dir, '.husky', 'pre-push');
+  if (productionPrePush) {
+    writeFileSync(hookPath, readFileSync(join(root, '.husky', 'pre-push')));
+    chmodSync(hookPath, 0o755);
+  } else {
+    writeFileSync(hookPath, '#!/bin/sh\nexit 0\n');
+  }
   writeFileSync(join(dir, 'README.md'), 'hi\n');
+  if (withNodeModules) {
+    writeFileSync(join(dir, '.gitignore'), 'node_modules/\n');
+  }
   git(dir, ['add', '.']);
   git(dir, ['commit', '-m', 'init']);
+  if (withNodeModules) {
+    mkdirSync(join(dir, 'node_modules'));
+    writeFileSync(join(dir, 'node_modules', '.keep'), '');
+  }
   return dir;
 }
 
@@ -127,6 +140,42 @@ try {
   assert.match(pruned, /nothing to remove|0 agent worktree/i);
 } finally {
   rmSync(repo, { recursive: true, force: true });
+}
+
+const repoHooks = initRepo({ productionPrePush: true, withNodeModules: true });
+try {
+  const created = run(repoHooks, ['create', 'hook-gate']);
+  assert.match(created, /pre-push hook: ready/);
+  const wt = join(repoHooks, AGENT_DIR, 'hook-gate');
+  assert.equal(lstatSync(join(wt, 'node_modules')).isSymbolicLink(), true);
+
+  const bareParent = mkdtempSync(join(tmpdir(), 'wt-hooks-bare-'));
+  const bare = join(bareParent, 'origin.git');
+  execFileSync('git', ['clone', '--bare', repoHooks, bare], { encoding: 'utf8' });
+  git(wt, ['remote', 'add', 'origin', bare]);
+
+  unlinkSync(join(wt, 'node_modules'));
+  let pushOutput = '';
+  try {
+    pushOutput = execFileSync('git', ['push', '-u', 'origin', 'worktree-hook-gate'], {
+      cwd: wt,
+      env: scrubGitEnv(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch (err) {
+    pushOutput = [err.stdout, err.stderr].filter(Boolean).join('\n');
+    assert.notEqual(err.status, 0);
+  }
+  assert.match(
+    pushOutput,
+    /refusing silent skip — node_modules missing/,
+    'push from worktree without node_modules must refuse loudly',
+  );
+
+  run(repoHooks, ['remove', 'hook-gate']);
+} finally {
+  rmSync(repoHooks, { recursive: true, force: true });
 }
 
 const repo2 = initRepo();
