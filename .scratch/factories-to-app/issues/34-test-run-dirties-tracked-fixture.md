@@ -5,7 +5,13 @@ in the working tree.
 
 **Blocked by:** None
 
-**Status:** ready-for-agent
+**Status:** resolved
+
+## Answer
+
+- `run()` checks `ctx.offline` before the API-key gate so fixture reads never need a key and never write.
+- Live fetch accepts injectable `now()` for deterministic tests; wall-clock ISO is still the default on real runs.
+- `imagery-claims.mjs` uses synthetic `__test-google-places-imagery__` for the mock-fetch check; new `test/builder/google-places.mjs` proves offline vs live behaviour.
 
 ## Evidence
 

@@ -14,6 +14,9 @@ import {
   writeOsmProposalFile,
 } from '../../packages/venue-builder/lib/osm-writeback.mjs';
 import { SHIPPED_GAP_TYPES } from '../../packages/venue-builder/lib/ship-gaps.mjs';
+import { rmSync } from 'node:fs';
+
+const GOOGLE_PLACES_TEST_VENUE = '__test-google-places-imagery__';
 
 const geoMap = {
   layers: {
@@ -70,17 +73,27 @@ if (prevKey) process.env.GOOGLE_MAPS_API_KEY = prevKey;
 
 process.env.GOOGLE_MAPS_API_KEY = 'test-key';
 const fetched = await runGooglePlaces(
-  { venueId: 'fixture-park', placeIds: ['ChIJtest'] },
+  { venueId: GOOGLE_PLACES_TEST_VENUE, placeIds: ['ChIJtest'] },
   {
     fetchFn: async () => ({
       ok: true,
       json: async () => ({ id: 'ChIJtest', displayName: { text: 'Front Gate' } }),
     }),
+    now: () => '2020-06-01T00:00:00.000Z',
   },
 );
 delete process.env.GOOGLE_MAPS_API_KEY;
 assert.equal(fetched.ok, true);
 assert.equal(fetched.claims[0].displayName, 'Front Gate');
+
+try {
+  rmSync(new URL(`../../packages/venue-builder/data/venues/${GOOGLE_PLACES_TEST_VENUE}`, import.meta.url), {
+    recursive: true,
+    force: true,
+  });
+} catch {
+  // best-effort cleanup of the synthetic venue sidecar
+}
 
 const proposal = buildOsmChangeProposal({ venueId: 'kings-island', claim: { note: 'path position disputed' } });
 assert.equal(proposal.status, 'draft');

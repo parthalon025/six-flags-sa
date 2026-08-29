@@ -23,10 +23,14 @@ function metadataClaims(details) {
 /**
  * @param {{ venueId?: string, offline?: boolean, placeIds?: string[] }} ctx
  */
-export async function run(ctx = {}, { fetchFn = fetch } = {}) {
+export async function run(ctx = {}, { fetchFn = fetch, now = () => new Date().toISOString() } = {}) {
   const id = ctx.venueId || 'unknown';
   const key = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API;
   const cached = readCache(id, 'google-places') || { placeIds: [], claims: [] };
+
+  if (ctx.offline) {
+    return { ok: true, offline: true, claims: cached.claims || [] };
+  }
 
   if (!key) {
     return {
@@ -35,9 +39,6 @@ export async function run(ctx = {}, { fetchFn = fetch } = {}) {
       reason: 'GOOGLE_MAPS_API_KEY not set — back-office corroboration skipped',
       claims: cached.claims || [],
     };
-  }
-  if (ctx.offline) {
-    return { ok: true, offline: true, claims: cached.claims || [] };
   }
 
   const placeIds = ctx.placeIds || cached.placeIds || [];
@@ -71,7 +72,7 @@ export async function run(ctx = {}, { fetchFn = fetch } = {}) {
 
   const claims = metadataClaims(details);
   const out = {
-    fetched: new Date().toISOString(),
+    fetched: now(),
     placeIds,
     claims,
   };
