@@ -8601,15 +8601,13 @@ await check('certify emits a birth certificate with nine gates', () => {
   return true;
 });
 
-await check('kings-island passes certification except outstanding park-map image', () => {
+await check('kings-island certifies with local park-map image (#434)', () => {
   const doc = certifyVenue('kings-island', { write: false });
   const route = doc.checks.find((c) => c.key === 'route');
   assert.equal(route.pass, true);
   const parkMap = doc.checks.find((c) => c.key === 'park_map_research');
-  assert.equal(parkMap.pass, false, 'no local maps/ image and no LLM park-map search cache yet');
-  const others = doc.checks.filter((c) => c.key !== 'park_map_research');
-  assert.ok(others.every((c) => c.pass), others.filter((c) => !c.pass).map((c) => c.key).join(', '));
-  assert.equal(doc.certified, false);
+  assert.equal(parkMap.pass, true, parkMap.evidence.detail);
+  assert.equal(doc.certified, true);
   return true;
 });
 const { reachablePoints } = await import('../../packages/venue-builder/lib/venue-route-qa-core.mjs');

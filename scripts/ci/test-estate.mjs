@@ -187,6 +187,7 @@ export const TEST_ESTATE = {
   'test/builder/mapillary-video.mjs': ['test:builder'],
   'test/builder/naip.mjs': ['test:builder'],
   'test/builder/overture-buildings.mjs': ['test:builder'],
+  'test/builder/park-map-extract.mjs': ['test:builder'],
   'test/builder/paths.mjs': ['test:builder'],
   'test/builder/postdb-io.mjs': ['test:builder'],
   'test/builder/postdb-sync.mjs': ['test:builder'],
