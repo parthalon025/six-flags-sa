@@ -7,7 +7,7 @@
  *   node scripts/worktree.mjs list
  *   node scripts/worktree.mjs status
  *   node scripts/worktree.mjs preserve [--dry-run]
-  node scripts/worktree.mjs prune [--merged]
+ *   node scripts/worktree.mjs prune [--merged]
  *
  * Worktrees live under `.claude/worktrees/<slug>` on branch `worktree-<slug>`,
  * cut from `origin/main` (local `main` if the remote ref is missing).
@@ -95,8 +95,18 @@ export function archiveRefFor(name) {
  *  subtle (patch-ids differ after a squash, and `--merged` lies for the same
  *  reason) and getting it wrong deletes the only copy. */
 export function needsPreserving({ name, aheadCount, tipSha, archivedSha }) {
-  if (isProtectedBranch(name)) return false;
-  if (String(name || "").startsWith("archive/")) return false;
+  const n = String(name || "");
+  if (!n) return false;
+  // Deliberately NOT isProtectedBranch. Protecting a branch from DELETION is a
+  // different question from excluding it from PRESERVATION, and conflating the
+  // two was a real bug: `wip/*` is protected from deletion precisely because it
+  // is where unfinished work is parked, which makes it the branch most likely
+  // to hold the only copy of something. Excluding it inverted the whole point.
+  // Same for `main` — local commits on main are still unpushed work.
+  //
+  // The only exclusion is an archive ref itself: it is the preservation, not
+  // the work, and archiving it would nest archive/archive/...
+  if (n.startsWith("archive/")) return false;
   if (Number(aheadCount) === 0) return false;
   if (!tipSha) return false;
   return String(archivedSha || "") !== String(tipSha);
@@ -492,6 +502,18 @@ function prune(root, { merged = false } = {}) {
   };
 }
 
+/** What actually went wrong, for a report that has to be actionable. */
+export function failureReason(err) {
+  const detail = String(err?.stderr || "").trim();
+  const text = detail || String(err?.message || err || "").trim();
+  return text
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .slice(-2)
+    .join(" | ");
+}
+
 /** Remote `archive/*` tips, keyed by the branch name they preserve. */
 function remoteArchives(root) {
   const out = gitOk(root, [
@@ -543,11 +565,30 @@ function preserve(root, { dryRun = false } = {}) {
       git(root, ["push", "origin", `refs/heads/${name}:refs/heads/${ref}`]);
       preserved.push({ name, ahead, ref });
     } catch (err) {
+      // A rebased or amended branch is not a fast-forward of what was archived
+      // before, so the plain push is rejected and the NEW work would never be
+      // preserved. Force-pushing would fix that by destroying the old copy,
+      // which is the one thing this command must never do. Push to a
+      // sha-suffixed ref instead: both copies survive and neither is a lie.
+      const fallback = `${ref}-${String(tipSha).slice(0, 9)}`;
+      try {
+        git(root, [
+          "push",
+          "origin",
+          `refs/heads/${name}:refs/heads/${fallback}`,
+        ]);
+        preserved.push({ name, ahead, ref: fallback, diverged: true });
+        continue;
+      } catch {
+        // fall through and report the original failure
+      }
       failed.push({
         name,
         ahead,
         ref,
-        reason: String(err?.message || err).split("\n")[0],
+        // git puts the useful part (non-fast-forward, auth, hook rejection)
+        // on stderr; err.message is only "Command failed: git push ...".
+        reason: failureReason(err),
       });
     }
   }
@@ -667,7 +708,11 @@ const invoked =
 
 if (invoked) {
   try {
-    main();
+    // main() returns a meaningful code for `preserve` (1 when a rescue failed).
+    // Discarding it made a failed rescue exit 0, so npm, the SessionStart hook
+    // and every other caller read "nothing was saved" as success — the exact
+    // failure this command exists to prevent. Other commands return undefined.
+    process.exitCode = main() ?? 0;
   } catch (err) {
     const msg = err.stderr ? String(err.stderr).trim() : err.message;
     console.error(msg || err);

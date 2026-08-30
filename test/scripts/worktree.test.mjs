@@ -27,6 +27,7 @@ import {
   worktreePath,
   archiveRefFor,
   needsPreserving,
+  failureReason,
 } from "../../scripts/worktree.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -368,14 +369,40 @@ assert.equal(
   "a branch that gained a commit after archiving is at risk again",
 );
 
-// Protected branches are never archived.
+// Protection from DELETION is not exclusion from PRESERVATION. The first
+// version of this reused isProtectedBranch and so refused to preserve `wip/*`
+// and `main` — inverting the point, since wip/* is where unfinished work is
+// parked and local commits on main are still unpushed work.
 for (const name of ["main", "master", "develop", "dev", "wip/thing"]) {
   assert.equal(
     needsPreserving({ name, aheadCount: 5, tipSha: SHA, archivedSha: "" }),
-    false,
-    `${name} is protected and must not be archived`,
+    true,
+    `${name} holds unpushed commits and must still be preserved`,
   );
 }
+
+// An empty name resolves to no ref and must never be pushed.
+assert.equal(
+  needsPreserving({ name: "", aheadCount: 5, tipSha: SHA, archivedSha: "" }),
+  false,
+  "an empty branch name is never pushed",
+);
+
+// failureReason must surface git's stderr, not just "Command failed: git push".
+assert.match(
+  failureReason({
+    stderr: "remote: rejected\n ! [rejected] main -> main (non-fast-forward)\n",
+    message:
+      "Command failed: git push origin refs/heads/x:refs/heads/archive/x",
+  }),
+  /non-fast-forward/,
+  "the reported reason names why the rescue failed, not merely that it did",
+);
+assert.match(
+  failureReason({ message: "Command failed: git push" }),
+  /Command failed/,
+  "with no stderr it falls back to the message rather than going blank",
+);
 
 // An archive ref must not archive itself.
 assert.equal(
@@ -403,3 +430,100 @@ assert.equal(
   false,
   "a branch with no resolvable tip is not pushed",
 );
+
+// ---------------------------------------------------------------------------
+// preserve, end to end, against a real origin that REJECTS the push.
+//
+// The pure predicate was covered from the start; the command was not, and that
+// is where the blocker lived: preserve() detected the failure, printed "FAILED
+// to preserve", returned 1 — and the invocation block discarded it, so a rescue
+// that saved nothing exited 0. npm, the SessionStart hook and any caller read
+// that as success. This asserts the exit code, which is the only signal a hook
+// runner actually sees.
+{
+  const sandbox = mkdtempSync(join(tmpdir(), "wt-preserve-"));
+  try {
+    const originDir = join(sandbox, "origin.git");
+    execFileSync("git", ["init", "--bare", "-b", "main", originDir], {
+      env: scrubGitEnv(),
+      stdio: "ignore",
+    });
+    const work = join(sandbox, "work");
+    execFileSync("git", ["clone", originDir, work], {
+      env: scrubGitEnv(),
+      stdio: "ignore",
+    });
+    const g = (args) =>
+      execFileSync("git", args, {
+        cwd: work,
+        env: scrubGitEnv(),
+        encoding: "utf8",
+      }).trim();
+    g(["config", "user.email", "t@t.t"]);
+    g(["config", "user.name", "t"]);
+    writeFileSync(join(work, "a.txt"), "a\n");
+    g(["add", "a.txt"]);
+    g(["commit", "-m", "base"]);
+    g(["push", "-u", "origin", "main"]);
+
+    // A branch holding a commit that exists nowhere else.
+    g(["checkout", "-b", "slice-only-here"]);
+    writeFileSync(join(work, "b.txt"), "b\n");
+    g(["add", "b.txt"]);
+    g(["commit", "-m", "only copy"]);
+
+    // Happy path: the work reaches the origin and the command reports success.
+    const ok = run(work, ["preserve"]);
+    assert.match(ok, /preserved 1 branch/, "the at-risk branch is preserved");
+    const refs = execFileSync(
+      "git",
+      ["--git-dir", originDir, "for-each-ref", "--format=%(refname)"],
+      { env: scrubGitEnv(), encoding: "utf8" },
+    );
+    assert.match(
+      refs,
+      /refs\/heads\/archive\/slice-only-here/,
+      "the archive ref really exists on the origin, not just in the report",
+    );
+
+    // Idempotent: a second run must push nothing, which is what makes this
+    // safe to run on every session start and on a timer.
+    assert.match(
+      run(work, ["preserve"]),
+      /already archived/,
+      "a branch already archived at its tip is skipped",
+    );
+
+    // Now make the origin reject every push, and advance the branch so there
+    // is something new to lose.
+    writeFileSync(
+      join(originDir, "hooks", "pre-receive"),
+      "#!/bin/sh\nexit 1\n",
+    );
+    execFileSync("chmod", ["+x", join(originDir, "hooks", "pre-receive")]);
+    writeFileSync(join(work, "c.txt"), "c\n");
+    g(["add", "c.txt"]);
+    g(["commit", "-m", "second only copy"]);
+
+    let status = 0;
+    let output = "";
+    try {
+      output = run(work, ["preserve"]);
+    } catch (err) {
+      status = err.status;
+      output = err.message;
+    }
+    assert.equal(
+      status,
+      1,
+      "a rescue that saved nothing must exit non-zero — exit 0 tells the hook it worked",
+    );
+    assert.match(
+      output,
+      /still only on this disk/,
+      "the failure says the work is unprotected",
+    );
+  } finally {
+    rmSync(sandbox, { recursive: true, force: true });
+  }
+}
