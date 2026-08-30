@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-14  
 **Status:** Accepted — ready for implementation  
-**ADR:** [`../../adr/0010-clerk-profile-signup.md`](../../adr/0010-clerk-profile-signup.md)  
+**ADR:** [`../../adr/0030-clerk-profile-signup.md`](../../adr/0030-clerk-profile-signup.md)  
 **Glossary:** [`../../../CONTEXT.md`](../../../CONTEXT.md)
 
 ## Summary
