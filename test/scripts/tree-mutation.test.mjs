@@ -81,8 +81,8 @@ check('a snapshot outside a git checkout is null, not a throw', () => {
   assert.equal(trackedTreeSnapshot('/'), null);
 });
 
-check('uncommitted work outside a git checkout is not refused', () => {
-  assert.equal(uncommittedWorkReason('/'), null);
+check('uncommitted work outside a git checkout is refused fail-closed', () => {
+  assert.match(uncommittedWorkReason('/'), /could not be read/);
 });
 
 console.log(`\n==== ${passed} passed, ${failed} failed ====\n`);

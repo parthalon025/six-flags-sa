@@ -78,17 +78,19 @@ commit), the more reliably it fires.
 
 ## Acceptance
 
-- [ ] Decide and record which way it should go: **fail closed** on a dirty tree ("commit first, the
+- [x] Decide and record which way it should go: **fail closed** on a dirty tree ("commit first, the
       gate plans from commits"), or **plan from the working tree** so uncommitted code owes its
       verticals. Fail-closed is the smaller change and matches how `diffHash` already works.
-- [ ] With uncommitted code changes present, `npm run test:pre-merge-vertical` does **not** print
+      **Decision:** fail closed — `uncommittedWorkReason` in `tree-mutation.mjs`, checked before
+      stamp skip in `runPreMergeVertical`.
+- [x] With uncommitted code changes present, `npm run test:pre-merge-vertical` does **not** print
       `ok` and does **not** write `scripts/ci/local-ci-pass.json`.
-- [ ] A genuinely empty diff (clean tree, nothing ahead of merge-base) still passes and still stamps
+- [x] A genuinely empty diff (clean tree, nothing ahead of merge-base) still passes and still stamps
       — the no-op path is legitimate, it is only the dirty-tree case that is not.
-- [ ] Assert on the exported function's return value in `test/scripts/*.test.mjs`, wired into
+- [x] Assert on the exported function's return value in `test/scripts/*.test.mjs`, wired into
       `scripts/ci/manifest.mjs` — the decision the script returns, not its exit code
       (vertical-e2e policy, "CI, deploy or stamp decisions").
-- [ ] A run that aborts before completing its verticals leaves the existing stamp untouched rather
+- [x] A run that aborts before completing its verticals leaves the existing stamp untouched rather
       than downgrading it.
 - [ ] `npm run test:pre-merge-vertical` green.
 

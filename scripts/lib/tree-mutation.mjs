@@ -65,7 +65,10 @@ export function uncommittedWorkReason(cwd = process.cwd()) {
       stdio: ['ignore', 'pipe', 'ignore'],
     });
   } catch {
-    return null;
+    return [
+      'the working tree could not be read',
+      'Commit first — pre-merge-vertical plans from the committed diff only.',
+    ].join(' ');
   }
   const lines = out.split('\n').filter((line) => line.trim());
   if (!lines.length) return null;
