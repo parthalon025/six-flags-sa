@@ -1,8 +1,11 @@
 /**
- * Train I — extraction lanes and the claims / Gap / truth wall.
+ * Train I — extraction lanes and the claims / dispute / truth wall.
  *
  * ADR-0020 clauses 3 and 5: imagery may add what OSM lacks and, where it
- * contradicts OSM, raise a Gap. It never silently moves geometry.
+ * contradicts OSM, raise a dispute for steward review. It never silently moves
+ * geometry, and — the owner's answer of 2026-08-22 — it never asks a guest
+ * about it either. A dispute leaves this module as a maintainer record
+ * (imagery-disputes.mjs), not as a Gap; there is no third return channel.
  *
  * Three lanes, one router:
  *   deterministic — may write truth only when the pass is CI-proven identical
@@ -11,10 +14,12 @@
  */
 
 import { metresToWalkable } from './ship-gaps.mjs';
+import { disputeRow } from './imagery-disputes.mjs';
 
 export const EXTRACTION_LANES = Object.freeze(['deterministic', 'model', 'agent']);
 
-export const WRITE_MODES = Object.freeze(['truth', 'claim', 'gap']);
+/** What a routed extraction may become. `dispute` is builder-side only. */
+export const WRITE_MODES = Object.freeze(['truth', 'claim', 'dispute']);
 
 /** Metres of centreline disagreement that count as a dispute, not noise. */
 export const DISPUTE_TOLERANCE_M = 8;
@@ -59,7 +64,7 @@ function writeModeFor(extraction, relation) {
   const proven = lane === 'deterministic'
     && extraction.deterministic === true
     && CI_PROVEN_PASSES.includes(extraction.passId);
-  if (relation === 'disputes') return 'gap';
+  if (relation === 'disputes') return 'dispute';
   if (relation === 'agrees') return 'claim';
   if (relation === 'adds' && proven) return 'truth';
   return 'claim';
@@ -67,28 +72,33 @@ function writeModeFor(extraction, relation) {
 
 /**
  * Route extractions under OSM-canonical rules.
- * @returns {{ truth: object[], claims: object[], gaps: object[] }}
+ *
+ * There is no `gaps` key. A disputed extraction produces a `disputes` row for
+ * the builder-side record and a dissenting claim for the evidence graph — the
+ * two audiences that are supposed to see it — and nothing a phone can fetch.
+ *
+ * @returns {{ truth: object[], claims: object[], disputes: object[] }}
  */
 export function routeImageryExtractions(extractions, ctx = {}) {
   const truth = [];
   const claims = [];
-  const gaps = [];
+  const disputes = [];
   for (const extraction of extractions || []) {
     const comparison = compareToOsm(extraction, ctx);
     const writeMode = writeModeFor(extraction, comparison.relation);
     const row = { ...extraction, comparison, writeMode };
     if (writeMode === 'truth') truth.push(row);
-    else if (writeMode === 'gap') {
-      gaps.push({
-        type: 'path_disputed',
+    else if (writeMode === 'dispute') {
+      disputes.push(disputeRow({
+        kind: 'path_disputed',
         target: null,
         note: 'path position disputed',
         extraction: row,
-      });
+      }));
       claims.push({ ...row, dissent: true });
     } else claims.push(row);
   }
-  return { truth, claims, gaps };
+  return { truth, claims, disputes };
 }
 
 /**

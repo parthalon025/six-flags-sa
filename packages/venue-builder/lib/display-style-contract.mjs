@@ -92,6 +92,33 @@ const median = (nums) => {
   return s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2;
 };
 
+/**
+ * Merge kit-level color families with a band overlay when certifying a band bake.
+ * Iso tolerance overrides apply only on the iso target, as before.
+ */
+export function profileColorFamilies(profile, { band = null, target = 'flat' } = {}) {
+  const base = profile.colorFamilies || {};
+  const overlay = band && profile.bands?.[band]?.colorFamilies;
+  const merged = overlay ? { ...base, ...overlay } : base;
+  const isoOverrides = (target === 'iso' && profile.iso?.toleranceOverrides) || {};
+  return Object.fromEntries(Object.entries(merged).map(([cls, fam]) => [
+    cls,
+    isoOverrides[cls] && fam && typeof fam === 'object' ? { ...fam, deltaE: isoOverrides[cls] } : fam,
+  ]));
+}
+
+/** Mechanical checks a band overlay withdraws rather than failing (overview annotation thinning). */
+export function profileWithdrawnChecks(profile, band = null) {
+  return new Set(band && profile.bands?.[band]?.withdrawChecks || []);
+}
+
+/** Ground thresholds for outside/water rows — band overlay wins over kit-level ground. */
+export function profileGroundThresholds(profile, band = null) {
+  const base = profile.ground || {};
+  const overlay = band && profile.bands?.[band]?.ground;
+  return overlay ? { ...base, ...overlay } : base;
+}
+
 /** Per-channel median color of a sample set. */
 export const medianColor = (colors) => [0, 1, 2].map((i) => median(colors.map((c) => c[i])));
 
@@ -538,7 +565,7 @@ export function bandGeneralizationRow(model) {
  * ADR-0021 clause 3, as a row: generalization removes, never moves.
  *
  * A coarser band is only ever a SUBSET of the band below it — same cell grid,
- * same crop, and for the bands clause 3 holds to a position, the same
+ * same extent, and for the bands clause 3 holds to a position, the same
  * coordinates for everything both bands draw. So this holds the pair to
  * containment on exact marks: a coarse mark with no identical twin in the finer
  * band either moved or was invented, and both are the failure clause 3 exists
@@ -686,12 +713,10 @@ export function certifyStyleContract({
 }) {
   const { groups, medians } = groupMedians(points, samples);
   const sig = signature(samples);
-  const baseFams = profile.colorFamilies || {};
-  const isoOverrides = (target === 'iso' && profile.iso?.toleranceOverrides) || {};
-  const fams = Object.fromEntries(Object.entries(baseFams).map(([cls, fam]) => [
-    cls,
-    isoOverrides[cls] && fam && typeof fam === 'object' ? { ...fam, deltaE: isoOverrides[cls] } : fam,
-  ]));
+  const effectiveBand = band ?? model.band ?? null;
+  const fams = profileColorFamilies(profile, { band: effectiveBand, target });
+  const withdrawn = profileWithdrawnChecks(profile, effectiveBand);
+  const groundThresholds = profileGroundThresholds(profile, effectiveBand);
   const checks = [];
   const dE = (a, b) => Math.round(deltaE(a, b) * 10) / 10;
 
@@ -835,7 +860,7 @@ export function certifyStyleContract({
   const floorName = ['ground', 'grass', 'lot'].find((n) => medians[n]);
   const floor = floorName ? medians[floorName] : null;
 
-  if (profile.roads?.vsGround && medians.road && floor) {
+  if (!withdrawn.has('style_road_hierarchy') && profile.roads?.vsGround && medians.road && floor) {
     const d = dE(medians.road, floor);
     const [lRoad] = rgbToLab(medians.road);
     const [lGround] = rgbToLab(floor);
@@ -850,7 +875,7 @@ export function certifyStyleContract({
       falsifier: 'a kit whose roads dissolve into the floor on a phone outdoors',
       soWhat: 'wayfinding is the map’s one job',
     }));
-  } else if (profile.roads?.centerlineVsPaper && groups.roadline && floor) {
+  } else if (!withdrawn.has('style_road_hierarchy') && profile.roads?.centerlineVsPaper && groups.roadline && floor) {
     const best = Math.max(...groups.roadline.map((e) => dE(e.color, floor)));
     checks.push(check({
       key: 'style_road_hierarchy',
@@ -864,7 +889,7 @@ export function certifyStyleContract({
   }
 
   if (medians.water) {
-    const min = profile.ground?.waterVsVegetation?.minDeltaE ?? 20;
+    const min = groundThresholds.waterVsVegetation?.minDeltaE ?? profile.ground?.waterVsVegetation?.minDeltaE ?? 20;
     const dGrass = medians.grass ? dE(medians.water, medians.grass) : null;
     const dGround = medians.ground ? dE(medians.water, medians.ground) : null;
     const worstWater = Math.min(...[dGrass, dGround].filter((v) => v !== null));
@@ -880,7 +905,7 @@ export function certifyStyleContract({
   }
 
   if (medians.outside && floor) {
-    const min = profile.ground?.outsideVsInside?.minDeltaE ?? 12;
+    const min = groundThresholds.outsideVsInside?.minDeltaE ?? profile.ground?.outsideVsInside?.minDeltaE ?? 12;
     const d = dE(medians.outside, floor);
     checks.push(check({
       key: 'style_outside_distinct',
@@ -896,7 +921,7 @@ export function certifyStyleContract({
   const structureMode = profile.structures?.buildingStyle === 'outline' ? 'edge' : 'interior';
   const structureFamily = structureMode === 'edge' ? (profile.structures?.edgeInk || fams.structure) : fams.structure;
   const structureSamples = (groups.structure || []).filter((e) => e.point.mode === structureMode);
-  if (structureFamily && model.buildings?.length) {
+  if (!withdrawn.has('style_structure_presence') && structureFamily && model.buildings?.length) {
     // Per building, the best of its samples — one stroke hit proves the
     // treatment painted; rounding misses on the other edges don't.
     const perBuilding = {};
@@ -992,7 +1017,7 @@ export function certifyStyleContract({
     }
   }
 
-  if (groups.badge?.length && fams.badge) {
+  if (!withdrawn.has('style_annotation_on_top') && groups.badge?.length && fams.badge) {
     const perBadge = {};
     for (const e of groups.badge) {
       const d = familyDistance(e.color, fams.badge);
@@ -1206,12 +1231,14 @@ export function crossRotationCoverageRow(sweep) {
  * Draft color families from measured medians — profile authoring starts
  * from a real bake compared by eye against the reference, never guessed.
  */
-export function harvestProfileDraft({ points, samples }) {
+export function harvestProfileDraft({ points, samples, band = null }) {
   const { medians } = groupMedians(points, samples);
   const families = {};
   for (const [cls, color] of Object.entries(medians)) {
     if (cls === 'track' || cls === 'trackedge' || cls === 'roadline') continue;
     families[cls] = { anchor: rgbToHex(color), deltaE: 14 };
   }
-  return { draft: true, ...families };
+  const draft = { draft: true, ...families };
+  if (band) draft.band = band;
+  return draft;
 }

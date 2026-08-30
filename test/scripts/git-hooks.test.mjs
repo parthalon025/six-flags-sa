@@ -6,9 +6,18 @@
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, chmodSync } from 'node:fs';
+import {
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+  rmSync,
+  existsSync,
+  chmodSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { scrubGitEnv } from '../../scripts/lib/git-env.mjs';
 import {
   hooksPathForRepo,
@@ -20,6 +29,18 @@ import {
 } from '../../scripts/lib/git-hooks.mjs';
 
 assert.equal(hooksPathForRepo(), '.husky');
+
+// A fresh clone never runs scripts/worktree.mjs, so `prepare` is the only thing
+// that points core.hooksPath at the tracked .husky scripts rather than husky's
+// generated .husky/_ shims.
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '../..');
+const pkg = JSON.parse(readFileSync(join(repoRoot, 'package.json'), 'utf8'));
+assert.match(pkg.scripts.prepare, /husky/, 'prepare must still run husky (pre-push hook install)');
+assert.match(
+  pkg.scripts.prepare,
+  /git config core\.hooksPath \.husky/,
+  "prepare must point core.hooksPath at tracked .husky scripts, not husky's generated .husky/_ shims",
+);
 
 const missing = mkdtempSync(join(tmpdir(), 'hooks-missing-'));
 try {

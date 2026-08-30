@@ -142,18 +142,17 @@ barriers, restrooms, restaurants, parking, gates.
 Theme parks are pedestrian graphs, not road networks. Any wrapped routing engine must
 consume the **venue path layer**, not raw OSM highways alone.
 
-## Map delivery: SVG today, tiles optional
+## Map delivery: inline JSON shipped, tiles optional
 
-Current: `ParkMap.jsx` renders SVG from full geometry in `map.json` — zero map deps,
-works offline.
+Current: `map.json` carries full geometry; the MapLibre caller (Train H) and routing read it directly — zero tile-server deps, works offline. See [ADR-0026](./adr/0026-venue-geometry-inline-vs-tiles.md).
 
-Optional pipeline for very large venues:
+Optional pipeline for display packs and future PMTiles cutover:
 
 ```
-build-venue → GeoJSON layers → Tippecanoe → vector tiles → MapLibre (evaluate)
+build-venue → GeoJSON layers → Tippecanoe → vector tiles → MapLibre (when revisit trigger met)
 ```
 
-Adopt MapLibre only if tile size and styling beat SVG maintenance cost.
+Adopt PMTiles as the **shipped** base layer only when ADR-0026's four revisit gates pass.
 
 ## Vision pipeline
 
