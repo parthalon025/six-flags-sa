@@ -27,8 +27,24 @@ function truthUrlPaths(venueId) {
   return new Set(TRUTH_KINDS.map((kind) => `/venues/${venueId}.${kind}.json`));
 }
 
-/** Pin bundle hashes to the bytes already on disk when the truth trio is shipped. */
-function overlayShippedTruthBytes(venueId, venueDir, assembled) {
+/**
+ * Pin bundle hashes to the bytes already on disk when the truth trio is shipped.
+ *
+ * A manifest's hashes must describe the bytes the *origin will serve*, and for the
+ * truth trio the origin serves `public/venues/<id>.<kind>.json` verbatim. Rebuilding
+ * those bytes from PostDB cannot reproduce them: `map_body` / `pois_body` / `gaps_body`
+ * are JSONB, and JSONB does not preserve object key order — it normalises keys to
+ * (length, then bytewise). A shipped POI reads `{i, n, lat, lng, c, a}` on disk and
+ * `{a, c, i, n, lat, lng}` out of the column, so `serializeVenue` over a round-tripped
+ * body yields the same key set, near-identical length, and a completely different
+ * sha256. A phone that fetched the disk file would hash it, mismatch the pin, and
+ * refuse to commit the manifest — permanently, since the next launch replans the same way.
+ *
+ * Apply this to a **head** assembly only. Overlaying disk bytes onto a *prior* revision
+ * would make prior and current truth hash alike and hide a genuine truth change from the
+ * delta, which is the opposite failure: the phone would stop re-fetching updated truth.
+ */
+export function overlayShippedTruthBytes(venueId, venueDir, assembled) {
   const files = new Map(assembled.files);
   for (const kind of TRUTH_KINDS) {
     const diskPath = path.join(venueDir, `${venueId}.${kind}.json`);

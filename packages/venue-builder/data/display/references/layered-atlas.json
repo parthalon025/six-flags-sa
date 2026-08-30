@@ -134,5 +134,55 @@
       "key": "style_reference_resemblance",
       "prompt": "Side-by-side with the worn layered-atlas Skin on the phone, a stranger says the baked plate and the palette skin are the same design language"
     }
-  ]
+  ],
+  "bands": {
+    "overview": {
+      "colorFamilies": {
+        "outside": {
+          "anchor": "#B7C2B4",
+          "deltaE": 14
+        },
+        "ground": {
+          "anchor": "#A6C38C",
+          "deltaE": 14
+        },
+        "grass": {
+          "anchor": "#98B57E",
+          "deltaE": 14
+        },
+        "wood": {
+          "anchor": "#7A9E64",
+          "deltaE": 14
+        },
+        "water": {
+          "anchor": "#8CC8D1",
+          "deltaE": 14
+        },
+        "lot": {
+          "anchor": "#CAD0C1",
+          "deltaE": 14
+        },
+        "road": {
+          "anchor": "#A6BF9C",
+          "deltaE": 14
+        },
+        "service": {
+          "anchor": "#7C9F76",
+          "deltaE": 14
+        },
+        "structure": {
+          "anchor": "#847760",
+          "deltaE": 14
+        },
+        "badge": {
+          "anchor": "#FCFBFA",
+          "deltaE": 14
+        }
+      },
+      "withdrawChecks": [
+        "style_structure_presence",
+        "style_road_hierarchy"
+      ]
+    }
+  }
 }

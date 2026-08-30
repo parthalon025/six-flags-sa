@@ -12,14 +12,14 @@ Committed wayfinder map for macro / Cloud resume fog tracking. Supersedes GitHub
 
 - Owner Round 1: PostDB bus ([ADR-0024](../../docs/adr/0024-postdb-factory-bus.md)), factory module seams ([ADR-0025](../../docs/adr/0025-factory-module-seams.md)), operating stack ([`scripts/lib/operating-stack.json`](../../scripts/lib/operating-stack.json)).
 - Trains H and I: **built** (18/18 slices). Do not restart — factory epic is PostDB → Delivery (tickets 15–19).
-- Epic NOW (machine-readable): ticket 16 closeout → 17; ticket 18 parallel-not-now; ticket 19 human.
+- [Delivery closeout — authority, trigger, bundle shape](issues/19-delivery-closeout.md) (owner, 2026-08-25): delivery authority is **same-origin** static `public/venues/*.bundle.json` on Vercel (R2 deferred behind `addVendorWhen`); export trigger is **steward publish** — `venues:export` run by hand after a PostDB promote, no automatic job in v1; bundle shape at sync is **delta** via `?since=<revision_id>`.
+- Epic NOW (machine-readable): tickets 15–21 resolved, epic merged to main. Remaining work is implementation only — see `npm run workflow:next`.
 
 ## Not yet specified
 
-- **Ticket 19** ([`issues/19-delivery-closeout.md`](issues/19-delivery-closeout.md)) — grilling open:
-  - Q20 delivery authority (static vs API manifest + R2)
-  - Q21 export trigger (auto vs steward publish)
-  - Q22 bundle shape (full vs delta on sync)
+_Empty — the charted decision frontier is closed._ Every `Type: grilling` ticket on this map is
+resolved; the open tickets are all `ready-for-agent` implementation work, which is why
+`npm run workflow:next` derives phase `implement`.
 
 ## Out of scope
 

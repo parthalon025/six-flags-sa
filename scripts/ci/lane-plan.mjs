@@ -19,7 +19,7 @@ function parseBase(argv) {
 
 function main(argv = process.argv.slice(2)) {
   const baseRef = parseBase(argv);
-  const { files } = gitChangedFiles(baseRef, root);
+  const { files } = gitChangedFiles(baseRef, 'HEAD', root);
   const outs = laneGithubOutputs(files);
   const lines = Object.entries(outs).map(([k, v]) => `${k}=${v}`);
   console.log(lines.join('\n'));
