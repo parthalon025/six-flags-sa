@@ -9,6 +9,7 @@ import {
   canonLanePlan,
   jobsRequiredByCanon,
   jobsProvenByStamp,
+  laneGithubOutputs,
   staticStepsForFiles,
   stampProvesCanonJobs,
 } from '../../scripts/lib/ci-lane-plan.mjs';
@@ -69,5 +70,24 @@ const guestCtx = {
   verticals: ['app'],
 };
 assert.equal(stampProvesCanonJobs(fullStamp, guestCtx), true);
+
+const backsideOnly = [
+  'scripts/ci/pre-merge-vertical.mjs',
+  'scripts/lib/tree-mutation.mjs',
+  'test/scripts/pre-merge-vertical.test.mjs',
+  'test/scripts/tree-mutation.test.mjs',
+];
+const backsideLane = canonLanePlan(backsideOnly);
+assert.equal(backsideLane.runAppUi, false, 'backside-only diff must not canon-require UI');
+assert.equal(
+  laneGithubOutputs(null).canon_any_ui,
+  'true',
+  'unreadable git diff fail-opens canon UI — lane-plan must pass cwd, not use it as headRef',
+);
+assert.equal(
+  laneGithubOutputs(backsideOnly).canon_any_ui,
+  'false',
+  'resolved diff must not canon-require UI for backside-only changes',
+);
 
 console.log('ci-lane-plan: ok');
