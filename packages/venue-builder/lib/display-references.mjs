@@ -21,6 +21,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { BUILDER_ROOT, OVERRIDE_DIR, readJson } from './venue-io.mjs';
 import { BUILDING_STYLES, TRACK_STYLES, TERRAIN_NAMES } from './display-bake.mjs';
 import { rgbToLab, hexToRgb, deltaE } from './display-style-contract.mjs';
+import { BANDS } from '@party-tracker/shared/zoomBands.js';
 import {
   AXES, DERIVATION_LICENSES, GROUNDING_BANDS, GROUNDING_CLASSES, GROUNDING_SOURCES, MAX_GROUPS,
   MIN_WORLD_CONTRAST,
@@ -30,6 +31,11 @@ const REFS_DIR = path.join(OVERRIDE_DIR, '..', 'display', 'references');
 const IMAGES_FILE = path.join(REFS_DIR, 'images.json');
 
 const FAMILY_KEYS = new Set([...Object.values(TERRAIN_NAMES), 'structure', 'badge']);
+
+const BAND_IDS = new Set(BANDS.map((b) => b.id));
+
+/** Keys a per-band profile overlay may carry (mirrors kit band vocabulary in slice h14). */
+const BAND_BLOCK_KEYS = new Set(['colorFamilies', 'withdrawChecks', 'ground']);
 
 /** Keys the optional per-profile `iso` block may carry. */
 const ISO_BLOCK_KEYS = new Set(['notes', 'appliesUnchanged', 'toleranceOverrides', 'structures']);
@@ -91,6 +97,58 @@ function validateIsoBlock(profile) {
   return problems;
 }
 
+/** Structural validation of per-band overlays on a reference profile. */
+function validateBandsBlock(profile) {
+  const problems = [];
+  const bands = profile.bands;
+  if (bands == null) return problems;
+  if (typeof bands !== 'object' || Array.isArray(bands)) {
+    problems.push(`${profile.id}: bands block must be an object`);
+    return problems;
+  }
+  for (const [bandId, block] of Object.entries(bands)) {
+    if (!BAND_IDS.has(bandId)) {
+      problems.push(`${profile.id}: unknown band "${bandId}" in bands`);
+      continue;
+    }
+    if (typeof block !== 'object' || Array.isArray(block)) {
+      problems.push(`${profile.id}: bands.${bandId} must be an object`);
+      continue;
+    }
+    for (const key of Object.keys(block)) {
+      if (!BAND_BLOCK_KEYS.has(key)) problems.push(`${profile.id}: unknown bands.${bandId} key "${key}"`);
+    }
+    for (const [key, family] of Object.entries(block.colorFamilies || {})) {
+      if (key === 'draft') continue;
+      if (!FAMILY_KEYS.has(key)) problems.push(`${profile.id}: bands.${bandId} unknown color family "${key}"`);
+      else if (!family.anchor) problems.push(`${profile.id}: bands.${bandId} family "${key}" has no anchor`);
+      else if (!(family.deltaE > 0 && family.deltaE <= 50)) {
+        problems.push(`${profile.id}: bands.${bandId} family "${key}" deltaE out of range`);
+      }
+    }
+    if (block.withdrawChecks != null) {
+      if (!Array.isArray(block.withdrawChecks)) {
+        problems.push(`${profile.id}: bands.${bandId}.withdrawChecks must be an array of check keys`);
+      } else {
+        for (const key of block.withdrawChecks) {
+          if (!STYLE_CHECK_KEYS.has(key)) {
+            problems.push(`${profile.id}: bands.${bandId}.withdrawChecks names unknown check "${key}"`);
+          }
+        }
+      }
+    }
+    const outside = block.ground?.outsideVsInside?.minDeltaE;
+    if (outside != null && !(outside > 0 && outside <= 50)) {
+      problems.push(`${profile.id}: bands.${bandId}.ground.outsideVsInside.minDeltaE out of range`);
+    }
+    const water = block.ground?.waterVsVegetation?.minDeltaE;
+    if (water != null && !(water > 0 && water <= 50)) {
+      problems.push(`${profile.id}: bands.${bandId}.ground.waterVsVegetation.minDeltaE out of range`);
+    }
+  }
+  return problems;
+}
+
 /** All reference profiles on disk, keyed by kit id. */
 export function readReferenceProfiles(dir = REFS_DIR) {
   const out = {};
@@ -128,6 +186,7 @@ export function validateProfile(profile, imageLedger = readReferenceImageLedger(
     problems.push(`${profile.id}: roads need vsGround or centerlineVsPaper`);
   }
   problems.push(...validateIsoBlock(profile));
+  problems.push(...validateBandsBlock(profile));
   for (const id of profile.inspiration?.images || []) {
     if (!imageLedger[id]) problems.push(`${profile.id}: inspiration image "${id}" not in the reference-image ledger`);
   }
