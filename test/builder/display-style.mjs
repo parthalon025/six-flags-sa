@@ -26,7 +26,7 @@ console.log('\nstyle contract\n');
 
 const {
   stylePoints, certifyStyleContract, crossRotationCoverageRow, harvestProfileDraft,
-  bandGeneralizationRow, bandNestingRow,
+  bandGeneralizationRow, bandNestingRow, profileColorFamilies, profileWithdrawnChecks,
   deltaE, hexToRgb, signature, alignmentBudgetMetres, ALIGNMENT_BUDGET_PIXELS,
 } = await import('../../packages/venue-builder/lib/display-style-contract.mjs');
 const { bandGeneralization } = await import('../../packages/venue-builder/lib/display-bake.mjs');
@@ -101,6 +101,52 @@ const profile = {
   agentReview: [{ key: 'style_reference_resemblance', prompt: 'same genre as the reference?' }],
 };
 const kit = { id: 'test-kit' };
+
+await check('profileColorFamilies overlays band colorFamilies on the kit-level contract', () => {
+  const bandProfile = {
+    ...profile,
+    colorFamilies: { grass: { anchor: '#000000', deltaE: 1 } },
+    bands: {
+      overview: {
+        colorFamilies: { grass: { anchor: '#8CBE74', deltaE: 10 } },
+        withdrawChecks: ['style_annotation_on_top'],
+      },
+    },
+  };
+  const overview = profileColorFamilies(bandProfile, { band: 'overview' });
+  assert.equal(overview.grass.anchor, '#8CBE74', 'band overlay wins');
+  assert.equal(profileColorFamilies(bandProfile, { band: 'mid' }).grass.anchor, '#000000', 'mid uses kit-level');
+  assert.ok(profileWithdrawnChecks(bandProfile, 'overview').has('style_annotation_on_top'));
+  return true;
+});
+
+await check('certifyStyleContract uses band profile overlay for overview palette', () => {
+  const bandProfile = {
+    ...profile,
+    colorFamilies: {
+      ...profile.colorFamilies,
+      grass: { anchor: '#000000', deltaE: 1 },
+    },
+    bands: {
+      overview: {
+        colorFamilies: { grass: { anchor: '#8CBE74', deltaE: 10 } },
+      },
+    },
+  };
+  const points = stylePoints(model, { perClass: 8 });
+  const samples = paint(points);
+  const cert = certifyStyleContract({
+    model: { ...model, band: 'overview' },
+    points,
+    samples,
+    profile: bandProfile,
+    kit,
+    band: 'overview',
+  });
+  const row = cert.checks.find((c) => c.key === 'style_terrain_palette');
+  assert.ok(row?.pass, `palette should pass with band overlay: ${row?.evidence}`);
+  return true;
+});
 
 await check('stylePoints is deterministic, interior-only, class-correct', () => {
   const a = stylePoints(model, { perClass: 8 });
