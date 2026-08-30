@@ -42,6 +42,16 @@
       "note": "Bare-earth elevation for US venues, 1/3 arc-second (~10 m) seamless DTM, lidar-derived (packages/venue-builder/lib/adapters/usgs-3dep.mjs). Feeds only the pre-release Display factory's terrain baking (packages/venue-builder/lib/terrain/dem-source.mjs) — not the shipped truth layer. Public domain: no attribution is legally required; credited here as courtesy."
     },
     {
+      "id": "okaloosa-ortho-2025",
+      "name": "Okaloosa County 2025 orthophotography",
+      "role": "imagery & terrain",
+      "license": "Unresolved — no redistribution grant identified",
+      "url": "https://okgis.myokaloosa.com/arcgis/rest/services/imagery/Aerial2025_dynamic/MapServer",
+      "attribution": "credits-screen",
+      "credit": "Okaloosa County GIS 2025 orthophotography, flown by Pictometry International Corp (EagleView), served via Esri World Imagery",
+      "note": "Aerial basis for Big Kahuna's Destin: walking paths OpenStreetMap does not draw, and ride positions where OSM names geometry but not the attraction (packages/venue-builder/data/venues/big-kahunas/imagery.geojson). No imagery bytes ship — what ships is hand-surveyed vector geometry read off the imagery, and the ledger row carries path: null and sha256: null accordingly. The serving channel is named here on purpose: this survey was made through Esri World Imagery, and the owner ruled (2026-08-29) that the record states the channel actually used rather than being rewritten to a compliant one after the fact — a survey record that is corrected retroactively is falsified, not fixed. Okaloosa County serves the same programme directly at the url above, which is the admissible channel for any future re-survey or ingest. LICENCE IS UNRESOLVED and is not to be inferred: the raster is a Pictometry (EagleView) vendor product the county licensed in, not a county work; Okaloosa GIS publishes its public-domain notice on vector items only and every imagery service returns an empty licenseInfo; Florida Chapter 119 grants access, not redistribution over a third party's raster. Open with webgis@myokaloosa.com. Full adjudication: packages/venue-builder/data/imagery-ledger.json, and docs/adr/0020-imagery-ground-truth.md clause 2."
+    },
+    {
       "id": "queue-times",
       "name": "Queue-Times.com",
       "role": "software",

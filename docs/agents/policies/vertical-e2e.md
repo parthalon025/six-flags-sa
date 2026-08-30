@@ -2,7 +2,7 @@
 
 **All code work ships proven end to end, with the run's output asserted.** Not "the tests I added pass" — the change exercised through the stack it ships in, and assertions over what that run produced.
 
-The gate is `scripts/lib/vertical-e2e.mjs`, enforced by `npm run test:pre-merge-vertical` and recorded in `scripts/ci/local-ci-pass.json`. Read the `VERTICALS` table there for the current map of paths → command → the output that command validates. This file is the judgment the script cannot make.
+The gate is `scripts/lib/vertical-e2e.mjs`, enforced by `npm run test:pre-merge-vertical` and recorded in the `local-ci-pass` stamp (`node scripts/ci/stamp-commit.mjs` publishes it as a commit trailer). Read the `VERTICALS` table there for the current map of paths → command → the output that command validates. This file is the judgment the script cannot make.
 
 That record is also the `local-ci-verified` tag: a run that proved every vertical this diff owes lets GitHub skip the jobs it already ran ([CI](../ci.md#local-ci-verified--skipping-github-ci)). Which is the point — the pre-merge run is not a tax on top of CI, it *is* CI, run where the code is.
 
