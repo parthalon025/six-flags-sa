@@ -115,6 +115,38 @@ assert.deepEqual(stamp.verticals, []);
   rmSync(dir, { recursive: true, force: true });
 }
 
+// --- Clean tree with nothing ahead of merge-base still passes and stamps (#35).
+{
+  const dir = mkdtempSync(join(tmpdir(), 'pre-merge-empty-clean-'));
+  const g = (...args) =>
+    execFileSync('git', args, {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...scrubGitEnv(),
+        GIT_AUTHOR_NAME: 'T',
+        GIT_AUTHOR_EMAIL: 'test@example.com',
+        GIT_COMMITTER_NAME: 'T',
+        GIT_COMMITTER_EMAIL: 'test@example.com',
+      },
+    });
+  g('init', '-q', '-b', 'main');
+  g('config', 'user.email', 'empty-clean@example.invalid');
+  g('config', 'user.name', 'Empty Clean');
+  writeFileSync(join(dir, 'README.md'), 'base\n');
+  g('add', '.');
+  g('commit', '-qm', 'base');
+  // HEAD == main, working tree clean — legitimate no-op path.
+
+  const emptyCode = await runPreMergeVertical({ baseRef: 'main', cwd: dir });
+  assert.equal(emptyCode, 0, 'clean empty diff exits 0');
+  assert.ok(
+    existsSync(join(dir, LOCAL_CI_PASS_REL)),
+    'clean empty diff still writes local-ci-pass stamp',
+  );
+  rmSync(dir, { recursive: true, force: true });
+}
+
 // --- Uncommitted work in the tree must not get a pass or a stamp (#35).
 // The gate plans from commits; dirty-tree runs would certify code it never ran.
 {
