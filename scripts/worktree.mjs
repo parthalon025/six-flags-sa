@@ -26,6 +26,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import { scrubGitEnv } from './lib/git-env.mjs';
+import { ensureWorktreeHooks } from './lib/git-hooks.mjs';
 import { existsSync, rmSync, statSync } from 'node:fs';
 import { join, normalize, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -330,7 +331,8 @@ function create(root, rawSlug) {
 
   const base = defaultBase(root);
   git(root, ['worktree', 'add', '-b', branch, path, base]);
-  return { path, branch, base };
+  const hooks = ensureWorktreeHooks({ worktreeRoot: path, sourceRoot: root });
+  return { path, branch, base, hooks };
 }
 
 function remove(root, slugOrPath, { force = false } = {}) {
@@ -557,7 +559,12 @@ function main(argv = process.argv.slice(2)) {
     const slug = argv[1];
     if (!slug) usage();
     const result = create(root, slug);
-    console.log(`Created worktree\n  path: ${result.path}\n  branch: ${result.branch}\n  base: ${result.base}\nWORKTREE=${result.path}`);
+    const hookNote = result.hooks?.readiness?.runnable
+      ? 'pre-push hook: ready'
+      : `pre-push hook: ${result.hooks?.readiness?.reason ?? 'not ready'}`;
+    console.log(
+      `Created worktree\n  path: ${result.path}\n  branch: ${result.branch}\n  base: ${result.base}\n  ${hookNote}\nWORKTREE=${result.path}`,
+    );
     return;
   }
   if (cmd === 'remove') {

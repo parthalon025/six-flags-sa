@@ -22,6 +22,7 @@ Matt-standard layout: **workflows orchestrate; scripts own policy.** Do not dupl
 | `matt-review.mjs` | `runCheck()`, `runWrite()`, `runPrompt()`, `runTwoAxis()` | Two-axis review prompts + Sonnet standards-review stamp (`scripts/lib/matt-review.mjs`) — code PRs fail without a fresh stamp |
 | `../lib/matt-standards.mjs` | `runMattStandardsChecks()` | Gate — scripts/lib test presence, functional↔modules sync, venue-builder path-literal lint |
 | `pre-push.mjs` | `main()` (`scripts/lib/pre-push.mjs`: `prePushDecision()`) | `.husky/pre-push` entry point — decides whether a `git push` owes a local CI run |
+| `../lib/git-hooks.mjs` | `ensureWorktreeHooks()`, `prePushRunnable()` | Pins `core.hooksPath` to tracked `.husky/` scripts; worktree `node_modules` symlink + readiness |
 | — | `scrubGitEnv()` (`scripts/lib/git-env.mjs`) | Strips git's inherited repository out of anything a hook spawns |
 
 Workflow YAML calls the CLIs; tests import the exported functions.
@@ -103,6 +104,12 @@ Re-run `npm run test:pre-merge-vertical` after changing code or dependencies —
 `PRE_PUSH_SKIP_BROWSER=1 git push` passes `--skip-browser` through for a faster local check; `test:pre-merge-vertical` still refuses to skip the browser vertical for a diff that touches app behaviour, so this only speeds up pushes that don't need it.
 
 Emergency bypass: `HUSKY=0 git push`. That skips the hook, not the requirement — GitHub runs full CI on that push instead of skipping the jobs a local run would have covered.
+
+`npm install` runs husky, then pins `core.hooksPath` to the tracked `.husky/` scripts (not husky's generated `.husky/_` shims, which are gitignored and absent in fresh worktrees). If `node_modules` is missing, `.husky/pre-push` refuses with a message instead of silently skipping — see `scripts/lib/git-hooks.mjs` (`test/scripts/git-hooks.test.mjs`).
+
+#### Worktrees and the pre-push hook
+
+`npm run worktree:create` calls `ensureWorktreeHooks()` (`scripts/lib/git-hooks.mjs`): it sets `core.hooksPath=.husky` in the new tree and symlinks `node_modules` from the primary checkout when the worktree does not already have one. A push from that worktree therefore runs the same gate as the primary checkout. Raw `git worktree add` without that setup still has the tracked `.husky/pre-push` hook (git checks out tracked files), but without `node_modules` the hook refuses loudly rather than no-oping.
 
 #### The hook's repository does not belong to the suite
 
