@@ -110,6 +110,18 @@ export function markerDeclutterPriority({
   return rank * 1000 + (barred ? 250 : 0) + index;
 }
 
+/** Declutter priority for a World Zone name (lower wins). Larger lands and
+ *  names already on screen outrank newcomers so collisions resolve the same
+ *  way every frame instead of by array order. */
+export function zoneDeclutterPriority({
+  wasShown = false,
+  area = 0,
+  index = 0,
+}) {
+  const shownBoost = wasShown ? -5000 : 0;
+  return shownBoost - area + index * 0.001;
+}
+
 /**
  * Whether a marker gets a name at this zoom. The policy layer here is only
  * pin promotion (Go target / next Plan stop always named, selection never —

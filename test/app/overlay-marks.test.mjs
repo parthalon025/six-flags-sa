@@ -181,6 +181,59 @@ assert.deepEqual(
 }
 
 {
+  const zone = (id, name, x, y, area = 1) => ({
+    kind: 'zone',
+    className: 'landMarker',
+    id,
+    name,
+    self: false,
+    label: false,
+    x,
+    y,
+    area,
+  });
+  const layout = { zoom: 13.2, latitude: 39.34, width: 390, height: 654 };
+  const named = (marks) => marks.filter((m) => m.kind === 'zone' && m.label).map((m) => m.id);
+
+  // Two Zones on the same pixel: largest land wins, not array order.
+  const stacked = layoutOverlayLabels(
+    [
+      zone('zone:Small', 'SMALL', 195, 327, 10),
+      zone('zone:Large', 'LARGE', 195, 327, 1000),
+    ],
+    layout,
+  );
+  assert.deepEqual(named(stacked), ['zone:Large']);
+
+  // Hysteresis: a Zone already shown keeps its name when the centroid jitters
+  // a few pixels during a pan — the declutter grid must not re-bid every frame.
+  const held = layoutOverlayLabels(
+    [zone('zone:Midway', 'MIDWAY', 100, 100, 500)],
+    { ...layout, shownIds: ['zone:Midway'] },
+  );
+  assert.equal(held[0].label, true);
+  const jittered = layoutOverlayLabels(
+    [zone('zone:Midway', 'MIDWAY', 108, 104, 500)],
+    { ...layout, shownIds: ['zone:Midway'] },
+  );
+  assert.equal(jittered[0].label, true, 'shown Zone survives a small pan jitter');
+  const freshJitter = layoutOverlayLabels(
+    [zone('zone:Midway', 'MIDWAY', 108, 104, 500)],
+    layout,
+  );
+  assert.equal(freshJitter[0].label, true, 'new Zone still prints at park-wide');
+
+  // Viewport clamp: a centroid on the left edge nudges inside so the caps
+  // are not clipped to "AK CITY".
+  const edge = layoutOverlayLabels(
+    [zone('zone:Oak', 'OAK CITY', 2, 327, 800)],
+    layout,
+  );
+  assert.equal(edge[0].label, true);
+  assert.ok(edge[0].x > 40, `Zone anchor clamped in from x=${edge[0].x}`);
+}
+
+{
   const pois = JSON.parse(
     readFileSync(new URL('../../apps/party-tracker/public/venues/six-flags-fiesta-texas.pois.json', import.meta.url)),
   );
