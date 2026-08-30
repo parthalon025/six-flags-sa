@@ -288,6 +288,34 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
   git('rebase', '--abort');
   git('checkout', '-q', 'feature-a');
 
+  // --- `git commit-tree` is plumbing and ignores commit.gpgsign, so without an
+  // explicit -S every stamp commit landed Unverified in a repo that signs.
+  // Proven by asking for a signing key that cannot work: publishing must now
+  // fail trying to sign, where before it happily wrote an unsigned commit.
+  const isSigned = (sha) => git('cat-file', 'commit', sha).split('\n\n')[0].includes('\ngpgsig ');
+
+  git('config', 'commit.gpgsign', 'false');
+  assert.equal(
+    isSigned(publishStamps({ cwd: dir, stamps: stampFor('ffff6666') })),
+    false,
+    'a repo that does not sign gets an unsigned stamp',
+  );
+
+  // What must never happen is the silent case: signing configured, and a stamp
+  // written unsigned anyway. Failing to sign is loud and fine; some
+  // environments have no usable key, and that is not what this is guarding.
+  git('config', 'commit.gpgsign', 'true');
+  let signedSha = null;
+  try {
+    signedSha = publishStamps({ cwd: dir, stamps: stampFor('99997777') });
+  } catch {
+    signedSha = null; // no usable key here — loud, not silent
+  }
+  if (signedSha) {
+    assert.equal(isSigned(signedSha), true, 'a repo that signs must not get an unsigned stamp');
+  }
+  git('config', '--unset', 'commit.gpgsign');
+
   // --- Control: the transport this replaced. Same two branches, stamp as a
   // tracked file, and the merge that just ran clean conflicts instead.
   git('checkout', '-q', 'main');

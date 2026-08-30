@@ -243,6 +243,16 @@ export function readStampFile(path) {
   }
 }
 
+/** Whether this repository signs its commits, as `git commit` would read it. */
+function signingEnabled(cwd) {
+  try {
+    return git(cwd, ['config', '--bool', 'commit.gpgsign']).trim() === 'true';
+  } catch {
+    // `git config` exits 1 for an unset key — unset means do not sign.
+    return false;
+  }
+}
+
 /**
  * Which of the two transports to believe.
  *
@@ -285,7 +295,12 @@ export function publishStamps({ cwd, stamps = {}, subject = STAMP_SUBJECT_DEFAUL
     );
   }
   const tree = git(cwd, ['rev-parse', 'HEAD^{tree}']).trim();
-  const sha = git(cwd, ['commit-tree', tree, '-p', 'HEAD', '-F', '-'], { input: message }).trim();
+  // `commit-tree` is plumbing: unlike `git commit` it ignores `commit.gpgsign`,
+  // so without this every stamp commit landed Unverified in a repo that signs.
+  const sign = signingEnabled(cwd) ? ['-S'] : [];
+  const sha = git(cwd, ['commit-tree', tree, '-p', 'HEAD', ...sign, '-F', '-'], {
+    input: message,
+  }).trim();
   git(cwd, ['update-ref', '-m', `commit: ${subject}`, 'HEAD', sha]);
   return sha;
 }
