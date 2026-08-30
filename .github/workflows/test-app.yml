@@ -85,7 +85,13 @@ jobs:
           else
             BASE_REF="${{ github.base_ref }}"
             if [ -n "$BASE_REF" ]; then
-              git fetch origin "$BASE_REF" --depth=1 || true
+              # NOT --depth=1. This job checks out fetch-depth: 0, so it already
+              # has the history; a shallow fetch on top writes .git/shallow and
+              # grafts origin/$BASE_REF to a parentless commit. That graft made
+              # `mergeBase..HEAD` stop excluding the base, so a stamp published
+              # on another branch and merged to main fell inside this branch's
+              # range and was honoured for it. See scripts/lib/stamp-trailer.mjs.
+              git fetch origin "$BASE_REF" || true
               node test/app/select-modules.mjs --base "origin/$BASE_REF" --format github
             else
               node test/app/select-modules.mjs --base origin/main --format github
