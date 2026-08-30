@@ -15,7 +15,59 @@ import { BUILDER_ROOT } from '../src/paths.mjs';
 
 export const CATALOG_FILE = path.join(BUILDER_ROOT, 'data', 'top-100-us-theme-parks.json');
 
-/** @typedef {{ rank: number, name: string, place: string, locality: string, kind?: string, id?: string, skip?: boolean, note?: string }} ParkEntry */
+/** Park kinds that legitimately publish no height-gated attractions (#428). */
+export const HEIGHT_LESS_KINDS = new Set(['water-park', 'zoo']);
+
+/** @typedef {{ rank: number, name: string, place: string, locality: string, kind?: string, allowNoHeights?: boolean, id?: string, skip?: boolean, note?: string }} ParkEntry */
+
+/**
+ * Whether a catalog row defaults to tolerating zero official height rules.
+ * Does not consider CLI overrides — use resolveAllowNoHeights for batch runs.
+ *
+ * @param {ParkEntry} park
+ */
+export function catalogAllowsNoHeights(park) {
+  if (park.allowNoHeights === true) return true;
+  if (park.allowNoHeights === false) return false;
+  return HEIGHT_LESS_KINDS.has(park.kind || 'theme-park');
+}
+
+/**
+ * Resolve allow-no-heights for one park in a batch/catalog run.
+ * Precedence: CLI --allow-no-heights > CLI --strict-heights > catalog default > strict.
+ *
+ * @param {ParkEntry} park
+ * @param {{ cliAllow?: boolean, cliStrict?: boolean }} [cli]
+ */
+export function resolveAllowNoHeights(park, cli = {}) {
+  if (cli.cliAllow) return true;
+  if (cli.cliStrict) return false;
+  return catalogAllowsNoHeights(park);
+}
+
+/**
+ * Whether the heights stage may proceed when zero rules are sourced (#428).
+ * Geometry-only CLI mode always optional; otherwise uses catalog resolution.
+ *
+ * @param {ParkEntry} park
+ * @param {{ allowNoHeights?: boolean, strictHeights?: boolean }} args catalog CLI args
+ */
+export function catalogHeightsOptional(park, args = {}) {
+  if (args.allowNoHeights === true) return true;
+  return resolveAllowNoHeights(park, { cliStrict: args.strictHeights === true });
+}
+
+/**
+ * Heights-stage gate: abort when zero rules are sourced unless optional (#428).
+ *
+ * @param {number} ruleCount
+ * @param {boolean} heightsOptional
+ * @returns {'continue' | 'allow-empty' | 'abort'}
+ */
+export function zeroHeightsGate(ruleCount, heightsOptional) {
+  if (ruleCount > 0) return 'continue';
+  return heightsOptional ? 'allow-empty' : 'abort';
+}
 
 /**
  * @returns {{ version: number, source: string, generated: string, parks: ParkEntry[] }}

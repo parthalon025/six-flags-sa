@@ -18,7 +18,7 @@
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -51,8 +51,9 @@ const mapMetaFor = (id) =>
 /* A venue whose ground span can be worked out on paper: sat on the equator so
  * cos(latMid) is exactly 1, the span is 0.004 * 111320 = 445.28 m across and
  * 0.002 * 110574 = 221.148 m down. The boundary is a rectangle covering the
- * middle half across and middle half down, so the crop window is computable
- * too. Used by the projector and bakeModel cases below. */
+ * middle half across and middle half down, so a bake that trimmed itself to
+ * the boundary would be visibly smaller than one that does not. Used by the
+ * projector and bakeModel cases below. */
 const EQUATOR_MAP = {
   meta: { id: 'equator', bounds: { n: 0.001, s: -0.001, e: 0.002, w: -0.002 } },
   boundary: [
@@ -86,6 +87,19 @@ await check('every shipped venue plans to its known band dimensions', () => {
 });
 
 await check('every shipped venue’s bands fit inside the canvas ceiling', () => {
+  // The bake paints a band into ONE Chromium <canvas> sized cols*px by
+  // rows*px, and a canvas asked for more than the browser gives does not
+  // throw — it clamps or loses its context and the PNG comes out blank or
+  // truncated. So the cost of not trimming the bake is measured here rather
+  // than assumed: it roughly doubled the emitted picture at the three venues
+  // whose boundary leaves slack inside their bbox (cedar-point's close band
+  // was ~79 Mpx cropped and is 152 Mpx whole), and this says the doubled
+  // pictures still fit.
+  //
+  // The live assertion is that planning SUCCEEDS: `bandBakePlan` refuses an
+  // over-ceiling plan, so a venue whose bounds grow — or a fourth, finer band
+  // — fails right here with the ceiling's own message rather than at bake
+  // time. Nothing is read back out of EXPECTED; these are the real bounds.
   const measured = [];
   for (const id of Object.keys(EXPECTED)) {
     const meta = mapMetaFor(id);
@@ -99,6 +113,8 @@ await check('every shipped venue’s bands fit inside the canvas ceiling', () =>
       measured.push({ id, band: band.id, width: plan.width, height: plan.height });
     }
   }
+  // The widest plan the repo makes, reported so the headroom is a number
+  // someone can read rather than a claim: cedar-point at close.
   const worst = measured.reduce((a, b) => (Math.max(b.width, b.height) > Math.max(a.width, a.height) ? b : a));
   const long = Math.max(worst.width, worst.height);
   console.log(`      widest shipped plan: ${worst.id}/${worst.band} ${worst.width}x${worst.height}`
@@ -109,6 +125,10 @@ await check('every shipped venue’s bands fit inside the canvas ceiling', () =>
 });
 
 await check('a band plan past the canvas ceiling is refused, not baked', () => {
+  // The guard has to be reachable, so drive it: a ~10 km square venue. Its
+  // overview band is a comfortable 4175 px and plans fine; its close band is
+  // 66792 px, four times the ceiling, and must be refused at plan time rather
+  // than handed to a canvas that will quietly clamp it.
   const huge = { id: 'too-big', bounds: { n: 0.09, s: 0, e: 0.09, w: 0 } };
   const overview = bandBakePlan(huge, 'overview');
   assert.ok(overview.width < CANVAS_MAX_AXIS_PX, `overview ${overview.width} should still plan`);
@@ -247,6 +267,31 @@ const { bandGeneralizationRow, bandNestingRow } = await import(
 const mapFor = (id) =>
   JSON.parse(readFileSync(path.join(REPO, 'apps/party-tracker/public/venues', `${id}.map.json`), 'utf8'));
 
+await check('the only committed bake keeps its placement', () => {
+  // Dropping the crop changes no committed venue placement, and that is worth
+  // a test rather than a memory. kings-island is the ONLY venue with a baked
+  // artifact in the tree, and its boundary fills its bbox, so the crop was
+  // already a no-op there: the same 240x197 cells and the same four corners
+  // before and after. Pois are not read — badges cannot move a grid or its
+  // bounds — so this is the extent and the georeference, nothing else.
+  const venuesDir = path.join(REPO, 'packages/venue-builder/data/venues');
+  const worldsIn = (id) => {
+    const dir = path.join(venuesDir, id, 'display');
+    return existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.world.json')) : [];
+  };
+  const baked = readdirSync(venuesDir).filter((id) => worldsIn(id).length > 0);
+  assert.deepEqual(baked, ['kings-island'], 'kings-island is the only venue with a committed bake');
+
+  const model = bakeModel(mapFor('kings-island'), [], {});
+  assert.equal(model.cols, 240, 'cols, cropped or not');
+  assert.equal(model.rows, 197, 'rows, cropped or not');
+  for (const file of worldsIn('kings-island')) {
+    const world = JSON.parse(readFileSync(path.join(venuesDir, 'kings-island/display', file), 'utf8'));
+    assert.deepEqual(world.bounds, model.bounds, `${file} bounds must still be what the bake states`);
+  }
+  return true;
+});
+
 await check('the projector lands on the plan grid, every venue, every band', () => {
   for (const id of Object.keys(EXPECTED)) {
     const map = mapFor(id);
@@ -325,12 +370,13 @@ await check('a tileMetres that is not a positive number is refused', () => {
 });
 
 await check('bakeModel bakes the plan grid when handed a tileMetres', () => {
-  // The end-to-end one: a real venue, the real painter, no column budget
-  // anywhere. `margin: Infinity` opens the crop window to the whole grid so
-  // this measures the projector's answer rather than the venue's boundary.
+  // The end-to-end one: a real venue, the real painter, no column budget and
+  // no escape hatch anywhere. big-kahunas is the venue whose boundary leaves
+  // slack inside its bbox, so it is the one that used to plan 244x276 and emit
+  // 157x191 — the mismatch ADR-0021's crop answer closed.
   const map = mapFor('big-kahunas');
   const plan = bandBakePlan(map.meta, 'overview');
-  const model = bakeModel(map, [], { tileMetres: plan.tileMetres, margin: Infinity });
+  const model = bakeModel(map, [], { tileMetres: plan.tileMetres });
   assert.equal(model.cols, plan.cols, 'cols');
   assert.equal(model.rows, plan.rows, 'rows');
   assert.equal(model.cols, 244);
@@ -338,20 +384,23 @@ await check('bakeModel bakes the plan grid when handed a tileMetres', () => {
   return true;
 });
 
-await check('bakeModel crops to the venue; the plan describes the uncropped World', () => {
-  // Worth pinning because it is the one place a band bake and its plan part
-  // company. `cropModel` trims to the boundary ring's box plus a margin, so
-  // the PNG a venue with slack bounds emits is SMALLER than plan.width. The
-  // crop depends only on the boundary and the cell grid, both of which are
-  // band-independent, so the 4x chain between bands survives it intact.
-  const open = bakeModel(EQUATOR_MAP, [], { tileMetres: 3.7, margin: Infinity });
-  const cropped = bakeModel(EQUATOR_MAP, [], { tileMetres: 3.7 }); // default margin 6
-  assert.equal(open.cols, 120);
-  assert.equal(open.rows, 60);
-  // Hand-computed: the boundary spans cells x 30.0865..90.2595 and
-  // y 14.9424..44.8273, so a 6-cell margin gives x 24..97 and y 8..51.
-  assert.equal(cropped.cols, 74, 'cropped cols');
-  assert.equal(cropped.rows, 44, 'cropped rows');
+await check('a boundary decides paint, not extent — the bake is never trimmed to it', () => {
+  // Worth pinning because this is where a band bake and its plan used to part
+  // company: the bake trimmed itself to the boundary ring's box plus a margin,
+  // so a venue with slack bounds emitted a SMALLER picture than plan.width.
+  // ADR-0021's crop question was closed "don't trim, use the large tiles"
+  // (2026-08-22), and this venue's boundary covers only the middle half of its
+  // bbox in each axis — the shape that used to shrink hardest.
+  const bounded = bakeModel(EQUATOR_MAP, [], { tileMetres: 3.7 });
+  // Hand-computed from the fixture's own span, not read back out of the
+  // module: 445.28 m / 3.7 = 120.35 -> 120 columns, 221.148 / 3.7 = 59.77 -> 60.
+  assert.equal(bounded.cols, 120, 'cols');
+  assert.equal(bounded.rows, 60, 'rows');
+  // The boundary's own box is 60x30 cells — nowhere near the picture size.
+  const open = bakeModel({ ...EQUATOR_MAP, boundary: null }, [], { tileMetres: 3.7 });
+  assert.equal(bounded.cols, open.cols, 'a boundary must not shrink the extent');
+  assert.equal(bounded.rows, open.rows, 'a boundary must not shrink the extent');
+  assert.deepEqual(bounded.bounds, open.bounds, 'a boundary must not move the geo footprint');
   return true;
 });
 
@@ -528,7 +577,11 @@ await check('end to end on a real venue: a band bake generalizes, and certifies 
   assert.match(generalization.evidence, /overview \(floor 3 px\)/, generalization.evidence);
   const nesting = bandNestingRow({ coarse: overview, fine: mid });
   assert.equal(nesting.pass, true, nesting.evidence);
-  assert.match(nesting.evidence, /buildings 32\/32/, nesting.evidence);
+  // 74, not the 32 this pinned while the bake trimmed itself to the boundary:
+  // big-kahunas' map.json carries 74 footprints inside its bbox and the crop
+  // used to drop the 42 that sit beyond the park's own ring. Nothing outside
+  // the boundary leaves the model any more (ADR-0021 crop, 2026-08-22).
+  assert.match(nesting.evidence, /buildings 74\/74/, nesting.evidence);
   // The same row on the mid band's own bake: mid removes nothing, so it must
   // nest in the overview's SUPERSET rather than the other way round — running
   // it backwards is the sanity check that the row is directional at all.

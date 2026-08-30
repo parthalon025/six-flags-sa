@@ -151,6 +151,7 @@ export const TEST_ESTATE = {
   // --- test/builder: assertions over generated venue output ----------------
   'test/builder/ambient-signal-seeds.mjs': ['test:builder'],
   'test/builder/attractions-sidecar.mjs': ['test:builder'],
+  'test/builder/catalog-allow-no-heights.mjs': ['test:builder'],
   'test/builder/check-names.mjs': ['test:builder'],
   'test/builder/compare.mjs': ['test:builder'],
   'test/builder/delivery-bundle-revision-gate.mjs': ['test:builder'],
@@ -211,6 +212,7 @@ export const TEST_ESTATE = {
   'test/scripts/apple-developer.test.mjs': ['ci-gate'],
   'test/scripts/bake-drift-watch.test.mjs': ['ci-gate'],
   'test/scripts/build-venue-workflow.test.mjs': ['ci-gate'],
+  'test/scripts/build-top100-workflow.test.mjs': ['ci-gate'],
   'test/scripts/builder-app-contract.test.mjs': ['ci-gate'],
   'test/scripts/builder-certify-ci.test.mjs': ['ci-gate'],
   'test/scripts/billing-sync-check.test.mjs': ['ci-gate', 'test:unit'],
@@ -223,6 +225,7 @@ export const TEST_ESTATE = {
   'test/scripts/clerk-apple-prod.test.mjs': ['ci-gate'],
   'test/scripts/clerk-e2e.test.mjs': ['ci-gate'],
   'test/scripts/ci-lane-plan.test.mjs': ['ci-gate'],
+  'test/scripts/lane-plan-cli.test.mjs': ['ci-gate'],
   'test/scripts/cloud-agent-clerk-env.test.mjs': ['ci-gate', 'test:unit'],
   'test/scripts/cloud-agent-neon-env.test.mjs': ['ci-gate'],
   'test/scripts/credits.test.mjs': ['ci-gate'],
@@ -268,7 +271,8 @@ export const TEST_ESTATE = {
   'test/scripts/vercel-ignore.test.mjs': ['ci-gate'],
   'test/scripts/import-closure.test.mjs': ['ci-gate'],
   'test/scripts/vercelignore-import-closures.test.mjs': ['ci-gate'],
-  'test/scripts/gitattributes-ci-stamps.test.mjs': ['ci-gate'],
+  'test/scripts/stamp-trailer.test.mjs': ['ci-gate'],
+  'test/scripts/ci-base-ref-depth.test.mjs': ['ci-gate'],
   'test/scripts/production-redis-guard.test.mjs': ['ci-gate'],
   'test/scripts/upstash-budget.test.mjs': ['ci-gate'],
   'test/scripts/redis-key-census.test.mjs': ['ci-gate'],
@@ -312,6 +316,8 @@ export const TEST_ESTATE_EXCLUDED = {
     'library, not a suite: in-memory stand-in for the Upstash REST API (GET/SET/EXPIRE/INCR, sorted sets, hashes, lists, and EVAL dispatched by exact script text) for tests that need the Redis path with no real credentials. Asserted through server-store-redis, world-marks, and guest-traces.',
   'test/app/lib/map-decisions.mjs':
     'library, not a suite: the map decision registry\'s checker, run over the style module by map-decisions.test.mjs and over a live MapLibre style by functional.mjs.',
+  'test/app/lib/marker-fade.mjs':
+    'library, not a suite: the marker fade-in checks functional.mjs runs inside the browser — animation facts read off computed style and the stylesheet\'s own keyframes, plus the MutationObserver that catches a freshly-mounted .poiPin\'s opacity. Playwright serializes an evaluate callback by its source text, so these live in a module rather than inline in the check.',
   'test/app/lib/module-select.mjs':
     'library, not a suite: the module manifest loader and path matcher that select-modules.mjs, validate-ui.mjs, functional.mjs and the CI scripts import. Asserted by test/app/module-select.test.mjs.',
   'test/app/lib/partyBus.mjs':

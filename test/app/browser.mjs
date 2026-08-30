@@ -302,22 +302,20 @@ export async function dismissUpdateSplash(page, { timeout = 12000 } = {}) {
 }
 
 /**
- * Dismiss the logo intro splash if it is up. Polls because React may not have painted it yet.
+ * Dismiss the intro scroll story if it is up. Polls because React may not have
+ * painted it yet. The footer's one control does it either way — labelled
+ * "Skip intro" before the story is read, "Get started" after — so this never
+ * needs to scroll first.
  */
 export async function dismissIntroSplash(page, { timeout = 12000 } = {}) {
   const deadline = Date.now() + timeout;
   do {
     const intro = page.locator('#intro-splash-title');
     if (await intro.count()) {
-      // Logo splash: tap the card (not the version line) to move on.
-      const card = page.locator('.gate:has(#intro-splash-title) .introSplashCard');
-      if (await card.count()) await card.first().click({ force: true }).catch(() => {});
-      else {
-        const primary = page.locator(
-          '.gate:has(#intro-splash-title) .btn.primary, .gate .btn.primary:has-text("Get started")',
-        );
-        await primary.first().click({ force: true }).catch(() => {});
-      }
+      const advance = page.locator(
+        '.gate:has(#intro-splash-title) .introSkip, .gate:has(#intro-splash-title) .introStart',
+      );
+      await advance.first().click({ force: true }).catch(() => {});
       await page.waitForTimeout(600);
       if (!(await intro.count())) return true;
     } else if (!(await page.locator('.gate').count())) {

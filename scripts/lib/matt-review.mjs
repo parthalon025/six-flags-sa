@@ -1,13 +1,15 @@
 /**
  * Matt-review stamp — proof that a Sonnet standards-review subagent ran over
  * this branch's diff before merge. Findings stay advisory; the *run* is the
- * enforced part (same shape as local-ci-pass: stamp committed with the
- * branch, CI fails code PRs whose stamp is missing or stale).
+ * enforced part (same shape as local-ci-pass: the stamp is published as a
+ * commit trailer on the branch, and CI fails code PRs whose stamp is missing
+ * or stale).
  *
  * Interface:
  *   reviewRequiredForFiles(files)
  *   buildMattReviewContext({ baseRef, cwd })
- *   readMattReview(cwd) / writeMattReview({ context, model, gitnexus }, cwd)
+ *   readMattReview(cwd, { range, diffHash }) / writeMattReview({ context, model, gitnexus }, cwd)
+ *   mattReviewStampRange(context)
  *   stampCoversReview(stamp, context)
  *   mattReviewBlockReason({ files, context, stamp })
  *   buildReviewPrompt({ files, diffStat })
@@ -22,6 +24,13 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { isAgentPolicyOnlyDiff } from './agent-policy-diff.mjs';
 import { scrubGitEnv } from './git-env.mjs';
+import {
+  MATT_REVIEW_TRAILER,
+  findStamp,
+  preferMatchingStamp,
+  readStampFile,
+  stampRange,
+} from './stamp-trailer.mjs';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -109,7 +118,17 @@ function git(args, cwd) {
  * 40-character ids are identical everywhere.
  */
 export function buildMattReviewContext({ baseRef = 'origin/main', cwd = root } = {}) {
-  const mergeBase = git(['merge-base', 'HEAD', baseRef], cwd).trim();
+  // Degrades the way gitChangedFiles already does rather than throwing. In the
+  // select job merge-base fails whenever the base ref is missing or shallow,
+  // and an uncaught throw there failed the whole job with a raw Node stack
+  // trace instead of the actionable block reason. Every downstream check fails
+  // closed on a null diffHash, so the gate still blocks — it just says why.
+  let mergeBase;
+  try {
+    mergeBase = git(['merge-base', 'HEAD', baseRef], cwd).trim();
+  } catch {
+    return { schema: MATT_REVIEW_SCHEMA, baseRef, mergeBase: null, diffHash: null, files: null };
+  }
   const excludes = STAMP_EXCLUDES.map((p) => `:(exclude)${p}`);
   const patch = git(['diff', '--full-index', `${mergeBase}...HEAD`, '--', '.', ...excludes], cwd);
   const files = git(['diff', '--name-only', `${mergeBase}...HEAD`, '--', '.', ...excludes], cwd)
@@ -129,14 +148,24 @@ export function mattReviewPath(cwd = root) {
   return join(cwd, MATT_REVIEW_REL);
 }
 
-export function readMattReview(cwd = root) {
-  const path = mattReviewPath(cwd);
-  if (!existsSync(path)) return null;
-  try {
-    return JSON.parse(readFileSync(path, 'utf8'));
-  } catch {
-    return null;
-  }
+/** The commit range a stamp for this context may be read from. */
+export function mattReviewStampRange(context) {
+  return stampRange({ mergeBase: context?.mergeBase });
+}
+
+/**
+ * The review stamp for this run.
+ *
+ * `range` (from `mattReviewStampRange(context)`) reads the commit trailer the
+ * stamp now travels in — see scripts/lib/stamp-trailer.mjs for why the tracked
+ * JSON file stopped being the transport. The file is still read when no
+ * trailer covers the range: it is the local cache `writeMattReview` leaves for
+ * `stamp-commit` to publish, and it is how a branch that predates the trailers
+ * still verifies.
+ */
+export function readMattReview(cwd = root, { range, diffHash } = {}) {
+  const trailer = range ? findStamp(cwd, { key: MATT_REVIEW_TRAILER, range, diffHash }) : null;
+  return preferMatchingStamp({ trailer, file: readStampFile(mattReviewPath(cwd)), diffHash });
 }
 
 export function writeMattReview(
@@ -169,12 +198,19 @@ export function mattReviewBlockReason({ files, context, stamp }) {
   if (!reviewRequiredForFiles(files)) return null;
   if (stampCoversReview(stamp, context)) return null;
   const state = stamp ? 'stale (diff changed since the review)' : 'missing';
+  if (context && context.mergeBase === null && context.diffHash === null) {
+    return [
+      `matt-review cannot be checked: no merge-base against ${context.baseRef}.`,
+      'The base ref is missing or shallow in this checkout, so the diff under review is unknown.',
+      'Fetch the base ref at full depth, then re-run.',
+    ].join('\n');
+  }
   return [
     `matt-review stamp ${state} for this code diff.`,
     'Run the Sonnet two-axis review, then stamp:',
     '  1. node scripts/ci/matt-review.mjs two-axis   # spawn parallel Standards + Spec sub-agents',
     '  2. node scripts/ci/matt-review.mjs write --gitnexus <ok|unavailable>',
-    `  3. commit ${MATT_REVIEW_REL} with the branch`,
+    '  3. node scripts/ci/stamp-commit.mjs           # publish the stamp as a commit trailer',
     'Findings are advisory — address them or answer them in the PR. The run is required.',
   ].join('\n');
 }
