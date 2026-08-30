@@ -6,8 +6,8 @@
     "locality": "Mason, Ohio"
   },
   "certified": true,
-  "certifiedAt": "2026-08-28T06:40:01.340Z",
-  "bundleFingerprint": "b87285128b5cd395808bae41d94d0485d0644d63b54870ebd573df85a9b40250",
+  "certifiedAt": "2026-08-30T14:26:42.978Z",
+  "bundleFingerprint": "0f74a75483ea43834ccc8c4ccc189dc068595a89d048b6e1e8de84e659e034c5",
   "checks": [
     {
       "key": "checklist",
@@ -152,7 +152,7 @@
       "evidence": {
         "numerator": 1,
         "denominator": 1,
-        "detail": "local_images=1; parkMap_candidates=0; llm_park_map_search=false",
+        "detail": "local_images=1; parkMap_candidates=0 (of 0 recorded); llm_park_map_search=false",
         "searchQueries": []
       },
       "confidence": "high",

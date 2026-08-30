@@ -138,5 +138,55 @@
       "key": "style_reference_resemblance",
       "prompt": "Overall: side-by-side with ref-big-kahunas-2026, a stranger names the same genre"
     }
-  ]
+  ],
+  "bands": {
+    "overview": {
+      "colorFamilies": {
+        "outside": {
+          "anchor": "#B9B2A8",
+          "deltaE": 14
+        },
+        "ground": {
+          "anchor": "#7BAD2C",
+          "deltaE": 14
+        },
+        "grass": {
+          "anchor": "#7BAD2C",
+          "deltaE": 14
+        },
+        "wood": {
+          "anchor": "#4E882B",
+          "deltaE": 14
+        },
+        "water": {
+          "anchor": "#37AAA5",
+          "deltaE": 14
+        },
+        "lot": {
+          "anchor": "#DDD4C3",
+          "deltaE": 14
+        },
+        "road": {
+          "anchor": "#D4BF8A",
+          "deltaE": 14
+        },
+        "service": {
+          "anchor": "#8D966D",
+          "deltaE": 14
+        },
+        "structure": {
+          "anchor": "#7B5C36",
+          "deltaE": 14
+        },
+        "badge": {
+          "anchor": "#FCFDFD",
+          "deltaE": 14
+        }
+      },
+      "withdrawChecks": [
+        "style_structure_presence",
+        "style_road_hierarchy"
+      ]
+    }
+  }
 }

@@ -8,9 +8,17 @@ scripts/lib/clerk-google-connection.json
 scripts/lib/clerk-apple-connection.json
 .DS_Store
 
-# scratch harnesses agents drop at the root while verifying
+# scratch harnesses agents drop at the root while verifying.
+# They land here rather than /tmp because a script outside the repo cannot
+# resolve `playwright` or the workspace packages, so a runnable throwaway has
+# to sit where node's resolution reaches node_modules. These patterns are the
+# names that actually show up; `*.tmp.mjs` alone missed `scratch-run-full.mjs`
+# and `scratch-debug-follow.mjs.tmp.497.<hash>`, which is how four of them ended
+# up as untracked noise in one session.
 .drive-tmp.mjs
 *.tmp.mjs
+*.mjs.tmp.*
+scratch-*.mjs
 .scratch/*
 
 # Wayfinder efforts — committed so macro / Cloud resume can track fog
@@ -101,3 +109,12 @@ packages/venue-builder/data/llm-briefs/
 # worth keeping, not its OBJ.
 packages/venue-builder/data/venues/*/display/*-terrain.obj
 packages/venue-builder/data/venues/*/display/*-terrain.mtl
+
+# CI gate stamps. Untracked on purpose: both are regenerated per branch, so as
+# tracked files any two branches conflicted on them at every merge, and the
+# `merge=keep-ours` driver that hid it locally never ran on GitHub's
+# server-side merge. They now travel as commit trailers (see
+# scripts/lib/stamp-trailer.mjs); these files are the local cache that
+# `node scripts/ci/stamp-commit.mjs` publishes from.
+scripts/ci/local-ci-pass.json
+scripts/ci/matt-review-pass.json

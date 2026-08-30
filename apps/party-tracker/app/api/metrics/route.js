@@ -20,6 +20,8 @@ const HELP = {
   mailbox_posted: ['counter', 'Messages accepted into a mailbox'],
   mailbox_dropped: ['counter', 'Messages dropped for age or mailbox depth'],
   store_errors: ['counter', 'Store backend errors'],
+  party_write_oversize_warned: ['counter', 'Parties that crossed the writeParty size warning threshold'],
+  party_write_oversize_blocked: ['counter', 'Party writes refused for exceeding the writeParty size hard cap'],
   parties_resident: ['gauge', 'Parties held in this process (-1 when using Redis)'],
   mailboxes_resident: ['gauge', 'Mailboxes held in this process (-1 when using Redis)'],
   uptime_seconds: ['gauge', 'Process uptime'],

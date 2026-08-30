@@ -88,7 +88,7 @@ Run `npm run venues:adapters -- matrix` for an up-to-date table. Snapshot:
 | Routing | graphhopper/graphhopper | ROUTING_CANDIDATE | evaluate | Apache-2.0 | Pedestrian graph extension |
 | Routing | valhalla/valhalla | ROUTING_CANDIDATE | evaluate | MIT | Builder QA only |
 | Map renderer | maplibre/maplibre-gl-js | MAP_RENDERER_OPTION | evaluate | BSD-2-Clause | vs SVG ParkMap |
-| Vector tiles | felt/tippecanoe | TILE_PIPELINE | wrap | BSD-2-Clause | GeoJSON → tiles |
+| Vector tiles | felt/tippecanoe | TILE_PIPELINE | wrap | BSD-2-Clause | GeoJSON → tiles; escape hatch per [ADR-0026](./adr/0026-venue-geometry-inline-vs-tiles.md) — inline `map.json` ships, tippecanoe optional |
 | Street imagery | mapillary/mapillary_tools | GROUND_IMAGERY | wrap | BSD-2-Clause | Entrance candidates |
 | Street viewer | mapillary/mapillary-js | VALIDATION_UI | defer | MIT | Human validation UI |
 | 3D reconstruction | mapillary/OpenSfM | ADVANCED_GEOMETRY | defer | BSD-2-Clause | Phase 3 |

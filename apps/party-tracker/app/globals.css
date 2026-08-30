@@ -555,6 +555,19 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .poiBarredRing { fill: none; stroke-width: 2.2; opacity: .45; }
 .poiMarker { transition: opacity var(--t2) var(--easeOut); }
 .poiMarker circle.pin { transition: r var(--t2) var(--easeOut); }
+/* The disc is what mounts on a pinch, not the outer <g> — ParkMapGl keys that
+ * `kind:id` for the life of the overlay, so it never remounts and .poiMarker
+ * alone could never see the snap. .poiPin wraps the disc at the render site
+ * for exactly this animation.
+ *
+ * Place labels are safe to fade alongside it: LABEL_ZOOM_HYSTERESIS already
+ * gives them 0.18 of dead zone around their zoom threshold, so a pinch that
+ * crosses it does not flap. Zone labels get no such guard — their declutter
+ * pass (`tryLabel`, unpinned) can win and lose a box on any frame of a pan —
+ * so they stay off this rule for the reason .lyr-detail above stays off it:
+ * an animation on a coordinate that thrashes is the flash, not the fix. */
+.poiPin,
+.poiLabel { animation: fadeIn var(--t2) var(--easeOut) both; }
 .poiHalo {
   fill: none; stroke: var(--blue); stroke-width: 2.5;
   transform-box: fill-box; transform-origin: 50% 50%;
@@ -3007,9 +3020,24 @@ html:not([data-intro="seen"]) .app[data-gate-map] > .mapWrap {
 .gate.gateFirstRun.introGate .introSkip {
   background: rgba(247, 244, 236, .08);
   border: 1px solid rgba(247, 244, 236, .28);
+  border-radius: 13px;
   color: var(--label);
   font-size: 14.5px; font-weight: 600;
   padding: 11px 16px;
+}
+/* The loud way out, once the story is behind the reader: filled rather than
+   outlined, and the palette's own highest-contrast pair (--label on --bg2 —
+   the same pairing .settingsTopic.on uses, at 11.4:1 by day / 12.6:1 at
+   night) rather than the adventure orange .btn.primary wears elsewhere,
+   because on this scrim orange is the claims' own accent colour, not a
+   button's. */
+.gate.gateFirstRun.introGate .introStart {
+  width: 100%;
+  border-radius: 16px;
+  background: var(--label);
+  color: var(--bg2);
+  font-size: 16.5px; font-weight: 700;
+  padding: 15px 0;
 }
 .gate.gateFirstRun.introGate .introFootHint { color: var(--label2); }
 /* One gradient across the footer itself, .96 at the controls fading to nothing
@@ -4539,12 +4567,26 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
 }
 @media (prefers-contrast: more) {
   /* High-contrast Parkbound accents — brighter Adventure / Meadow / Signal
-     so markers and actions survive outdoor glare and accessibility settings. */
+     so markers and actions survive outdoor glare and accessibility settings.
+
+     --introContrast* are named once here, not because :root needs the
+     indirection, but because .gate.gateFirstRun.introGate a hundred lines
+     down does: the intro's scrim is always night ink, in both palettes, so
+     it cannot reference the bare --label2/--sep/--sun above (day's own
+     boosted values, further down, would win there). Naming the three
+     values once and having both :root and .introGate point at the same
+     custom property means tuning one can no longer silently desync from
+     the other the way two typed-out copies of the same rgba() can. */
+  :root {
+    --introContrastLabel2: rgba(247, 244, 236, .82);
+    --introContrastSep: rgba(247, 244, 236, .42);
+    --introContrastSun: #FFD56A;
+  }
   :root {
     --adventure: #FF8A55;
     --aqua: #3DD4CC;
     --meadow: #7DCF80;
-    --sun: #FFD56A;
+    --sun: var(--introContrastSun);
     --signal: #FF6E6E;
     --blue: var(--adventure);
     --green: var(--meadow);
@@ -4556,9 +4598,9 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
     --purple: #EA8DFF;
     --pink: #FF8AC4;
     --barred: #FF7A70;
-    --label2: rgba(247, 244, 236, .82);
+    --label2: var(--introContrastLabel2);
     --label3: rgba(247, 244, 236, .55);
-    --sep: rgba(247, 244, 236, .42);
+    --sep: var(--introContrastSep);
   }
   :root[data-theme='day'] {
     --adventure: #D44E1A;
@@ -4589,6 +4631,23 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
     --lens: none; --lensLite: none; --lensDeep: none;
     --blur: none; --blurLite: none;
     --lensEdge: inset 0 0 0 1px var(--sep);
+  }
+  /* .gate.gateFirstRun.introGate re-declares --label2/--sep/--sun at
+     three-class specificity (0,3,0) — a hundred lines up, so its Trail-day
+     scrim and its SCROLL nudge do not inherit the wrong palette. That beats
+     this media query's :root override outright: a :root selector is
+     (0,1,0) no matter what @media it sits inside, and higher specificity
+     wins regardless of source order or media-query nesting. Reordering the
+     two rules would not change that; only matching the winning rule's
+     specificity does. So this restates the same three custom properties at
+     the same (0,3,0) specificity, scoped to the same subtree, which — being
+     later in the cascade at equal specificity — wins when the preference is
+     on. Pointing at --introContrast* rather than retyping their values
+     keeps the two declarations from ever being able to drift apart. */
+  .gate.gateFirstRun.introGate {
+    --label2: var(--introContrastLabel2);
+    --sep: var(--introContrastSep);
+    --sun: var(--introContrastSun);
   }
 }
 

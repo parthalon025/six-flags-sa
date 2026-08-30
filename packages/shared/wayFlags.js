@@ -46,6 +46,13 @@ export const WAY_FLAGS = {
   ONEWAY_BACK: 16,
   /** `access=no` or `access=private`. Back of house, whoever drew it. */
   RESTRICTED: 32,
+  /**
+   * `wheelchair=no`. The explicit denial only — `wheelchair=yes` on a way
+   * asserts nothing that silence did not (76 of 77 tagged ways at the one
+   * venue that carries it say `yes`, against 112 flights of steps; the
+   * single `no` is the whole signal). Absent is not "accessible".
+   */
+  WHEELCHAIR_NO: 64,
 };
 
 /** Whether a way's bitfield asserts a given flag. */

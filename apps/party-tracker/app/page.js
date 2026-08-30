@@ -4017,11 +4017,7 @@ function ParkApp({ isSignedIn }) {
       )}
 
       {showIntroSplash && (
-        <IntroSplash
-          version={appUpdate.version}
-          visitorName={visitorName}
-          onContinue={() => setLogoSplashDismissed(true)}
-        />
+        <IntroSplash version={appUpdate.version} onContinue={() => setLogoSplashDismissed(true)} />
       )}
 
       {/* Explore-without-GPS uses its own card; location intake is the GPS gate. */}

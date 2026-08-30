@@ -23,10 +23,25 @@
  * parks holds both. lib/venueIndex.js is generated alongside them so the server
  * routes — which cannot fetch their own static files on every host — still get
  * the POI lists through the bundler.
+ *
+ * Path resolution and generic JSON read/write are venue-fs.mjs, not this
+ * file — this file is the orchestration layer above that base (assembling
+ * the shipped gaps document, writing venue files, rebuilding the manifest)
+ * and re-exports venue-fs.mjs's primitives so its ~70 existing importers are
+ * unaffected. See venue-fs.mjs's header for why the split exists (#32: it
+ * broke two import cycles that ran through this file).
  */
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { shippedGapsForVenue } from './ship-gaps.mjs';
+import { routeImageryExtractions } from './imagery-claims.mjs';
+import { DISPUTE_SIDECAR, recordDisputes } from './imagery-disputes.mjs';
+import { writeBundleManifest } from './venue-bundle.mjs';
+import { buildGeneratedBinding } from './delivery/builder-app-contract.mjs';
+import { writeRoutingCoverage } from '../src/routing-coverage.mjs';
+import { readSources, adapterGapNotes, externalAdaptersFromCatalog } from './venue-sources.mjs';
+import { adapterCacheFile } from './adapters/_cache.mjs';
 import {
   APP_ROOT,
   BUILDER_ROOT,
@@ -35,93 +50,83 @@ import {
   MONO_ROOT,
   OVERRIDE_DIR,
   VENUE_DIR,
-} from '../src/paths.mjs';
-import { shippedGapsForVenue } from './ship-gaps.mjs';
-import { routeImageryExtractions } from './imagery-claims.mjs';
-import { writeBundleManifest } from './venue-bundle.mjs';
-import { buildGeneratedBinding } from './delivery/builder-app-contract.mjs';
-import { writeRoutingCoverage } from '../src/routing-coverage.mjs';
-import { readSources, adapterGapNotes, externalAdaptersFromCatalog } from './venue-sources.mjs';
-import { adapterCacheFile } from './adapters/_cache.mjs';
+  ROOT,
+  venuePkgDir,
+  venueSidecar,
+  venueSidecarRel,
+  venueMapRel,
+  listVenuePackages,
+  resolveBuilderPath,
+  slugify,
+  readJson,
+  writeJson,
+} from './venue-fs.mjs';
 
-export { APP_ROOT, BUILDER_ROOT, INDEX_FILE, MANIFEST_FILE, MONO_ROOT, OVERRIDE_DIR, VENUE_DIR };
-/** @deprecated use MONO_ROOT */
-export const ROOT = MONO_ROOT;
-
-/** Absolute path to one venue's builder package directory. */
-export const venuePkgDir = (id) => path.join(OVERRIDE_DIR, id);
-
-/**
- * Absolute path to a sidecar inside a venue package.
- * @param {string} id venue id
- * @param {string} name file name inside the package (e.g. `sources.json`, `queue-times-cache.json`)
- */
-export const venueSidecar = (id, name) => path.join(OVERRIDE_DIR, id, name);
-
-/** Relative path from the venue-builder package root (for sources.json datasets). */
-export const venueSidecarRel = (id, name) => path.join('data', 'venues', id, name).replace(/\\/g, '/');
-
-/** Relative path from the venue-builder package root to a map image in the venue package. */
-export const venueMapRel = (id, filename) => venueSidecarRel(id, path.join('maps', filename));
-
-/** List venue package ids that have a directory under data/venues/. */
-export function listVenuePackages() {
-  if (!existsSync(OVERRIDE_DIR)) return [];
-  return readdirSync(OVERRIDE_DIR, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && !d.name.startsWith('.'))
-    .map((d) => d.name)
-    .sort();
-}
-
-/**
- * Resolve a path recorded in sources / recipes / traces.
- * Paths are usually relative to the venue-builder package (`data/venues/...`);
- * docs and other mono-root assets fall back to MONO_ROOT.
- */
-export function resolveBuilderPath(relOrAbs) {
-  if (!relOrAbs) return null;
-  const raw = String(relOrAbs);
-  if (path.isAbsolute(raw)) return raw;
-  const fromBuilder = path.join(BUILDER_ROOT, raw);
-  if (existsSync(fromBuilder)) return fromBuilder;
-  const fromMono = path.join(MONO_ROOT, raw);
-  if (existsSync(fromMono)) return fromMono;
-  return fromBuilder;
-}
-
-export const slugify = (s) =>
-  String(s)
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-
-export function readJson(file, fallback = null) {
-  try {
-    return JSON.parse(readFileSync(file, 'utf8'));
-  } catch {
-    return fallback;
-  }
-}
-
-export const writeJson = (file, value, pretty) => {
-  mkdirSync(path.dirname(file), { recursive: true });
-  writeFileSync(file, pretty ? `${JSON.stringify(value, null, 2)}\n` : JSON.stringify(value));
+export {
+  APP_ROOT,
+  BUILDER_ROOT,
+  INDEX_FILE,
+  MANIFEST_FILE,
+  MONO_ROOT,
+  OVERRIDE_DIR,
+  VENUE_DIR,
+  ROOT,
+  venuePkgDir,
+  venueSidecar,
+  venueSidecarRel,
+  venueMapRel,
+  listVenuePackages,
+  resolveBuilderPath,
+  slugify,
+  readJson,
+  writeJson,
 };
+
+/** Whatever extractions.json holds for this venue, as a flat list. */
+function extractionsFor(id, extractions) {
+  const loaded = extractions ?? (id ? readJson(venueSidecar(id, 'extractions.json'), []) : []);
+  if (Array.isArray(loaded)) return loaded;
+  return Array.isArray(loaded?.extractions) ? loaded.extractions : [];
+}
+
+/**
+ * Disputes this build found, for the builder-side record. Never shipped —
+ * the owner's answer of 2026-08-22 was that a disputed path position stays
+ * internal, so this is a separate call from `gapsDocumentFor` rather than a
+ * field inside it. See imagery-disputes.mjs.
+ */
+export function imageryDisputesFor({ meta, map, extractions } = {}) {
+  const list = extractionsFor(meta?.id, extractions);
+  return routeImageryExtractions(list, { map: map || {} }).disputes;
+}
+
+/**
+ * Write this venue's dispute record into its builder package directory.
+ * `packages/venue-builder/data/venues/<id>/imagery-disputes.json` — beside the
+ * other maintainer sidecars, nowhere near `apps/party-tracker/public/`.
+ *
+ * Silent when there is nothing in dispute: an empty file per venue per build
+ * would be diff noise, and no record is the same fact as an empty one.
+ */
+export function writeImageryDisputes({ meta, map, extractions, write } = {}) {
+  const id = meta?.id;
+  const disputes = imageryDisputesFor({ meta, map, extractions });
+  if (!id || !disputes.length) return { wrote: false, reason: 'nothing in dispute' };
+  const sink = write ?? ((doc) => writeJson(venueSidecar(id, DISPUTE_SIDECAR), doc, true));
+  return recordDisputes(id, disputes, { write: sink, asOf: new Date().toISOString().slice(0, 10) });
+}
 
 /**
  * Gaps this venue ships. Reads builder sidecars (attractions) and walkable
  * geometry; does not invent live ops. Phone-safe: one `{ type, target }` per fact.
+ *
+ * Imagery extractions are deliberately absent. They are routed by
+ * `writeImageryDisputes` into a builder-side record; nothing they produce is
+ * on the wire.
  */
-export function gapsDocumentFor({ meta, pois, map, extractions } = {}) {
+export function gapsDocumentFor({ meta, pois, map } = {}) {
   const id = meta?.id;
   const attractions = id ? readJson(venueSidecar(id, 'attractions.json')) : null;
-  const loaded = extractions ?? (id ? readJson(venueSidecar(id, 'extractions.json'), []) : []);
-  const list = Array.isArray(loaded)
-    ? loaded
-    : Array.isArray(loaded?.extractions) ? loaded.extractions : [];
-  const imagery = routeImageryExtractions(list, { map: map || {} });
   const catalog = id ? readSources(id) : null;
   const gapNotes = catalog?.data ? adapterGapNotes(catalog.data) : {};
   const adapterIds = catalog?.data ? externalAdaptersFromCatalog(catalog.data) : [];
@@ -137,7 +142,6 @@ export function gapsDocumentFor({ meta, pois, map, extractions } = {}) {
     pois: pois || [],
     map: map || {},
     attractions,
-    imageryGaps: imagery.gaps,
     adapterCaches,
     gapNotes,
   });
@@ -157,6 +161,10 @@ export function writeVenue({ meta, map, pois, gaps }) {
   // through the same serialiser the drift check reads with, so the two can
   // never disagree about what a venue looks like.
   const shipped = gaps ?? gapsDocumentFor({ meta, pois, map });
+  // The dispute record is written on the same pass that publishes the venue,
+  // so a build can never ship a venue whose disputes went unrecorded. It lands
+  // in the builder package, not under public/.
+  writeImageryDisputes({ meta, map });
   const bytes = serializeVenue({ meta, map, pois, gaps: shipped });
   mkdirSync(VENUE_DIR, { recursive: true });
   writeFileSync(path.join(VENUE_DIR, `${id}.map.json`), bytes.map);
@@ -189,17 +197,31 @@ export function reindex({ preferredDefault } = {}) {
       console.warn(`  ! ${id}.map.json has no meta block — skipped`);
       continue;
     }
+    // No `writeImageryDisputes` here, on purpose. A reindex re-derives only
+    // what `gapsDocumentFor` produces, and that reads no extractions — the
+    // dispute record's one input — so a republish has nothing new to say about
+    // disputes and no business overwriting what the build recorded. Disputes
+    // are written by `writeVenue`, the pass that has the extractions in hand;
+    // this pass must leave a maintainer's sidecar exactly as it found it.
     const shipped = gapsDocumentFor({ meta: map.meta, pois, map });
     writeJson(path.join(VENUE_DIR, `${id}.gaps.json`), shipped, true);
     // The bundle manifest is written after the gaps file so it hashes the
     // bytes this reindex just shipped. It lists the truth trio plus whatever
     // display files have been published under public/venues/<id>/display/ —
     // the download manager's one trusted entry point per venue (ADR-0018).
+    // `basedOn.revisionId` is PostDB's to mint (ADR-0024) and reindex reads
+    // only file truth, so it cannot recompute the cursor — carry forward
+    // whatever the last `venues:export` pinned rather than dropping a field
+    // this pass does not own. Dropping it is what silently un-stamped every
+    // shipped bundle: `publishBundle` exports the revision-pinned manifest and
+    // then reindexes, and reindexing one venue rewrote all of them.
+    const bundleFile = path.join(VENUE_DIR, `${id}.bundle.json`);
     writeBundleManifest(id, {
       venueDir: VENUE_DIR,
       displayDir: path.join(VENUE_DIR, id, 'display'),
-      outFile: path.join(VENUE_DIR, `${id}.bundle.json`),
+      outFile: bundleFile,
       generated: map.meta?.generated ?? null,
+      revisionId: readJson(bundleFile)?.basedOn?.revisionId ?? null,
     });
     venues.push({
       ...map.meta,

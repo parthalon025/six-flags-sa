@@ -140,12 +140,12 @@ available as the escape hatch for the entries a name cannot address on its own, 
 of twenty-six places called "Restrooms".
 
 Each build writes `apps/party-tracker/public/venues/<id>.map.json`, `apps/party-tracker/public/venues/<id>.pois.json`, and `apps/party-tracker/public/venues/<id>.gaps.json`, then
-rebuilds `apps/party-tracker/public/venues/manifest.json` and the generated `apps/party-tracker/lib/venueIndex.js`. Gaps are facts the builder cannot settle (height, queue, path, path_disputed, restroom, food, gate, camping, verify); `verify` rows name a stale adapter id in `target`. The phone ranks them by Location and does not invent them from POI fields. The client
+rebuilds `apps/party-tracker/public/venues/manifest.json` and the generated `apps/party-tracker/lib/venueIndex.js`. Gaps are facts the builder cannot settle (height, queue, path, restroom, food, gate, camping, verify, inventory); `verify` rows name either a stale adapter id or a ride whose evidence sources disagree in `target`. The phone ranks them by Location and does not invent them from POI fields. Where imagery contradicts OSM the build records a dispute in `packages/venue-builder/data/venues/<id>/imagery-disputes.json` for a maintainer and ships nothing — no guest is asked to settle where a path runs (owner decision, 2026-08-22; ADR-0021 Open). A ride evidence conflict is the other way round: a guest at the ride can settle it, so it ships as a `verify` Gap on that ride (owner ruling, 2026-08-23) rather than as a Gap type of its own — reaching the wire, but not yet a guest: the phone keeps `verify` and then draws no card for it (#795). `ship-gaps.mjs` fails to load if a dispute kind is ever added back to the shipped allowlist. The client
 *fetches* those files rather than importing them, which is the point: a venue added to the
 manifest reaches a phone that already has the app installed, and the service worker caches
 whichever one gets opened. A missing Gaps file is an empty list — it must not fail the park load.
 
-`npm run venues:export` is the **publish** step after PostDB promote: it seeds file truth into PostDB when needed (`seedVenueFromFiles`), exports the hash-addressed phone bundle `public/venues/<id>.bundle.json` from the PostDB truth head, and registers `artifact_blobs` rows for exported files. Run `npm run venues:export -- --all` with `DATABASE_URL` before shipping flagship bundles. The bundle's `basedOn.map` is the truth `generated` stamp; `basedOn.revisionId` is the PostDB revision cursor the phone can sync against. Without `DATABASE_URL`, export is unavailable in CI and tests read already-exported seed bundles. The phone still plans from file hashes (`planBundleSync`); `?since=<revision_id>` is reserved for a later delta sync and does not filter Slice 1.
+`npm run venues:export` is the **publish** step after PostDB promote: it seeds file truth into PostDB when needed (`seedVenueFromFiles`), exports the hash-addressed phone bundle `public/venues/<id>.bundle.json` from the PostDB truth head, and registers `artifact_blobs` rows for exported files. Run `npm run venues:export -- --all` with `DATABASE_URL` before shipping flagship bundles. The bundle's `basedOn.map` is the truth `generated` stamp; `basedOn.revisionId` is the PostDB revision cursor the phone can sync against. Without `DATABASE_URL`, export is unavailable in CI and tests read already-exported seed bundles. `reindex` rewrites every `<id>.bundle.json` from file truth and cannot mint a cursor, so it carries the pinned `basedOn.revisionId` forward rather than dropping it — a `venues:build` on one venue must not un-stamp the others. The phone still plans from file hashes (`planBundleSync`); `?since=<revision_id>` is reserved for a later delta sync and does not filter Slice 1.
 
 Which one loads, in priority order: a venue picked by hand, then the venue the party's
 host phone is standing in, then the venue you said yes to at intake, then the venue this
@@ -381,6 +381,40 @@ real source and a project of its own. What is here is what can be done from data
 disk — plus the door for the rest, since every one of those sources already has a weight and
 lands through the same call the automatic ones use.
 
+### The static ride record
+
+`apps/party-tracker/public/venues/<id>.pois.json` is the offline map contract
+(ADR-0002) — every place a venue ships, static because it is only ever
+rewritten by a rebuild or a consolidate run, never by a live signal. A ride's
+record on disk carries:
+
+| Field | What it is |
+| --- | --- |
+| `i` | Deterministic key from the venue's `ids.json` ledger — the primary id (E1.2). |
+| `n` | Display name. |
+| `lat` / `lng` | The place's own point. |
+| `c` | Category key from `@party-tracker/shared/ontology.js`'s `ONTOLOGY.categories` — `isRideable(poi)` is true for ride-like categories. |
+| `a` | The Zone (OSM land polygon) the point falls in, or the venue name if none does. |
+| `h` | Height rule — `{ min, alone, max }` inches, from `data/venues/<id>/heights.json`; `min`/`alone`/`max` are each `null` when that bound does not apply. Absent entirely on a ride with no height rule on file yet ("no data" and "no requirement" must stay distinguishable — see `heightAudit`). |
+| `e` | Fused entrance/exit points from the ride inventory (previous section) — each carries `src.by` provenance, never bare coordinates. Absent until a ride clears the moderate-confidence bar. |
+| `note` | Free-text hand correction from `overrides.json`, shown as-is (e.g. "Upcharge attraction — height and weight checked at the ride"). |
+| `tel` | Phone number, where sourced. |
+| `camp` | Campground facts (`drive`, `hookup`, `sewer`, ...) — only on `c: 'campsite'` places, from a merged dataset or `applyCamping` rules. |
+
+**What is never in this file**, enforced by `packages/venue-builder/lib/external-claims.mjs`'s
+publish contract (`Publish kinds: queue_entrance | ride_exit` — everything
+else is evidence, not a place field) and never written by any builder path:
+live wait minutes, open/closed or temporary-closure status, crowd level, or
+any other signal that changes faster than a rebuild. Those live in the
+observation/realtime path instead — `ObservationRow` in
+`packages/shared/schemas.js` (`waitMin`, `status`, `ts`) and the Ride report
+flow (ADR-0007) — which reads and writes independently of this file and never
+triggers a rebuild. Mixing a live value into `pois.json` as if the builder
+had confirmed it is exactly the failure ADR-0002 exists to rule out: a wait
+time frozen at build time would ship as false "official" data to every guest
+until the next rebuild, indistinguishable from a fact the builder actually
+checked.
+
 ### Getting things off the park's own map
 
 The map a park hands out at the gate knows things OpenStreetMap does not, and until now none
@@ -535,7 +569,8 @@ passing it without having run `venues:bake` fails the pack on purpose.
 Tile export writes GeoJSON from the shipped contract and wraps Tippecanoe into
 `display/base.pmtiles` — a recorded gap, not a crash, when the binary is absent,
 though a Tippecanoe that runs and produces a broken or oversized archive still
-fails certification. Each Skin also gets a compiled MapLibre `<skin>.style.json`;
+fails certification. Inline `map.json` remains the shipped geometry path; tiles are
+the escape hatch ([ADR-0026](../adr/0026-venue-geometry-inline-vs-tiles.md)). Each Skin also gets a compiled MapLibre `<skin>.style.json`;
 `venues:render` serves the pack to headless Chromium and screenshots every
 Skin at the certification's truth-derived visual points — the builder-side
 descendant of the reference-skin visual matrix.
@@ -711,11 +746,35 @@ Adapters that do not apply (e.g. RopeDrop on Cedar Fair) belong in `gaps.adapter
 Research caches feed `normalizeExternalClaims` → attractions evidence; live waits and
 weather stay builder-only and never land in `pois.json`.
 
+### Guest walk traces (#394)
+
 Guest walk uploads (`Me → Walk history`, opt-in) post anonymised LineStrings and ground-truth
-Points (queue entrances, ride exits, park gates, amenities) to `/api/contributions/traces`. The
-`guest-traces` adapter reads the Redis queue (or a dumped `packages/venue-builder/data/venues/<id>/guest-traces-cache.json`)
-and proposes walkway / entrance candidates where guests disagree with the published graph — research
-only; it never writes `public/venues`.
+Points (queue entrances, ride exits, park gates, amenities) to `/api/contributions/traces`. They
+land in Redis under `ki:guest-traces:{venueId}` (`apps/party-tracker/lib/guestTraces.js`) with a
+90-day TTL — see the key table in [Upstash runbook](./upstash.md#key-namespace-and-ttls-370-386-390).
+The `guest-traces` adapter proposes walkway / entrance candidates where guests disagree with the
+published graph — research only; it never writes `public/venues`.
+
+**Operator export path — Redis → adapter cache:**
+
+The adapter's own fetch mode is the export path; no separate script is needed. It calls the
+token-gated `GET /api/contributions/traces?venueId=<id>&format=geojson` route (the same
+operator gate as `/api/metrics`) and writes the result straight to
+`packages/venue-builder/data/venues/<id>/guest-traces-cache.json` via `writeCache()`:
+
+```bash
+export GUEST_TRACES_API=https://<your-deployment-domain>   # or PARKBOUND_API_BASE
+export GUEST_TRACES_TOKEN=<the deployment's GUEST_TRACES_TOKEN or METRICS_TOKEN>
+
+npm run venues:sync-sources -- <venue-id> --fetch   # refreshes every fetchable adapter, guest-traces included
+# or, scoped to one adapter during agent orchestration:
+npm run venues:build-agent -- <venue-id> --ai --apply
+```
+
+Without `GUEST_TRACES_API` set, the adapter falls back to whatever is already cached on disk
+(`--offline`) or reports `No guest traces yet` — it never blocks a build. Run without `--fetch`
+(or `--offline`) to build entirely from the last dumped cache, e.g. in CI or when iterating
+offline; re-run with `--fetch` when it is time to pull whatever guests have uploaded since.
 
 Every location here is the same data about a different place, and the failure mode that
 comes with that is a park that is *almost* built. Nothing crashes — the map draws, the list

@@ -104,6 +104,51 @@ assert.match(
   /scripts\/ci\/stage-version-stamps\.mjs/,
   'bump commit must stage version stamps via shared manifest',
 );
+/* An exact pin on an internal workspace package must equal the version that
+   package actually declares. npm resolves a workspace by version: when the pin
+   and the workspace disagree, `npm ci` stops treating it as a workspace link and
+   goes to the registry, where @party-tracker/* does not exist — a 404 that fails
+   every job before a single test runs.
+
+   The stamp-manifest assertion below was written against this failure but only
+   guards which FILES get stamped. It cannot see whether the bump actually
+   rewrites the pin inside them, which is a separate list in bump-version.mjs
+   (INTERNAL_DEP_NAMES). That list omitted @party-tracker/venue-builder, so its
+   pin never tracked a bump and main's CI went red on npm ci. This asserts the
+   invariant the two lists exist to keep, so neither can drift alone. */
+{
+  const declared = new Map();
+  const pins = [];
+  for (const rel of [
+    'package.json',
+    'apps/party-tracker/package.json',
+    'packages/shared/package.json',
+    'packages/venue-builder/package.json',
+  ]) {
+    const pkg = JSON.parse(readFileSync(join(root, rel), 'utf8'));
+    if (pkg.name?.startsWith('@party-tracker/')) declared.set(pkg.name, pkg.version);
+    for (const section of ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies']) {
+      for (const [name, range] of Object.entries(pkg[section] || {})) {
+        if (!name.startsWith('@party-tracker/')) continue;
+        if (typeof range !== 'string' || range.startsWith('workspace:')) continue;
+        if (/^[\^~*]|^$/.test(range)) continue; // a range resolves fine; only exact pins can 404
+        pins.push({ from: rel, name, range });
+      }
+    }
+  }
+  for (const { from, name, range } of pins) {
+    const actual = declared.get(name);
+    if (actual === undefined) continue;
+    assert.equal(
+      range,
+      actual,
+      `${from} pins ${name} at ${range} but that workspace declares ${actual} — `
+        + 'npm ci will resolve it from the registry and 404. Add the package to '
+        + "bump-version.mjs's INTERNAL_DEP_NAMES so its pin tracks the bump.",
+    );
+  }
+}
+
 assert.ok(
   loadVersionStampPaths().includes('packages/venue-builder/package.json'),
   'stamp manifest must include venue-builder or npm ci 404s the stale shared pin',

@@ -37,7 +37,7 @@ Owner Round 1 (factories-to-app Wayfinder) confirmed **PostDB** as that canonica
 
 5. **Factory verbs require `DATABASE_URL`.** File fixtures are for unit tests only; CI and dev factory commands fail closed without PostDB.
 
-6. **Operating stack (owner 2026-08-25).** Author-time PostDB is laptop **Docker Postgres** + CI `postgres:16`. Hosted app/API is **Vercel + Neon Marketplace** (Upstash if Party runs on Vercel). Cloudflare is **DNS only**. Clerk Pro, Cursor + Claude Code Max, Google AI, Apple Developer, and Google Play stay. Do not add vendors from the parked / do-not-add lists. Epic NOW (ticket 16 closeout, then 17; Trains H/I already built) lives in the same JSON so `npm run workflow:next` does not remember it. Narrative: [2026-08-25 research note](../research/2026-08-25-free-tier-databricks-vs-postgres.md).
+6. **Operating stack (owner 2026-08-25).** Author-time PostDB is laptop **Docker Postgres** + CI `postgres:18`. Hosted app/API is **Vercel + Neon Marketplace** (Upstash if Party runs on Vercel). Cloudflare is **DNS only**. Clerk Pro, Cursor + Claude Code Max, Google AI, Apple Developer, and Google Play stay. Do not add vendors from the parked / do-not-add lists. Epic NOW (ticket 16 closeout, then 17; Trains H/I already built) lives in the same JSON so `npm run workflow:next` does not remember it. Narrative: [2026-08-25 research note](../research/2026-08-25-free-tier-databricks-vs-postgres.md).
 
 ## Consequences
 

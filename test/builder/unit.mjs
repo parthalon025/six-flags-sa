@@ -2404,6 +2404,61 @@ await check('a contradictory f (ONEWAY|ONEWAY_BACK) degrades to two-way, not to 
   return true;
 });
 
+/* #415: wheelchair=no and steps are hard exclusions, unlike ONEWAY's price —
+   there is no lesser-but-still-avoid tier for either signal, so the profile
+   walls the segment off rather than pricing it. */
+const { profilesForCoverage, profileOpts } = await import(
+  '../../apps/party-tracker/lib/routingProfiles.js'
+);
+
+await check('the wheelchair profile is offered only when it has something to avoid (#415)', () => {
+  assert.equal(profilesForCoverage({}).some((p) => p.id === 'wheelchair'), false, 'nothing recorded, nothing to offer');
+  assert.equal(
+    profilesForCoverage({ steps: 3 }).some((p) => p.id === 'wheelchair'),
+    true,
+    'steps alone are enough to offer it',
+  );
+  assert.equal(
+    profilesForCoverage({ wheelchair: 1 }).some((p) => p.id === 'wheelchair'),
+    true,
+    'a single wheelchair=no way is enough to offer it',
+  );
+  return true;
+});
+
+await check('the wheelchair profile excludes both steps and wheelchair=no segments (#415)', () => {
+  const g = buildRouteGraph(CROSSING);
+  const { excludeSeg } = profileOpts('wheelchair', g);
+  const excluded = g.segments
+    .map((s, i) => ({ name: s.name, out: excludeSeg(i) }))
+    .filter((s) => s.out)
+    .map((s) => s.name);
+  assert.deepEqual(new Set(excluded), new Set(['Steps to the midway']));
+  // The default profile excludes nothing here — carrying the flags moved
+  // nothing until this profile spent them.
+  assert.equal(g.segments.some((s, i) => profileOpts('default', g).excludeSeg(i)), false);
+  return true;
+});
+
+await check('a wheelchair=no side of the square routes the long way round (#415)', () => {
+  const g = buildRouteGraph(ONEWAY_SQUARE(WAY_FLAGS.WHEELCHAIR_NO));
+  const direct = findRoute(g, SQ_FROM, SQ_TO, {});
+  const wheelchairRoute = findRoute(g, SQ_FROM, SQ_TO, profileOpts('wheelchair', g));
+  assert.ok(direct.metres < 350, 'the default profile still takes the flagged south side');
+  assert.ok(
+    wheelchairRoute.metres > direct.metres * 1.8,
+    `wheelchair profile detours round the block (${Math.round(wheelchairRoute.metres)} m vs ${Math.round(direct.metres)} m)`,
+  );
+  return true;
+});
+
+await check('WAY_FLAGS.WHEELCHAIR_NO is a distinct bit from every existing flag (#415)', () => {
+  const bits = Object.values(WAY_FLAGS);
+  assert.equal(new Set(bits).size, bits.length, 'every flag value is unique');
+  assert.equal(WAY_FLAGS.WHEELCHAIR_NO, 64, 'load-bearing value — never renumber a shipped bit');
+  return true;
+});
+
 await check('the attributes survive the round trip from tags to bundle to graph', () => {
   const way = (id, tags, coords) => ({
     type: 'way',
@@ -3168,6 +3223,7 @@ const { checklist, failures } = await import('../../packages/venue-builder/lib/v
 const {
   addressBook, assignKeys, keyAudit, osmRef, resolveOverride, seedLedger, serializeLedger,
 } = await import('../../packages/venue-builder/lib/venue-ids.mjs');
+const { applyHeightsSidecar } = await import('../../packages/venue-builder/lib/heights-sidecar.mjs');
 
 await check('no venue ships half-built', () => {
   /* The list of what a location has to carry, held to. A park that is *almost*
@@ -3661,6 +3717,103 @@ await check('every override is filed under a name the venue actually has', () =>
     // happen — usually the park renamed the ride and the alias was not moved.
     assert.deepEqual(orphans, [], `${id}: overrides with no POI to land on: ${orphans.join(', ')}`);
   });
+  return true;
+});
+
+await check('every height rule addresses a place the venue actually ships', () => {
+  /* The sibling of the overrides check above, and the guard #30 asked for.
+     A height rule that lands on nothing is one of two things and the build
+     cannot tell which: a ride the park still gates on that has fallen off the
+     shipped map — invisible to a guest, its height rule unable to reach anyone
+     — or a ride that closed while its rule stayed behind. Cedar Point's Snake
+     River Falls was the second; it went unnoticed because `applyHeightsSidecar`
+     skipped it in silence, and surfaced only when a place count in an unrelated
+     suite moved by one. A retired rule goes in `retired`, where it is neither
+     applied nor lost, and says why. */
+  const dir = new URL('../../packages/venue-builder/data/venues/', import.meta.url);
+  const venues = fs.readdirSync(dir).filter((name) => {
+    try {
+      return fs.statSync(new URL(`${name}/heights.json`, dir)).isFile();
+    } catch {
+      return false;
+    }
+  });
+  assert.ok(venues.length, 'no heights files to check');
+  for (const id of venues) {
+    const pois = readPois(`/venues/${id}.pois.json`);
+    // Through the applier the build itself uses, so this cannot go on passing
+    // after the build stops agreeing with it.
+    const { unresolved } = applyHeightsSidecar(pois, id);
+    assert.deepEqual(
+      unresolved,
+      [],
+      `${id}: height rule(s) addressing no place: ${unresolved.join(', ')} — restore the place, `
+        + 'or move the rule to "retired" with why',
+    );
+  }
+  return true;
+});
+
+await check('every retired height rule is a well-formed record, at every venue', () => {
+  /* The `retired` block was validated by one hardcoded assertion about Cedar
+     Point's single entry, so a second venue could add a malformed one and pass
+     in silence — the same shape of gap the block exists to close. */
+  const dir = new URL('../../packages/venue-builder/data/venues/', import.meta.url);
+  const venues = fs.readdirSync(dir).filter((name) => {
+    try {
+      return fs.statSync(new URL(`${name}/heights.json`, dir)).isFile();
+    } catch {
+      return false;
+    }
+  });
+  let seen = 0;
+  for (const id of venues) {
+    const heights = JSON.parse(fs.readFileSync(new URL(`${id}/heights.json`, dir)));
+    for (const [name, rule] of Object.entries(heights.retired || {})) {
+      const at = `${id}/heights.json retired["${name}"]`;
+      seen += 1;
+      assert.equal(heights.rules?.[name], undefined, `${at}: also live in rules — it is one or the other`);
+      assert.ok(rule?.retired, `${at}: says nothing about when it retired`);
+      assert.ok(
+        Number.isFinite(rule?.h?.min),
+        `${at}: dropped the height it gated on — that is the fact worth keeping`,
+      );
+      assert.ok(
+        Array.isArray(rule?.evidence) && rule.evidence.length >= 2,
+        `${at}: one source saying a ride closed is a claim, not a record`,
+      );
+      for (const row of rule.evidence) {
+        assert.ok(row?.source && row?.date, `${at}: an evidence row needs a source and a date`);
+      }
+    }
+  }
+  assert.ok(seen >= 1, 'no retired rules found — did the block move?');
+  return true;
+});
+
+await check('a retired height rule keeps its evidence and never reaches a place', () => {
+  const heights = JSON.parse(
+    fs.readFileSync(new URL('../../packages/venue-builder/data/venues/cedar-point/heights.json', import.meta.url)),
+  );
+  const snake = heights.retired?.['Snake River Falls'];
+  assert.ok(snake, 'Snake River Falls closed after 2024 — the rule belongs in retired, not deleted');
+  assert.equal(heights.rules['Snake River Falls'], undefined, 'a retired rule must not also be live');
+  assert.equal(snake.h.min, 48, 'the height it gated on is a fact about the park; keep it');
+  assert.ok(snake.retired, 'a retired rule says when');
+  assert.ok(
+    snake.evidence.length >= 2,
+    'one source saying a ride closed is a claim; the record carries what agreed',
+  );
+
+  // The applier reads `rules`, so nothing in `retired` can reach a place.
+  const pois = readPois('/venues/cedar-point.pois.json');
+  const { applied } = applyHeightsSidecar(pois, 'cedar-point');
+  assert.ok(applied > 0, 'the live rules still apply');
+  assert.equal(
+    pois.some((p) => p.n === 'Snake River Falls'),
+    false,
+    'the place is gone from the shipped map, which is why the rule is retired',
+  );
   return true;
 });
 
@@ -5091,6 +5244,99 @@ await check('a camping rule narrows the venue-wide facts by name', () => {
   return true;
 });
 
+/* -------------------------------------------------------------- overrides -- */
+
+const { applyOverrides } = await import('../../packages/venue-builder/bin/build-venue.mjs');
+
+await check('every shipped venue with an expect lock clears its own floor (#271)', async () => {
+  const { listRecipes, readRecipe } = await import('../../packages/venue-builder/lib/venue-recipe.mjs');
+  const venuesDir = new URL('../../apps/party-tracker/public/venues/', import.meta.url);
+  let checked = 0;
+  for (const id of listRecipes()) {
+    const { data: recipe } = readRecipe(id);
+    const min = recipe?.expect?.walkable_km_min;
+    if (min == null) continue;
+    const mapFile = new URL(`${id}.map.json`, venuesDir);
+    if (!fs.existsSync(mapFile)) continue; // recipe on disk without a shipped bundle (not a fleet venue)
+    const shipped = JSON.parse(fs.readFileSync(mapFile, 'utf8'));
+    const walkableKm = shipped.meta?.coverage?.walkable_km;
+    assert.ok(
+      typeof walkableKm === 'number',
+      `${id}: shipped bundle has no meta.coverage.walkable_km to check against its expect lock`,
+    );
+    assert.ok(
+      walkableKm >= min,
+      `${id}: shipped walkable coverage is ${walkableKm} km, below its own locked floor of ${min} km — ` +
+        'a rebuild already regressed routing coverage and shipped that way.',
+    );
+    checked += 1;
+  }
+  // The assertion is meaningless if nothing on disk declares an expect lock.
+  assert.ok(checked >= 1, 'expected at least one shipped venue with an expect.walkable_km_min lock');
+  return true;
+});
+
+await check('a partial nested override patch leaves sibling fields intact', () => {
+  const pois = [{ n: 'Millennium Force', c: 'coaster', h: { min: 48, alone: 46, max: null } }];
+  const { pois: merged, applied } = applyOverrides(pois, {
+    pois: { 'Millennium Force': { h: { min: 52 } } },
+  });
+  assert.equal(applied, 1);
+  // Only `min` was named in the patch — `alone` and `max` must survive it,
+  // where a wholesale Object.assign onto `h` would have dropped both.
+  assert.deepEqual(merged[0].h, { min: 52, alone: 46, max: null });
+  return true;
+});
+
+await check('an explicit null in an override patch still clears the field', () => {
+  const pois = [{ n: 'Top Thrill 2', c: 'coaster', h: { min: 52, alone: null, max: null } }];
+  const { pois: merged } = applyOverrides(pois, { pois: { 'Top Thrill 2': { h: null } } });
+  // `null` is not a plain object, so it falls through to a direct
+  // assignment rather than being recursed into — "check at the ride" holds.
+  assert.equal(merged[0].h, null);
+  return true;
+});
+
+await check('dropping a name shared by more than one place removes every bearer and says so', () => {
+  const pois = [
+    { n: 'Restrooms', c: 'restroom', i: 'restroom-1' },
+    { n: 'Restrooms', c: 'restroom', i: 'restroom-2' },
+    { n: 'Millennium Force', c: 'coaster', i: 'millennium-force' },
+  ];
+  const logged = [];
+  const origError = console.error;
+  console.error = (...args) => logged.push(args.join(' '));
+  let result;
+  try {
+    result = applyOverrides(pois, { drop: ['Restrooms'] });
+  } finally {
+    console.error = origError;
+  }
+  assert.equal(result.pois.length, 1);
+  assert.equal(result.pois[0].n, 'Millennium Force');
+  assert.ok(
+    logged.some((line) => line.includes('drop "Restrooms"') && line.includes('2 places')),
+    `expected a multi-bearer drop notice, got: ${JSON.stringify(logged)}`,
+  );
+  return true;
+});
+
+await check('dropping a key-addressed single place stays silent', () => {
+  const pois = [{ n: 'Restrooms', c: 'restroom', i: 'restroom-1' }];
+  const logged = [];
+  const origError = console.error;
+  console.error = (...args) => logged.push(args.join(' '));
+  let result;
+  try {
+    result = applyOverrides(pois, { drop: ['restroom-1'] });
+  } finally {
+    console.error = origError;
+  }
+  assert.equal(result.pois.length, 0);
+  assert.deepEqual(logged, []);
+  return true;
+});
+
 /* -------------------------------------------------------- source catalogue -- */
 
 const { wireSources, osmGaps, resolveCredits, readSources } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
@@ -5303,6 +5549,58 @@ await check('slug-key overrides resolve via addressBook, not display name', asyn
   const overrides = { pois: { 'lake-eerie-nor-easter': { n: "Lake Erie Nor'easter" } } };
   const reqs = reqsFn({ venue: { id: 'test' }, pois, overrides });
   assert.equal(reqs.find((r) => r.key === 'unmatched'), undefined);
+  return true;
+});
+
+await check('a rename override survives rebuild only while the ledger pins the OSM element', async () => {
+  /* Cedar Point shipped "Lake Eerie Nor'easter" and "Watterin' Hole" to guests
+     because its two spelling overrides silently stopped applying. The shape of
+     that failure, pinned here so it cannot come back unnoticed.
+
+     assignKeys stores the name a place ended the build with — the *corrected*
+     one, after overrides. On the next rebuild OpenStreetMap hands back the raw
+     spelling. Step 1 rematches on the OSM element; step 2 only compares
+     baseKeyFor(name) against baseKeyFor(name). So a record carrying no `osm`
+     has nothing but the name to match on, the two spellings disagree, the key
+     retires, a suffixed one is issued, and an override filed under the base key
+     lands on nothing. Nothing throws. The park just starts shipping the typo. */
+  const raw = "Lake Eerie Nor'easter"; // what OSM says
+  const fixed = "Lake Erie Nor'easter"; // what the override makes it
+  const at = { lat: 41.488522, lng: -82.687185 };
+  const ledgerWith = (rec) => ({ venue: 'cedar-point', keys: { 'lake-eerie-nor-easter': rec } });
+
+  // No `osm` on the record: step 1 cannot help, step 2's names disagree.
+  const rotated = assignKeys(
+    [{ n: raw, c: 'ride', ...at, osm: 'way/106356823' }],
+    ledgerWith({ n: fixed, c: 'ride', at: '41.488522,-82.687185' }),
+    { venue: 'cedar-point', keepOsm: true },
+  );
+  assert.notEqual(
+    rotated.pois[0].i,
+    'lake-eerie-nor-easter',
+    'a nameless-match ledger record should rotate the key — if this now holds, step 2 '
+      + 'learned to bridge the override rename and this test is pinning the wrong trap',
+  );
+  assert.equal(
+    resolveOverride(addressBook(rotated.pois), 'lake-eerie-nor-easter', { n: fixed }),
+    null,
+    'an override filed under the retired base key must land on nothing — that silent '
+      + 'null is the whole defect',
+  );
+
+  // Same rename, but the record pins the element: the key holds.
+  const held = assignKeys(
+    [{ n: raw, c: 'ride', ...at, osm: 'way/106356823' }],
+    ledgerWith({ n: fixed, c: 'ride', at: '41.488522,-82.687185', osm: 'way/106356823' }),
+    { venue: 'cedar-point', keepOsm: true },
+  );
+  assert.equal(
+    held.pois[0].i,
+    'lake-eerie-nor-easter',
+    'with the OSM element pinned, step 1 rematches and the key survives the rename',
+  );
+  const hit = resolveOverride(addressBook(held.pois), 'lake-eerie-nor-easter', { n: fixed });
+  assert.ok(hit?.length, 'and the override still reaches its Place');
   return true;
 });
 
@@ -6170,6 +6468,9 @@ await check('the attributes read off a way are the ones worth their bytes', () =
   assert.equal(wayAttributes({ highway: 'service', oneway: '-1' }).f, WAY_FLAGS.ONEWAY_BACK);
   assert.equal(wayAttributes({ highway: 'service', access: 'private' }).f, WAY_FLAGS.RESTRICTED);
   assert.equal(wayAttributes({ highway: 'service', access: 'no' }).f, WAY_FLAGS.RESTRICTED);
+  // Only the denial (#415) — `wheelchair=yes` is 76 of 77 tagged ways and
+  // asserts nothing absence did not.
+  assert.equal(wayAttributes({ highway: 'footway', wheelchair: 'no' }).f, WAY_FLAGS.WHEELCHAIR_NO);
 
   // A denial is not an assertion, and neither is silence.
   assert.equal(wayAttributes({ highway: 'footway' }), null);
@@ -6186,6 +6487,8 @@ await check('the attributes read off a way are the ones worth their bytes', () =
   assert.equal(wayAttributes({ highway: 'footway', surface: 'asphalt' }), null);
   assert.equal(wayAttributes({ highway: 'footway', width: "10'" }), null);
   assert.equal(wayAttributes({ highway: 'footway', covered: 'yes' }), null);
+  // wheelchair=no is read (above); =yes is 76 of 77 tagged ways and asserts
+  // nothing absence did not, so it stays silent same as the others here.
   assert.equal(wayAttributes({ highway: 'footway', wheelchair: 'yes' }), null);
 
   // A `layer` outside the nibble it is worth storing in is a typo, not a cliff.
@@ -6195,6 +6498,23 @@ await check('the attributes read off a way are the ones worth their bytes', () =
 
   // Only the two layers the router welds carry any of it.
   assert.deepEqual([...ROUTED_LAYERS].sort(), ['path', 'service']);
+  return true;
+});
+
+await check('tag coverage counts wheelchair=no ways separately from restricted (#415)', async () => {
+  const { tagCoverageFromMap } = await import('../../packages/venue-builder/lib/tag-coverage.mjs');
+  const noWheelchair = wayAttributes({ highway: 'footway', wheelchair: 'no' });
+  const restricted = wayAttributes({ highway: 'service', access: 'private' });
+  const cov = tagCoverageFromMap({
+    path: [
+      { r: [[0, 0], [0, 0.001]], ...noWheelchair },
+      { r: [[0, 0], [0, 0.001]] },
+    ],
+    service: [{ r: [[0, 0], [0, 0.001]], ...restricted }],
+  });
+  assert.equal(cov.wheelchair, 1);
+  assert.equal(cov.restricted, 1);
+  assert.equal(cov.ways, 3);
   return true;
 });
 
@@ -7182,6 +7502,56 @@ await check('the element id is kept as provenance and never reaches the phone', 
   return true;
 });
 
+await check('a reapply with no OpenStreetMap source keeps the provenance already recorded', () => {
+  /* `venues:overrides` (build-venue.mjs --reapply) re-runs the pipeline over the
+     bundle on disk, and a bundle carries no `osm` — it is stripped on the way
+     out. Rebuilding each ledger record from those places wrote the field away
+     on 427 of Cedar Point's 434 records.
+
+     `osm` is step 1 of assignKeys, the only stable rematch path. Without it a
+     renamed place falls to step 2, which compares the ledger's stored (already
+     corrected) name against the incoming raw name, misses, retires the key and
+     issues a fresh one — the mechanism that reverted two Cedar Point spelling
+     corrections. So the repair verb re-armed the failure it exists to fix (#27). */
+  const first = assignKeys(SOURCE(), null, { venue: 'v' });
+  // What a reapply actually reads: the bundle it just wrote, keys and all.
+  const fromBundle = first.pois.map((p) => ({ ...p, lat: Number(p.lat), lng: Number(p.lng) }));
+  assert.equal(fromBundle.every((p) => p.osm === undefined), true, 'a bundle carries no osm');
+
+  const second = assignKeys(fromBundle, first.ledger, { venue: 'v' });
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(second.ledger.keys).map(([k, r]) => [k, r.osm])),
+    Object.fromEntries(Object.entries(first.ledger.keys).map(([k, r]) => [k, r.osm])),
+    'a reapply must carry provenance forward, not write it away',
+  );
+  // And the ledger is byte-identical, so the verb leaves no diff to review.
+  assert.equal(serializeLedger(second.ledger), serializeLedger(first.ledger));
+
+  // The point of keeping it: the next OSM rebuild after a reapply still rematches
+  // a renamed place on its element rather than rotating the key. That rebuild
+  // reads OSM, so it arrives keyless and carrying `osm` — exactly SOURCE(), with
+  // the park's new name on the sign.
+  const rebuilt = SOURCE().map((p) => (p.osm === 'w111' ? { ...p, n: 'Orion Reborn' } : p));
+  const third = assignKeys(rebuilt, second.ledger, { venue: 'v' });
+  assert.equal(
+    third.pois.find((p) => p.n === 'Orion Reborn').i,
+    'orion',
+    'the reapply stripped the provenance this rematch runs on',
+  );
+  return true;
+});
+
+await check('a live source that has genuinely lost an element still outranks the ledger', () => {
+  /* Carrying forward must not mean "the ledger always wins": when the run does
+     have a source and it reports a different element on that place, the run is
+     the newer fact. */
+  const first = assignKeys(SOURCE(), null, { venue: 'v' });
+  const remapped = SOURCE().map((p) => (p.osm === 'w111' ? { ...p, osm: 'w999' } : p));
+  const second = assignKeys(remapped, first.ledger, { venue: 'v' });
+  assert.equal(second.ledger.keys.orion.osm, 'w999');
+  return true;
+});
+
 await check('a venue built before keys existed loads, and loads unchanged', () => {
   /* The bundles on disk carry no key. A phone updates its app long before it
      updates its precached map, so the fallback has to hold — and it has to
@@ -7741,27 +8111,49 @@ await check('The World pick is one component, mounted by both intake paths', () 
   return true;
 });
 
-await check('The intro is a tap-to-continue splash and never invents a party code', async () => {
-  const { BRAND } = await import('../../apps/party-tracker/lib/brand.js');
-  assert.equal(typeof BRAND.introPitch, 'string');
-  assert.equal(typeof BRAND.gatePitch, 'string');
-  assert.notEqual(BRAND.introPitch, BRAND.shortDescription);
-  const src = fs.readFileSync(
-    new URL('../../apps/party-tracker/components/IntroSplash.jsx', import.meta.url),
-    'utf8',
-  );
-  assert.doesNotMatch(src, /PB-/, 'the mock party code must not ship');
-  // Tap the card to advance — do not make the reader scroll a story first.
-  assert.match(src, /introSplashCard/);
-  assert.match(src, /onContinue/);
-  assert.doesNotMatch(src, /introScroll/);
-  assert.doesNotMatch(src, /Skip intro/);
-  // Still a .gate: the first-run hold hides the app behind anything that is not
-  // one, so dropping the class would leak the map through the intro.
-  assert.match(src, /gate gateFirstRun/);
-  assert.match(src, /gateVersionBtn/);
-  return true;
-});
+await check(
+  'The intro is the Claude Design scroll story and never invents a party code',
+  async () => {
+    // docs/agents/policies/claude-design.md makes Claude Design canon for
+    // structure and information architecture — the intro is a scroll story
+    // that tracks how much of it the guest has read, not the tap-to-continue
+    // card this check used to pin. That is a deliberate decision swap, so
+    // this pins the decision now in force rather than the one it replaced.
+    const { BRAND, INTRO_CLAIMS } = await import('../../apps/party-tracker/lib/brand.js');
+    assert.equal(typeof BRAND.introPitch, 'string');
+    assert.equal(typeof BRAND.gatePitch, 'string');
+    assert.notEqual(BRAND.introPitch, BRAND.shortDescription);
+    const src = fs.readFileSync(
+      new URL('../../apps/party-tracker/components/IntroSplash.jsx', import.meta.url),
+      'utf8',
+    );
+    assert.doesNotMatch(src, /PB-/, 'the mock party code must not ship');
+    // The scroll story itself, and the footer that tracks reading it.
+    assert.match(src, /introScroll/);
+    assert.match(src, /Skip intro/);
+    assert.match(src, /Get started/);
+    assert.match(src, /introDot/, 'the reading-progress dots must exist');
+    // The three claims come from lib/brand.js's INTRO_CLAIMS, not retyped
+    // here — a fourth claim should be one edit to that list, not this file
+    // too. Asserting the import, and that a claim's own copy is not also a
+    // literal in the component, is what keeps that true.
+    assert.match(src, /INTRO_CLAIMS/);
+    assert.ok(
+      !src.includes(INTRO_CLAIMS[0].title),
+      'claim copy should come from INTRO_CLAIMS, not be retyped in the component',
+    );
+    assert.match(src, /onContinue/);
+    // Still a .gate: the first-run hold hides the app behind anything that is
+    // not one, so dropping the class would leak the map through the intro.
+    assert.match(src, /gate gateFirstRun/);
+    assert.match(src, /gateVersionBtn/);
+    // The scroll story and the release-notes reader are split into separate
+    // components (not separate files) — pin that the split kept both.
+    assert.match(src, /function IntroStory/);
+    assert.match(src, /function IntroReleaseNotes/);
+    return true;
+  },
+);
 
 await check('first-run splash does not wait for the Profile gate', () => {
   const page = fs.readFileSync(new URL('../../apps/party-tracker/app/page.js', import.meta.url), 'utf8');
@@ -8001,6 +8393,17 @@ await check('adapter registry lists core external stacks', () => {
   return true;
 });
 
+await check('maplibre-gl-js is credited with its actual license (#565)', () => {
+  // The installed package disagrees with the value this registry used to
+  // carry — regression coverage for the drift, checked against the real
+  // package.json rather than a hardcoded string.
+  const installed = JSON.parse(fs.readFileSync(new URL('../../node_modules/maplibre-gl/package.json', import.meta.url)));
+  const row = getAdapter('maplibre-gl-js');
+  assert.equal(row.license, installed.license);
+  assert.equal(row.license, 'BSD-3-Clause');
+  return true;
+});
+
 await check('mapillary-tools row covers ride-walkthrough video evidence', () => {
   const row = getAdapter('mapillary-tools');
   assert.ok(row.evidence_sources.includes('mapillary'));
@@ -8207,6 +8610,8 @@ await check('kings-island certifies with local park-map image (#434)', () => {
   assert.equal(doc.certified, true);
   return true;
 });
+const { reachablePoints } = await import('../../packages/venue-builder/lib/venue-route-qa-core.mjs');
+
 await check('route QA enforces the Kings Island island standard', () => {
   const r = qaVenueRouting('kings-island');
   assert.ok(r.components <= MAX_ROUTING_ISLANDS);
@@ -8215,11 +8620,113 @@ await check('route QA enforces the Kings Island island standard', () => {
   return true;
 });
 
-await check('cedar point fails route gate when a ride is off the network', () => {
+await check('the route gate measures where a guest can stand, not a ride centroid', () => {
+  /* Cedar Point failed this gate on Siren's Curse, 45 m from the walk network —
+     read as an OpenStreetMap path gap stranding a ride. It is not one. That
+     distance is from the *centroid* of a 225-vertex coaster, which sits in the
+     middle of its own footprint; the ride's track runs 9.5 m from a walkway in
+     this venue's own map, and live OSM agrees (14.9 m). A guest can walk right
+     up to it. The gate was measuring the wrong point (#23). */
   const doc = certifyVenue('cedar-point', { write: false });
   const route = doc.checks.find((c) => c.key === 'route');
-  assert.equal(route.pass, false);
-  assert.ok(route.evidence.farRides?.length >= 1);
+  assert.equal(route.pass, true, `farRides: ${JSON.stringify(route.evidence.farRides)}`);
+  assert.deepEqual(route.evidence.farRides, []);
+
+  const map = JSON.parse(
+    fs.readFileSync(new URL('../../apps/party-tracker/public/venues/cedar-point.map.json', import.meta.url)),
+  );
+  const pois = readPois('/venues/cedar-point.pois.json');
+  const siren = pois.find((p) => p.n === "Siren's Curse");
+  const points = reachablePoints(siren, map);
+  assert.ok(points.length > 1, 'the coaster resolves to its own structure, not one centroid');
+  assert.ok(
+    points.some((pt) => pt.lat !== siren.lat || pt.lng !== siren.lng),
+    'the centroid is not what gets snapped when the ride has mapped structure',
+  );
+  return true;
+});
+
+await check('a ride with no structure and no entrance still snaps by its point', () => {
+  // The fallback, unchanged: most rides carry neither, and a flat ride's point
+  // is where it is. Widening what counts as reachable must not stop measuring
+  // the ones it was already measuring correctly.
+  const ride = { n: 'Nothing Mapped', lat: 41.4809, lng: -82.6851, c: 'ride' };
+  assert.deepEqual(reachablePoints(ride, { coaster: [], slide: [] }), [
+    { lat: 41.4809, lng: -82.6851 },
+  ]);
+  // A recorded entrance outranks both — it is literally where a guest queues.
+  const withGate = { ...ride, e: [{ lat: 41.4816, lng: -82.6852 }] };
+  assert.deepEqual(reachablePoints(withGate, { coaster: [{ n: 'Nothing Mapped', r: [[-82.7, 41.5]] }] }), [
+    { lat: 41.4816, lng: -82.6852 },
+  ]);
+  return true;
+});
+
+await check('the ride-to-geometry join survives a name that only drifted in case or spacing', () => {
+  /* The join used raw string equality while `osmGaps` — walking these same
+     coaster/slide layers — has always lowercased both sides, because raw
+     OpenStreetMap names and POI names diverge (Cedar Point ships aliases for
+     exactly that). A case change alone would have dropped a ride silently back
+     to its centroid, which is the behaviour the gate was fixed to stop. */
+  const ride = { n: "Siren's Curse", lat: 41.4809, lng: -82.6851, c: 'coaster' };
+  const map = { coaster: [{ n: "SIREN'S  CURSE", r: [[-82.6852, 41.4817]] }] };
+  assert.deepEqual(reachablePoints(ride, map), [{ lat: 41.4817, lng: -82.6852 }]);
+  return true;
+});
+
+await check('two rides sharing a name fall back to their points, not each other\'s track', () => {
+  /* The normalisation is lossy on purpose — it drops a leading article — so it
+     manufactures this collision itself: "The Beast" and "Beast" land on one
+     key. Geometry that could belong to either ride is attributed to neither. */
+  const beast = { n: 'The Beast', lat: 39.3400, lng: -84.2700, c: 'coaster' };
+  const twin = { n: 'Beast', lat: 39.3500, lng: -84.2800, c: 'coaster' };
+  const map = { coaster: [{ n: 'Beast', r: [[-84.2650, 39.3450]] }] };
+
+  // Told about both, the join refuses: each ride keeps its own point.
+  assert.deepEqual(reachablePoints(beast, map, [beast, twin]), [{ lat: beast.lat, lng: beast.lng }]);
+  assert.deepEqual(reachablePoints(twin, map, [beast, twin]), [{ lat: twin.lat, lng: twin.lng }]);
+  // And qaVenueRouting always tells it about the whole venue.
+  assert.match(
+    fs.readFileSync(new URL('../../packages/venue-builder/lib/venue-route-qa-core.mjs', import.meta.url), 'utf8'),
+    /reachablePoints\(ride, map, rides\)/,
+    'the routing gate must pass the venue rides, or the collision guard never runs',
+  );
+  return true;
+});
+
+await check('an unnamed way is never attributed to a ride', () => {
+  const ride = { n: 'Orion', lat: 39.3441, lng: -84.2681, c: 'coaster' };
+  for (const way of [{ r: [[-84.2680, 39.3442]] }, { n: '', r: [[-84.2680, 39.3442]] }, { n: '   ' }]) {
+    assert.deepEqual(
+      reachablePoints(ride, { coaster: [way] }),
+      [{ lat: ride.lat, lng: ride.lng }],
+      `an unnamed way (${JSON.stringify(way.n)}) must not become a ride's reachable point`,
+    );
+  }
+  // A ride with no usable name of its own cannot join either.
+  assert.deepEqual(
+    reachablePoints({ n: '  ', lat: 1, lng: 2, c: 'ride' }, { coaster: [{ n: 'Orion', r: [[3, 4]] }] }),
+    [{ lat: 1, lng: 2 }],
+  );
+  return true;
+});
+
+await check('a ride stranded off the network still fails the route gate', async () => {
+  /* The gate must still catch what it was built for. Same venue, same graph,
+     one ride moved a kilometre into Lake Erie — structure and all. */
+  const map = JSON.parse(
+    fs.readFileSync(new URL('../../apps/party-tracker/public/venues/cedar-point.map.json', import.meta.url)),
+  );
+  const stranded = { n: 'Stranded Ride', lat: 41.4909, lng: -82.6951, c: 'coaster' };
+  const points = reachablePoints(stranded, map);
+  assert.deepEqual(points, [{ lat: stranded.lat, lng: stranded.lng }]);
+  const routing = await import('../../apps/party-tracker/lib/routing.js');
+  const graph = routing.buildRouteGraph(map);
+  const snap = routing.snapToGraph(graph, stranded.lat, stranded.lng);
+  assert.ok(
+    snap == null || snap.offset > MAX_RIDE_SNAP_METRES,
+    `a ride in the lake must be off the network, got ${snap?.offset}`,
+  );
   return true;
 });
 

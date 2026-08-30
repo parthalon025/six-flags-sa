@@ -19,21 +19,82 @@ coverage/
 # Builder package source is large; keep package.json so npm workspaces resolve.
 # Wear-time delivery (ticket 17) imports @party-tracker/venue-builder/delivery.js
 # at runtime — whitelist that closure only (no sharp / factory bins).
-packages/venue-builder/**
+#
+# Gitignore/vercelignore semantics forbid re-including a file whose PARENT
+# directory is already excluded — `packages/venue-builder/**` excludes `lib`
+# itself, so a deeper `!packages/venue-builder/lib/delivery/**` negation is a
+# no-op and `lib/delivery/index.mjs` never uploads (#706, commit 640f4e8 hit
+# this same wall by adding more negations under the same excluded parent).
+# Exclude/re-include one directory LEVEL at a time instead, so each ancestor
+# gets its own un-ignore rule before a deeper pattern can apply.
+packages/venue-builder/*
 !packages/venue-builder/package.json
-!packages/venue-builder/lib/delivery/**
-!packages/venue-builder/lib/db/**
+!packages/venue-builder/lib
+!packages/venue-builder/src
+
+packages/venue-builder/lib/*
+!packages/venue-builder/lib/delivery
+!packages/venue-builder/lib/db
+!packages/venue-builder/lib/adapters
+!packages/venue-builder/lib/map-factory
+!packages/venue-builder/lib/visual-factory
 !packages/venue-builder/lib/postdb-io.mjs
 !packages/venue-builder/lib/venue-io.mjs
 !packages/venue-builder/lib/venue-bundle.mjs
+!packages/venue-builder/lib/venue-fs.mjs
+!packages/venue-builder/lib/venue-sources.mjs
+!packages/venue-builder/lib/venue-checklist.mjs
+!packages/venue-builder/lib/venue-recipe.mjs
+!packages/venue-builder/lib/venue-ids.mjs
+!packages/venue-builder/lib/venue-report-gate.mjs
 !packages/venue-builder/lib/evidence.mjs
+!packages/venue-builder/lib/evidence-graph.mjs
 !packages/venue-builder/lib/imagery-claims.mjs
+!packages/venue-builder/lib/imagery-disputes.mjs
 !packages/venue-builder/lib/quest-seeds.mjs
 !packages/venue-builder/lib/ship-gaps.mjs
+!packages/venue-builder/lib/ambient-signal-seeds.mjs
+# Pulled in by ship-gaps.mjs since the inventory lane was wired (#29). All three
+# are pure — a coverage comparison and the name-similarity primitive under it —
+# so this is three small files, not the adapter tree they used to live in.
+!packages/venue-builder/lib/inventory-gaps.mjs
+!packages/venue-builder/lib/inventory-compare.mjs
+!packages/venue-builder/lib/name-matching.mjs
+!packages/venue-builder/lib/factory-types.mjs
+!packages/venue-builder/lib/postdb-seed-from-files.mjs
+
+# lib/adapters, lib/map-factory and lib/visual-factory are large factory
+# trees (25+ files each, some with heavy image/geo tooling); delivery.js only
+# reaches through three thin I/O seams inside them via
+# postdb-seed-from-files.mjs, so re-exclude the rest of each directory.
+packages/venue-builder/lib/adapters/*
+!packages/venue-builder/lib/adapters/_cache.mjs
+
+packages/venue-builder/lib/map-factory/*
+!packages/venue-builder/lib/map-factory/map-io.mjs
+!packages/venue-builder/lib/map-factory/postdb-sync.mjs
+
+packages/venue-builder/lib/visual-factory/*
+!packages/venue-builder/lib/visual-factory/postdb-sync.mjs
+
+packages/venue-builder/src/*
 !packages/venue-builder/src/paths.mjs
 !packages/venue-builder/src/routing-coverage.mjs
 
 # Repo scripts are not part of the Next build (ignoreCommand + bump stay).
+#
+# Same excluded-parent trap as packages/venue-builder above, one hop deeper:
+# `!scripts/lib/` un-ignores the lib/ directory entry itself so its children
+# can be evaluated at all, but only the files explicitly negated below are
+# actually re-included — everything else under scripts/lib stays excluded by
+# `scripts/**`. scripts/lib/git-env.mjs and scripts/lib/release-bump.mjs were
+# both real imports of the entry points below and both missing from this
+# list: the preview ignoreCommand crashed with ERR_MODULE_NOT_FOUND on
+# git-env.mjs before decideVercelBuild ever ran, so Vercel fell back to
+# building every preview regardless of the Fix 2 branch-order fix above —
+# the actual mechanism behind the preview-budget leak, not just a
+# theoretical risk. release-bump.mjs (imported by bump-version.mjs) was the
+# same failure waiting to happen on the next post-merge bump.
 scripts/**
 !scripts/vercel-ignore.sh
 !scripts/bump-version.mjs
@@ -49,6 +110,8 @@ scripts/**
 !scripts/lib/app-paths.mjs
 !scripts/lib/app-paths.json
 !scripts/lib/gitnexus-only.mjs
+!scripts/lib/git-env.mjs
+!scripts/lib/release-bump.mjs
 
 *.md
 !apps/party-tracker/**/*.md

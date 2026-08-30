@@ -329,6 +329,23 @@ export default function ParkMapGl({
     applyCamera(camera);
   }, [camera, applyCamera, laidOut]);
 
+  /* Correct the already-mounted map's Zone tints once a fresher World lands —
+   * separate from the mount effect above, on purpose. The mount effect is
+   * keyed on `[world?.id, skin, laidOut]` and fires *before* `useZoneTones`'s
+   * fetch for the new Skin's own palette can possibly resolve (a network
+   * round trip cannot beat the synchronous render that flipped `skin`), so it
+   * always captures a World still wearing the generic name-hue fallback. This
+   * effect is keyed on `world` alone: ParkMap.jsx recomputes that object once
+   * the fetch lands, which is what re-fires this without waiting for another
+   * camera move, another Skin, or a remount. It is also why this is its own
+   * effect rather than folded into the Overlay push below — that one also
+   * depends on `puck`/`heading`/etc. and would otherwise re-set the lands
+   * source on every GPS tick during Go for no reason. */
+  useEffect(() => {
+    if (!world) return;
+    viewRef.current?.retint(world);
+  }, [world, laidOut, mapReady]);
+
   // A guest moving the camera themselves is free look: Follow stands down so
   // the ease does not fight the finger. A tap is not a move — pointerdown
   // used to clear Follow on the press that selected a Place, and then the
@@ -423,14 +440,20 @@ export default function ParkMapGl({
               <>
                 <title>{mark.name}</title>
                 {mark.kind === 'place' && mark.pin !== false ? (
-                  <PoiMarker
-                    category={mark.category}
-                    colour={pinPalette?.categories?.[mark.category] || '#888'}
-                    barredInk={pinPalette?.barred}
-                    r={mark.radius}
-                    state={state}
-                    selected={mark.id === selectedId}
-                  />
+                  // .poiPin, not a class on PoiMarker itself: PoiMarker also
+                  // draws the legend's static swatches (MapLegend.jsx), which
+                  // mount and unmount with the key panel and would pick up an
+                  // enter animation that has nothing to do with the map.
+                  <g className="poiPin">
+                    <PoiMarker
+                      category={mark.category}
+                      colour={pinPalette?.categories?.[mark.category] || '#888'}
+                      barredInk={pinPalette?.barred}
+                      r={mark.radius}
+                      state={state}
+                      selected={mark.id === selectedId}
+                    />
+                  </g>
                 ) : style.drawsPin && mark.pin !== false ? (
                   mark.kind === 'car' ? (
                     <g>

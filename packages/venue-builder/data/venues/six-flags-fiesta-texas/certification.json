@@ -6,8 +6,8 @@
     "locality": "San Antonio, Texas"
   },
   "certified": true,
-  "certifiedAt": "2026-08-28T06:39:53.084Z",
-  "bundleFingerprint": "804941b20891e740253d8f527464337ff9b3f4fdaab3e1e79cad55d175acdea6",
+  "certifiedAt": "2026-08-30T14:26:55.233Z",
+  "bundleFingerprint": "3e842c131cfad42188e1d30e6cbba6d8d1a12965348194ff2cf8132ad1f5da70",
   "checks": [
     {
       "key": "checklist",
@@ -153,7 +153,7 @@
       "evidence": {
         "numerator": 1,
         "denominator": 1,
-        "detail": "local_images=1; parkMap_candidates=0; llm_park_map_search=false",
+        "detail": "local_images=1; parkMap_candidates=0 (of 0 recorded); llm_park_map_search=false",
         "searchQueries": []
       },
       "confidence": "high",

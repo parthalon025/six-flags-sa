@@ -635,18 +635,23 @@ export const pyramidGatePasses = (pyramid) => Boolean(
 );
 
 /**
- * The crop window a pyramid may georeference against.
+ * The geo footprint a pyramid may georeference against.
  *
- * ADR-0021 crop: the plan describes the World; the pyramid places the cropped
- * PNG against `cert.bounds`. A caller that hands map/plan bounds here is the
- * bug that decision named — refuse anything that is not the bake cert.
+ * `cert.bounds` is the emitted PNG's own account of where it sits — the bake
+ * grid's four corners, stamped by `bakeModel` (`gridBounds`) and folded into
+ * the style cert by `bin/display-bake.mjs`. Since ADR-0021's crop answer
+ * ("don't trim, use the large tiles", 2026-08-22) that is the same World the
+ * band plan describes, but the cert stays the source: a plan states what a
+ * bake was ASKED for, and only the artifact can say what it emitted. A caller
+ * that hands map or plan bounds here is guessing at placement rather than
+ * reading it, so refuse anything that is not the bake cert.
  *
  * @param {{ bounds?: { west: number, south: number, east: number, north: number } }|null} cert
  */
 export function pyramidBoundsFromCert(cert) {
   const bounds = cert?.bounds;
   if (!bounds || typeof bounds !== 'object') {
-    throw new Error('pyramid georeferences against cert.bounds — the plan does not place the crop');
+    throw new Error('pyramid georeferences against cert.bounds — a plan does not place an emitted image');
   }
   for (const key of ['west', 'south', 'east', 'north']) {
     if (!Number.isFinite(bounds[key])) {

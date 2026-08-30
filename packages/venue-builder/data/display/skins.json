@@ -138,7 +138,7 @@
           "grass": "#D9D0B5",
           "building": "#B8A68D",
           "label": "#57485C",
-          "structureEdge": "#756276",
+          "structureEdge": "#9C5A45",
           "groundEdge": "#C9BFAE",
           "pathCasing": "#F4EFDF"
         }
@@ -235,6 +235,36 @@
         "lot": "concrete--lot"
       },
       "bakeKit": "blueprint-survey"
+    },
+    "pixel-tycoon": {
+      "label": "Pixel tycoon",
+      "status": "active",
+      "harvestedFrom": "data/display/kits/pixel-tycoon.json — palette quoted from the kit that bakes its world; iso retired (ADR-0021 clause 6, data/display/references/pixel-tycoon.json)",
+      "tokens": {
+        "contrastFloor": 4.5,
+        "labelHalo": true,
+        "mode": "day",
+        "colors": {
+          "path": "#E8D49C",
+          "ground": "#C4A46C",
+          "water": "#3C7CBC",
+          "grass": "#5C9C4C",
+          "building": "#B45C4C",
+          "label": "#1C140C"
+        }
+      },
+      "surfaces": {
+        "walkway": "paving-stones--warm",
+        "service-road": "asphalt--worn",
+        "vegetation": "grass--meadow",
+        "water": "water--calm",
+        "pool": "water--pool",
+        "coaster-track": "steel--track",
+        "slide": "fiberglass--flume",
+        "structure": "roofing--shingle",
+        "lot": "concrete--lot"
+      },
+      "bakeKit": "pixel-tycoon"
     }
   }
 }
