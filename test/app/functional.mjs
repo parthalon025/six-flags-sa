@@ -41,16 +41,22 @@ import {
   waitForHeightsReady,
 } from './browser.mjs';
 import { parseModulesArg, wantModule } from './lib/module-select.mjs';
+import { checkMapDecisions } from './lib/map-decisions.mjs';
+import { checkMarkerFade, startFadeWatch, stopFadeWatch } from './lib/marker-fade.mjs';
 import {
   assertContributionConsolidatePipelineHttp,
+  contributionOperatorPathAvailable,
   contributionPostAvailable,
 } from './lib/contribution-pipeline-vertical.mjs';
 import { readFileSync } from 'node:fs';
 import { pointInCoverage } from '../../packages/venue-builder/src/routing-coverage.mjs';
+import { INTRO_CLAIMS } from '../../apps/party-tracker/lib/brand.js';
 import { distance, formatDistance } from '../../apps/party-tracker/lib/geo.js';
 import { FOLLOW_RESUME_MS } from '../../apps/party-tracker/lib/parkMapView.js';
 import { RIDE_STALE_AFTER_MS } from '../../apps/party-tracker/lib/core/state.js';
 import { PRECISE_MAX_MS } from '../../apps/party-tracker/lib/location.js';
+import { labelZoomFor, LABEL_ZOOM_HYSTERESIS } from '../../packages/shared/mapSymbols.js';
+import { zoomForResolution } from '../../packages/shared/zoomBands.js';
 
 const PASS = [];
 const FAIL = [];
@@ -111,7 +117,8 @@ console.log(`\nfunctional suite against ${BASE} (modules: ${running})\n`);
 if (want('contribution-pipeline')) {
   console.log('\n--- contribution pipeline (HTTP + consolidate dry-run) ---');
   const postOk = await contributionPostAvailable(BASE);
-  if (postOk === true) {
+  const operatorOk = await contributionOperatorPathAvailable(BASE);
+  if (postOk === true && operatorOk === true) {
     await check(
       'POST → accept → consolidate dry-run names venue, action, and contribution id',
       async () => {
@@ -123,9 +130,13 @@ if (want('contribution-pipeline')) {
         return true;
       },
     );
-  } else {
+  } else if (postOk !== true) {
     console.log(
       `  SKIP HTTP contribution pipeline — POST returned ${postOk.status} (memory backend or test Postgres with profiles; see #438)`,
+    );
+  } else {
+    console.log(
+      `  SKIP HTTP contribution pipeline — ${operatorOk.reason ?? `operator probe ${operatorOk.status}`} (#774)`,
     );
   }
   if (!want('smoke') && !want('heights') && !want('walk') && !want('party') && !want('intake') && !want('venues') && !want('offline') && !want('auth')) {
@@ -338,6 +349,21 @@ await check('Settings sign-in card matches Clerk routes', async () => {
   if (!clerkAuthPages && card) {
     throw new Error('SignInCard mounted when /sign-in is not available');
   }
+  // The card mounting is half the capability; the other half is that it still
+  // offers the way in. AuthGate — the old Profile gate that carried Sign in and
+  // Guest together — is no longer mounted anywhere (in-place OAuth broke live),
+  // so this card is the shipped entry point to a Profile, and nothing asserted
+  // it had a Sign in on it (#24).
+  if (card) {
+    const login = a.locator('.signInCard .authGateLogin');
+    if ((await login.count()) < 1) {
+      throw new Error('sign-in card offers no Sign in action');
+    }
+    const href = await login.first().getAttribute('href');
+    if (href !== '/sign-in') {
+      throw new Error(`Sign in points at ${href ?? 'nothing'}, not the Clerk route`);
+    }
+  }
   await a.locator('.tabItem[data-tab="explore"]').click();
   await a.waitForTimeout(200);
   return true;
@@ -359,6 +385,161 @@ await check('park geometry is drawn', async () => {
   const canvas = await a.locator('[data-testid="park-map-gl"]:not(.mapMissing) canvas').count();
   if (!canvas) throw new Error('map not drawn (no MapLibre canvas)');
   if (!(await a.locator('.mePulse').count())) throw new Error('no own-position marker');
+  return true;
+});
+
+await check('the map still draws the decisions it was asked for', async () => {
+  /* The registry in test/app/map-decisions.json, against the style a real
+     MapLibre is drawing on a real phone — not against the module that built
+     it. Those are two different things whenever the renderer, a Skin's custom
+     map, or the adapter has a hand in the final style, and "the module says
+     the track is six pixels" is worth nothing if the glass disagrees.
+
+     map-decisions.test.mjs runs the same checker over every shipped venue
+     without a browser. This is the vertical: Kings Island, loaded, drawn, and
+     required to still have coaster track and a parking lot in it — so a green
+     result here cannot mean the layers were simply absent. */
+  await until(async () => {
+    const ids = await a.evaluate(() => (globalThis.__parkMapLibre?.getStyle?.()?.layers || []).map((l) => l.id));
+    return ids.includes('world-coaster');
+  }, { timeout: 20000, label: 'the World tier drawn by MapLibre' });
+
+  const style = await a.evaluate(() => {
+    const s = globalThis.__parkMapLibre?.getStyle?.();
+    // Only what the checker reads. The whole style carries every source's
+    // data, which is a park's worth of geometry across the CDP bridge.
+    return { layers: (s?.layers || []).map((l) => ({ id: l.id, type: l.type, paint: l.paint, layout: l.layout })) };
+  });
+
+  const { failures, checked } = checkMapDecisions(style, { require: ['coaster', 'parking', 'path', 'building'] });
+  if (failures.length) throw new Error(failures.join(' | '));
+  if (!checked.includes('coaster') || !checked.includes('parking')) {
+    throw new Error(`nothing checked the layers this was about (checked: ${checked.join(', ') || 'none'})`);
+  }
+  return true;
+});
+
+/** A zoom, at this latitude, whose zPlan — the px/m scale `labelWantedAtZoom`
+ *  reads, via `overlayMarks.js`'s `labelPlanZoom` and `mapVisual.js`'s
+ *  `markerWantsLabel` — sits comfortably under every LABEL_ZOOM rank's enter
+ *  threshold, hysteresis included. Below it, every zoom-gated .poiPin loses
+ *  its pin. Derived rather than a fixed zoom delta: a raw zoom offset only
+ *  ever "dwarfed LABEL_ZOOM's max" by accident, since a zoom level and a
+ *  zPlan unit are not the same space — `zoomForResolution` is the actual
+ *  inverse of the metres-per-pixel math `labelPlanZoom` runs forward. */
+function zoomClearOfEveryLabelRank(latitude) {
+  const lowestEnter = Math.min(...[1, 2, 3, 4, 5].map(labelZoomFor));
+  const safeZPlan = (lowestEnter - LABEL_ZOOM_HYSTERESIS) / 2;
+  return zoomForResolution(1 / safeZPlan, { latitude });
+}
+
+await check('a Place that enters on a pinch or a pan fades in rather than snapping', async () => {
+  /* The snap this fixes lives on the disc, not the wrapper: ParkMapGl mounts
+     one <g> per Place under a stable `kind:id` key that lasts the life of the
+     overlay, and it is the .poiPin inside that unmounts and remounts as a
+     pinch crosses `markerWantsLabel`'s zoom rank — or as a pan carries its
+     label box on- or off-screen, since `tryLabel`'s `visible(box)` gate
+     (overlayMarks.js) feeds the same `mark.pin`. A marker that has just
+     mounted has no previous opacity for a transition to animate from, so it
+     painted at full strength on its first frame — that is the snap. Checking
+     .poiMarker instead would prove nothing: it never remounts, so it could
+     not tell a fixed bug from a still-broken one.
+
+     First read off the glass rather than off the stylesheet text — a real
+     .poiPin in a real document resolves to an animation, and the keyframes
+     it names actually start from transparent. That catches a rule deleted,
+     renamed, or quietly re-pointed at something that does not fade, but not
+     a rule sitting on an element the app never remounts, which is exactly
+     the first bug. So then force the remount for real, twice — once by
+     zoom, once by pan — and catch a freshly-inserted .poiPin each time with
+     a MutationObserver installed before the jump, recording its opacity the
+     instant it lands in the document. Every `until()` below polls the real
+     .poiPin count rather than sleeping a guessed duration, so a phase that
+     stalls says which one rather than false-failing under load. */
+  const entry = await a.evaluate(checkMarkerFade, ['.poiPin', '.poiLabel']);
+  for (const got of entry) {
+    if (!got.found) throw new Error(`no ${got.selector} on the map to check`);
+    if (!got.seconds) throw new Error(`${got.selector} enters with no animation (${got.name})`);
+    if (!got.fades) throw new Error(`${got.selector} animates "${got.name}", which does not start transparent`);
+  }
+
+  const home = await a.evaluate(() => {
+    const map = globalThis.__parkMapLibre;
+    return { zoom: map.getZoom(), center: map.getCenter() };
+  });
+
+  // --- by zoom: drop below every rank's threshold, then zoom back in -----
+  const lowZoom = zoomClearOfEveryLabelRank(home.center.lat);
+  const zoomHomeCount = await a.locator('.poiPin').count();
+  await a.evaluate((zoom) => {
+    const map = globalThis.__parkMapLibre;
+    map.jumpTo({ zoom, center: map.getCenter() });
+  }, lowZoom);
+  await until(async () => (await a.locator('.poiPin').count()) < zoomHomeCount, {
+    timeout: 8000,
+    label: `.poiPin count dropping below ${zoomHomeCount} after zooming out`,
+  });
+  const zoomAwayCount = await a.locator('.poiPin').count();
+
+  await a.evaluate(startFadeWatch, '.poiPin');
+  await a.evaluate((cam) => {
+    const map = globalThis.__parkMapLibre;
+    map.jumpTo({ zoom: cam.zoom, center: cam.center });
+  }, home);
+  await until(async () => (await a.locator('.poiPin').count()) > zoomAwayCount, {
+    timeout: 8000,
+    label: `.poiPin count rising above ${zoomAwayCount} after zooming back in`,
+  });
+  const zoomBackCount = await a.locator('.poiPin').count();
+  const zoomSamples = await a.evaluate(stopFadeWatch);
+
+  if (!zoomSamples.length) {
+    throw new Error(
+      `zooming ${zoomHomeCount} -> ${zoomAwayCount} -> ${zoomBackCount} mounted no new .poiPin — the remount this bug depends on did not happen`,
+    );
+  }
+  if (!zoomSamples.every((opacity) => opacity < 1)) {
+    throw new Error(`a .poiPin mounted by a zoom was already at full opacity (${zoomSamples.join(', ')}) — it snapped`);
+  }
+
+  // --- by pan: shift a full screen width off the current view, then back -
+  const away = await a.evaluate(() => {
+    const map = globalThis.__parkMapLibre;
+    const el = map.getContainer();
+    const shifted = map.unproject([el.clientWidth * 2, el.clientHeight / 2]);
+    return { lng: shifted.lng, lat: shifted.lat };
+  });
+  const panHomeCount = await a.locator('.poiPin').count();
+  await a.evaluate((there) => {
+    const map = globalThis.__parkMapLibre;
+    map.jumpTo({ center: [there.lng, there.lat], zoom: map.getZoom() });
+  }, away);
+  await until(async () => (await a.locator('.poiPin').count()) !== panHomeCount, {
+    timeout: 8000,
+    label: `.poiPin count changing from ${panHomeCount} after panning away`,
+  });
+  const panAwayCount = await a.locator('.poiPin').count();
+
+  await a.evaluate(startFadeWatch, '.poiPin');
+  await a.evaluate((cam) => {
+    const map = globalThis.__parkMapLibre;
+    map.jumpTo({ zoom: cam.zoom, center: cam.center });
+  }, home);
+  await until(async () => (await a.locator('.poiPin').count()) !== panAwayCount, {
+    timeout: 8000,
+    label: `.poiPin count changing from ${panAwayCount} after panning back`,
+  });
+  const panBackCount = await a.locator('.poiPin').count();
+  const panSamples = await a.evaluate(stopFadeWatch);
+
+  if (!panSamples.length) {
+    throw new Error(
+      `panning ${panHomeCount} -> ${panAwayCount} -> ${panBackCount} mounted no new .poiPin — panning does not remount Places here`,
+    );
+  }
+  if (!panSamples.every((opacity) => opacity < 1)) {
+    throw new Error(`a .poiPin mounted by a pan was already at full opacity (${panSamples.join(', ')}) — it snapped`);
+  }
   return true;
 });
 
@@ -505,6 +686,33 @@ await check('the on-map OSM notice opens Settings straight to Credits, listing s
   if (!(await osmRow.count())) throw new Error('Credits screen missing the OpenStreetMap row');
   const license = (await osmRow.locator('.rowValue').innerText()).trim();
   if (!/ODbL/.test(license)) throw new Error(`OpenStreetMap row missing its license: ${license}`);
+
+  // A `credits-screen` row's credit line is the whole reason that row is on this
+  // screen, so it has to be legible here — the generator emitting it into
+  // credits.json is not the same as a guest being able to read it. The aerial
+  // imagery Big Kahuna's paths are surveyed from is served through Esri, and the
+  // owner's call is that the chain gets named rather than quietly re-pointed at a
+  // compliant channel after the fact.
+  const imageryRow = a.locator('.rowList a.row', { hasText: 'Okaloosa County' });
+  if (!(await imageryRow.count())) throw new Error('Credits screen missing the aerial imagery row');
+  const imageryText = (await imageryRow.first().innerText()).trim();
+  if (!/served via Esri World Imagery/i.test(imageryText)) {
+    throw new Error(`imagery row does not name its serving channel: ${imageryText}`);
+  }
+  if (!/Pictometry/i.test(imageryText)) {
+    throw new Error(`imagery row does not name who flew it: ${imageryText}`);
+  }
+  // CC BY 4.0 requires the credit line, so ESA's must render for the same reason.
+  // Unconditional on purpose: guarding this on the row existing would let the
+  // check quietly pass if ESA ever fell out of the registry, which is the case
+  // where a required attribution silently stops shipping.
+  const esaRow = a.locator('.rowList a.row', { hasText: 'ESA WorldCover' });
+  if (!(await esaRow.count())) throw new Error('Credits screen missing the ESA WorldCover row');
+  const esaText = (await esaRow.first().innerText()).trim();
+  if (!/©\s*ESA WorldCover project/i.test(esaText)) {
+    throw new Error(`ESA WorldCover row missing its required CC BY credit line: ${esaText}`);
+  }
+
   await a.locator('.tabItem[data-tab="explore"]').click();
   await a.waitForTimeout(200);
   return true;
@@ -723,9 +931,17 @@ await check("wearing a Skin repaints the World's Zones from its own display pack
      Visual factory owned Zone tone, every Skin of a World painted its Zones
      identically — the tints came from map truth (`meta.lands`) and the Skin
      was not an input at all. This asserts the output of the run: the same
-     Zone paths, under two different worn looks, carry different fills, and
-     the fills are the ones this World's published `<skin>.visual.json` says
-     — not a table in app code and not a colour out of truth. */
+     `world-lands` source, under two different worn looks, carries different
+     feature tints, and the tints are the ones this World's published
+     `<skin>.visual.json` says — not a table in app code and not a colour out
+     of truth.
+
+     The shipped renderer is MapLibre (ADR-0019/h18) — `svg.mapSvg path` and
+     `.mapWorld .lyr-land path` are ParkMapSvg.jsx's retired DOM and never
+     exist on this branch, so the assertion reads the real mechanism instead:
+     the `world-lands` GeoJSON source's `tint` feature property, which
+     `mapViewStyle.js`'s `lands` layer paints with
+     `['coalesce', ['get','tint'], grassFill]`. */
   const P = await openPhone(browser, {
     lat: 39.34395,
     lng: -84.2673,
@@ -737,16 +953,31 @@ await check("wearing a Skin repaints the World's Zones from its own display pack
   try {
     await p.evaluate(() => localStorage.setItem('parkbound-demo-skins', '1'));
     await p.reload({ waitUntil: 'domcontentloaded' });
-    await p.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
+    await p.waitForFunction(() => Boolean(document.querySelector('[data-testid="park-map-gl"] canvas')), null, {
       timeout: 40000,
     });
     await closeGate(p);
-    // Zone fills as drawn, keyed by nothing but paint order — the map is the
-    // same drawing either way, so position N is the same Zone either way.
-    const zoneFills = () => p.evaluate(() =>
-      [...document.querySelectorAll('.mapWorld .lyr-land path')].map((el) => el.getAttribute('fill')));
-    const palette = await zoneFills();
-    if (palette.length < 5) throw new Error(`expected Kings Island's Zones, drew ${palette.length}`);
+    await until(async () => {
+      const layers = await p.evaluate(() => (globalThis.__parkMapLibre?.getStyle?.()?.layers || []).map((l) => l.id));
+      return layers.includes('world-lands');
+    }, { timeout: 20000, label: 'world-lands layer built' });
+
+    // Zone tints as the source actually holds them, keyed by Zone name so a
+    // feature reordered by a later `setData` still matches its own before.
+    const zoneTints = () => p.evaluate(async () => {
+      const source = globalThis.__parkMapLibre?.getSource?.('world-lands');
+      if (!source) return null;
+      const data = await source.getData();
+      return Object.fromEntries(
+        (data.features || [])
+          .filter((f) => f.properties?.name)
+          .map((f) => [f.properties.name, String(f.properties.tint || '').toUpperCase()]),
+      );
+    });
+    const before = await zoneTints();
+    if (!before || Object.keys(before).length < 5) {
+      throw new Error(`expected Kings Island's Zones on world-lands, got ${JSON.stringify(before)}`);
+    }
 
     await go(p, 'Collection');
     const row = p.locator('.worldSkinRow .row', { hasText: 'Watercolor quest' }).first();
@@ -755,13 +986,13 @@ await check("wearing a Skin repaints the World's Zones from its own display pack
       throw new Error('Watercolor quest still locked after demo grant');
     }
     // Read the spec before wearing, because it is what the wait below waits
-    // FOR. Waiting on "any fill changed" instead raced the thing under test:
+    // FOR. Waiting on "any tint changed" instead races the thing under test:
     // switching Skin re-runs landTint immediately, and with no tones in hand
     // yet that already repaints every Zone in the generated name-hue. The
-    // wait therefore fired on the fallback repaint and `worn` was read in the
-    // window before the spec landed — reporting 0 Zone fills from the Skin on
-    // a build where the Skin paints all ten, whenever the fetch lost the race
-    // (which is to say, whenever the box was busy).
+    // wait would then fire on that fallback repaint and `worn` would be read
+    // before the spec's fetch — and, before the app fix, before the retint
+    // that pushes it into the already-built map — landed at all, reporting 0
+    // Zone tints from the Skin on a build where the Skin paints all ten.
     const spec = await p.evaluate(async () => {
       const res = await fetch('/venues/kings-island/display/watercolor-quest.visual.json');
       return res.ok ? res.json() : null;
@@ -774,24 +1005,28 @@ await check("wearing a Skin repaints the World's Zones from its own display pack
     if (declared.length < 5) throw new Error(`spec declares ${declared.length} Zone fills`);
 
     await row.click();
-    // Wait for the tones the spec declares to be the ones on the map. A Skin
-    // that never paints its Zones times out here instead of passing, which is
-    // the failure this check exists to catch.
-    await p.waitForFunction((want) => {
-      const set = new Set(want);
-      const now = [...document.querySelectorAll('.mapWorld .lyr-land path')].map((el) => el.getAttribute('fill'));
-      return now.filter((f) => set.has(String(f).toUpperCase())).length >= 5;
-    }, declared, { timeout: 20000 });
-    const worn = await zoneFills();
+    // Wait for the tones the spec declares to be the ones on the source. A
+    // Skin that never pushes its own palette into the live map — because the
+    // mount race stuck it with the fallback and nothing corrected it after —
+    // times out here instead of passing, which is the failure this check
+    // exists to catch.
+    const declaredUpper = declared.map((f) => f.toUpperCase());
+    await until(async () => {
+      const now = await zoneTints();
+      if (!now) return false;
+      const set = new Set(declaredUpper);
+      return Object.values(now).filter((tint) => set.has(tint)).length >= 5;
+    }, { timeout: 20000, label: "world-lands tints matching the Skin's declared spec" });
+    const worn = await zoneTints();
 
-    // Every fill the Skin painted is one its own published spec declares.
-    const declaredSet = new Set(declared);
-    const fromSpec = worn.filter((f) => declaredSet.has(String(f).toUpperCase()));
+    // Every tint the Skin painted is one its own published spec declares.
+    const declaredSet = new Set(declaredUpper);
+    const fromSpec = Object.values(worn).filter((tint) => declaredSet.has(tint));
     if (fromSpec.length < 5) {
-      throw new Error(`only ${fromSpec.length} Zone fills came from the Skin's own spec`);
+      throw new Error(`only ${fromSpec.length} Zone tints came from the Skin's own spec`);
     }
     // …and they are genuinely a restyle, not the palette's own answer.
-    const changed = worn.filter((f, i) => f !== palette[i]).length;
+    const changed = Object.keys(worn).filter((name) => worn[name] !== before[name]).length;
     if (changed < 5) throw new Error(`wearing the Skin repainted only ${changed} Zones`);
   } finally {
     await P.context.close();
@@ -2691,12 +2926,18 @@ await check('the logo splash opens first and a tap moves to the welcome gate', a
     timeout: 8000,
     label: 'back to the splash',
   });
-  await p.locator('.introSplashCard').click();
+  // Fresh open: nothing has been scrolled yet, so the footer's move-on
+  // control is still labelled Skip intro.
+  const advance = p.locator('.gate:has(#intro-splash-title) .introSkip');
+  if ((await advance.innerText()).trim() !== 'Skip intro') {
+    throw new Error('unread intro should offer Skip intro, not Get started');
+  }
+  await advance.click();
   await until(
     async () =>
       (await p.locator('#intro-splash-title').count()) === 0 &&
       (await p.locator('.gate h2').count()) > 0,
-    { timeout: 10000, label: 'welcome after splash tap' },
+    { timeout: 10000, label: 'welcome after skipping the intro' },
   );
   const next = (await p.locator('.gate h2').innerText()).trim();
   if (next !== 'Plan your day') throw new Error(`tap advanced to: "${next}"`);
@@ -2722,7 +2963,7 @@ await check('GPS already granted still reaches the welcome gate after the splash
   });
   // A returning phone — often already signed in — usually has GPS on before
   // the splash yields; closing the gate on 'live' used to skip the welcome step.
-  await p.locator('.introSplashCard').click();
+  await p.locator('.gate:has(#intro-splash-title) .introSkip').click();
   await until(
     async () => {
       if (!(await p.locator('.gate h2').count())) return false;
@@ -2735,7 +2976,7 @@ await check('GPS already granted still reaches the welcome gate after the splash
   return true;
 });
 
-await check('the welcome intro greets a signed-in Profile by name', async () => {
+await check('the welcome gate greets a signed-in Profile by name after the intro', async () => {
   const fresh = await browser.newContext({
     viewport: { width: 390, height: 844 },
     permissions: ['geolocation'],
@@ -2761,9 +3002,11 @@ await check('the welcome intro greets a signed-in Profile by name', async () => 
     timeout: 10000,
     label: 'the logo splash',
   });
-  const eyebrow = (await p.locator('.gate:has(#intro-splash-title) .gateEyebrow').innerText()).trim();
-  if (!/^Welcome,\s*Ava$/i.test(eyebrow)) throw new Error(`splash eyebrow: "${eyebrow}"`);
-  await p.locator('.introSplashCard').click();
+  // The intro is the same brand story for every guest — the personal
+  // greeting belongs to the welcome gate one screen later, not this one.
+  const heading = (await p.locator('#intro-splash-title').innerText()).trim();
+  if (heading !== 'PARKBOUND') throw new Error(`intro heading should stay generic: "${heading}"`);
+  await p.locator('.gate:has(#intro-splash-title) .introSkip').click();
   await until(
     async () => {
       if (!(await p.locator('.gate h2').count())) return false;
@@ -2775,6 +3018,175 @@ await check('the welcome intro greets a signed-in Profile by name', async () => 
   await fresh.close();
   return true;
 });
+
+await check(
+  'the intro is a scroll story: Skip becomes Get started once read, and a returning guest never sees it',
+  async () => {
+    const fresh = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      permissions: ['geolocation'],
+      geolocation: { latitude: 30.2672, longitude: -97.7431 },
+    });
+    await fresh.addInitScript(() => {
+      localStorage.removeItem('tracker-intro-seen');
+    });
+    const p = await fresh.newPage();
+    await p.goto(BASE, { waitUntil: 'domcontentloaded' });
+    await hydrated(p);
+    await until(async () => (await p.locator('#intro-splash-title').count()) > 0, {
+      timeout: 10000,
+      label: 'the intro',
+    });
+
+    // The scroll story itself: the three claims from lib/brand.js, unread.
+    const scroll = p.locator('.introScroll');
+    const firstClaim = INTRO_CLAIMS[0];
+    const claimTitle = (
+      await p.locator('.introClaimTitle').first().innerText()
+    ).trim();
+    if (claimTitle !== firstClaim.title) {
+      throw new Error(`first claim reads "${claimTitle}", expected "${firstClaim.title}"`);
+    }
+    const before = p.locator('.gate:has(#intro-splash-title) .introSkip');
+    if (!(await before.count())) throw new Error('unread intro should show Skip intro');
+    if (await p.locator('.gate:has(#intro-splash-title) .introStart').count()) {
+      throw new Error('Get started should not be offered before the story is read');
+    }
+
+    // The progress dots: one per claim, lighting in order as each claim is
+    // reached. Thresholds are measured from real layout (not a formula on
+    // claim count), so this drives the assertion off the actual DOM —
+    // scrolling each claim to centre and checking its own dot lights, with
+    // no dot for a claim further down the story lit early — rather than
+    // hardcoding the fractions at which that happens.
+    const claimCount = await p.locator('.introClaim').count();
+    if (claimCount !== INTRO_CLAIMS.length) {
+      throw new Error(`expected ${INTRO_CLAIMS.length} claims, found ${claimCount}`);
+    }
+    const dotsAtRest = await p
+      .locator('.introDot')
+      .evaluateAll((els) => els.map((el) => el.classList.contains('on')));
+    if (dotsAtRest.length !== claimCount) {
+      throw new Error(`expected ${claimCount} dots, found ${dotsAtRest.length}`);
+    }
+    if (dotsAtRest.every(Boolean)) {
+      throw new Error('every dot is already lit before any scrolling happened');
+    }
+    for (let i = 0; i < claimCount; i++) {
+      // scrollIntoView centres the claim exactly — which can land within a
+      // sub-pixel of the app's own measured threshold for that same centred
+      // position (two independent centring calculations rounding a hair
+      // apart). An 8px nudge past centre clears that without meaningfully
+      // risking the next claim's own threshold: the gap between successive
+      // claims measures in the hundreds of pixels on a phone-sized story.
+      await p.locator('.introClaim').nth(i).evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      await p.locator('.introScroll').evaluate((el) => {
+        el.scrollTop = Math.min(el.scrollHeight - el.clientHeight, el.scrollTop + 8);
+      });
+      await until(
+        async () => {
+          const states = await p
+            .locator('.introDot')
+            .evaluateAll((els) => els.map((el) => el.classList.contains('on')));
+          return states[i] === true;
+        },
+        { timeout: 4000, label: `dot ${i + 1} lights once claim ${i + 1} is centred` },
+      );
+      const states = await p
+        .locator('.introDot')
+        .evaluateAll((els) => els.map((el) => el.classList.contains('on')));
+      for (let j = i + 1; j < claimCount; j++) {
+        if (states[j]) {
+          throw new Error(
+            `dot ${j + 1} lit before claim ${j + 1} was reached (states: ${JSON.stringify(states)})`,
+          );
+        }
+      }
+    }
+
+    // The flip trails the last dot rather than coinciding with it: right at
+    // the scroll position where the last claim's own dot just lit (still
+    // inside the read-margin buffer), Skip intro must still be the offer —
+    // this fails if the flip ever regresses to firing on the same frame as
+    // the last dot.
+    if (!(await p.locator('.gate:has(#intro-splash-title) .introSkip').count())) {
+      throw new Error('Get started appeared at the same scroll position the last dot lit');
+    }
+
+    // The flip must not linger near the very bottom either: sample a point
+    // derived from where the last claim's own centre actually measured
+    // (not a hardcoded scroll fraction) — comfortably past that centre, but
+    // comfortably short of the end of the story. 50px clears the read
+    // margin with room to spare against sub-pixel rounding, and this
+    // viewport leaves tens of pixels of story after the last claim's
+    // centre for the sample to land short of the floor. This is what a
+    // threshold drifting back toward "only flips essentially at the floor"
+    // — the defect this suite exists to guard against — would catch.
+    await p.locator('.introClaim').last().evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    const lastClaimCentreTop = await scroll.evaluate((el) => el.scrollTop);
+    const midReadPoint = await scroll.evaluate((el, base) => {
+      const scrollable = el.scrollHeight - el.clientHeight;
+      return { scrollTop: Math.min(scrollable, base + 50), scrollable };
+    }, lastClaimCentreTop);
+    if (midReadPoint.scrollable - midReadPoint.scrollTop < 15) {
+      throw new Error(
+        `sample point ${midReadPoint.scrollTop} leaves only ${midReadPoint.scrollable - midReadPoint.scrollTop}px ` +
+          'before the floor — too close to distinguish this check from the full-scroll one below',
+      );
+    }
+    await scroll.evaluate((el, st) => {
+      el.scrollTop = st;
+      el.dispatchEvent(new Event('scroll'));
+    }, midReadPoint.scrollTop);
+    await until(
+      async () => (await p.locator('.gate:has(#intro-splash-title) .introStart').count()) > 0,
+      {
+        timeout: 4000,
+        label: `Get started well short of the floor (scrollTop=${midReadPoint.scrollTop} of ${midReadPoint.scrollable})`,
+      },
+    );
+
+    // Scroll to the end of the story — the footer should flip on its own,
+    // with no click needed.
+    await scroll.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+      el.dispatchEvent(new Event('scroll'));
+    });
+    await until(
+      async () => (await p.locator('.gate:has(#intro-splash-title) .introStart').count()) > 0,
+      { timeout: 10000, label: 'Get started once the story is read' },
+    );
+    if (await p.locator('.gate:has(#intro-splash-title) .introSkip').count()) {
+      throw new Error('Skip intro should be gone once the story is read');
+    }
+
+    await p.locator('.gate:has(#intro-splash-title) .introStart').click();
+    await until(async () => (await p.locator('#intro-splash-title').count()) === 0, {
+      timeout: 10000,
+      label: 'Get started moves on',
+    });
+    await fresh.close();
+
+    // A returning guest — intro already marked seen — never sees any of this.
+    const back = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      permissions: ['geolocation'],
+      geolocation: { latitude: 30.2672, longitude: -97.7431 },
+    });
+    await back.addInitScript(() => {
+      localStorage.setItem('tracker-intro-seen', '1');
+    });
+    const p2 = await back.newPage();
+    await p2.goto(BASE, { waitUntil: 'domcontentloaded' });
+    await hydrated(p2);
+    await p2.waitForTimeout(1500);
+    if (await p2.locator('#intro-splash-title').count()) {
+      throw new Error('a returning guest saw the intro again');
+    }
+    await back.close();
+    return true;
+  },
+);
 
 await dismissIntroSplash(e);
 await dismissUpdateSplash(e);
@@ -3032,8 +3444,12 @@ await check('picking a World by hand outranks the host', async () => {
 });
 
 // Out again, so the roster the tests below assert on is the one they set up.
+// Best-effort teardown, not an assertion under test: this phone is about to
+// have its whole context closed regardless, so a click that times out here
+// (#596) must become a swallowed rejection, not an uncaught one that kills
+// the entire suite process before the checks below ever run.
 await go(d, 'Party');
-await d.locator('.codeBox button:has-text("Leave")').click();
+await d.locator('.codeBox button:has-text("Leave")').click().catch(() => {});
 await until(async () => (await d.locator('button:has-text("Start a party")').count()) > 0, {
   timeout: JOIN_TIMEOUT,
   label: 'phone D to leave the party',

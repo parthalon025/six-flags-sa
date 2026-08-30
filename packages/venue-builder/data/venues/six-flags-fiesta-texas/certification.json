@@ -7,7 +7,7 @@
   },
   "certified": false,
   "certifiedAt": null,
-  "bundleFingerprint": "804941b20891e740253d8f527464337ff9b3f4fdaab3e1e79cad55d175acdea6",
+  "bundleFingerprint": "3e842c131cfad42188e1d30e6cbba6d8d1a12965348194ff2cf8132ad1f5da70",
   "checks": [
     {
       "key": "checklist",
@@ -153,7 +153,7 @@
       "evidence": {
         "numerator": 0,
         "denominator": 1,
-        "detail": "local_images=0; parkMap_candidates=0; llm_park_map_search=false",
+        "detail": "local_images=0; parkMap_candidates=0 (of 0 recorded); llm_park_map_search=false",
         "searchQueries": []
       },
       "confidence": "low",

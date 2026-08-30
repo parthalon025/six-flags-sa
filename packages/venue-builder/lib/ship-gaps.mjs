@@ -3,9 +3,25 @@
  *
  * Builder ask seeds and low-confidence queue evidence stay in certification
  * sidecars. This module is the seam that ships what guests can settle:
- * height, queue, path, path_disputed, restroom, food, gate, camping, verify
- * (stale adapter cache). Credits, aliases, locality, and live ops never go
- * in `*.gaps.json`.
+ * height, queue, path, restroom, food, gate, camping (ADR-0009's frozen
+ * seven), verify (stale adapter cache, and a ride whose evidence sources
+ * disagree), inventory (adapter under-coverage, from inventory-gaps.mjs).
+ * Credits, aliases, locality, and live ops never go in `*.gaps.json`.
+ *
+ * Dispute *kinds* are not on that list and cannot be added to it. A disputed
+ * path position is settled by the builder, not a guest: it becomes a
+ * maintainer record (imagery-disputes.mjs) and ships nothing — the owner's
+ * answer, 2026-08-22. `assertNoDisputeKinds` runs over the allowlist below at
+ * module load, so putting a dispute kind back into it fails the builder
+ * instead of reaching a phone.
+ *
+ * A ride evidence conflict is the deliberate exception, and it is an exception
+ * about the *audience*, not about the list: the owner ruled on 2026-08-23 that
+ * a ride whose sources disagree stays visible, so `evidence_conflict` seeds
+ * ship on the existing `verify` type. The seven stay frozen and no new type is
+ * added; `evidence_conflict` is not a member of DISPUTE_KINDS and is never
+ * spelled as a Gap type — the guest is asked to verify a ride, which is what
+ * `verify` already means.
  *
  * Place keys `i` are unique. Invent one Gap per `i`. A display name is only
  * a fallback when exactly one Place has that title; an ambiguous title is
@@ -16,18 +32,22 @@
 
 import { questSeedsFromEntrances } from './quest-seeds.mjs';
 import { ambientSignalShipArtifacts } from './ambient-signal-seeds.mjs';
+import { assertNoDisputeKinds, isDisputeKind } from './imagery-disputes.mjs';
+import { inventoryShipArtifacts } from './inventory-gaps.mjs';
 
 export const SHIPPED_GAP_TYPES = Object.freeze([
   'height',
   'queue',
   'path',
-  'path_disputed',
   'restroom',
   'food',
   'gate',
   'camping',
   'verify',
+  'inventory',
 ]);
+
+assertNoDisputeKinds(SHIPPED_GAP_TYPES, 'ship-gaps.mjs SHIPPED_GAP_TYPES');
 
 /** Rides farther than this from walkable geometry get a targeted path Gap. */
 export const PATH_RIDE_SNAP_METRES = 35;
@@ -46,16 +66,22 @@ const RIDE = (p) => p && (p.c === 'coaster' || p.c === 'ride');
 export function shippedTypeForSeed(seed) {
   if (!seed) return null;
   if (seed.sourceGap === 'adapter_stale') return 'verify';
-  if (seed.sourceGap === 'evidence_conflict') return 'path_disputed';
+  // A ride whose evidence sources disagree is asked about on the ground, on
+  // the existing `verify` type (owner ruling, 2026-08-23). Named here in full
+  // rather than routed through some other kind's branch — that indirection is
+  // exactly how this seed shipped once without anyone deciding it should.
+  if (seed.sourceGap === 'evidence_conflict') return 'verify';
+  // A dispute seed has no shipped type by construction, whatever it is called.
+  // The seed still exists — questSeedsForVenue keeps it in the certification
+  // brief and imagery-disputes.mjs keeps the imagery half — it simply has no
+  // channel to the phone.
+  if (isDisputeKind(seed.sourceGap) || isDisputeKind(seed.type)) return null;
   if (DROP_SEED_TYPES.has(seed.type)) return null;
   if (seed.sourceGap === 'credits' || seed.sourceGap === 'locality') return null;
   if (seed.sourceGap === 'ambient_ops') return null;
   if (seed.type === 'height_rule' || seed.sourceGap === 'heights') return 'height';
   if (seed.type === 'geometry_nudge' || seed.sourceGap === 'entrance_missing' || seed.sourceGap === 'entrance_low_confidence') {
     return 'queue';
-  }
-  if (seed.sourceGap === 'path_disputed' || seed.type === 'path_disputed') {
-    return 'path_disputed';
   }
   if (seed.sourceGap === 'camping' || seed.type === 'poi_attribute') return 'camping';
   if (seed.type === 'poi_presence' || seed.sourceGap === 'missing-poi') {
@@ -194,10 +220,10 @@ function presenceAndCampingSeeds(meta, pois) {
  * Place key `i` (not per display name). Path Gaps need a `map`; omit it in
  * unit tests that are not about walk geometry.
  *
- * @param {{ venueId: string, seeds?: object[], pois?: object[], map?: object | null }} opts
+ * @param {{ venueId: string, seeds?: object[], pois?: object[], map?: object | null, inventoryGaps?: { type: string, target: string | null }[] }} opts
  * @returns {{ version: number, venue: string, gaps: { type: string, target: string | null }[] }}
  */
-export function shippedGapsDocument({ venueId, seeds = [], pois = [], map = null } = {}) {
+export function shippedGapsDocument({ venueId, seeds = [], pois = [], map = null, inventoryGaps = [] } = {}) {
   const seen = new Set();
   const gaps = [];
   const add = (type, target) => {
@@ -209,15 +235,29 @@ export function shippedGapsDocument({ venueId, seeds = [], pois = [], map = null
 
   for (const gap of heightGapsFromPois(pois)) add(gap.type, gap.target);
 
+  for (const gap of inventoryGaps || []) {
+    if (gap && gap.type === 'inventory') add('inventory', gap.target);
+  }
+
   for (const seed of seeds) {
     const type = shippedTypeForSeed(seed);
     if (!type) continue;
-    if (type === 'height' || type === 'queue' || type === 'path_disputed') {
+    if (type === 'height' || type === 'queue') {
       const target = resolveGapTarget(pois, seed.target);
       if (target) add(type, target);
       continue;
     }
     if (type === 'verify') {
+      // Two seeds arrive on this type and they name different things. A stale
+      // adapter names the adapter id — there is no Place to stand at. A ride
+      // evidence conflict names the ride, and resolves to one Place key under
+      // resolveGapTarget's contract (ambiguous or unmatched targets are
+      // skipped, not forked) so the phone can rank it by Location.
+      if (seed.sourceGap === 'evidence_conflict') {
+        const target = resolveGapTarget(pois, seed.target);
+        if (target) add(type, target);
+        continue;
+      }
       add(type, seed.adapterId || null);
       continue;
     }
@@ -242,6 +282,9 @@ export function shippedGapsDocument({ venueId, seeds = [], pois = [], map = null
  * Invent Gaps for a built venue without going through venue-requests
  * (that import cycle would pull venue-io back in).
  *
+ * Imagery extractions do not appear here. A disputed extraction is recorded by
+ * imagery-disputes.mjs and stops there; nothing about it is on the wire.
+ *
  * @param {{ venueId: string, meta?: object, pois?: object[], map?: object, attractions?: object | null }} opts
  */
 export function shippedGapsForVenue({
@@ -250,23 +293,42 @@ export function shippedGapsForVenue({
   pois = [],
   map = {},
   attractions = null,
-  imageryGaps = [],
   adapterCaches = null,
   gapNotes = {},
   asOf,
 } = {}) {
+  const caches = adapterCaches || {};
   const signals = ambientSignalShipArtifacts({
     venueId,
-    adapterCaches: adapterCaches || {},
+    adapterCaches: caches,
     attractions,
     gapNotes,
     asOf,
   });
+  /* Inventory under-coverage. The lane was built and tested but never called
+     from here, so a real build could not emit a `type: 'inventory'` row however
+     bad its adapter coverage got, and the allowlist entry on both sides was
+     inert (#29). It is a floor, not routine output: nothing is emitted until an
+     adapter matches fewer than half this venue's rideables, which none of the
+     four flagships does (74-80% at the time of wiring). */
+  const inventory = inventoryShipArtifacts({
+    venueId,
+    pois,
+    parksApiCache: caches['parks-api'] || null,
+    qtCache: caches['queue-times'] || null,
+    gapNotes,
+  });
   const seeds = [
     ...questSeedsFromEntrances(venueId, attractions),
     ...presenceAndCampingSeeds(meta, pois),
-    ...imageryGaps,
     ...signals.seeds,
+    ...inventory.seeds,
   ];
-  return shippedGapsDocument({ venueId, seeds, pois, map: map ?? {} });
+  return shippedGapsDocument({
+    venueId,
+    seeds,
+    pois,
+    map: map ?? {},
+    inventoryGaps: inventory.gaps,
+  });
 }

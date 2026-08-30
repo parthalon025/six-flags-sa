@@ -22,7 +22,7 @@
       "grass": "#D9D0B5",
       "building": "#B8A68D",
       "label": "#57485C",
-      "structureEdge": "#756276",
+      "structureEdge": "#9C5A45",
       "groundEdge": "#C9BFAE",
       "pathCasing": "#F4EFDF"
     }
@@ -97,8 +97,8 @@
   "landTones": {
     "Action Zone": {
       "day": {
-        "fill": "#A19695",
-        "stroke": "#AFA49E",
+        "fill": "#AF9483",
+        "stroke": "#B8A392",
         "label": "#57485C"
       }
     },
@@ -111,8 +111,8 @@
     },
     "Area 72": {
       "day": {
-        "fill": "#BBB0AE",
-        "stroke": "#C0B5AE",
+        "fill": "#C8AD9D",
+        "stroke": "#C8B3A3",
         "label": "#57485C"
       }
     },

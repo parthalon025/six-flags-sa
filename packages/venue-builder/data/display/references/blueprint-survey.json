@@ -92,6 +92,9 @@
     "edgeInk": {
       "anchor": "#2F4C7A",
       "deltaE": 24
+    },
+    "trackVsRoad": {
+      "sharedInk": "trackStyle 'mono' — a survey blueprint draws every line in one ink (edgeInk #2F4C7A) and carries hierarchy in weight and dash, not hue. Separation from the paper is style_road_hierarchy's centerlineVsPaper row (ΔE >= 25); separating track from midway by colour would break the design language rather than serve it."
     }
   },
   "hierarchy": {
@@ -119,5 +122,55 @@
       "key": "style_reference_resemblance",
       "prompt": "Overall: a surveyor would file it, a player would not mistake it for the game tier"
     }
-  ]
+  ],
+  "bands": {
+    "overview": {
+      "colorFamilies": {
+        "outside": {
+          "anchor": "#EFEAD9",
+          "deltaE": 14
+        },
+        "ground": {
+          "anchor": "#F0F3E2",
+          "deltaE": 14
+        },
+        "grass": {
+          "anchor": "#C9D4A8",
+          "deltaE": 14
+        },
+        "wood": {
+          "anchor": "#B4C494",
+          "deltaE": 14
+        },
+        "water": {
+          "anchor": "#8FB0D4",
+          "deltaE": 14
+        },
+        "lot": {
+          "anchor": "#E0DACA",
+          "deltaE": 14
+        },
+        "road": {
+          "anchor": "#6B809B",
+          "deltaE": 14
+        },
+        "service": {
+          "anchor": "#DBD5C3",
+          "deltaE": 14
+        },
+        "structure": {
+          "anchor": "#2F4C7A",
+          "deltaE": 14
+        },
+        "badge": {
+          "anchor": "#F9F9FB",
+          "deltaE": 14
+        }
+      },
+      "withdrawChecks": [
+        "style_structure_presence",
+        "style_road_hierarchy"
+      ]
+    }
+  }
 }

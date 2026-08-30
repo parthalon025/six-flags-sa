@@ -50,9 +50,33 @@ never repositions.
    versus gravel, where lawn meets plaza — re-expressed inside each Skin's own palette. Skins
    stay distinct (the beyond-palette gate holds) while every Skin stays unmistakably that park.
 5. **Truth-conflict rule: OSM stays canonical; imagery adds and flags.** Imagery adds what OSM
-   lacks and, where it contradicts OSM geometry, raises an evidence claim / **Gap** ("path
-   position disputed") for steward review — or a Side Quest — never a silent geometry move
+   lacks and, where it contradicts OSM geometry, raises an evidence claim and a dispute
+   ("path position disputed") for steward review — never a silent geometry move
    (the OSM import-guidelines norm). Confirmed corrections may flow back upstream to OSM.
+   *Clarified 2026-08-29 by [ADR-0021](./0021-zoomable-worlds-revised.md)'s closed Open
+   section:* "**Gap**" here meant the steward's review queue, not the guest-facing **Gap** type
+   in [ADR-0009](./0009-ship-gaps.md), and the two were conflated while Train I was built. The
+   owner's answer of 2026-08-22 is that *a disputed path position* is builder-side only —
+   recorded in `imagery-disputes.json` beside the venue's other maintainer sidecars, and never a
+   Side Quest, a shipped Gap, or anything else a guest is asked to settle. This clause is about
+   imagery versus OSM geometry, and that is the whole of what goes internal.
+
+   *Owner ruling, 2026-08-23:* the internal treatment is **path disputes only**. A **ride
+   evidence conflict** — two evidence sources disagreeing about a ride feature, which is a
+   different question with a guest standing in front of the answer — **stays visible to
+   guests**. It ships on the existing `verify` Gap type, targeted at the ride, so ADR-0009's
+   seven stay frozen and no eighth type is added. The final position, in one line: *path
+   disputes internal; ride evidence conflicts visible via `verify`.*
+
+   *Shipped state, 2026-08-29:* the builder half of that ruling is delivered — the seed is
+   named in `shippedTypeForSeed`, mapped to `verify`, and targeted at the ride. **The guest
+   half is not.** `apps/party-tracker/lib/sideQuests.js` renders a Side Quest only for a type
+   present in its `GAP_CARD` map, which holds ADR-0009's seven and nothing else, so
+   `groupShippedGaps` drops a `verify` row on the floor. The word "existing" above was load
+   bearing and wrong: `verify` existed in the builder's vocabulary and in the phone's network
+   keep-list (`venue/store.js` `SHIPPED_GAP_TYPES`), never in the phone's renderer. A ride
+   evidence conflict therefore still reaches no guest. Tracked as #795; until that
+   lands, read this clause as the intended position, not the shipped one.
 6. **Sequencing: the grounding harvest rides Train H** (kings-island's banded worlds ship already
    grounded in that park's real relationships); the **evidence lane is Train I** after H —
    extraction passes, evidence-graph wiring, the steward gate, and the OSM feedback loop.

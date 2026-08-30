@@ -17,7 +17,7 @@
   },
   "operate": [
     { "id": "docker-postgres", "job": "Factory PostDB + DuckDB batch", "cost": "$0" },
-    { "id": "github-actions", "job": "Code + CI postgres:16", "cost": "$0 public" },
+    { "id": "github-actions", "job": "Code + CI postgres:18", "cost": "$0 public" },
     { "id": "vercel-neon", "job": "App UI, E0 API, seed public/venues CDN", "cost": "Hobby $0 / Pro $20/mo commercial" },
     { "id": "upstash", "job": "Party store across Vercel functions", "cost": "$0 Free", "skipIf": "Party never runs on Vercel" },
     { "id": "cloudflare-dns", "job": "Domain / SSL", "cost": "$0", "note": "DNS only" },

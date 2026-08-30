@@ -1,0 +1,176 @@
+{
+  "$schema_note": "The map's drawn decisions, in the words they were asked for. Every row is either enforced by a rule this suite runs (test/app/lib/map-decisions.mjs) or pending with the question that blocks it. A decision that is not in this file is a decision nothing stops from reverting — which is the whole reason the file exists. Checked twice: test/app/map-decisions.test.mjs against the style module, and functional.mjs against the style a real browser is drawing.",
+  "rules": {
+    "area-layers-are-shapes": "Every World layer whose truth geometry is an area is painted as a fill. `covers` must account for every polygon layer in WORLD_LAYERS that is not named in a pending row — so a new area layer added later is covered on the day it lands, not the day someone remembers.",
+    "min-line-width": "A line layer is at least this many pixels wide at this zoom.",
+    "line-weight-order": "Line layers ranked heaviest first, asserted on the widths the style actually ships.",
+    "paint-order": "[under, over] — the second layer is painted after the first.",
+    "has-casing": "The layer ships a `-case` layer beneath it, wider than its own stroke.",
+    "smooth-bends": "Every way is drawn with round caps and round joins. A mitred join spikes where a walkway turns and a butt cap leaves a square end at every segment break, which is what makes a curved midway read as a run of straight sticks.",
+    "area-edge-drawn-as-outline": "A layer that draws only an outline is allowed exactly when the area it outlines is itself painted as a shape, below it. `shapeBeneath` names that fill.",
+    "drawn-at-every-zoom": "The layer is in no LOD hide-group, so nothing ever toggles it off — and its paint is quiet at the wide end: under an absolute width and opacity cap, and no more than `maxRatioAtWide` times the layer it is measured against, so it may lead there without taking the map over.",
+    "ramps-with-zoom": "The layer's width is a zoom ramp, not a constant, and it is at most `maxAtWide` of its walking-scale width when the whole park is on screen. A flat width is the failure this catches: it draws the same at every camera, so the park-wide read is as heavy as standing on it.",
+    "vector-tier-yields-to-a-loaded-bake": "With a baked band actually on screen, every layer of the vector tier is hidden; with none on screen, the tier draws. Checked through `worldTierVisibility`, the one function the renderer asks — a decision that lived only in the adapter could not be checked without a browser."
+  },
+  "decisions": [
+    {
+      "id": "areas-are-shapes-not-lines",
+      "asked": "walkways and broad areas use shapes and smooth bends",
+      "status": "enforced",
+      "rule": "area-layers-are-shapes",
+      "params": {
+        "covers": [
+          "sea",
+          "park",
+          "lands",
+          "wood",
+          "grass",
+          "parking",
+          "water",
+          "pool",
+          "building"
+        ]
+      },
+      "why": "A parking lot outlined is a lot you read as a fence. Broad ground — the lot, the lake, the lawn, the building footprint — is an area in truth, so it is an area on the map, and the outline is the shape's edge rather than the whole of it."
+    },
+    {
+      "id": "coaster-track-is-the-heaviest-line",
+      "asked": "roller coasters displayed more visual and thicker on the map",
+      "status": "enforced",
+      "rule": "line-weight-order",
+      "params": {
+        "order": [
+          "coaster",
+          "path",
+          "slide",
+          "service"
+        ],
+        "zoom": 16
+      },
+      "why": "Coaster track is the thing the park is famous for and the landmark a guest navigates by. Drawn at 1.6px it sat lighter than the midway it flies over and read as a stray scribble. Asserted at ride scale (z16), which is where track carries full weight — at park-wide it is deliberately the lighter line, and `coaster-visible-at-park-wide` holds that end. The order is the whole World tier's line weight, so making track heavier by thinning the midway does not satisfy it. `boundary` is out of this chain — it is the park edge, held by its own row."
+    },
+    {
+      "id": "coaster-track-has-real-weight",
+      "asked": "roller coasters displayed more visual and thicker on the map",
+      "status": "enforced",
+      "rule": "min-line-width",
+      "params": {
+        "layer": "coaster",
+        "zoom": 16,
+        "atLeast": 6
+      },
+      "why": "Heaviest-of-the-lines is a ranking, and a ranking survives everything shrinking together. This is the floor, and it is set at the zoom the track first appears: `worldLod.js` hides the coaster layer below 0.7 px/m, which at this latitude is about MapLibre zoom 15.5, so a floor asserted at a wider camera would be pinning a width nothing draws. Six pixels at the moment track becomes visible, ramping to ten as a single ride fills the screen."
+    },
+    {
+      "id": "coaster-flies-over-the-buildings",
+      "asked": "roller coasters displayed more visual",
+      "status": "enforced",
+      "rule": "paint-order",
+      "params": {
+        "pairs": [
+          [
+            "building",
+            "coaster"
+          ],
+          [
+            "parking",
+            "coaster"
+          ],
+          [
+            "path",
+            "coaster"
+          ]
+        ]
+      },
+      "why": "Track passes over the station house, the midway and the lot in life. Painted under any of them the ride is chopped into pieces wherever the park is busiest."
+    },
+    {
+      "id": "midway-keeps-its-casing",
+      "asked": "paths read as walkways, not as gaps in the grass",
+      "status": "enforced",
+      "rule": "has-casing",
+      "params": {
+        "layers": [
+          "path"
+        ]
+      },
+      "why": "One wide line in the ground colour under the path. Without it a midway crossing a lawn has no edge and reads as a gap in the grass."
+    },
+    {
+      "id": "ways-bend-smoothly",
+      "asked": "walkways and broad areas use shapes and smooth bends",
+      "status": "enforced",
+      "rule": "smooth-bends",
+      "params": {
+        "layers": [
+          "path",
+          "service",
+          "slide",
+          "coaster",
+          "boundary"
+        ]
+      },
+      "why": "A midway is a curve, and MapLibre's default join is a mitre: every bend in it spikes and every segment break ends square, which is what turns a drawn walkway into a run of straight sticks. Round caps and joins are the whole of what makes a way read as one continuous shape."
+    },
+    {
+      "id": "walkways-have-a-width-you-can-see",
+      "asked": "walkways and broad areas use shapes and smooth bends",
+      "status": "enforced",
+      "rule": "min-line-width",
+      "params": {
+        "layer": "path",
+        "zoom": 16,
+        "atLeast": 2.4
+      },
+      "why": "A walkway a guest is meant to follow with a phone at arm's length is a shape with width, not a hairline. Paired with the casing below it, that width is what gives the midway an edge against the lawn."
+    },
+    {
+      "id": "park-edge-outlines-a-shape",
+      "asked": "walkways and broad areas use shapes and smooth bends",
+      "status": "enforced",
+      "rule": "area-edge-drawn-as-outline",
+      "params": {
+        "layer": "boundary",
+        "shapeBeneath": "park"
+      },
+      "why": "`boundary` is the one area layer drawn as a line, and it is allowed to be: it is the edge of the `park` fill directly beneath it, and it sits above every ground layer, so filling it would paint over the lake. The rule holds it to that — take the park fill away and the boundary becomes a bare outline, and this fails."
+    },
+    {
+      "id": "coaster-visible-at-park-wide",
+      "asked": "make coasters visible at park-wide zoom without making the map too visually complicated",
+      "status": "enforced",
+      "rule": "drawn-at-every-zoom",
+      "params": {
+        "layer": "coaster",
+        "wideZoom": 13,
+        "maxWidthAtWide": 2,
+        "maxOpacityAtWide": 0.7,
+        "againstAtWide": "path",
+        "maxRatioAtWide": 1.6
+      },
+      "why": "The view the app opens on is the whole park, and a coaster park with no coasters in that view is the plainest possible failure of \"displayed more visual\" — thickness cannot fix a layer that is not drawn. worldLod.js used to hide track below 0.7 px/m, so no width would ever have shown there. It is drawn at every zoom now. The second half of the ask is the constraint: a hairline under full opacity, lighter than the midway, so at park-wide it reads as a landmark you can find the ride by rather than as the line spaghetti ADR-0012 warns against. Both halves are asserted, because either one alone is the wrong map. The relative half is a ceiling rather than \"thinner than the midway\": walkways ramp down at park-wide too, so \"thinner than\" would now mean under a pixel — the invisible coaster this row exists to stop. Track may lead the midway there; it may not take it over."
+    },
+    {
+      "id": "walkways-thin-out-at-park-wide",
+      "asked": "the paths are overbearing, they should have LOD similar to Google Maps LOD on zoom",
+      "status": "enforced",
+      "rule": "ramps-with-zoom",
+      "params": {
+        "layer": "path",
+        "wideZoom": 12,
+        "walkingZoom": 16,
+        "maxAtWide": 0.4,
+        "maxOpacityAtWide": 0.6
+      },
+      "why": "Walkways were one flat width at every camera — 427 constant lines at Kings Island, 701 at Cedar Point — so the park-wide view was a net of paths with the rides lost inside it. A road atlas thins its minor streets on the way out; this does the same. The cap is relative to the layer's own walking-scale width, so a Skin that draws a wider midway still has to thin it by the same proportion, and the rule cannot be satisfied by making the walking view thinner."
+    },
+    {
+      "id": "osm-vectors-yield-to-factory-output",
+      "asked": "OSM vectors should be hidden if they have a visual factory replacement or overlay",
+      "status": "enforced",
+      "rule": "vector-tier-yields-to-a-loaded-bake",
+      "params": {},
+      "why": "When the Visual factory's image is on screen it is the map, and the Truth geometry underneath is drawn for nobody — wasted work every frame, and a bleed risk through the bake's soft edges and semi-transparent passages. The trigger is the image having loaded, not a Skin declaring a pack: ADR-0019 makes the vector tier the never-fails fallback, so a bake that is still downloading, offline or failed to decode must leave a working map rather than an empty one. Hiding on the declaration would trade that away for nothing; hiding on the event keeps both. The renderer asks `isSourceLoaded`, and re-runs the decision on `sourcedata` so the tier goes when the image lands rather than at the guest's next camera move."
+    }
+  ]
+}

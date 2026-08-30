@@ -1,6 +1,6 @@
 # Display pipeline — builder-owned map beauty, phone-owned overlay
 
-**Status:** Accepted — amended 2026-08-19 (item 4, real-time PBR tier) · Amended by [ADR-0021](./0021-zoomable-worlds-revised.md) (visual-spec step 3) · Amended 2026-08-21 (visual-spec step 3 direction, skin templates, Non-goals — Zone tone leaves map truth)  
+**Status:** Accepted — amended 2026-08-19 (item 4, real-time PBR tier) · Amended by [ADR-0021](./0021-zoomable-worlds-revised.md) (visual-spec step 3) · Amended 2026-08-21 (visual-spec step 3 direction, skin templates, Non-goals — Zone tone leaves map truth) · Amended by [ADR-0026](./0026-venue-geometry-inline-vs-tiles.md) (inline `map.json` ships; Tippecanoe optional)  
 **Date:** 2026-08-17  
 **Depends on:** [ADR-0002 dual-layer park truth](./0002-dual-layer-park-truth.md), [ADR-0005 store Capacitor shell](./0005-store-capacitor-shell.md)  
 **Extended by:** [ADR-0015 terrain in display](./0015-terrain-in-display.md)  

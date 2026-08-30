@@ -999,20 +999,6 @@
     }
   },
   {
-    "i": "lake-eerie-nor-easter-2",
-    "n": "Lake Eerie Nor'easter",
-    "lat": 41.488522,
-    "lng": -82.687185,
-    "c": "ride",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    },
-    "a": "Cedar Point Shores",
-    "note": "OpenStreetMap spells it “Lake Eerie”; the sign does not."
-  },
-  {
     "i": "lake-erie-eagles",
     "n": "Lake Erie Eagles",
     "lat": 41.485888,
@@ -1024,6 +1010,20 @@
       "max": null
     },
     "a": "Gemini Midway"
+  },
+  {
+    "i": "lake-eerie-nor-easter-2",
+    "n": "Lake Erie Nor'easter",
+    "lat": 41.488522,
+    "lng": -82.687185,
+    "c": "ride",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "a": "Cedar Point Shores",
+    "note": "OpenStreetMap spells it “Lake Eerie”; the sign does not."
   },
   {
     "i": "lakeside-express",
@@ -3763,7 +3763,7 @@
   },
   {
     "i": "watterin-hole-2",
-    "n": "Watterin' Hole",
+    "n": "Waterin' Hole",
     "lat": 41.487096,
     "lng": -82.684437,
     "c": "ride",

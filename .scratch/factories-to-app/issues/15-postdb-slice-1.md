@@ -8,7 +8,7 @@
 
 ## Acceptance
 
-- [x] `db/migrations/004_postdb_*.sql` applied in CI (`postgres:16`)
+- [x] `db/migrations/004_postdb_*.sql` applied in CI (`postgres:18`)
 - [x] `writeTruth` / `writeDisplayPack` / `getHeadRevisionId` round-trip
 - [x] `mirrorTruthToPostdb` + `mirrorDisplayPacksToPostdb` wired
 - [x] `DATABASE_URL` required for factory verbs (ADR-0024 §5)

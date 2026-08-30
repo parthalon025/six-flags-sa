@@ -398,6 +398,27 @@ export function mountMapView(
      *  context. */
     state: () => Object.freeze({ camera: current, plan }),
 
+    /** Correct an already-mounted renderer's World, without a remount.
+     *
+     *  `attach()` bakes a World once, at mount. A Skin's own Zone tones
+     *  (`useZoneTones`) arrive over the network, which cannot beat the
+     *  synchronous render that flips the caller's `skin` prop and re-mounts
+     *  — so the World the renderer painted still carries the generic
+     *  name-hue fallback for however long that fetch takes. Blocking mount
+     *  on the fetch would freeze the venue-open camera on network latency
+     *  for every guest, including the common case where the tones are
+     *  already cached; retinting the live renderer instead is what lets the
+     *  fallback show first and the Skin's own palette land under it a beat
+     *  later, the way the retired SVG renderer's re-render implicitly did.
+     *
+     *  Optional on the renderer, like `project` and `engine`: a renderer
+     *  with no live source to correct in place is not broken for lacking
+     *  one. */
+    retint: (world) => {
+      assertAlive();
+      if (typeof renderer.retint === 'function') renderer.retint(world);
+    },
+
     project: (lngLat) => {
       if (!alive || typeof renderer.project !== 'function') return null;
       return renderer.project(lngLat);

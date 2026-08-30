@@ -34,7 +34,7 @@ export const WORLD_PROJECTIONS = ['top-down', 'iso'];
 
 /**
  * Pure: one world's sidecar. Every coordinate it carries is the bake
- * model's crop-window bounds — derived from truth geometry by the bake,
+ * model's own grid bounds — derived from truth geometry by the bake,
  * echoed here, never invented (the no_repositioning rule's spirit for
  * files that must place an image).
  */

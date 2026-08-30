@@ -101,8 +101,12 @@ An on-the-ground mission. Gap quests require being at the **Place** and produce 
 _Avoid_: Adventure; generic quest; Contribution (the payload, not the mission)
 
 **Gap**:
-A missing fact the builder ships with a **World** that open sources cannot settle (height, queue, path, restroom, food, gate, camping). The builder invents Gaps once; the phone ranks them by **Location** and does not invent them. Missing gap data is an empty list, not a failed World. Gaps seed **Side Quests**.
-_Avoid_: Bug; missing POI; Contribution (the answer, not the hole)
+A missing fact the builder ships with a **World** that open sources cannot settle (height, queue, path, restroom, food, gate, camping). The builder invents Gaps once; the phone ranks them by **Location** and does not invent them. Missing gap data is an empty list, not a failed World. Gaps seed **Side Quests**. A **Dispute** is not a Gap.
+_Avoid_: Bug; missing POI; Dispute (imagery against OSM, settled by a steward, not a hole); Contribution (the answer, not the hole)
+
+**Dispute**:
+Imagery putting a walkway where OSM does not — a disagreement about geometry the **Map factory** already has. Recorded builder-side for a steward (`imagery-disputes.json`) and never shipped: no guest is asked to arbitrate two remote sources about where a path runs. No dispute kind may be spelled as a **Gap** type. A ride whose evidence sources contradict each other is *not* a Dispute — a guest standing at the ride can settle it, so it ships as a `verify` **Gap** on that ride (owner ruling, 2026-08-23) — *intended*, not yet true: the builder emits it and the phone keeps it, but `sideQuests.js` draws no card for `verify`, so it reaches no guest today (#795). Detail: ADR-0020 clause 5, ADR-0021 Open.
+_Avoid_: Gap; Side Quest; conflict Overlay; guest-facing vote; ride evidence conflict (routed to `verify`, undrawn — #795)
 
 **Contribution**:
 The durable, Profile-attributed result of a gap **Side Quest**. Feeds **Overlay** and can graduate into the persistent **World** map. Enjoyment and map improvement are one loop.
@@ -167,7 +171,7 @@ The catalog of license-gated sprites, tilesheets, and icons a kit may reference.
 _Avoid_: ad-hoc URLs; internet search at bake time without review; **Gap**
 
 **PostDB**:
-The canonical store for all factory outputs — **Truth revisions**, **Display packs**, certifications, and published artifact registry. Factories write here; **Delivery** exports from here. Not git paths or working-tree JSON as source of truth. Author-time: laptop Docker Postgres + CI `postgres:16`; hosted app/API: Neon on the Vercel Marketplace. Databricks jobs stay paused. Detail: ADR-0024, `scripts/lib/operating-stack.json`.
+The canonical store for all factory outputs — **Truth revisions**, **Display packs**, certifications, and published artifact registry. Factories write here; **Delivery** exports from here. Not git paths or working-tree JSON as source of truth. Author-time: laptop Docker Postgres + CI `postgres:18`; hosted app/API: Neon on the Vercel Marketplace. Databricks jobs stay paused. Detail: ADR-0024, `scripts/lib/operating-stack.json`.
 _Avoid_: lakebase; file store; repo-as-bus
 
 **Truth revision**:

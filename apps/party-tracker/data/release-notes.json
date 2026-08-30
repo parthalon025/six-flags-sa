@@ -624,5 +624,77 @@
     "items": [
       "fix(app): Bugbot ParkMap regressions — mapWrap, zone tones, fog scope (#730)"
     ]
+  },
+  "1.35.5": {
+    "title": "What's new",
+    "items": [
+      "fix(#16): close the delivery revision cursor, and the gates that were hiding work (#746)"
+    ]
+  },
+  "1.35.6": {
+    "title": "What's new",
+    "items": [
+      "automations mega: fix broken Gate base ref + complete the Upstash ops lane (#748)"
+    ]
+  },
+  "1.35.7": {
+    "title": "What's new",
+    "items": [
+      "factory mega: deep-merge override patches, wheelchair routing profile, expect-lock enforcement (#750)"
+    ]
+  },
+  "1.35.8": {
+    "title": "What's new",
+    "items": [
+      "app mega: World-keyed Overlay, atomic relay store, suite resilience (#751)"
+    ]
+  },
+  "1.35.9": {
+    "title": "What's new",
+    "items": [
+      "fix(deploy): unbreak production uploads, stop agent previews burning budget, end CI-stamp conflicts (#759)"
+    ]
+  },
+  "1.35.10": {
+    "title": "What's new",
+    "items": [
+      "Pin the map's drawn decisions so they stop reverting (#755)"
+    ]
+  },
+  "1.35.11": {
+    "title": "What's new",
+    "items": [
+      "fix(test): skip contribution-pipeline when the operator path is gated (#779)"
+    ]
+  },
+  "1.35.12": {
+    "title": "What's new",
+    "items": [
+      "Close seven factory due-outs, and the gates that let them hide (#781)"
+    ]
+  },
+  "1.35.13": {
+    "title": "What's new",
+    "items": [
+      "Places fade in on a pinch or a pan, and the Claude Design intro screen is wired up (#785)"
+    ]
+  },
+  "1.35.14": {
+    "title": "What's new",
+    "items": [
+      "Trains H and I: align the code with the owner's answers (20/20) (#784)"
+    ]
+  },
+  "1.35.15": {
+    "title": "What's new",
+    "items": [
+      "fix(ci): carry gate stamps in commit trailers, so branch merges stop conflicting on them (#778)"
+    ]
+  },
+  "1.35.16": {
+    "title": "What's new",
+    "items": [
+      "worktree: preserve local-only branches, so nothing lives on one disk (#808)"
+    ]
   }
 }

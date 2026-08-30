@@ -92,7 +92,12 @@
         "apps/party-tracker/components/SpotCapsule.jsx",
         "apps/party-tracker/components/SpotBanner.jsx",
         "apps/party-tracker/components/WorldCloset.jsx",
-        "apps/party-tracker/components/WorldMarks.jsx"
+        "apps/party-tracker/components/WorldMarks.jsx",
+        "apps/party-tracker/lib/mapViewStyle.js",
+        "apps/party-tracker/lib/worldGeo.js",
+        "apps/party-tracker/lib/mapViewMaplibre.js",
+        "test/app/map-decisions.json",
+        "test/app/lib/map-decisions.mjs"
       ]
     },
     {
