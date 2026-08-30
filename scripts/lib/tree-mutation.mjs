@@ -1,19 +1,19 @@
 /**
- * Did a test leg rewrite tracked files?
+ * Tree mutation and uncommitted-work guards for CI gates.
  *
- * A suite that mutates tracked state leaves the working tree dirty after every
- * run, which trains everyone — human and agent — to read a dirty tree as noise
- * and `git checkout --` it away unread. A real unintended change riding
- * alongside gets discarded by the same reflex (#34). It also means the suite's
- * second run starts from different inputs than its first.
+ * **Post-run mutation** (`treeMutationReason`): a suite that mutates tracked state
+ * leaves the working tree dirty after every run, which trains everyone — human and
+ * agent — to read a dirty tree as noise and `git checkout --` it away unread (#34).
+ * The before/after comparison catches legs that rewrite committed files; a
+ * developer's own pre-existing edits are not the thing being caught.
  *
- * The gate is a before/after comparison rather than a "tree must be clean"
- * assertion, because the tree it runs in is a developer's, and their own
- * in-progress edits are not the thing being caught.
+ * **Pre-run dirty tree** (`uncommittedWorkReason`): pre-merge-vertical plans from
+ * commits only, so uncommitted work must refuse before any stamp or vertical (#35).
  *
  * Interface:
  *   trackedTreeSnapshot(cwd)         → Map<path, status> | null when git is unreadable
  *   treeMutationReason(before, after)→ operator-facing string, or null
+ *   uncommittedWorkReason(cwd)       → operator-facing string, or null when tree is clean
  */
 import { execFileSync } from 'node:child_process';
 import { scrubGitEnv } from './git-env.mjs';
@@ -45,6 +45,38 @@ export function trackedTreeSnapshot(cwd = process.cwd()) {
     snapshot.set(line.slice(3).trim(), line.slice(0, 2));
   }
   return snapshot;
+}
+
+/**
+ * Fail-closed guard for pre-merge-vertical: the gate plans from commits, so
+ * uncommitted work in the tree is work the run cannot certify (#35).
+ *
+ * @param {string} [cwd]
+ * @returns {string|null}
+ */
+export function uncommittedWorkReason(cwd = process.cwd()) {
+  let out;
+  try {
+    out = execFileSync('git', ['status', '--porcelain'], {
+      cwd,
+      env: scrubGitEnv(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+  } catch {
+    return [
+      'the working tree could not be read',
+      'Commit first — pre-merge-vertical plans from the committed diff only.',
+    ].join(' ');
+  }
+  const lines = out.split('\n').filter((line) => line.trim());
+  if (!lines.length) return null;
+  const paths = lines.map((line) => line.slice(3).trim());
+  return [
+    'the working tree has uncommitted changes the gate did not prove',
+    `(${paths.length} path(s): ${paths.join(', ')})`,
+    'Commit first — pre-merge-vertical plans from the committed diff only.',
+  ].join(' ');
 }
 
 /**

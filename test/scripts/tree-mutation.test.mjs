@@ -8,7 +8,7 @@
  * making the ticket's own mistake.
  */
 import assert from 'node:assert/strict';
-import { trackedTreeSnapshot, treeMutationReason } from '../../scripts/lib/tree-mutation.mjs';
+import { trackedTreeSnapshot, treeMutationReason, uncommittedWorkReason } from '../../scripts/lib/tree-mutation.mjs';
 
 const FIXTURE = 'packages/venue-builder/data/venues/fixture-park/google-places-cache.json';
 
@@ -79,6 +79,10 @@ check('a snapshot of a real repository reads paths, not status columns', () => {
 
 check('a snapshot outside a git checkout is null, not a throw', () => {
   assert.equal(trackedTreeSnapshot('/'), null);
+});
+
+check('uncommitted work outside a git checkout is refused fail-closed', () => {
+  assert.match(uncommittedWorkReason('/'), /could not be read/);
 });
 
 console.log(`\n==== ${passed} passed, ${failed} failed ====\n`);
