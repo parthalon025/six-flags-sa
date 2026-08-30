@@ -225,6 +225,7 @@ export const TEST_ESTATE = {
   'test/scripts/clerk-apple-prod.test.mjs': ['ci-gate'],
   'test/scripts/clerk-e2e.test.mjs': ['ci-gate'],
   'test/scripts/ci-lane-plan.test.mjs': ['ci-gate'],
+  'test/scripts/lane-plan-cli.test.mjs': ['ci-gate'],
   'test/scripts/cloud-agent-clerk-env.test.mjs': ['ci-gate', 'test:unit'],
   'test/scripts/cloud-agent-neon-env.test.mjs': ['ci-gate'],
   'test/scripts/credits.test.mjs': ['ci-gate'],
