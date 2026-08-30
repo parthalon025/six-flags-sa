@@ -219,7 +219,15 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
     findStamp(dir, { key: LOCAL_CI_TRAILER, range, diffHash: 'no-such-diff' }),
     'an unmatched diff still yields a stamp, so the reason names a real one',
   );
-  assert.equal(findStamp(dir, { key: LOCAL_CI_TRAILER, range: null }), null, 'no range, no trailer read');
+  // No usable range — the shape a shallow or partially-fetched CI checkout
+  // produces when merge-base against the base ref fails. That must not read
+  // as "this branch published no stamp": the range is an optimization, and
+  // diffHash is what actually decides.
+  assert.equal(
+    findStamp(dir, { key: LOCAL_CI_TRAILER, range: null, diffHash: 'aaaa1111' })?.diffHash,
+    'aaaa1111',
+    'a stamp is still found by walking back from HEAD when no range resolves',
+  );
 
   // --- GitHub reads the PR's merge ref, not the branch tip. The stamp has to
   // be reachable from there too, or CI never honours a stamp it was given.

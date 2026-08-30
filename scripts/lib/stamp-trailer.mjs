@@ -29,7 +29,7 @@
  *   stampRange({ mergeBase, headRef })
  *   buildStampMessage({ subject, stamps })
  *   parseStampTrailers(message)
- *   readStampTrailers(cwd, { range })
+ *   readStampTrailers(cwd, { range } | { ref, limit })
  *   findStamp(cwd, { key, range, diffHash })
  *   preferMatchingStamp({ trailer, file, diffHash })
  *   readStampFile(path)
@@ -144,14 +144,20 @@ export function parseStampTrailers(message = '') {
  * half of the answer to a commit that merely quotes the trailer format — such
  * a commit has content, so its trailers are not stamps.
  */
-export function readStampTrailers(cwd, { range } = {}) {
-  if (!range) return [];
+export function readStampTrailers(cwd, { range, ref, limit } = {}) {
+  const selector = range ? [range] : ref ? ['-n', String(limit ?? 200), ref] : null;
+  if (!selector) return [];
   let out = '';
   try {
-    out = git(cwd, ['log', `--format=%H${FS}%T${FS}%P${FS}%B${RS}`, range]);
-  } catch {
-    // An unreadable range (shallow clone, missing base ref) is not an error
-    // here: no trailer found means the caller falls back and CI runs in full.
+    out = git(cwd, ['log', `--format=%H${FS}%T${FS}%P${FS}%B${RS}`, ...selector]);
+  } catch (err) {
+    // Said out loud, not swallowed. A stamp that cannot be read is reported as
+    // "missing", which is indistinguishable from one that was never published —
+    // and that ambiguity cost a CI round to diagnose. Still non-fatal: the
+    // caller falls back, and a stamp nobody can read never skips a job.
+    process.stderr.write(
+      `stamp-trailer: could not read ${selector.join(' ')} — ${err?.message?.split('\n')[0] || err}\n`,
+    );
     return [];
   }
   const candidates = [];
@@ -191,14 +197,26 @@ function treeOf(cwd, sha) {
  * of any kind is the fallback so the "stamp is for a different diff" message
  * still names something real.
  */
-export function findStamp(cwd, { key, range, diffHash } = {}) {
-  const entries = readStampTrailers(cwd, { range }).filter((e) => e.stamps[key] != null);
-  if (!entries.length) return null;
-  if (diffHash) {
-    const exact = entries.find((e) => e.stamps[key].diffHash === diffHash);
-    if (exact) return exact.stamps[key];
-  }
-  return entries[0].stamps[key];
+export function findStamp(cwd, { key, range, diffHash, ref = 'HEAD', limit = 200 } = {}) {
+  const pick = (entries) => {
+    const carrying = entries.filter((e) => e.stamps[key] != null);
+    if (!carrying.length) return null;
+    if (diffHash) {
+      const exact = carrying.find((e) => e.stamps[key].diffHash === diffHash);
+      if (exact) return exact.stamps[key];
+    }
+    return carrying[0].stamps[key];
+  };
+
+  const inRange = pick(readStampTrailers(cwd, { range }));
+  if (inRange && (!diffHash || inRange.diffHash === diffHash)) return inRange;
+
+  // The range is an optimization, not the guarantee — `diffHash` is. Deriving
+  // it needs a merge-base against the base ref, which is exactly the thing a
+  // shallow or partially-fetched CI checkout can fail to give, and losing it
+  // must not read as "this branch published no stamp". Walking back from HEAD
+  // needs no base ref at all; a stamp for another diff is still inert.
+  return pick(readStampTrailers(cwd, { ref, limit })) ?? inRange;
 }
 
 /**
