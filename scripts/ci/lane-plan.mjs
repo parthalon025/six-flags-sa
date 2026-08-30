@@ -17,10 +17,15 @@ function parseBase(argv) {
   return idx >= 0 ? argv[idx + 1] : 'origin/main';
 }
 
+/** @param {string} baseRef @param {{ cwd?: string, headRef?: string }} [opts] */
+export function lanePlanGithubOutputs(baseRef, { cwd = root, headRef = 'HEAD' } = {}) {
+  const { files } = gitChangedFiles(baseRef, headRef, cwd);
+  return laneGithubOutputs(files);
+}
+
 function main(argv = process.argv.slice(2)) {
   const baseRef = parseBase(argv);
-  const { files } = gitChangedFiles(baseRef, 'HEAD', root);
-  const outs = laneGithubOutputs(files);
+  const outs = lanePlanGithubOutputs(baseRef, { cwd: root });
   const lines = Object.entries(outs).map(([k, v]) => `${k}=${v}`);
   console.log(lines.join('\n'));
   if (process.env.GITHUB_OUTPUT) {
