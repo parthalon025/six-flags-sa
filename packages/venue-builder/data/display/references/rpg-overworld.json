@@ -151,5 +151,55 @@
       "key": "style_reference_resemblance",
       "prompt": "Overall: side-by-side with ref-rpg-overworld, a stranger names the same genre"
     }
-  ]
+  ],
+  "bands": {
+    "overview": {
+      "colorFamilies": {
+        "outside": {
+          "anchor": "#6B4E9B",
+          "deltaE": 14
+        },
+        "ground": {
+          "anchor": "#7BAD2C",
+          "deltaE": 14
+        },
+        "grass": {
+          "anchor": "#7BAD2C",
+          "deltaE": 14
+        },
+        "wood": {
+          "anchor": "#598926",
+          "deltaE": 14
+        },
+        "water": {
+          "anchor": "#37AAA5",
+          "deltaE": 14
+        },
+        "lot": {
+          "anchor": "#CBC5B6",
+          "deltaE": 14
+        },
+        "road": {
+          "anchor": "#A8BEB2",
+          "deltaE": 14
+        },
+        "service": {
+          "anchor": "#6FA379",
+          "deltaE": 14
+        },
+        "structure": {
+          "anchor": "#595741",
+          "deltaE": 14
+        },
+        "badge": {
+          "anchor": "#FDFCFB",
+          "deltaE": 14
+        }
+      },
+      "withdrawChecks": [
+        "style_structure_presence",
+        "style_road_hierarchy"
+      ]
+    }
+  }
 }

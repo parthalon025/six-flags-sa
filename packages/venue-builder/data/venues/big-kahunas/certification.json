@@ -7,7 +7,7 @@
   },
   "certified": false,
   "certifiedAt": null,
-  "bundleFingerprint": "71116120796fe35814cbde932db2ec1955cfcc03fb76573712eebffe045ca01a",
+  "bundleFingerprint": "1273181857dc7ed028389b3402f81237dfd53618f01e7cc1cb6f26a0acaeb100",
   "checks": [
     {
       "key": "checklist",
@@ -174,7 +174,7 @@
       "evidence": {
         "numerator": 1,
         "denominator": 1,
-        "detail": "local_images=1; parkMap_candidates=0; llm_park_map_search=false",
+        "detail": "local_images=1; parkMap_candidates=0 (of 0 recorded); llm_park_map_search=false",
         "searchQueries": []
       },
       "confidence": "high",

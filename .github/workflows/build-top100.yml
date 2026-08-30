@@ -76,3 +76,6 @@ jobs:
         run: |
           npm run lint
           npm run test:unit
+
+      - name: Make sure the app still builds with it
+        run: npm run build -w @party-tracker/app

@@ -35,6 +35,7 @@ import { compileDisplay } from './visual-factory/index.mjs';
 import { loadParksApiData } from './adapters/parks-api.mjs';
 import { readSources } from './venue-sources.mjs';
 import { loadOfficialData } from './venue-official-site.mjs';
+import { catalogHeightsOptional, zeroHeightsGate } from './top-parks-catalog.mjs';
 
 const BUILDER_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const BUILDER_BIN = path.join(BUILDER_ROOT, '..', 'bin', 'build-venue.mjs');
@@ -119,6 +120,7 @@ export async function runVenuePipeline(park, opts = {}) {
     dryRun = false,
     retries = 3,
     allowNoHeights = false,
+    heightsOptional = false,
     applyAliases = true,
     browser = true,
     attractions = true,
@@ -268,7 +270,7 @@ export async function runVenuePipeline(park, opts = {}) {
       if (heights.officialErrors?.length) {
         console.error(`    warnings: ${heights.officialErrors.join('; ')}`);
       }
-      if (!heights.ruleCount) {
+      if (zeroHeightsGate(heights.ruleCount, heightsOptional) === 'abort') {
         return {
           id: park.id,
           rank: park.rank,
@@ -277,11 +279,16 @@ export async function runVenuePipeline(park, opts = {}) {
           stages,
         };
       }
-      logStage('heights', {
-        ruleCount: heights.ruleCount,
-        matched: heights.matched,
-        rideCount: heights.rideCount,
-      });
+      if (!heights.ruleCount) {
+        console.error('    no height rules — catalog allows proceeding without heights');
+        logStage('heights', { ruleCount: 0, matched: heights.matched, rideCount: heights.rideCount, allowed: true });
+      } else {
+        logStage('heights', {
+          ruleCount: heights.ruleCount,
+          matched: heights.matched,
+          rideCount: heights.rideCount,
+        });
+      }
     }
 
     if (!skip.includes('rebuild')) {
@@ -396,12 +403,16 @@ export async function runVenueBatch(parks, opts = {}) {
     openPr = false,
     catalogSize = parks.length,
     dryRun = false,
+    catalogArgs = null,
     ...pipelineOpts
   } = opts;
 
   const results = [];
   for (const [i, park] of parks.entries()) {
-    const result = await runVenuePipeline(park, { ...pipelineOpts, dryRun });
+    const perPark = catalogArgs
+      ? pipelineOptsForPark(park, catalogArgs, { batch: parks.length > 1 })
+      : pipelineOpts;
+    const result = await runVenuePipeline(park, { ...perPark, dryRun });
     results.push(result);
 
     if (openPr && result.status === 'built' && !dryRun) {
@@ -450,6 +461,7 @@ export function parseCatalogArgs(argv) {
     delay: 5,
     retries: 3,
     allowNoHeights: false,
+    strictHeights: false,
     browser: true,
     attractions: true,
     agent: true,
@@ -480,6 +492,7 @@ export function parseCatalogArgs(argv) {
     else if (a === '--delay') out.delay = Number(argv[++i]);
     else if (a === '--retries') out.retries = Number(argv[++i]);
     else if (a === '--allow-no-heights') out.allowNoHeights = true;
+    else if (a === '--strict-heights') out.strictHeights = true;
     else if (a === '--no-browser') out.browser = false;
     else if (a === '--no-attractions') out.attractions = false;
     else if (a === '--no-agent') out.agent = false;
@@ -529,4 +542,18 @@ export function pipelineOptsFromCatalogArgs(args, { batch = false } = {}) {
     rebuildOnly: args.skipExisting,
     skip: args.allowNoHeights ? ['research', 'aliases', 'heights', 'rebuild', 'agent'] : [],
   };
+}
+
+/**
+ * Per-park pipeline options for catalog/batch runs (#428).
+ * Resolves heightsOptional from catalog kind and CLI precedence.
+ *
+ * @param {import('./top-parks-catalog.mjs').ParkEntry} park
+ * @param {ReturnType<typeof parseCatalogArgs>} args
+ * @param {{ batch?: boolean }} [scale]
+ */
+export function pipelineOptsForPark(park, args, { batch = false } = {}) {
+  const base = pipelineOptsFromCatalogArgs(args, { batch });
+  const heightsOptional = catalogHeightsOptional(park, args);
+  return { ...base, heightsOptional };
 }

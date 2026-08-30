@@ -63,6 +63,40 @@ concurrency:
   group: build-venue-${{ inputs.rebuild || inputs.bbox || inputs.place }}
   cancel-in-progress: false
 
+# This job runs a *subset* of the ten unified pipeline stages
+# (packages/venue-builder/lib/build-pipeline.mjs `STAGES`, and
+# `npm run venues:build -- --pipeline` / `--catalog`), by deliberate choice
+# rather than by drift (#397):
+#
+#   sources     skipped — a fresh sources.json scaffold wants a human to fill
+#               in official URLs before research can use it; this workflow
+#               targets "one park, on demand", not the catalog onboarding flow
+#   geometry    runs — "Build the venue" below
+#   research    skipped — official-site + ParksAPI research needs Playwright
+#               for JS-rendered listings, which this job does not install for
+#               that purpose (only for the display bake, later); see #410
+#   aliases     skipped — proposeAliases reads research output, which did
+#               not run
+#   heights     skipped — same reason; height rules stay a human's "Ask" list
+#               instead ("Ask for what OpenStreetMap does not have" below)
+#   rebuild     n/a — "Build the venue" already ran the fresh OSM extract
+#               this stage exists to re-run after research updates sources
+#   attractions runs — "Work out the ways into every ride" below
+#   agent       skipped — the QA/GIS/vision/validation agents publish
+#               entrances from research evidence that was never gathered
+#   certify     runs — "Certify built venue" below
+#   display     runs a fixed kit set (not the venues:display default), tuned
+#               for the reference-contract review this workflow exists to
+#               produce — "Bake the game map against its reference
+#               contract" below
+#
+# A rebuild of an already-onboarded venue (`inputs.rebuild`) is the common
+# case this workflow serves, and research/aliases/heights/agent are one-time
+# onboarding work already sitting in that venue's committed sources.json,
+# overrides and heights.json — a rebuild re-reads them rather than redoing
+# them. Prefer `venues:build -- --pipeline --place "..."` for a brand-new
+# park (all ten stages, one park) or build-top100.yml's `--catalog` (same
+# stages, batched) when the full sequence is wanted.
 jobs:
   build:
     runs-on: ubuntu-latest

@@ -24,6 +24,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
+      - name: Fetch origin/main
+        # fetch-depth: 2 checks out only this ref — origin/main never lands as
+        # a remote-tracking ref, so any gate script that diffs against it
+        # (local-ci-pass's real-repo context, readme-shots-check) hits
+        # `fatal: Not a valid object name origin/main` and treats the diff as
+        # unreadable. A push to main already has it at HEAD; `|| true` keeps
+        # that case (and any transient fetch hiccup) from failing the job —
+        # scripts already fail closed (full CI) when the ref stays missing.
+        run: git fetch origin main:refs/remotes/origin/main --depth=1 || true
       - name: Gate checks
         id: check
         run: |
@@ -76,7 +85,13 @@ jobs:
           else
             BASE_REF="${{ github.base_ref }}"
             if [ -n "$BASE_REF" ]; then
-              git fetch origin "$BASE_REF" --depth=1 || true
+              # NOT --depth=1. This job checks out fetch-depth: 0, so it already
+              # has the history; a shallow fetch on top writes .git/shallow and
+              # grafts origin/$BASE_REF to a parentless commit. That graft made
+              # `mergeBase..HEAD` stop excluding the base, so a stamp published
+              # on another branch and merged to main fell inside this branch's
+              # range and was honoured for it. See scripts/lib/stamp-trailer.mjs.
+              git fetch origin "$BASE_REF" || true
               node test/app/select-modules.mjs --base "origin/$BASE_REF" --format github
             else
               node test/app/select-modules.mjs --base origin/main --format github
@@ -199,6 +214,26 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint:boundaries
+
+  upstash-smoke:
+    name: Upstash smoke (optional)
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      # No `npm ci` — scripts/lib/upstash-smoke.mjs is pure ESM over node
+      # builtins + fetch, same "runs before workspace install" property as
+      # Gate. Skips (exit 0) when UPSTASH_REDIS_REST_URL/TOKEN test secrets
+      # are unset — most branches have none, and absence must never be red.
+      - run: node scripts/ci/upstash-smoke.mjs
+        env:
+          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL_TEST }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN_TEST }}
 
   lint:
     name: Lint

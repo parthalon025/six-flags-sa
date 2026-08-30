@@ -11,7 +11,7 @@
 - [x] `npm run venues:export -- --all` (with `DATABASE_URL`) writes every flagship `public/venues/<id>.bundle.json` with `basedOn.revisionId` matching PostDB head
 - [x] Seed bundles on disk include revision cursor (today they only pin `basedOn.map` stamp)
 - [x] `artifact_blobs` rows registered for exported files when PostDB configured
-- [x] Delivery CI leg runs `test/builder/delivery-export.mjs` against `postgres:16` service
+- [x] Delivery CI leg runs `test/builder/delivery-export.mjs` against `postgres:18` service
 - [x] `npm run venues:factory-validate -- --all` passes revision freshness for shipped venues
 - [x] `docs/guide/venue-builder.md` documents export as the publish step after PostDB promote
 - [x] No hand-edits to generated `public/venues/*`

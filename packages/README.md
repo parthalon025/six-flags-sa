@@ -56,8 +56,10 @@ Public surface:
 - `bin/*.mjs` — CLIs, reached with `npm run venues:*` from the repo root
 - `src/paths.mjs` and `src/compare.mjs` — the `package.json` `exports`
 - `src/routing-coverage.mjs` — App Store routing MultiPolygon from shipped venue bounds (`./routing-coverage.js`)
+- `lib/build-pipeline.mjs` — the batch orchestrator (ADR-0025 §6); `STAGES` is the doc-guide-sync surface (`./build-pipeline.js`)
+- `lib/delivery/builder-app-contract.mjs` — generated-file binding checked at commit and CI (`./builder-app-contract.js`); `scripts/lib/builder-app-contract.mjs` re-exports it via a relative path (not the package specifier) because the Gate job runs it before `npm ci` links workspaces
 
-`lib/` is implementation. `bin/` and `src/` are subfolders, so other packages must not import them — reach CLIs with `npm run venues:*`. `data/venues/<id>/` is builder **input** (hand-edit). The phone app must not import this package.
+`lib/` is otherwise implementation — a handful of files (above, plus `freshness.js`/`venue-report-gate.js`/`map-factory.js`/`visual-factory.js`/`delivery.js` in the `package.json` `exports` map) are deliberately promoted to entry points; nothing else in `lib/` is. `bin/` and `src/` are subfolders, so other packages must not import them — reach CLIs with `npm run venues:*`. `data/venues/<id>/` is builder **input** (hand-edit). The phone app must not import this package.
 
 Shipped venue JSON is builder **output** under `apps/party-tracker/public/venues/` plus generated `apps/party-tracker/lib/venueIndex.js` and App Store `fastlane/metadata/ios/routing_app_coverage.geojson`. Fix output at the source, then regenerate — see the builder ↔ app contract in `AGENTS.md`.
 

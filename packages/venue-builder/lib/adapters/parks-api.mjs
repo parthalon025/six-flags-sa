@@ -8,8 +8,13 @@
 import path from 'node:path';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { OVERRIDE_DIR, readJson, venueSidecar } from '../venue-io.mjs';
-import { nameSimilarity, pairSuggestions } from '../venue-judge.mjs';
+// The comparison is pure name work and moved to a leaf so callers that only
+// want it do not inherit this module's venue reads (#29). Re-exported here so
+// every existing caller keeps its import.
+import { compareParksApiToBundle } from '../inventory-compare.mjs';
 import { parkEntityIds } from '../parks-api-entities.mjs';
+
+export { compareParksApiToBundle };
 
 const API = 'https://api.themeparks.wiki/v1';
 const UA = 'six-flags-sa-venue-research/1.0 (+https://github.com/parthalon025/six-flags-sa)';
@@ -82,34 +87,6 @@ export async function loadParksApiData(id, { fetch = false, offline = false, cac
 }
 
 /** Compare ParksAPI names to bundle ride names. */
-export function compareParksApiToBundle({ parksApi = {}, pois = [] } = {}) {
-  const rides = pois.filter((p) => p.c === 'ride' || p.c === 'slide' || p.c === 'coaster');
-  const bundleNames = rides.map((p) => p.n);
-  const apiNames = (parksApi.attractions || []).map((a) => a.name);
-  const matched = new Set();
-  const pairs = [];
-  for (const name of bundleNames) {
-    const best = pairSuggestions([name], apiNames, { floor: 0.72, limit: 1 })[0];
-    if (best) {
-      matched.add(best.right);
-      pairs.push({ bundle: name, api: best.right, score: best.score });
-    }
-  }
-  const onlyApi = apiNames.filter((n) => !matched.has(n));
-  const onlyBundle = bundleNames.filter((n) => {
-    const hit = pairSuggestions([n], apiNames, { floor: 0.72, limit: 1 })[0];
-    return !hit;
-  });
-  return {
-    apiCount: apiNames.length,
-    bundleRideCount: bundleNames.length,
-    matched: pairs.length,
-    pairs,
-    onlyOnApi: onlyApi.sort(),
-    onlyInBundle: onlyBundle.sort(),
-  };
-}
-
 export async function run(ctx = {}) {
   const id = ctx.venueId;
   if (!id) return { adapterId: 'parks-api', ok: false, error: 'venueId_required' };

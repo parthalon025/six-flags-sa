@@ -16,7 +16,7 @@
  */
 
 import { loadCatalog, selectParks } from '../lib/top-parks-catalog.mjs';
-import { runVenuePipeline } from '../lib/build-pipeline.mjs';
+import { runVenuePipeline, pipelineOptsForPark } from '../lib/build-pipeline.mjs';
 
 const USAGE = `
 Build the top 100 US theme parks through the unified venue pipeline.
@@ -31,6 +31,7 @@ Build the top 100 US theme parks through the unified venue pipeline.
   --delay <seconds>     pause between parks (default: 5)
   --retries <n>         attempts per build step (default: 3)
   --allow-no-heights    geometry only; skip research, heights, rebuild, agent
+  --strict-heights      abort when zero official heights even for water-park catalog rows
   --no-browser          skip Playwright for JS-rendered park sites
   --no-attractions      skip attractions inventory
   --no-agent            skip build-agent (QA, GIS, vision, validation)
@@ -47,6 +48,7 @@ function parseArgs(argv) {
     delay: 5,
     retries: 3,
     allowNoHeights: false,
+    strictHeights: false,
     browser: true,
     attractions: true,
     agent: true,
@@ -62,6 +64,7 @@ function parseArgs(argv) {
     else if (a === '--delay') out.delay = Number(argv[++i]);
     else if (a === '--retries') out.retries = Number(argv[++i]);
     else if (a === '--allow-no-heights') out.allowNoHeights = true;
+    else if (a === '--strict-heights') out.strictHeights = true;
     else if (a === '--no-browser') out.browser = false;
     else if (a === '--no-attractions') out.attractions = false;
     else if (a === '--no-agent') out.agent = false;
@@ -95,19 +98,9 @@ async function main() {
   const mode = args.allowNoHeights ? 'geometry only' : 'full pipeline (OSM + research + heights + agent)';
   console.error(`Building ${parks.length} of ${catalog.parks.length} catalog parks (${mode})…`);
 
-  const pipelineOpts = {
-    dryRun: args.dryRun,
-    retries: args.retries,
-    allowNoHeights: args.allowNoHeights,
-    browser: args.browser,
-    attractions: args.attractions,
-    agent: args.agent,
-    rebuildOnly: args.skipExisting,
-    skip: args.allowNoHeights ? ['research', 'heights', 'rebuild', 'agent'] : [],
-  };
-
   const results = [];
   for (const [i, park] of parks.entries()) {
+    const pipelineOpts = pipelineOptsForPark(park, args, { batch: parks.length > 1 });
     const result = await runVenuePipeline(park, pipelineOpts);
     results.push(result);
     if (result.status === 'failed') {

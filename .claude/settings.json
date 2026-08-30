@@ -20,6 +20,12 @@
           },
           {
             "type": "command",
+            "command": "node scripts/worktree.mjs preserve",
+            "timeout": 300,
+            "statusMessage": "Preserving local-only branches to archive/*"
+          },
+          {
+            "type": "command",
             "command": "node scripts/worktree.mjs prune",
             "timeout": 30,
             "statusMessage": "Pruning leftover agent branches"
@@ -47,8 +53,6 @@
     ]
   },
   "permissions": {
-    "allow": [
-      "Bash(kill:*)"
-    ]
+    "allow": ["Bash(kill:*)"]
   }
 }

@@ -26,12 +26,14 @@ import { startProductionServer, waitForHealth } from './party-tracker-ui.mjs';
 import {
   STATIC_STEPS,
   buildLocalCiContext,
+  localCiStampRange,
   readLocalCiPass,
   shouldSkipLocalPreMerge,
   staticNpmStepsForFiles,
   writeLocalCiPass,
 } from '../lib/local-ci-pass.mjs';
 import { canonLanePlan } from '../lib/ci-lane-plan.mjs';
+import { trackedTreeSnapshot, treeMutationReason } from '../lib/tree-mutation.mjs';
 import { clerkE2eBlockReason } from '../lib/clerk-e2e.mjs';
 import { ensureClerkEnvForCi } from '../lib/cloud-agent-clerk-env.mjs';
 import {
@@ -48,6 +50,7 @@ import {
 import {
   buildMattReviewContext,
   mattReviewBlockReason,
+  mattReviewStampRange,
   readMattReview,
 } from '../lib/matt-review.mjs';
 import { workflowBlockReason } from '../lib/matt-workflow.mjs';
@@ -131,7 +134,10 @@ export async function runPreMergeVertical({
   cwd = root,
 } = {}) {
   const context = buildLocalCiContext({ baseRef, cwd });
-  const existing = readLocalCiPass(cwd);
+  const existing = readLocalCiPass(cwd, {
+    range: localCiStampRange(context),
+    diffHash: context.diffHash,
+  });
   if (shouldSkipLocalPreMerge(existing, context, { skipBrowser })) {
     console.log('pre-merge-vertical: local CI pass stamp covers this tree — skipping');
     return 0;
@@ -178,6 +184,11 @@ export async function runPreMergeVertical({
   const ran = [];
   const factoryLegsRan = [];
 
+  // Anything the legs below rewrite in tracked files is compared against this.
+  // Taken here, after the cheap refusals, so the snapshot spans exactly the
+  // steps that run tests.
+  const treeBefore = trackedTreeSnapshot(cwd);
+
   for (const args of staticNpm) {
     if (args[1] === 'build') {
       const clerkEnv = ensureClerkEnvForCi(cwd);
@@ -205,10 +216,14 @@ export async function runPreMergeVertical({
 
   // clerk gate treats an unknown diff as empty; matt-review instead fails
   // closed on null (reviewRequiredForFiles) — both are deliberate.
+  const reviewContext = buildMattReviewContext({ baseRef, cwd });
   const reviewBlock = mattReviewBlockReason({
     files,
-    context: buildMattReviewContext({ baseRef, cwd }),
-    stamp: readMattReview(cwd),
+    context: reviewContext,
+    stamp: readMattReview(cwd, {
+      range: mattReviewStampRange(reviewContext),
+      diffHash: reviewContext.diffHash,
+    }),
   });
   if (reviewBlock) {
     console.error(`pre-merge-vertical: ${reviewBlock}`);
@@ -268,6 +283,14 @@ export async function runPreMergeVertical({
     return 1;
   }
 
+  // Checked before the pass is stamped: a stamp over a run that rewrote its own
+  // inputs certifies a tree nobody has actually tested.
+  const mutation = treeMutationReason(treeBefore, trackedTreeSnapshot(cwd));
+  if (mutation) {
+    console.error(`pre-merge-vertical: ${mutation}`);
+    return 1;
+  }
+
   if (!noStamp) {
     writeLocalCiPass(
       {
@@ -278,6 +301,8 @@ export async function runPreMergeVertical({
       },
       cwd,
     );
+    // The cache is gitignored — GitHub only ever sees a published trailer.
+    console.log('\npre-merge-vertical: stamped. Publish it: node scripts/ci/stamp-commit.mjs');
   }
   return 0;
 }

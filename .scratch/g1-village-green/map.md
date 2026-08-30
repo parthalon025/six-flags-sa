@@ -27,6 +27,18 @@ first; Cedar Point after KI certifies. Visual factory restyles, never reposition
 - **Props:** Block first ship until minimum prop vocabulary exists — bridges at path×water crossings, fence/barrel scatter near buildings; not full G1 B6 on day one, but enough to prove it is not a recolor.
 - **Signage:** Category glyphs on live overlay carry names; optional in-world shop/INN sprites at landmark POIs only (G1 C3 partial negation).
 
+## Goal line
+
+G1 is goal #1 of five. Sequencing (G1 → G5 → G4 → G2 → G3), per-goal pipelines, and acceptance
+live in [kings-island-goal-matrix.md](../../docs/goals/kings-island-goal-matrix.md) — canon, not
+copied here, so the two cannot drift.
+
+One decision from this effort landed in that file: **the quest-node overlay is split out of G2**
+(owner, 2026-08-27). Drawing Side Quests and Gaps as numbered nodes on dotted paths is a product
+feature, not a look — a live overlay layer that composes over whatever Skin the guest wears.
+Binding it to G2 would have made a feature earnable and left four of the five goals unable to show
+the quest loop at all. It is scheduled against the reward loop, not the Skin queue.
+
 ## Not yet specified
 
 - Design request doc beside ledgers (pillar line, exemplar pin, per-axis targets for `village-green`).

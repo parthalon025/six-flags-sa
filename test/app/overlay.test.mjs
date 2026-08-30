@@ -206,6 +206,64 @@ await check('upload seam uses local adapter; HTTP is optional', async () => {
   assert.equal(posted.payload.overlayType, 'height');
 });
 
+// #589 — Overlay is per-World: a Contribution made at one park must not be
+// painted onto the next one just because both are loaded on the same phone.
+await check('a Contribution scoped to another World does not paint this one', () => {
+  const cedarPoint = { id: 'cedar-point', bounds: { north: 41.49, south: 41.47, east: -82.68, west: -82.70 } };
+  let overlay = emptyOverlay();
+  // Authored at Kings Island (its own lat/lng and venueId), while the phone
+  // now has Cedar Point loaded.
+  overlay = applyContribution(overlay, contributionFromGapSubmit({
+    id: 'ki-restroom', type: 'restroom', venueId: 'kings-island',
+    payload: { name: 'Ohio restroom' }, lat: 39.34, lng: -84.26, now: 1,
+  }));
+  overlay = applyContribution(overlay, contributionFromGapSubmit({
+    id: 'ki-path', type: 'path', venueId: 'kings-island', lat: 39.34, lng: -84.26, now: 2,
+  }));
+  const painted = applyOverlayToPlaces(
+    [{ i: 'top-thrill', n: 'Top Thrill 2', c: 'coaster', lat: 41.48, lng: -82.69 }],
+    overlay,
+    cedarPoint,
+  );
+  assert.ok(!painted.places.some((p) => p.n === 'Ohio restroom'), 'the other World’s restroom must not appear');
+  assert.ok(!painted.pins.some((p) => p.kind === 'path'), 'the other World’s path pin must not appear');
+  assert.equal(painted.places.length, 1, 'only the shipped Cedar Point Place remains');
+});
+
+await check('a Contribution scoped to the loaded World still paints', () => {
+  const cedarPoint = { id: 'cedar-point', bounds: { north: 41.49, south: 41.47, east: -82.68, west: -82.70 } };
+  let overlay = emptyOverlay();
+  overlay = applyContribution(overlay, contributionFromGapSubmit({
+    id: 'cp-restroom', type: 'restroom', venueId: 'cedar-point',
+    payload: { name: 'Frontier restroom' }, lat: 41.48, lng: -82.69, now: 1,
+  }));
+  const painted = applyOverlayToPlaces([], overlay, cedarPoint);
+  assert.ok(painted.places.some((p) => p.n === 'Frontier restroom'));
+});
+
+await check('pre-migration Overlay with no venueId falls back to bounds', () => {
+  const cedarPoint = { id: 'cedar-point', bounds: { north: 41.49, south: 41.47, east: -82.68, west: -82.70 } };
+  let overlay = emptyOverlay();
+  // Old data recorded before #589: no venueId, and coordinates far outside
+  // the loaded World's bounds.
+  overlay = applyContribution(overlay, contributionFromGapSubmit({
+    id: 'legacy-gate', type: 'gate', payload: { name: 'Old gate' }, lat: 39.34, lng: -84.26, now: 1,
+  }));
+  const painted = applyOverlayToPlaces([], overlay, cedarPoint);
+  assert.ok(!painted.places.some((p) => p.n === 'Old gate'), 'out-of-bounds legacy fact stays out');
+});
+
+await check('no venue argument keeps prior unscoped behaviour', () => {
+  // Existing callers that never pass a venue (or tests that don't care about
+  // World scoping) must see the same painting as before this fix.
+  let overlay = emptyOverlay();
+  overlay = applyContribution(overlay, contributionFromGapSubmit({
+    id: 'anywhere-food', type: 'food', payload: { name: 'Funnel cakes' }, lat: 1, lng: 2, now: 1,
+  }));
+  const painted = applyOverlayToPlaces([], overlay);
+  assert.ok(painted.places.some((p) => p.n === 'Funnel cakes'));
+});
+
 if (FAIL.length) {
   console.error(`overlay tests: ${FAIL.length} failed`);
   for (const f of FAIL) console.error(' !', f);

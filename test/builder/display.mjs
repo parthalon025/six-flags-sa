@@ -493,8 +493,8 @@ await check('buildTiles produces base.pmtiles, or records the gap honestly', () 
 /* ------------------------------------------------------- the bake pieces -- */
 
 const {
-  bakeModel, declutterBadges, resolveKit, TERRAIN_PIECES, TEXTURE_KINDS, impliedTerrainClasses,
-  POI_BADGES,
+  bakeModel, declutterBadges, projector, resolveKit, TERRAIN_PIECES, TEXTURE_KINDS,
+  impliedTerrainClasses, POI_BADGES,
 } = await import(
   '../../packages/venue-builder/lib/display-bake.mjs'
 );
@@ -706,31 +706,87 @@ await check('every Skin bakeKit binding names a kit on disk', async () => {
   return true;
 });
 
-await check('the crop window is integral and tightens to the boundary', () => {
-  const tight = {
-    ...BAKE_MAP,
-    boundary: [[0.004, 0.004], [0.006, 0.004], [0.006, 0.006], [0.004, 0.006]],
-  };
-  const full = bakeModel({ ...tight, boundary: null }, [], { maxCols: 60 });
-  const cropped = bakeModel(tight, [], { maxCols: 60, margin: 2 });
-  assert.ok(Number.isInteger(cropped.cols) && Number.isInteger(cropped.rows), 'grid dims must be integers');
-  assert.equal(cropped.cells.length, cropped.cols * cropped.rows, 'cells must fill the grid exactly');
-  assert.ok(cropped.cols < full.cols && cropped.rows < full.rows, 'crop must tighten to the boundary');
-  assert.equal(JSON.stringify(cropped), JSON.stringify(bakeModel(tight, [], { maxCols: 60, margin: 2 })));
+// A venue whose boundary leaves slack inside its map bbox — the shape the
+// bake used to shrink to. big-kahunas is the real one: it plans 244x276 and
+// used to emit 157x191, while kings-island matched its plan only because its
+// boundary happens to fill its bbox. ADR-0021's crop question was answered
+// "don't trim, use the large tiles" (2026-08-22), so the bake now emits every
+// cell the plan asked for and the boundary decides paint, not extent.
+const SLACK_BOUNDARY_MAP = {
+  ...BAKE_MAP,
+  meta: { ...BAKE_MAP.meta, id: 'slack-park' },
+  boundary: [[0.002, 0.002], [0.008, 0.002], [0.008, 0.008], [0.002, 0.008]],
+};
+
+await check('the bake emits the whole planned grid, boundary slack and all', () => {
+  const grid = projector(SLACK_BOUNDARY_MAP, { maxCols: 60 });
+  const model = bakeModel(SLACK_BOUNDARY_MAP, [], { maxCols: 60 });
+  assert.equal(model.cols, grid.cols, 'the emitted grid is the projector’s grid');
+  assert.equal(model.rows, grid.rows, 'the emitted grid is the projector’s grid');
+  assert.equal(model.cells.length, model.cols * model.rows, 'cells must fill the grid exactly');
+  // Same venue, boundary removed: what the boundary encloses no longer changes
+  // how big a picture the bake emits.
+  const unbounded = bakeModel({ ...SLACK_BOUNDARY_MAP, boundary: null }, [], { maxCols: 60 });
+  assert.equal(model.cols, unbounded.cols, 'a boundary must not shrink the extent');
+  assert.equal(model.rows, unbounded.rows, 'a boundary must not shrink the extent');
+  // The trimming knob is gone rather than defaulted: a caller who still passes
+  // one gets the same picture as a caller who does not.
+  assert.equal(
+    JSON.stringify(bakeModel(SLACK_BOUNDARY_MAP, [], { maxCols: 60, margin: 2 })),
+    JSON.stringify(model),
+    'no margin option survives to trim the bake',
+  );
   return true;
 });
 
-await check('the bake model carries geo bounds of its crop window', () => {
-  const full = bakeModel({ ...BAKE_MAP, boundary: null }, [], { maxCols: 60 });
-  const cropped = bakeModel(BAKE_MAP, [], { maxCols: 60, margin: 1 });
-  for (const m of [full, cropped]) {
-    assert.ok(m.bounds, 'bounds ride every model');
-    assert.ok(m.bounds.west < m.bounds.east && m.bounds.south < m.bounds.north, 'WSEN ordering');
-    assert.ok(m.bounds.west >= -0.001 && m.bounds.east <= 0.011, 'inside the map bbox');
-  }
-  const span = (b) => (b.east - b.west) * (b.north - b.south);
-  assert.ok(span(cropped.bounds) < span(full.bounds), 'the crop window tightens the geo bounds');
-  assert.deepEqual(cropped.bounds, bakeModel(BAKE_MAP, [], { maxCols: 60, margin: 1 }).bounds, 'deterministic');
+await check('a band plan and its bake describe the same picture', async () => {
+  const { bandBakePlan } = await import('../../packages/venue-builder/lib/display-bands.mjs');
+  // A ~2.2 km park so every band clears the projector's 2 m cell floor, with a
+  // boundary covering barely a quarter of it — the big-kahunas shape.
+  const wide = {
+    meta: { id: 'wide-park', bounds: { n: 0.02, s: 0, e: 0.02, w: 0 } },
+    boundary: [[0.004, 0.004], [0.012, 0.004], [0.012, 0.012], [0.004, 0.012]],
+    path: [{ r: [[0.004, 0.008], [0.012, 0.008]] }],
+  };
+  const plan = bandBakePlan(wide.meta, 'overview');
+  const model = bakeModel(wide, [], { tileMetres: plan.tileMetres, band: 'overview' });
+  assert.equal(model.cols, plan.cols, 'the plan and the bake must agree on columns');
+  assert.equal(model.rows, plan.rows, 'the plan and the bake must agree on rows');
+  return true;
+});
+
+await check('bake bounds are the grid’s own corners, not a window inside them', () => {
+  const { n, s, e, w } = SLACK_BOUNDARY_MAP.meta.bounds;
+  const model = bakeModel(SLACK_BOUNDARY_MAP, [], { maxCols: 60 });
+  assert.ok(model.bounds, 'bounds ride every model');
+  assert.ok(model.bounds.west < model.bounds.east && model.bounds.south < model.bounds.north, 'WSEN ordering');
+  assert.equal(model.bounds.west, w, 'the west edge is the map’s own west edge');
+  assert.equal(model.bounds.north, n, 'the north edge is the map’s own north edge');
+  // East and south are one whole grid from those corners, so they land within
+  // a cell of the map's other two edges rather than inside the boundary box.
+  const cellDegrees = 0.01 / 60;
+  assert.ok(Math.abs(model.bounds.east - e) < cellDegrees, `east ${model.bounds.east} is not the grid's east edge`);
+  assert.ok(Math.abs(model.bounds.south - s) < cellDegrees, `south ${model.bounds.south} is not the grid's south edge`);
+  // The boundary decides paint, not placement: the same venue without one
+  // states exactly the same footprint.
+  assert.deepEqual(
+    model.bounds,
+    bakeModel({ ...SLACK_BOUNDARY_MAP, boundary: null }, [], { maxCols: 60 }).bounds,
+    'a boundary must not move the picture’s geo footprint',
+  );
+  return true;
+});
+
+await check('marks sit at the projector’s own cells, unshifted', () => {
+  const gate = { i: 'g', n: 'Gate', c: 'gate', lat: 0.005, lng: 0.005 };
+  const { toCell } = projector(SLACK_BOUNDARY_MAP, { maxCols: 60 });
+  const model = bakeModel(SLACK_BOUNDARY_MAP, [gate], { maxCols: 60 });
+  const badge = model.badges.find((b) => b.kind === 'gate');
+  assert.ok(badge, 'the gate must badge');
+  assert.deepEqual([badge.x, badge.y], toCell([gate.lng, gate.lat]), 'a badge sits at the projector’s cell');
+  const road = model.roads.find((r) => r.kind === 'path');
+  assert.ok(road, 'the path polyline must ride the model');
+  assert.deepEqual(road.pts[0], toCell(SLACK_BOUNDARY_MAP.path[0].r[0]), 'road vertices are unshifted projector cells');
   return true;
 });
 
@@ -781,20 +837,21 @@ await check('the LDtk debug export mirrors the model exactly', async () => {
   return true;
 });
 
-await check('entities outside the crop window leave the model', () => {
+await check('nothing outside the boundary is dropped — the whole bbox ships', () => {
   const withOutsider = {
     ...BAKE_MAP,
     boundary: [[0.004, 0.004], [0.009, 0.004], [0.009, 0.009], [0.004, 0.009]],
     building: [
-      { r: [[0.005, 0.005], [0.006, 0.005], [0.006, 0.006]] }, // inside the window
+      { r: [[0.005, 0.005], [0.006, 0.005], [0.006, 0.006]] }, // inside the boundary
       { r: [[0.0005, 0.0005], [0.001, 0.0005], [0.001, 0.001]] }, // a neighboring business
     ],
   };
   const outsidePoi = { i: 'far-gate', n: 'Far Gate', c: 'gate', lat: 0.0005, lng: 0.0005 };
   const insidePoi = { i: 'near-food', n: 'Near Food', c: 'food', lat: 0.006, lng: 0.006 };
-  const model = bakeModel(withOutsider, [outsidePoi, insidePoi], { maxCols: 60, margin: 1 });
-  assert.equal(model.buildings.length, 1, 'the off-window footprint is not part of this world');
-  assert.deepEqual(model.badges.map((b) => b.kind), ['food'], 'the off-window pin is dropped');
+  const model = bakeModel(withOutsider, [outsidePoi, insidePoi], { maxCols: 60 });
+  assert.equal(model.buildings.length, 2, 'a footprint beyond the boundary is still in the picture');
+  assert.deepEqual(model.badges.map((b) => b.kind).sort(), ['food', 'gate'],
+    'a pin beyond the boundary still badges');
   return true;
 });
 
@@ -822,7 +879,7 @@ await check('parking rows close into one lot, per aerial ground truth', () => {
       { r: [[0.0056, 0.004], [0.009, 0.004], [0.009, 0.006], [0.0056, 0.006]] },
     ],
   };
-  const model = bakeModel(rows, [], { maxCols: 50, margin: 0 });
+  const model = bakeModel(rows, [], { maxCols: 50 });
   const name = (t) => model.terrains[t];
   const mid = model.cells[Math.floor(0.5 * model.rows) * model.cols + Math.floor(0.5 * model.cols)];
   assert.equal(name(mid), 'lot', 'the gap between lot rows must close to lot');
@@ -838,7 +895,7 @@ await check('buildings grow no trees', () => {
     wood: [{ r: [[0.001, 0.001], [0.009, 0.001], [0.009, 0.009], [0.001, 0.009]] }],
     building: [{ r: [[0.003, 0.003], [0.007, 0.003], [0.007, 0.007], [0.003, 0.007]] }],
   };
-  const model = bakeModel(wooded, [], { maxCols: 40, margin: 0 });
+  const model = bakeModel(wooded, [], { maxCols: 40 });
   assert.ok(model.trees.length > 0, 'the woods must still grow trees');
   const ring = model.buildings[0].ring;
   const xs = ring.map(([x]) => x); const ys = ring.map(([, y]) => y);
@@ -940,14 +997,13 @@ await check('an unknown band is refused at the bake, not silently ignored', () =
   return true;
 });
 
-await check('crop shifts roads with the window', () => {
-  const model = bakeModel(BAKE_MAP, [], { maxCols: 60, margin: 2 });
+await check('roads keep the projector’s coordinates across the whole grid', () => {
+  const { toCell } = projector(SLACK_BOUNDARY_MAP, { maxCols: 60 });
+  const model = bakeModel(SLACK_BOUNDARY_MAP, [], { maxCols: 60 });
   assert.ok(model.roads.length >= 1, 'path polyline expected');
   for (const road of model.roads) {
-    for (const [x, y] of road.pts) {
-      assert.ok(x >= -2 && x <= model.cols + 2 && y >= -2 && y <= model.rows + 2,
-        'road points must live in the cropped window');
-    }
+    assert.deepEqual(road.pts, SLACK_BOUNDARY_MAP.path[0].r.map(toCell),
+      'road points are truth projected once, never shifted again');
   }
   return true;
 });
@@ -1063,12 +1119,12 @@ await check('runDisplayStage with bakes: folds certs, binds the primary kit via 
   assert.throws(
     () => pyramidBoundsFromCert(null),
     /cert\.bounds/,
-    'a pyramid without a bake cert cannot invent a crop',
+    'a pyramid without a bake cert cannot invent a placement',
   );
   assert.throws(
     () => pyramidBoundsFromCert({ bounds: FIXTURE_MAP.meta.bounds }),
     /cert\.bounds/,
-    'map.meta.bounds is not a bake cert — crop window only',
+    'map.meta.bounds is not a bake cert — the emitted image places itself',
   );
   assert.deepEqual(
     pyramidBoundsFromCert({ bounds: { west: 0, south: 0, east: 0.01, north: 0.01 } }),

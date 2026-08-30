@@ -10,9 +10,16 @@
       "CONTEXT.md",
       "docs/adr"
     ],
-    "sha256": "03b3c7a24d33955d51013fd90c93c9f225f29002729cfa182a2dc07c15996dad"
+    "sha256": "29d34b9a2c94eb89da6b0cbc7da6fe0c306c967233835902037804a232c592c1"
   },
   "paths": [
+    {
+      "id": "intro-scroll-story",
+      "slice": "Navigate",
+      "user_action": "Scroll the first-run intro through the brand story and the Party pitch; the footer's Skip intro becomes Get started once it is read, and a returning guest never sees it again",
+      "suite": "functional",
+      "check": "the intro is a scroll story: Skip becomes Get started once read, and a returning guest never sees it"
+    },
     {
       "id": "intake-welcome",
       "slice": "Navigate",
@@ -26,6 +33,20 @@
       "user_action": "Confirm nearest World and load its map",
       "suite": "functional",
       "check": "the nearest-park button asks before building that park"
+    },
+    {
+      "id": "map-decisions-hold",
+      "slice": "Navigate",
+      "user_action": "Read a park map that still draws what was asked for — coaster track heavy enough to navigate by, walkways and broad areas as shapes with smooth bends rather than hairlines",
+      "suite": "functional",
+      "check": "the map still draws the decisions it was asked for"
+    },
+    {
+      "id": "map-marks-fade-in",
+      "slice": "Navigate",
+      "user_action": "Pinch or pan the map and have Places arrive rather than pop",
+      "suite": "functional",
+      "check": "a Place that enters on a pinch or a pan fades in rather than snapping"
     },
     {
       "id": "settings-credits",
@@ -121,7 +142,7 @@
     {
       "id": "grandma-core",
       "slice": "Navigate",
-      "user_action": "First-time visitor can complete toilet → food → walk",
+      "user_action": "First-time visitor can complete toilet \u2192 food \u2192 walk",
       "suite": "grandma",
       "check_includes": "toilet"
     },
@@ -133,11 +154,19 @@
       "check": "anonymous can start a party by name"
     },
     {
-      "id": "clerk-profile-oauth",
+      "id": "clerk-profile-sign-in",
       "slice": "EP",
-      "user_action": "Sign in or Guest from the Profile gate; Google/Apple on /sign-in",
+      "user_action": "Reach a Profile from Settings \u2014 the sign-in card offers Sign in, which opens the Clerk route",
       "suite": "functional",
-      "check": "Profile gate shows Sign in and Guest"
+      "check": "Settings sign-in card matches Clerk routes",
+      "note": "Was clerk-profile-oauth, naming a Profile gate that carried Sign in and Guest together. That gate (AuthGate) is mounted nowhere \u2014 in-place OAuth on it broke live \u2014 so the row named a shape the app retired and a check nothing had written (#24). Google/Apple on /sign-in is the row below."
+    },
+    {
+      "id": "clerk-sign-in-oauth",
+      "slice": "EP",
+      "user_action": "Sign in with Google or Apple from /sign-in",
+      "suite": "functional",
+      "check": "sign-in route shows Google and Apple logo buttons"
     },
     {
       "id": "ep5-sharing",
@@ -158,7 +187,7 @@
       "slice": "Adventure",
       "user_action": "Steward accepts a durable contribution and consolidate dry-run names the venue action",
       "suite": "functional",
-      "check": "POST → accept → consolidate dry-run names venue, action, and contribution id"
+      "check": "POST \u2192 accept \u2192 consolidate dry-run names venue, action, and contribution id"
     },
     {
       "id": "e91-quest-sync",
@@ -191,7 +220,7 @@
     {
       "id": "spot-mark",
       "slice": "Adventure",
-      "user_action": "Leave a Mark standing at the tapped spot — an anchor is what unlocks placement",
+      "user_action": "Leave a Mark standing at the tapped spot \u2014 an anchor is what unlocks placement",
       "suite": "functional",
       "check": "Leave a Mark places a Mark at the tapped spot"
     },
@@ -291,14 +320,15 @@
       "slice": "Party",
       "user_action": "Leave the Party and drop off the other rosters",
       "suite": "functional",
-      "check": "leaving removes the member from the other phone’s roster"
+      "check": "leaving removes the member from the other phone\u2019s roster"
     },
     {
-      "id": "iso-custom-map",
+      "id": "pixel-tycoon-map",
       "slice": "Adventure",
-      "user_action": "Wear the Pixel tycoon Skin and see its isometric Custom map",
+      "user_action": "Wear the Pixel tycoon Skin and keep a map to navigate by",
       "suite": "functional",
-      "check": "wearing Pixel tycoon draws the isometric custom map"
+      "check": "wearing Pixel tycoon keeps the MapLibre map (OSM until a bake exists)",
+      "note": "Was iso-custom-map. ADR-0021 clause 6 converted the kit off iso and slice h14 retired the iso Custom map; the row outlived the capability it claimed. The Wear still ships, so the row names what it does now \u2014 the check asserts the iso layer is gone (#24)."
     },
     {
       "id": "baked-world-map",
@@ -313,22 +343,21 @@
       "user_action": "Wear a Skin and see this World's Zones repainted in that Skin's own palette",
       "suite": "functional",
       "check": "wearing a Skin repaints the World's Zones from its own display pack"
-    }
-  ],
-  "upcoming": [
+    },
     {
       "id": "train-h-zoom-bands",
       "slice": "Navigate",
       "user_action": "Pinch from park overview in to one ride and see detail emerge, never a hard band cut or a tilt and restyle in the same instant",
       "suite": "functional",
-      "check": "TODO (Train H, ADR-0021 clauses 2/4): crossing each band boundary keeps a parent placeholder drawn, ramps added content across the crossfade, and holds the pitch ease off the boundary"
+      "check": "crossing each band boundary keeps a parent placeholder drawn, ramps added content across the crossfade, and holds the pitch ease off the boundary"
     },
     {
       "id": "train-h-offline-download",
       "slice": "Navigate",
       "user_action": "Choose 'make this park available offline' and see the download size stated before it runs",
       "suite": "functional",
-      "check": "TODO (Train H, ADR-0021 clause 5): the offline action states its size, runs only on the guest's choice, and no pyramid downloads on Skin wear"
+      "check": "the offline action states its size, runs only on the guest's choice, and no pyramid downloads on Skin wear"
     }
-  ]
+  ],
+  "upcoming": []
 }

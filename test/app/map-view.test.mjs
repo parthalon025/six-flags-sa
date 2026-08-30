@@ -576,6 +576,36 @@ const OVERLAY = overlayGeoJson(
 }
 
 // ---------------------------------------------------------------------------
+// Retinting. The World a caller mounted with is not the last World it ever
+// has: `useZoneTones`'s fetch for a Skin's published palette lands after the
+// mount effect already committed, so a corrected World — same id, same
+// bounds, a Zone's `tint` property now the Skin's own colour rather than the
+// generic name-hue fallback — has to reach an *already-built* renderer without
+// a remount. `retint` is that path. It is optional on the renderer, the way
+// `project` and `engine` are: a renderer with no live source to correct (a
+// future PBR tier, a test double) is not broken for lacking one.
+// ---------------------------------------------------------------------------
+
+{
+  // A renderer that never declares `retint` does not make the seam throw —
+  // the capability is optional, not every renderer owns a live source to
+  // correct in place.
+  const view = mount({ renderer: recordingRenderer() });
+  assert.doesNotThrow(() => view.retint({ id: 'kings-island', geometry: {} }));
+}
+
+{
+  const seen = [];
+  const renderer = recordingRenderer({ retint: (world) => seen.push(world) });
+  const view = mount({ renderer });
+  const corrected = { id: 'kings-island', geometry: { lands: { type: 'FeatureCollection', features: [] } } };
+
+  view.retint(corrected);
+  assert.equal(seen.length, 1, 'a renderer that owns retint is handed the corrected World');
+  assert.equal(seen[0], corrected, 'the World crosses whole, the way attach() hands one over');
+}
+
+// ---------------------------------------------------------------------------
 // Hit testing. The renderer knows where a pixel is; only the seam knows what a
 // Place is. So the renderer answers with an id and the Place comes back from
 // Truth — a renderer can never hand a caller a Place the venue does not have.
@@ -635,6 +665,7 @@ const OVERLAY = overlayGeoJson(
   assert.throws(() => view.setOverlay(OVERLAY), /destroyed/i);
   assert.throws(() => view.hitTest({ x: 1, y: 2 }), /destroyed/i);
   assert.throws(() => view.setAvailableBands(['mid']), /destroyed/i);
+  assert.throws(() => view.retint({ id: 'kings-island', geometry: {} }), /destroyed/i);
   assert.equal(
     renderer.calls.filter((c) => c.call !== 'attach' && c.call !== 'detach').length,
     0,
@@ -1037,7 +1068,21 @@ const GEOMETRY = worldGeoJson({
   const layerFor = (id) => skinned.layers.find((l) => l.id === worldLayer(id));
   assert.equal(layerFor('water').paint['fill-color'], '#004080', "the Skin's water is the water drawn");
   assert.equal(layerFor('path').paint['line-color'], '#ffcc00');
-  assert.equal(layerFor('path').paint['line-width'], 3);
+  /* The Skin's own width leads the zoom ramp rather than being replaced by
+     it: at walking scale the midway is exactly the 3px this Skin asked for,
+     and the wide end is a proportion of that. A Skin that draws a wider
+     midway still gets a wider midway — it just thins out on the way out. */
+  {
+    const width = layerFor('path').paint['line-width'];
+    assert.ok(Array.isArray(width) && width[0] === 'interpolate', 'the midway ramps with zoom');
+    const at = (zoom) => {
+      const stops = width.slice(3);
+      for (let i = 0; i < stops.length; i += 2) if (stops[i] === zoom) return stops[i + 1];
+      return null;
+    };
+    assert.equal(at(16), 3, "the Skin's width is the walking-scale width");
+    assert.ok(at(12) < 3, 'and it is thinner when the whole park is on screen');
+  }
   assert.equal(skinned.layers.find((l) => l.id === 'bg').paint['background-color'], '#101010');
 
   const plain = bandedWorldStyle({ world: { ...WORLD, geometry: GEOMETRY } });
@@ -1435,23 +1480,51 @@ const read = (name) => JSON.parse(readFileSync(new URL(name, VENUES), 'utf8'));
   const hidden = worldLodVisibility(parkWide);
   assert.equal(hidden.grass, false);
   assert.equal(hidden.building, false);
-  assert.equal(hidden.coaster, false);
   assert.equal(hidden.service, false);
   assert.equal(hidden.slide, false);
   assert.equal(hidden['path-case'], false);
   const shown = worldLodVisibility(walking);
   assert.equal(shown.grass, true);
   assert.equal(shown.building, true);
-  assert.equal(shown.coaster, true);
   assert.equal(shown.service, true);
   assert.equal(shown.slide, true);
   assert.equal(shown['path-case'], true);
+
+  /* Coaster track is in no LOD group, at either end. A layer this table does
+     not name is never toggled, which is how it stays drawn at every zoom —
+     the park-wide view of a coaster park has coasters in it. Quieting it at
+     the wide end is paint's job (mapViewStyle.js ramps width and opacity),
+     and `test/app/map-decisions.json` holds that. Asserted at both ends
+     because "always drawn" is the decision, not "drawn at the zoom I
+     happened to check". */
+  assert.equal(hidden.coaster, undefined, 'track is not hidden at park-wide');
+  assert.equal(shown.coaster, undefined, 'and is not toggled when walking either');
+
+  /* A loaded bake takes the whole vector tier off screen — the Visual
+     factory's image IS the map at that point, and Truth geometry drawn under
+     it is work for nobody and a bleed risk through the bake's soft edges.
+     Every layer, not just the ones the LOD table names. */
+  const { worldTierVisibility } = await import('../../apps/party-tracker/lib/worldLod.js');
+  const { WORLD_LAYERS: TIER } = await import('../../apps/party-tracker/lib/worldGeo.js');
+  const baked = worldTierVisibility(walking, { covered: true });
+  for (const { id } of TIER) assert.equal(baked[id], false, `${id} is hidden under a loaded bake`);
+  assert.equal(baked['path-case'], false, 'including the midway casing');
+
+  /* And ADR-0019's fallback survives: with no bake on screen the tier draws,
+     so a pack that never downloads leaves a working map rather than an empty
+     one. This is why the renderer asks isSourceLoaded rather than trusting a
+     Skin's declaration. */
+  const unbaked = worldTierVisibility(walking, { covered: false });
+  assert.equal(unbaked.path, true, 'no bake on screen, so Truth still draws');
+  assert.equal(unbaked.coaster, true);
+  assert.equal(worldTierVisibility(parkWide, { covered: false }).grass, false, 'and zoom LOD still applies under it');
 
   const seam = readFileSync(new URL('../../apps/party-tracker/lib/mapView.js', import.meta.url), 'utf8');
   assert.match(seam, /worldLodGroups/, 'LOD groups live on the zoom seam, next to the band plan');
   const adapter = readFileSync(new URL('../../apps/party-tracker/lib/mapViewMaplibre.js', import.meta.url), 'utf8');
   assert.match(adapter, /plan\.worldLod/, 'the adapter paints the seam\'s LOD, it does not choose it');
-  assert.match(adapter, /worldLodVisibility/, 'layer ids come from the lod table, not a second list');
+  assert.match(adapter, /worldTierVisibility/, 'layer ids come from the lod table, not a second list');
+  assert.doesNotMatch(adapter, /WORLD_LAYERS/, 'and the adapter does not enumerate the tier itself');
   assert.doesNotMatch(adapter, /worldLodGroups/, 'the adapter does not recompute groups mid-pinch');
 }
 
