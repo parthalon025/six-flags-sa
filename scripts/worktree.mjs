@@ -24,25 +24,25 @@
  * leftover dirs. Dispatched `isolation: worktree` also leaves CWD on the
  * primary checkout on this host — work in the absolute `WORKTREE=` path.
  */
-import { execFileSync } from "node:child_process";
-import { scrubGitEnv } from "./lib/git-env.mjs";
-import { existsSync, rmSync, statSync } from "node:fs";
-import { join, normalize, relative, resolve, sep } from "node:path";
-import { pathToFileURL } from "node:url";
+import { execFileSync } from 'node:child_process';
+import { scrubGitEnv } from './lib/git-env.mjs';
+import { existsSync, rmSync, statSync } from 'node:fs';
+import { join, normalize, relative, resolve, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
-export const AGENT_DIR = ".claude/worktrees";
-const LEGACY_AGENT_DIR = ".worktrees";
-const BRANCH_PREFIX = "worktree-";
+export const AGENT_DIR = '.claude/worktrees';
+const LEGACY_AGENT_DIR = '.worktrees';
+const BRANCH_PREFIX = 'worktree-';
 
 export function sanitizeSlug(raw) {
-  let slug = String(raw || "")
+  let slug = String(raw || '')
     .trim()
     .toLowerCase()
-    .replace(/^worktree-/, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
+    .replace(/^worktree-/, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
     .slice(0, 50);
-  if (!slug) throw new Error("slug must contain a letter or digit");
+  if (!slug) throw new Error('slug must contain a letter or digit');
   return slug;
 }
 
@@ -59,20 +59,19 @@ export function shouldRemoveOnPrune({ dirty, locked, aheadCount, prMerged }) {
 }
 
 export function isProtectedBranch(name) {
-  const n = String(name || "");
-  if (!n || n === "main" || n === "master" || n === "develop" || n === "dev")
-    return true;
-  return n.startsWith("wip/");
+  const n = String(name || '');
+  if (!n || n === 'main' || n === 'master' || n === 'develop' || n === 'dev') return true;
+  return n.startsWith('wip/');
 }
 
 export function isAgentBranch(name) {
-  return String(name || "").startsWith("worktree-");
+  return String(name || '').startsWith('worktree-');
 }
 
 /** The archive ref a branch is preserved under, so a reclaimed container
  *  cannot take unpushed work with it. */
 export function archiveRefFor(name) {
-  return `archive/${String(name || "").replace(/^archive\//, "")}`;
+  return `archive/${String(name || '').replace(/^archive\//, '')}`;
 }
 
 /** Does this branch hold work that exists nowhere but this disk?
@@ -80,45 +79,52 @@ export function archiveRefFor(name) {
  *  Deliberately NOT limited to `worktree-*`. The branches that went unprotected
  *  for a week were `slice-h14`, `slice-h18` and friends — created by workflow
  *  fan-out, never matched by `isAgentBranch`, so `prune`'s "still has unique
- *  commits" guard never even considered them. Anything with commits not on the
- *  base and no matching archive on the remote is at risk, whatever it is called.
+ *  commits" guard never even considered them (#803).
+ *
+ *  Deliberately NOT isProtectedBranch either. Protecting a branch from DELETION
+ *  is a different question from excluding it from PRESERVATION: `wip/*` is
+ *  protected from deletion precisely because it is where unfinished work is
+ *  parked, which makes it the branch most likely to hold the only copy of
+ *  something. `main` is the same — local commits on main are unpushed work.
+ *  The only exclusion is an archive ref itself, which is the preservation
+ *  rather than the work.
  *
  *  `archivedSha` is the remote `archive/<name>` tip, or '' when there is none.
  *  Comparing tips rather than mere existence is what makes this re-runnable: a
  *  branch that gains a commit after being archived is at risk again.
  *
- *  Deliberately conservative. `aheadCount` counts commits, so a branch whose
- *  work reached main through a SQUASH merge still looks ahead and gets archived
- *  again — a false positive. That is the trade taken on purpose: a false
- *  positive costs one ref on the remote, a false negative costs the work. Do
- *  not make this cleverer by testing whether the content landed; that test is
- *  subtle (patch-ids differ after a squash, and `--merged` lies for the same
- *  reason) and getting it wrong deletes the only copy. */
+ *  Deliberately conservative: `aheadCount` counts commits, so a branch whose
+ *  work reached main through a SQUASH merge still looks ahead and is archived
+ *  again. That false positive costs one ref; the false negative costs the work.
+ *  Do not make this cleverer by testing whether the content landed — patch-ids
+ *  differ after a squash and `git branch --merged` lies for the same reason,
+ *  and getting it wrong deletes the only copy. */
 export function needsPreserving({ name, aheadCount, tipSha, archivedSha }) {
-  const n = String(name || "");
+  const n = String(name || '');
   if (!n) return false;
-  // Deliberately NOT isProtectedBranch. Protecting a branch from DELETION is a
-  // different question from excluding it from PRESERVATION, and conflating the
-  // two was a real bug: `wip/*` is protected from deletion precisely because it
-  // is where unfinished work is parked, which makes it the branch most likely
-  // to hold the only copy of something. Excluding it inverted the whole point.
-  // Same for `main` — local commits on main are still unpushed work.
-  //
-  // The only exclusion is an archive ref itself: it is the preservation, not
-  // the work, and archiving it would nest archive/archive/...
-  if (n.startsWith("archive/")) return false;
+  if (n.startsWith('archive/')) return false;
   if (Number(aheadCount) === 0) return false;
   if (!tipSha) return false;
-  return String(archivedSha || "") !== String(tipSha);
+  return String(archivedSha || '') !== String(tipSha);
 }
 
-export function shouldDeleteBranch({
-  name,
-  aheadCount,
-  hasWorktree,
-  prMerged,
-  force,
-}) {
+/** What actually went wrong, for a report that has to be actionable.
+ *
+ *  git puts the useful part (non-fast-forward, auth, hook rejection) on stderr;
+ *  err.message is only "Command failed: git push ...". Reporting the message
+ *  alone says a rescue failed but never why. */
+export function failureReason(err) {
+  const detail = String(err?.stderr || '').trim();
+  const text = detail || String(err?.message || err || '').trim();
+  return text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .slice(-2)
+    .join(' | ');
+}
+
+export function shouldDeleteBranch({ name, aheadCount, hasWorktree, prMerged, force }) {
   if (isProtectedBranch(name)) return false;
   if (hasWorktree && !force) return false;
   if (force || prMerged) return true;
@@ -128,10 +134,10 @@ export function shouldDeleteBranch({
 /** Drop a directory without following NTFS junctions into their targets. */
 export function removeDirSafe(dir) {
   if (!existsSync(dir)) return;
-  if (process.platform === "win32") {
-    execFileSync("cmd.exe", ["/c", "rmdir", "/S", "/Q", dir], {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
+  if (process.platform === 'win32') {
+    execFileSync('cmd.exe', ['/c', 'rmdir', '/S', '/Q', dir], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
     return;
   }
@@ -141,11 +147,11 @@ export function removeDirSafe(dir) {
 function git(cwd, args, opts = {}) {
   // An inherited GIT_DIR outranks `cwd`, so a hook-spawned run would
   // silently operate on the hook's repository. See scripts/lib/git-env.mjs.
-  return execFileSync("git", args, {
+  return execFileSync('git', args, {
     cwd,
     env: scrubGitEnv(),
-    encoding: "utf8",
-    stdio: opts.stdio ?? ["ignore", "pipe", "pipe"],
+    encoding: 'utf8',
+    stdio: opts.stdio ?? ['ignore', 'pipe', 'pipe'],
   }).trim();
 }
 
@@ -153,12 +159,12 @@ function gitOk(cwd, args) {
   try {
     return git(cwd, args);
   } catch {
-    return "";
+    return '';
   }
 }
 
 function repoRoot(cwd = process.cwd()) {
-  return git(cwd, ["rev-parse", "--show-toplevel"]);
+  return git(cwd, ['rev-parse', '--show-toplevel']);
 }
 
 function agentRoots(root) {
@@ -167,63 +173,51 @@ function agentRoots(root) {
 
 function isInside(rootDir, target) {
   const rel = relative(resolve(rootDir), resolve(target));
-  return (
-    rel === "" ||
-    (!rel.startsWith(`..${sep}`) &&
-      rel !== ".." &&
-      !rel.startsWith("../") &&
-      !rel.startsWith("..\\"))
-  );
+  return rel === '' || (!rel.startsWith(`..${sep}`) && rel !== '..' && !rel.startsWith('../') && !rel.startsWith('..\\'));
 }
 
 export function isAgentWorktreePath(root, target) {
   const resolved = resolve(target);
-  return agentRoots(root).some(
-    (dir) => isInside(dir, resolved) && resolve(dir) !== resolved,
-  );
+  return agentRoots(root).some((dir) => isInside(dir, resolved) && resolve(dir) !== resolved);
 }
 
 function parsePorcelain(text) {
   const trees = [];
   let current = {};
-  for (const line of String(text || "").split(/\r?\n/)) {
+  for (const line of String(text || '').split(/\r?\n/)) {
     if (!line) {
       if (current.worktree) trees.push(current);
       current = {};
       continue;
     }
-    if (line.startsWith("worktree ")) current.worktree = line.slice(9);
-    else if (line.startsWith("branch "))
-      current.branch = line.slice(7).replace(/^refs\/heads\//, "");
-    else if (line === "bare") current.bare = true;
-    else if (line === "locked" || line.startsWith("locked "))
-      current.locked = true;
-    else if (line === "prunable" || line.startsWith("prunable "))
-      current.prunable = true;
+    if (line.startsWith('worktree ')) current.worktree = line.slice(9);
+    else if (line.startsWith('branch ')) current.branch = line.slice(7).replace(/^refs\/heads\//, '');
+    else if (line === 'bare') current.bare = true;
+    else if (line === 'locked' || line.startsWith('locked ')) current.locked = true;
+    else if (line === 'prunable' || line.startsWith('prunable ')) current.prunable = true;
   }
   if (current.worktree) trees.push(current);
   return trees;
 }
 
 function listTrees(root) {
-  return parsePorcelain(gitOk(root, ["worktree", "list", "--porcelain"]));
+  return parsePorcelain(gitOk(root, ['worktree', 'list', '--porcelain']));
 }
 
 function defaultBase(root) {
-  gitOk(root, ["fetch", "origin", "main"]);
-  if (gitOk(root, ["rev-parse", "--verify", "origin/main"]))
-    return "origin/main";
-  if (gitOk(root, ["rev-parse", "--verify", "main"])) return "main";
-  return "HEAD";
+  gitOk(root, ['fetch', 'origin', 'main']);
+  if (gitOk(root, ['rev-parse', '--verify', 'origin/main'])) return 'origin/main';
+  if (gitOk(root, ['rev-parse', '--verify', 'main'])) return 'main';
+  return 'HEAD';
 }
 
 function aheadCount(root, branch, base) {
-  const out = gitOk(root, ["rev-list", "--count", `${base}..${branch}`]);
+  const out = gitOk(root, ['rev-list', '--count', `${base}..${branch}`]);
   return out ? Number(out) : 0;
 }
 
 function isDirty(path) {
-  return gitOk(path, ["status", "--porcelain"]) !== "";
+  return gitOk(path, ['status', '--porcelain']) !== '';
 }
 
 function slugFromPath(root, path) {
@@ -232,11 +226,11 @@ function slugFromPath(root, path) {
       return normalize(relative(dir, path)).split(/[\\/]/)[0];
     }
   }
-  return "";
+  return '';
 }
 
 function resolveTarget(root, slugOrPath) {
-  if (!slugOrPath) throw new Error("usage: remove <slug-or-path>");
+  if (!slugOrPath) throw new Error('usage: remove <slug-or-path>');
   if (existsSync(slugOrPath) && statSync(slugOrPath).isDirectory()) {
     return resolve(slugOrPath);
   }
@@ -246,18 +240,9 @@ function resolveTarget(root, slugOrPath) {
 function mergedPrHeads() {
   try {
     const raw = execFileSync(
-      "gh",
-      [
-        "pr",
-        "list",
-        "--state",
-        "merged",
-        "--limit",
-        "100",
-        "--json",
-        "headRefName",
-      ],
-      { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+      'gh',
+      ['pr', 'list', '--state', 'merged', '--limit', '100', '--json', 'headRefName'],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
     );
     const rows = JSON.parse(raw);
     return new Set((rows || []).map((r) => r.headRefName).filter(Boolean));
@@ -267,11 +252,7 @@ function mergedPrHeads() {
 }
 
 function localBranches(root) {
-  const out = gitOk(root, [
-    "for-each-ref",
-    "--format=%(refname:short)",
-    "refs/heads",
-  ]);
+  const out = gitOk(root, ['for-each-ref', '--format=%(refname:short)', 'refs/heads']);
   return out ? out.split(/\r?\n/).filter(Boolean) : [];
 }
 
@@ -280,49 +261,34 @@ function branchHasWorktree(root, name) {
 }
 
 function remoteHasBranch(root, name) {
-  return gitOk(root, ["ls-remote", "--heads", "origin", name]) !== "";
+  return gitOk(root, ['ls-remote', '--heads', 'origin', name]) !== '';
 }
 
 function switchOffBranch(root, name) {
-  if (gitOk(root, ["branch", "--show-current"]) !== name) return;
+  if (gitOk(root, ['branch', '--show-current']) !== name) return;
   if (isDirty(root)) {
-    throw new Error(
-      `cannot delete checked-out branch ${name} while the working tree is dirty`,
-    );
+    throw new Error(`cannot delete checked-out branch ${name} while the working tree is dirty`);
   }
-  if (gitOk(root, ["rev-parse", "--verify", "main"])) {
-    git(root, ["switch", "-q", "main"]);
+  if (gitOk(root, ['rev-parse', '--verify', 'main'])) {
+    git(root, ['switch', '-q', 'main']);
     return;
   }
-  git(root, ["switch", "-q", "--detach", "HEAD"]);
+  git(root, ['switch', '-q', '--detach', 'HEAD']);
 }
 
-function deleteAgentBranch(
-  root,
-  name,
-  { force = false, prMerged = false } = {},
-) {
-  if (!name || isProtectedBranch(name))
-    return { deleted: false, remote: false };
+function deleteAgentBranch(root, name, { force = false, prMerged = false } = {}) {
+  if (!name || isProtectedBranch(name)) return { deleted: false, remote: false };
   const hasWorktree = branchHasWorktree(root, name);
   const ahead = aheadCount(root, name, defaultBase(root));
-  if (
-    !shouldDeleteBranch({
-      name,
-      aheadCount: ahead,
-      hasWorktree,
-      prMerged,
-      force,
-    })
-  ) {
+  if (!shouldDeleteBranch({ name, aheadCount: ahead, hasWorktree, prMerged, force })) {
     return { deleted: false, remote: false };
   }
   switchOffBranch(root, name);
-  gitOk(root, ["branch", "-D", name]);
+  gitOk(root, ['branch', '-D', name]);
   let remote = false;
   if (remoteHasBranch(root, name)) {
-    gitOk(root, ["push", "origin", "--delete", name]);
-    gitOk(root, ["fetch", "origin", "--prune"]);
+    gitOk(root, ['push', 'origin', '--delete', name]);
+    gitOk(root, ['fetch', 'origin', '--prune']);
     remote = true;
   }
   return { deleted: true, remote };
@@ -341,25 +307,21 @@ function create(root, rawSlug) {
     throw new Error(`path already exists: ${path}`);
   }
   if (trees.some((t) => t.branch === branch)) {
-    throw new Error(
-      `branch ${branch} is already checked out in another worktree`,
-    );
+    throw new Error(`branch ${branch} is already checked out in another worktree`);
   }
-  if (gitOk(root, ["rev-parse", "--verify", `refs/heads/${branch}`])) {
+  if (gitOk(root, ['rev-parse', '--verify', `refs/heads/${branch}`])) {
     throw new Error(`branch ${branch} already exists — pick a different slug`);
   }
 
   const base = defaultBase(root);
-  git(root, ["worktree", "add", "-b", branch, path, base]);
+  git(root, ['worktree', 'add', '-b', branch, path, base]);
   return { path, branch, base };
 }
 
 function remove(root, slugOrPath, { force = false } = {}) {
   const path = resolveTarget(root, slugOrPath);
   if (!isAgentWorktreePath(root, path)) {
-    throw new Error(
-      `refusing to remove ${path} — not an agent worktree under ${AGENT_DIR}/`,
-    );
+    throw new Error(`refusing to remove ${path} — not an agent worktree under ${AGENT_DIR}/`);
   }
 
   const trees = listTrees(root);
@@ -374,27 +336,22 @@ function remove(root, slugOrPath, { force = false } = {}) {
   }
 
   if (entry) {
-    gitOk(root, ["worktree", "unlock", path]);
+    gitOk(root, ['worktree', 'unlock', path]);
     try {
-      git(root, ["worktree", "remove", ...(force ? ["--force"] : []), path]);
+      git(root, ['worktree', 'remove', ...(force ? ['--force'] : []), path]);
     } catch (err) {
       if (!force) throw err;
-      git(root, ["worktree", "remove", "--force", path]);
+      git(root, ['worktree', 'remove', '--force', path]);
     }
   } else if (existsSync(path)) {
     removeDirSafe(path);
   }
-  gitOk(root, ["worktree", "prune"]);
+  gitOk(root, ['worktree', 'prune']);
 
   const deleted = branch
     ? deleteAgentBranch(root, branch, { force })
     : { deleted: false, remote: false };
-  return {
-    path,
-    branch,
-    branchDeleted: deleted.deleted,
-    remoteDeleted: deleted.remote,
-  };
+  return { path, branch, branchDeleted: deleted.deleted, remoteDeleted: deleted.remote };
 }
 
 function formatList(root) {
@@ -403,58 +360,46 @@ function formatList(root) {
   for (const t of listTrees(root)) {
     const path = t.worktree;
     const flags = [
-      resolve(path) === main ? "primary" : "",
-      t.locked ? "locked" : "",
-      existsSync(path) && isDirty(path) ? "dirty" : "",
+      resolve(path) === main ? 'primary' : '',
+      t.locked ? 'locked' : '',
+      existsSync(path) && isDirty(path) ? 'dirty' : '',
     ].filter(Boolean);
     const slug = slugFromPath(root, path);
-    const label = slug || (resolve(path) === main ? "(primary)" : path);
-    lines.push(
-      `  ${label}  ${t.branch || "(detached)"}  ${path}${flags.length ? `  [${flags.join(", ")}]` : ""}`,
-    );
+    const label = slug || (resolve(path) === main ? '(primary)' : path);
+    lines.push(`  ${label}  ${t.branch || '(detached)'}  ${path}${flags.length ? `  [${flags.join(', ')}]` : ''}`);
   }
   return lines;
 }
 
 function leftoverAgentBranches(root) {
-  const checkedOut = new Set(
-    listTrees(root)
-      .map((t) => t.branch)
-      .filter(Boolean),
-  );
-  return localBranches(root).filter(
-    (name) => isAgentBranch(name) && !checkedOut.has(name),
-  );
+  const checkedOut = new Set(listTrees(root).map((t) => t.branch).filter(Boolean));
+  return localBranches(root).filter((name) => isAgentBranch(name) && !checkedOut.has(name));
 }
 
 function status(root) {
   const cwd = resolve(process.cwd());
   const here = listTrees(root).find((t) => resolve(t.worktree) === cwd);
-  const agent = formatList(root).filter((l) => !l.includes("  (primary)  "));
+  const agent = formatList(root).filter((l) => !l.includes('  (primary)  '));
   const leftover = leftoverAgentBranches(root);
   const lines = [
-    `checkout: ${cwd}  [${here?.branch || gitOk(cwd, ["branch", "--show-current"]) || "unknown"}]`,
+    `checkout: ${cwd}  [${here?.branch || gitOk(cwd, ['branch', '--show-current']) || 'unknown'}]`,
     here && isAgentWorktreePath(root, cwd)
-      ? "this session is already in an agent worktree"
-      : "this session is in the primary checkout — create a worktree before editing",
+      ? 'this session is already in an agent worktree'
+      : 'this session is in the primary checkout — create a worktree before editing',
     `agent worktrees (${agent.length}):`,
-    ...(agent.length ? agent : ["  (none)"]),
+    ...(agent.length ? agent : ['  (none)']),
     `leftover agent branches (${leftover.length}):`,
-    ...(leftover.length ? leftover.map((b) => `  ${b}`) : ["  (none)"]),
+    ...(leftover.length ? leftover.map((b) => `  ${b}`) : ['  (none)']),
   ];
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 function prune(root, { merged = false } = {}) {
-  gitOk(root, ["worktree", "prune"]);
-  const trees = listTrees(root).filter((t) =>
-    isAgentWorktreePath(root, t.worktree),
-  );
+  gitOk(root, ['worktree', 'prune']);
+  const trees = listTrees(root).filter((t) => isAgentWorktreePath(root, t.worktree));
   const heads = merged ? mergedPrHeads() : new Set();
   if (merged && heads === null) {
-    throw new Error(
-      "prune --merged needs gh (GitHub CLI) to confirm merged PRs",
-    );
+    throw new Error('prune --merged needs gh (GitHub CLI) to confirm merged PRs');
   }
   const removed = [];
   if (merged) {
@@ -462,15 +407,12 @@ function prune(root, { merged = false } = {}) {
     for (const t of trees) {
       const dirty = existsSync(t.worktree) && isDirty(t.worktree);
       const ahead = t.branch ? aheadCount(root, t.branch, base) : 1;
-      if (
-        !shouldRemoveOnPrune({
-          dirty,
-          locked: Boolean(t.locked),
-          aheadCount: ahead,
-          prMerged: heads.has(t.branch),
-        })
-      )
-        continue;
+      if (!shouldRemoveOnPrune({
+        dirty,
+        locked: Boolean(t.locked),
+        aheadCount: ahead,
+        prMerged: heads.has(t.branch),
+      })) continue;
       remove(root, t.worktree, { force: false });
       removed.push(t.worktree);
     }
@@ -486,47 +428,28 @@ function prune(root, { merged = false } = {}) {
     if (result.deleted) deletedBranches.push(name);
   }
 
-  const leftoverTrees = listTrees(root).filter((t) =>
-    isAgentWorktreePath(root, t.worktree),
-  );
+  const leftoverTrees = listTrees(root).filter((t) => isAgentWorktreePath(root, t.worktree));
   return {
     removed,
     deletedBranches,
     leftover: leftoverTrees.map((t) => t.worktree),
     leftoverBranches: leftoverAgentBranches(root),
     note: leftoverTrees.length
-      ? "npm run worktree:remove -- <slug> to drop a worktree this session owns"
+      ? 'npm run worktree:remove -- <slug> to drop a worktree this session owns'
       : leftoverAgentBranches(root).length
-        ? "leftover agent branches still have unique commits — not pruned"
-        : "0 agent worktrees — nothing to remove",
+        ? 'leftover agent branches still have unique commits — not pruned'
+        : '0 agent worktrees — nothing to remove',
   };
-}
-
-/** What actually went wrong, for a report that has to be actionable. */
-export function failureReason(err) {
-  const detail = String(err?.stderr || "").trim();
-  const text = detail || String(err?.message || err || "").trim();
-  return text
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean)
-    .slice(-2)
-    .join(" | ");
 }
 
 /** Remote `archive/*` tips, keyed by the branch name they preserve. */
 function remoteArchives(root) {
-  const out = gitOk(root, [
-    "ls-remote",
-    "--heads",
-    "origin",
-    "refs/heads/archive/*",
-  ]);
+  const out = gitOk(root, ['ls-remote', '--heads', 'origin', 'refs/heads/archive/*']);
   const map = new Map();
-  for (const line of (out || "").split(/\r?\n/)) {
+  for (const line of (out || '').split(/\r?\n/)) {
     const [sha, ref] = line.split(/\s+/);
     if (!sha || !ref) continue;
-    map.set(ref.replace("refs/heads/archive/", ""), sha);
+    map.set(ref.replace('refs/heads/archive/', ''), sha);
   }
   return map;
 }
@@ -535,8 +458,8 @@ function remoteArchives(root) {
  *
  *  Never deletes and never force-pushes: preserving is not tidying, and a
  *  rescue that can lose the thing it rescues is worse than none. A branch
- *  whose archive already matches its tip is skipped, so this is cheap to run
- *  on every session start and on a timer. */
+ *  already archived at its tip is skipped, so this is cheap on every session
+ *  start and on a timer. */
 function preserve(root, { dryRun = false } = {}) {
   const base = defaultBase(root);
   const archives = remoteArchives(root);
@@ -545,9 +468,9 @@ function preserve(root, { dryRun = false } = {}) {
   const failed = [];
 
   for (const name of localBranches(root)) {
-    const tipSha = gitOk(root, ["rev-parse", name]);
+    const tipSha = gitOk(root, ['rev-parse', name]);
     const ahead = aheadCount(root, name, base);
-    const archivedSha = archives.get(name) || "";
+    const archivedSha = archives.get(name) || '';
     if (!needsPreserving({ name, aheadCount: ahead, tipSha, archivedSha })) {
       if (ahead > 0 && archivedSha === tipSha && tipSha) alreadySafe.push(name);
       continue;
@@ -560,56 +483,40 @@ function preserve(root, { dryRun = false } = {}) {
     // --no-verify because the pre-push hook demands the review/CI gate, and a
     // rescue must not be blocked by one. Found by running this for real: the
     // hook refused the archive push, so preserve failed exactly when there was
-    // unreviewed work in progress — which is precisely when the only copy of
-    // something is on this disk. An `archive/*` ref is a backup, never merged
-    // and never deployed (it is in AGENT_PREVIEW_BRANCH), so the gate has
-    // nothing to protect there. Every push that matters is still gated.
+    // unreviewed work in progress — precisely when the only copy of something
+    // is on this disk. An `archive/*` ref is a backup: never merged, never
+    // deployed (it is in AGENT_PREVIEW_BRANCH), never a code submission.
     //
     // Checked before bypassing it: `.husky/pre-push` runs
-    // `scripts/ci/pre-push.mjs` and nothing else — it decides local CI versus
-    // GitHub Actions to save credits, and enforces the review stamp. No secret
+    // `scripts/ci/pre-push.mjs` and nothing else — it routes local CI versus
+    // GitHub Actions to save credits and enforces the review stamp. No secret
     // scanning, no credential check, nothing security-relevant is skipped. The
-    // hook documents its own escape hatch (`HUSKY=0 git push`) for exactly this
-    // kind of case; --no-verify is the same thing without assuming husky.
-    // Not gitOk: it swallows a failure into '', and a successful push writes
-    // to stderr with an empty stdout — so the two are indistinguishable by
-    // return value. A rescue that reports success for a push that did not
-    // happen is worse than no rescue, so let git throw and catch it.
+    // hook documents its own escape hatch (`HUSKY=0 git push`); --no-verify is
+    // the same thing without assuming husky is the hook manager.
+    //
+    // Not gitOk: it swallows a failure into '', and a successful push writes to
+    // stderr with an empty stdout, so the two are indistinguishable by return
+    // value. A rescue that reports success for a push that did not happen is
+    // worse than no rescue, so let git throw and catch it.
     try {
-      git(root, [
-        "push",
-        "--no-verify",
-        "origin",
-        `refs/heads/${name}:refs/heads/${ref}`,
-      ]);
+      git(root, ['push', '--no-verify', 'origin', `refs/heads/${name}:refs/heads/${ref}`]);
       preserved.push({ name, ahead, ref });
+      continue;
     } catch (err) {
       // A rebased or amended branch is not a fast-forward of what was archived
       // before, so the plain push is rejected and the NEW work would never be
-      // preserved. Force-pushing would fix that by destroying the old copy,
-      // which is the one thing this command must never do. Push to a
-      // sha-suffixed ref instead: both copies survive and neither is a lie.
+      // preserved. Force-pushing would fix that by destroying the older copy,
+      // which is the one thing this must never do. Push to a sha-suffixed ref
+      // instead: both copies survive and neither is a lie.
       const fallback = `${ref}-${String(tipSha).slice(0, 9)}`;
       try {
-        git(root, [
-          "push",
-          "--no-verify",
-          "origin",
-          `refs/heads/${name}:refs/heads/${fallback}`,
-        ]);
+        git(root, ['push', '--no-verify', 'origin', `refs/heads/${name}:refs/heads/${fallback}`]);
         preserved.push({ name, ahead, ref: fallback, diverged: true });
         continue;
       } catch {
-        // fall through and report the original failure
+        // fall through and report the original failure, which is the useful one
       }
-      failed.push({
-        name,
-        ahead,
-        ref,
-        // git puts the useful part (non-fast-forward, auth, hook rejection)
-        // on stderr; err.message is only "Command failed: git push ...".
-        reason: failureReason(err),
-      });
+      failed.push({ name, ahead, ref, reason: failureReason(err) });
     }
   }
 
@@ -631,81 +538,62 @@ function main(argv = process.argv.slice(2)) {
   const cmd = argv[0];
   if (!cmd) usage();
   const root = repoRoot();
-  if (cmd === "create") {
+  if (cmd === 'create') {
     const slug = argv[1];
     if (!slug) usage();
     const result = create(root, slug);
-    console.log(
-      `Created worktree\n  path: ${result.path}\n  branch: ${result.branch}\n  base: ${result.base}\nWORKTREE=${result.path}`,
-    );
+    console.log(`Created worktree\n  path: ${result.path}\n  branch: ${result.branch}\n  base: ${result.base}\nWORKTREE=${result.path}`);
     return;
   }
-  if (cmd === "remove") {
-    const target =
-      argv.find(
-        (a) => a !== "remove" && a !== "--force" && !a.startsWith("-"),
-      ) || argv[1];
-    const force = argv.includes("--force");
-    if (!target || target === "--force") usage();
+  if (cmd === 'remove') {
+    const target = argv.find((a) => a !== 'remove' && a !== '--force' && !a.startsWith('-')) || argv[1];
+    const force = argv.includes('--force');
+    if (!target || target === '--force') usage();
     const result = remove(root, target, { force });
-    console.log(
-      `Removed worktree ${result.path}${result.branch ? ` [${result.branch}]` : ""}`,
-    );
+    console.log(`Removed worktree ${result.path}${result.branch ? ` [${result.branch}]` : ''}`);
     if (result.branchDeleted) {
-      console.log(
-        `Deleted branch ${result.branch}${result.remoteDeleted ? " (local + origin)" : " (local)"}`,
-      );
+      console.log(`Deleted branch ${result.branch}${result.remoteDeleted ? ' (local + origin)' : ' (local)'}`);
     } else if (result.branch) {
-      console.log(
-        `Kept branch ${result.branch} (unique commits still not on main)`,
-      );
+      console.log(`Kept branch ${result.branch} (unique commits still not on main)`);
     }
     return;
   }
-  if (cmd === "list") {
+  if (cmd === 'list') {
     const lines = formatList(root);
-    console.log(lines.length ? lines.join("\n") : "  (no worktrees)");
+    console.log(lines.length ? lines.join('\n') : '  (no worktrees)');
     return;
   }
-  if (cmd === "status") {
+  if (cmd === 'status') {
     console.log(status(root));
     return;
   }
-  if (cmd === "preserve") {
-    const result = preserve(root, { dryRun: argv.includes("--dry-run") });
-    const label = argv.includes("--dry-run") ? "would preserve" : "preserved";
+  if (cmd === 'preserve') {
+    const dryRun = argv.includes('--dry-run');
+    const result = preserve(root, { dryRun });
     if (result.preserved.length) {
-      console.log(
-        `${label} ${result.preserved.length} branch(es) holding work only on this disk:`,
-      );
-      for (const p of result.preserved)
-        console.log(
-          `  ${p.name} (+${p.ahead}) -> ${p.ref || archiveRefFor(p.name)}`,
-        );
+      const label = dryRun ? 'would preserve' : 'preserved';
+      console.log(`${label} ${result.preserved.length} branch(es) holding work only on this disk:`);
+      for (const p of result.preserved) {
+        console.log(`  ${p.name} (+${p.ahead}) -> ${p.ref || archiveRefFor(p.name)}`);
+      }
     }
     if (result.alreadySafe.length) {
-      console.log(
-        `already archived (${result.alreadySafe.length}): ${result.alreadySafe.join(", ")}`,
-      );
+      console.log(`already archived (${result.alreadySafe.length}): ${result.alreadySafe.join(', ')}`);
     }
     if (result.failed.length) {
-      console.error(
-        `FAILED to preserve ${result.failed.length} branch(es) — this work is still only on this disk:`,
-      );
+      console.error(`FAILED to preserve ${result.failed.length} branch(es) — this work is still only on this disk:`);
       for (const f of result.failed) console.error(`  ${f.name}: ${f.reason}`);
       return 1;
     }
     if (!result.preserved.length && !result.alreadySafe.length) {
-      console.log("nothing to preserve — every local branch is on the remote");
+      console.log('nothing to preserve — every local branch is on the remote');
     }
     return 0;
   }
-  if (cmd === "prune") {
-    const result = prune(root, { merged: argv.includes("--merged") });
+  if (cmd === 'prune') {
+    const result = prune(root, { merged: argv.includes('--merged') });
     if (result.deletedBranches.length) {
-      console.log(
-        `Deleted ${result.deletedBranches.length} leftover agent branch(es):`,
-      );
+      console.log(`Deleted ${result.deletedBranches.length} leftover agent branch(es):`);
       for (const b of result.deletedBranches) console.log(`  ${b}`);
     }
     if (result.removed.length) {
@@ -723,8 +611,7 @@ function main(argv = process.argv.slice(2)) {
 }
 
 const invoked =
-  process.argv[1] &&
-  pathToFileURL(resolve(process.argv[1])).href === import.meta.url;
+  process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url;
 
 if (invoked) {
   try {
