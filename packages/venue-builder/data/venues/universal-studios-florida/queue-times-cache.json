@@ -1,0 +1,117 @@
+{
+  "fetched": "2026-08-28T05:48:07",
+  "source": "queue-times.com",
+  "parkId": 65,
+  "parkName": "Universal Studios At Universal Orlando",
+  "operator": "Universal Parks & Resorts",
+  "rides": [
+    {
+      "name": "Trolls Trollercoaster",
+      "land": "DreamWorks Land",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "E.T. Adventure",
+      "land": "Hollywood",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Despicable Me Minion Mayhem™",
+      "land": "Illumination's Minion Land",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Illumination's Villain-Con Minion Blast",
+      "land": "Illumination's Minion Land",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Race Through New York Starring Jimmy Fallon™",
+      "land": "New York",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Revenge of the Mummy™",
+      "land": "New York",
+      "waitTime": 5,
+      "isOpen": true
+    },
+    {
+      "name": "Revenge of the Mummy™ Single Rider",
+      "land": "New York",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "TRANSFORMERS™ The Ride-3D",
+      "land": "Production Central",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Harry Potter and the Escape from Gringotts™",
+      "land": "The Wizarding World of Harry Potter - Diagon Alley",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Harry Potter and the Escape from Gringotts™ Single Rider",
+      "land": "The Wizarding World of Harry Potter - Diagon Alley",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Hogwarts Express™ - King's Cross Station",
+      "land": "The Wizarding World of Harry Potter - Diagon Alley",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Hogwarts™ Express - First Train",
+      "land": "The Wizarding World of Harry Potter - Diagon Alley",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Hogwarts™ Express - Last Train",
+      "land": "The Wizarding World of Harry Potter - Diagon Alley",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Ollivanders™ Experience in Diagon Alley™",
+      "land": "The Wizarding World of Harry Potter - Diagon Alley",
+      "waitTime": 5,
+      "isOpen": true
+    },
+    {
+      "name": "Kang & Kodos' Twirl 'n' Hurl",
+      "land": "World Expo",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "MEN IN BLACK™ Alien Attack!",
+      "land": "World Expo",
+      "waitTime": 5,
+      "isOpen": true
+    },
+    {
+      "name": "MEN IN BLACK™ Alien Attack!™ Single Rider",
+      "land": "World Expo",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "The Simpsons Ride™",
+      "land": "World Expo",
+      "waitTime": 0,
+      "isOpen": false
+    }
+  ]
+}

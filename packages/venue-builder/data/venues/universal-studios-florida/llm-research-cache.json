@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "fetched": "2026-08-28",
+  "sources": [
+    "official_site"
+  ],
+  "mode": "official",
+  "aliases": [],
+  "heightCandidates": [],
+  "inventoryGaps": [],
+  "parkMaps": [],
+  "followUpUrls": [],
+  "searchQueries": [],
+  "notes": [
+    "LLM open research skipped: ai_not_requested",
+    "No park-map assets found in catalogue or HTML — LLM search required",
+    "LLM park-map search skipped (required): ai_not_requested"
+  ],
+  "siteCount": 0,
+  "bundleRideCount": 1,
+  "llm": null,
+  "llmParkMapSearch": {
+    "skipped": true,
+    "reason": "ai_not_requested",
+    "required": true
+  },
+  "venue": "universal-studios-florida"
+}

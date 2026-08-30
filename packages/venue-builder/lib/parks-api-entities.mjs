@@ -29,8 +29,8 @@ const OVERRIDES = {
   epcot: '47f90d2c-e191-4239-a466-5892ef59a88b',
   'disney-s-hollywood-studios': '288747d1-8b4f-4a64-867e-ea7c9b27bad8',
   'disney-s-animal-kingdom': '1c84a229-8862-4648-9c71-378ddd2c7693',
-  'universal-studios-florida': '267615cc-8943-4c2a-b2b6-5a8ca1ae7a45',
-  'universal-s-islands-of-adventure': '267615cc-8943-4c2a-b2b6-5a8ca1ae7a45',
+  'universal-studios-florida': 'eb3f4560-2383-4a36-9152-6b3e5ed6bc57',
+  'universal-s-islands-of-adventure': '267615cc-8943-4c2a-ae2c-5da728ca591f',
 };
 
 async function fetchDestinations() {
