@@ -98,6 +98,7 @@
     "worktree:list": "node scripts/worktree.mjs list",
     "worktree:status": "node scripts/worktree.mjs status",
     "worktree:prune": "node scripts/worktree.mjs prune",
+    "worktree:preserve": "node scripts/worktree.mjs preserve",
     "skills:check": "node scripts/check-skills-lock.mjs",
     "train:plan": "node scripts/train-plan.mjs",
     "train:next": "node scripts/train-plan.mjs session",
