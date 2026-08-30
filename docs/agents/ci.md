@@ -70,7 +70,7 @@ A branch that still carries the old tracked stamp files keeps working — the fi
 CONFLICT (modify/delete): scripts/ci/local-ci-pass.json deleted in main and modified in HEAD
 ```
 
-Resolve it with `git rm scripts/ci/local-ci-pass.json scripts/ci/matt-review-pass.json`, then re-stamp. Every merge after that is clean, which is the trade: one modify/delete per in-flight branch, instead of a content conflict on every branch↔main merge forever.
+Resolve it with `git rm --ignore-unmatch scripts/ci/local-ci-pass.json scripts/ci/matt-review-pass.json`, then re-stamp. `--ignore-unmatch` is load-bearing: `git rm` is all-or-nothing over its pathspec, and most branches only ever re-stamped `matt-review-pass.json` since their merge base — so `local-ci-pass.json` merged cleanly, is already gone from the index, and the bare command aborts with `fatal: pathspec … did not match any files` having removed *neither* file. Expect one conflicted path, not always two. Every merge after that is clean, which is the trade: one modify/delete per in-flight branch, instead of a content conflict on every branch↔main merge forever.
 
 ## `local-ci-verified` — skipping GitHub CI
 
@@ -87,7 +87,7 @@ The tag means *local CI already ran everything the skipped jobs would have run, 
 
 `gitnexus` (soft) never skips either, on purpose: it exists to prove GitNexus still installs on a clean runner, which is exactly the thing a local run cannot vouch for — the agent's own session either has an index already or failed to build one.
 
-**The stamp is self-attested.** Anyone who can push to the branch can also write a `local-ci-verified` JSON by hand and skip those jobs; the checks above stop a *stale* or *incomplete* stamp, not a dishonest one. That is the same trust model as the matt-review stamp, and it is why review and branch protection stay the real control on what merges. Label a PR `full-ci` when you want the jobs run regardless.
+**The stamp is self-attested.** Anyone who can push to the branch can also write a `local-ci-verified` JSON by hand and skip those jobs; the checks above stop a *stale* or *incomplete* stamp, not a dishonest one. The trailer transport inherits exactly that boundary and no more: a stamp is honoured when it sits on this branch's own commits and records this diff, so the accidental paths — a revert-and-re-land, a backport, a cherry-pick of the *code* — cannot inherit another branch's stamp. Cherry-picking the *stamp commit itself* onto your branch would, because then it genuinely is one of your commits. That is deliberate fraud rather than a CI-shape accident, and it is the same thing hand-writing the JSON always allowed. That is the same trust model as the matt-review stamp, and it is why review and branch protection stay the real control on what merges. Label a PR `full-ci` when you want the jobs run regardless.
 
 Two things always run full CI regardless of the stamp:
 

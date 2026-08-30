@@ -1,6 +1,6 @@
 {
   "name": "@party-tracker/app",
-  "version": "1.35.15",
+  "version": "1.35.16",
   "private": true,
   "type": "module",
   "engines": {
@@ -20,8 +20,8 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^7.7.5",
-    "@party-tracker/shared": "1.35.15",
-    "@party-tracker/venue-builder": "1.35.15",
+    "@party-tracker/shared": "1.35.16",
+    "@party-tracker/venue-builder": "1.35.16",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "maplibre-gl": "^6.4.1",

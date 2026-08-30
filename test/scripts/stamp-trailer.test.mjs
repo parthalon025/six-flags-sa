@@ -148,10 +148,15 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 // --- two branches, both stamped, merged: the whole point
 {
   const dir = mkdtempSync(join(tmpdir(), 'stamp-trailer-'));
-  const git = (...args) =>
-    execFileSync('git', args, {
+  // A trailing string argument is piped as stdin, so a commit body larger than
+  // argv allows can still be written with `-F -`.
+  const git = (...args) => {
+    const input = args.length > 1 && args[args.length - 1].length > 4096 ? args.pop() : undefined;
+    return execFileSync('git', args, {
       cwd: dir,
       encoding: 'utf8',
+      input,
+      maxBuffer: 256 * 1024 * 1024,
       env: {
         // Not `process.env`: under a git hook GIT_DIR names the real
         // repository and git prefers it to `cwd`. See scripts/lib/git-env.mjs.
@@ -162,6 +167,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
         GIT_COMMITTER_EMAIL: 't@t',
       },
     });
+  };
 
   git('init', '-q', '-b', 'main');
   // In the repo config, not just this helper's env: publishStamps runs git
@@ -219,14 +225,13 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
     findStamp(dir, { key: LOCAL_CI_TRAILER, range, diffHash: 'no-such-diff' }),
     'an unmatched diff still yields a stamp, so the reason names a real one',
   );
-  // No usable range — the shape a shallow or partially-fetched CI checkout
-  // produces when merge-base against the base ref fails. That must not read
-  // as "this branch published no stamp": the range is an optimization, and
-  // diffHash is what actually decides.
+  // A range that will not resolve proves nothing. An earlier revision walked
+  // back from HEAD instead, which on a PR merge ref reaches the whole base
+  // branch — see the re-land leg below for what that let through.
   assert.equal(
-    findStamp(dir, { key: LOCAL_CI_TRAILER, range: null, diffHash: 'aaaa1111' })?.diffHash,
-    'aaaa1111',
-    'a stamp is still found by walking back from HEAD when no range resolves',
+    findStamp(dir, { key: LOCAL_CI_TRAILER, range: null, diffHash: 'aaaa1111' }),
+    null,
+    'no usable range means no stamp, not a wider search',
   );
 
   // --- GitHub reads the PR's merge ref, not the branch tip. The stamp has to
@@ -329,6 +334,67 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
     assert.equal(isSigned(signedSha), true, 'a repo that signs must not get an unsigned stamp');
   }
   git('config', '--unset', 'commit.gpgsign');
+
+  // --- A stamp published on ANOTHER branch and merged to the base must never
+  // be honoured here, even when this branch's patch is byte-identical. That is
+  // not hypothetical: a revert-and-re-land, a backport, or a cherry-pick all
+  // reproduce the same diffHash, and diffHash identifies the patch text, not
+  // the branch. When findStamp fell back to walking HEAD, a branch that had
+  // never run the gate and never been reviewed inherited the original's stamp
+  // and CI skipped the whole matrix for it.
+  git('checkout', '-q', 'main');
+  git('checkout', '-qb', 'stamped-elsewhere');
+  writeFileSync(join(dir, 'shared.js'), 'export const v = 2;\n');
+  git('add', '.');
+  git('commit', '-qm', 'a change worth stamping');
+  const foreign = publishStamps({ cwd: dir, stamps: stampFor('5eaf00d5') });
+  git('checkout', '-q', 'main');
+  git('merge', '--no-ff', '--no-edit', '-q', 'stamped-elsewhere'); // it lands on the base
+  writeFileSync(join(dir, 'shared.js'), 'export const v = 1;\n');
+  git('add', '.');
+  git('commit', '-qm', 'revert it');
+
+  git('checkout', '-qb', 're-lands-the-same-patch');
+  writeFileSync(join(dir, 'shared.js'), 'export const v = 2;\n'); // identical content
+  git('add', '.');
+  git('commit', '-qm', 're-land, never stamped, never reviewed');
+  const relandRange = stampRange({ mergeBase: git('merge-base', 'HEAD', 'main').trim() });
+  assert.ok(
+    git('log', '--format=%H', 'HEAD').includes(foreign),
+    'the foreign stamp IS reachable from this head — which is what made the HEAD walk unsafe',
+  );
+  assert.equal(
+    readStampTrailers(dir, { range: relandRange }).length,
+    0,
+    'the re-landing branch owns no stamp commits',
+  );
+  assert.equal(
+    findStamp(dir, { key: LOCAL_CI_TRAILER, range: relandRange, diffHash: '5eaf00d5' }),
+    null,
+    'a stamp from another branch is not honoured here, even for an identical patch',
+  );
+  git('checkout', '-q', 'feature-a');
+
+  // --- The range read captures every commit MESSAGE in it, so a branch with
+  // one long body pushes `git log --format=…%B` past Node's 1 MB execFileSync
+  // default. Without the maxBuffer cap that is `spawnSync git ENOBUFS`, the
+  // read returns [], and every caller renders it as "stamp missing" — which is
+  // exactly how a real PR got blocked. A squashed PR description or a pasted
+  // CI log reaches this size easily.
+  git('checkout', '-q', 'main');
+  git('checkout', '-qb', 'long-message');
+  writeFileSync(join(dir, 'bulky.js'), 'export const a = 1;\n');
+  git('add', '.');
+  // -F - because a body this size would hit E2BIG as an argv value.
+  git('commit', '-q', '--cleanup=verbatim', '-F', '-', `feat: a change\n\n${'x'.repeat(1200 * 1024)}\n`);
+  publishStamps({ cwd: dir, stamps: stampFor('b19b0dy5') });
+  const bulkyRange = stampRange({ mergeBase: git('merge-base', 'HEAD', 'main').trim() });
+  assert.equal(
+    findStamp(dir, { key: LOCAL_CI_TRAILER, range: bulkyRange, diffHash: 'b19b0dy5' })?.diffHash,
+    'b19b0dy5',
+    'a stamp is still readable when the range holds more than 1 MB of commit messages',
+  );
+  git('checkout', '-q', 'feature-a');
 
   // --- Control: the transport this replaced. Same two branches, stamp as a
   // tracked file, and the merge that just ran clean conflicts instead.

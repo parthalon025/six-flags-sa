@@ -23,6 +23,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/import-closure.test.mjs',
   'test/scripts/vercelignore-import-closures.test.mjs',
   'test/scripts/stamp-trailer.test.mjs',
+  'test/scripts/ci-base-ref-depth.test.mjs',
   'test/scripts/production-redis-guard.test.mjs',
   'test/scripts/upstash-budget.test.mjs',
   'test/scripts/redis-key-census.test.mjs',

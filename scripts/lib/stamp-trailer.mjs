@@ -29,7 +29,7 @@
  *   stampRange({ mergeBase, headRef })
  *   buildStampMessage({ subject, stamps })
  *   parseStampTrailers(message)
- *   readStampTrailers(cwd, { range } | { ref, limit })
+ *   readStampTrailers(cwd, { range })
  *   findStamp(cwd, { key, range, diffHash })
  *   preferMatchingStamp({ trailer, file, diffHash })
  *   readStampFile(path)
@@ -154,8 +154,8 @@ export function parseStampTrailers(message = '') {
  * half of the answer to a commit that merely quotes the trailer format — such
  * a commit has content, so its trailers are not stamps.
  */
-export function readStampTrailers(cwd, { range, ref, limit } = {}) {
-  const selector = range ? [range] : ref ? ['-n', String(limit ?? 200), ref] : null;
+export function readStampTrailers(cwd, { range } = {}) {
+  const selector = range ? [range] : null;
   if (!selector) return [];
   let out = '';
   try {
@@ -200,6 +200,15 @@ function treeOf(cwd, sha) {
 /**
  * The stamp to judge for this run.
  *
+ * Deliberately range-only. An earlier revision fell back to walking `HEAD` when
+ * the range came up empty, to survive a base ref that would not resolve. That
+ * was a fail-open: on a PR merge ref, HEAD's ancestry IS the base branch, so
+ * the scan reached every stamp already merged to it, and `diffHash` identifies
+ * the patch text rather than the branch. A branch re-landing a reverted patch —
+ * byte-identical, never run, never reviewed — inherited the original's stamp
+ * and CI skipped the whole matrix for it. A range that will not resolve now
+ * proves nothing, which is the fail-closed answer.
+ *
  * A range on a GitHub merge ref also contains whatever branches were merged
  * in, and those carry their own stamp trailers, so "newest wins" would let an
  * unrelated branch's stamp mask this branch's own. `diffHash` breaks the tie
@@ -207,26 +216,14 @@ function treeOf(cwd, sha) {
  * of any kind is the fallback so the "stamp is for a different diff" message
  * still names something real.
  */
-export function findStamp(cwd, { key, range, diffHash, ref = 'HEAD', limit = 200 } = {}) {
-  const pick = (entries) => {
-    const carrying = entries.filter((e) => e.stamps[key] != null);
-    if (!carrying.length) return null;
-    if (diffHash) {
-      const exact = carrying.find((e) => e.stamps[key].diffHash === diffHash);
-      if (exact) return exact.stamps[key];
-    }
-    return carrying[0].stamps[key];
-  };
-
-  const inRange = pick(readStampTrailers(cwd, { range }));
-  if (inRange && (!diffHash || inRange.diffHash === diffHash)) return inRange;
-
-  // The range is an optimization, not the guarantee — `diffHash` is. Deriving
-  // it needs a merge-base against the base ref, which is exactly the thing a
-  // shallow or partially-fetched CI checkout can fail to give, and losing it
-  // must not read as "this branch published no stamp". Walking back from HEAD
-  // needs no base ref at all; a stamp for another diff is still inert.
-  return pick(readStampTrailers(cwd, { ref, limit })) ?? inRange;
+export function findStamp(cwd, { key, range, diffHash } = {}) {
+  const entries = readStampTrailers(cwd, { range }).filter((e) => e.stamps[key] != null);
+  if (!entries.length) return null;
+  if (diffHash) {
+    const exact = entries.find((e) => e.stamps[key].diffHash === diffHash);
+    if (exact) return exact.stamps[key];
+  }
+  return entries[0].stamps[key];
 }
 
 /**
