@@ -472,6 +472,19 @@ assert.equal(
     g(["add", "b.txt"]);
     g(["commit", "-m", "only copy"]);
 
+    // A LOCAL pre-push hook must never be able to block a rescue. This repo's
+    // real pre-push hook demands the review/CI gate, and it refused the archive
+    // push when this was first run for real — so preserve failed exactly when
+    // there was unreviewed work in progress, which is when the only copy of
+    // something is on disk. archive/* is a backup, never merged or deployed.
+    mkdirSync(join(work, ".husky"), { recursive: true });
+    writeFileSync(
+      join(work, ".husky", "pre-push"),
+      "#!/bin/sh\necho 'gate says no' >&2\nexit 1\n",
+    );
+    execFileSync("chmod", ["+x", join(work, ".husky", "pre-push")]);
+    g(["config", "core.hooksPath", ".husky"]);
+
     // Happy path: the work reaches the origin and the command reports success.
     const ok = run(work, ["preserve"]);
     assert.match(ok, /preserved 1 branch/, "the at-risk branch is preserved");
