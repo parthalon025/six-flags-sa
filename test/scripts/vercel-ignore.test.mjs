@@ -228,6 +228,27 @@ assert.match(lib, /\^1/, 'must diff against the first parent');
 assert.match(lib, /version-stamp\.mjs/, 'must treat post-merge version bumps via shared stamp list');
 assert.match(lib, /bump push cancels the merge deploy/, 'production stamp bumps must deploy after merge cancel');
 assert.match(lib, /AGENT_PREVIEW_BRANCH/, 'must skip agent preview branches');
+
+// `worktree.mjs preserve` pushes one archive/* ref per local-only branch on
+// every session start. Those are backups of work in progress, never something
+// to deploy: without this every rescue builds a preview, the way claude/* did
+// until 2026-08-28. Asserted rather than assumed — deleting the pattern must
+// go red.
+assert.equal(
+  isAgentPreviewBranch('archive/slice-h14', 'preview'),
+  true,
+  'archive/* backups must never build a preview',
+);
+assert.equal(
+  isAgentPreviewBranch('archive/claude/train-h-i', 'preview'),
+  true,
+  'a nested archive ref is still a backup',
+);
+assert.equal(
+  isAgentPreviewBranch('feature/real-work', 'preview'),
+  false,
+  'a real feature branch still previews',
+);
 assert.match(lib, /USER_DEPLOY_RESERVE/, 'must document user reserve');
 assert.equal(USER_DEPLOY_RESERVE, 25);
 assert.equal(AUTOMATION_DEPLOY_BUDGET, 75);
