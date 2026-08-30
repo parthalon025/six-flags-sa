@@ -2726,8 +2726,8 @@ function ParkApp({ isSignedIn }) {
        camera back to a stale coordinate and fight the pan. Free look
        leaves the camera where the finger put it. */
     setFocusPoint(null);
-    if (!previewing) followTimerRef.current?.arm(false);
-  }, [previewing]);
+    followTimerRef.current?.disarm();
+  }, []);
 
   const onUserGestureSettled = useCallback(() => {
     followTimerRef.current?.stamp(Date.now());

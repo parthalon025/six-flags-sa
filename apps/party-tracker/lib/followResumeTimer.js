@@ -83,6 +83,8 @@ export function createFollowResumeTimer({
       clearTimer();
     },
     arm,
+    /** Cancel a pending resume without clearing the gesture clock. */
+    disarm: clearTimer,
     dispose: clearTimer,
   };
 }

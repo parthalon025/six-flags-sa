@@ -1408,6 +1408,22 @@ const MAP_JSON = {
   clock = T0 + 5000 + FOLLOW_RESUME_MS;
   pending[0].fn();
   assert.equal(resumed, true, 'resume fires once the refreshed pause elapses');
+
+  resumed = false;
+  pending.length = 0;
+  clock = T0;
+  timer.clearGesture();
+  timer.stamp(T0);
+  timer.arm(false);
+  clock = T0 + 3000;
+  timer.stamp(clock);
+  timer.disarm();
+  assert.equal(pending.length, 0, 'disarm cancels a resume armed before lift');
+  clock = T0 + 5000;
+  timer.stamp(clock);
+  timer.arm(false);
+  assert.equal(pending.length, 1, 'arm after settle schedules one timeout');
+  assert.equal(pending[0].ms, FOLLOW_RESUME_MS, 'from the settle stamp, not the drag frames');
 }
 
 // ---------------------------------------------------------------------------
