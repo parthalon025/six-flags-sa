@@ -155,12 +155,15 @@ assert.deepEqual(stamp.verticals, []);
 
   const said = [];
   const realErr = console.error;
+  const realLog = console.log;
   console.error = (...parts) => said.push(parts.join(' '));
+  console.log = (...parts) => said.push(parts.join(' '));
   let dirtyCode;
   try {
     dirtyCode = await runPreMergeVertical({ baseRef: 'main', cwd: dir });
   } finally {
     console.error = realErr;
+    console.log = realLog;
   }
   assert.equal(dirtyCode, 1, 'uncommitted code refuses with exit code 1');
   assert.match(
@@ -168,10 +171,47 @@ assert.deepEqual(stamp.verticals, []);
     /uncommitted/i,
     'the refusal names uncommitted work',
   );
+  assert.doesNotMatch(
+    said.join('\n'),
+    /\bok\b/i,
+    'a dirty-tree run does not print ok',
+  );
   assert.equal(
     readFileSync(join(dir, LOCAL_CI_PASS_REL), 'utf8'),
     stampBefore,
     'an aborted run does not downgrade the existing stamp',
+  );
+  rmSync(dir, { recursive: true, force: true });
+}
+
+// --- No pre-existing stamp: dirty tree must not create one (#35).
+{
+  const dir = mkdtempSync(join(tmpdir(), 'pre-merge-dirty-no-stamp-'));
+  const g = (...args) =>
+    execFileSync('git', args, {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...scrubGitEnv(),
+        GIT_AUTHOR_NAME: 'T',
+        GIT_AUTHOR_EMAIL: 'test@example.com',
+        GIT_COMMITTER_NAME: 'T',
+        GIT_COMMITTER_EMAIL: 'test@example.com',
+      },
+    });
+  g('init', '-q', '-b', 'main');
+  g('config', 'user.email', 'dirty-test@example.invalid');
+  g('config', 'user.name', 'Dirty Test');
+  writeFileSync(join(dir, 'README.md'), 'base\n');
+  g('add', '.');
+  g('commit', '-qm', 'base');
+  writeFileSync(join(dir, 'README.md'), 'dirty\n');
+
+  const dirtyCode = await runPreMergeVertical({ baseRef: 'main', cwd: dir });
+  assert.equal(dirtyCode, 1, 'uncommitted work refuses without a pre-existing stamp');
+  assert.ok(
+    !existsSync(join(dir, LOCAL_CI_PASS_REL)),
+    'a refused run does not create local-ci-pass.json',
   );
   rmSync(dir, { recursive: true, force: true });
 }

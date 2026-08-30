@@ -1,15 +1,14 @@
 /**
- * Did a test leg rewrite tracked files?
+ * Tree mutation and uncommitted-work guards for CI gates.
  *
- * A suite that mutates tracked state leaves the working tree dirty after every
- * run, which trains everyone — human and agent — to read a dirty tree as noise
- * and `git checkout --` it away unread. A real unintended change riding
- * alongside gets discarded by the same reflex (#34). It also means the suite's
- * second run starts from different inputs than its first.
+ * **Post-run mutation** (`treeMutationReason`): a suite that mutates tracked state
+ * leaves the working tree dirty after every run, which trains everyone — human and
+ * agent — to read a dirty tree as noise and `git checkout --` it away unread (#34).
+ * The before/after comparison catches legs that rewrite committed files; a
+ * developer's own pre-existing edits are not the thing being caught.
  *
- * The gate is a before/after comparison rather than a "tree must be clean"
- * assertion, because the tree it runs in is a developer's, and their own
- * in-progress edits are not the thing being caught.
+ * **Pre-run dirty tree** (`uncommittedWorkReason`): pre-merge-vertical plans from
+ * commits only, so uncommitted work must refuse before any stamp or vertical (#35).
  *
  * Interface:
  *   trackedTreeSnapshot(cwd)         → Map<path, status> | null when git is unreadable
