@@ -88,7 +88,7 @@ Target: **MapLibre GL JS** in the Capacitor WebView reading local PMTiles. SVG `
 - New Venue bundle fields under `apps/party-tracker/public/venues/<id>/` (or CDN mirror): `display/`, `visual.json`, `manifest.json`.
 - `packages/venue-builder/lib/build-pipeline.mjs` gains display stages; `attractions.mjs --tiles` path becomes mandatory in CI for shipped venues.
 - Implementation backlog: MapLibre renderer, real-time PBR tier (three.js), venue download manager, skin template compiler, display-certify matrix.
-- Databricks unchanged (ADR-0008/0010): batch ingest may feed better geometry; display baking stays Node/CI Tippecanoe.
+- Databricks unchanged (ADR-0008a/0010a): batch ingest may feed better geometry; display baking stays Node/CI Tippecanoe.
 
 ## Non-goals
 

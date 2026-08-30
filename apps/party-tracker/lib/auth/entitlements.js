@@ -1,5 +1,5 @@
 /**
- * Profile subscription entitlements — Clerk is identity only (ADR-0011).
+ * Profile subscription entitlements — Clerk is identity only (ADR-0011a).
  * Store rails write rows; prelaunch mode mints a complimentary entitlement until StoreKit ships.
  */
 

@@ -2,9 +2,9 @@
 
 **Status:** Proposal (research)
 **Date:** 2026-08-18
-**Depends on:** [ADR-0013 display pipeline](../adr/0013-display-pipeline.md) · [ADR-0008 Databricks back-office](../adr/0008-databricks-back-office.md) · [ADR-0010 Databricks ops & free tier](../adr/0010-databricks-ops-free-tier.md) · [park intelligence review](../park-intelligence-review.md) · [universal venue builder architecture](../universal-venue-builder-architecture.md)
+**Depends on:** [ADR-0013 display pipeline](../adr/0013-display-pipeline.md) · [ADR-0008a Databricks back-office](../adr/0008a-databricks-back-office.md) · [ADR-0010a Databricks ops & free tier](../adr/0010a-databricks-ops-free-tier.md) · [park intelligence review](../park-intelligence-review.md) · [universal venue builder architecture](../universal-venue-builder-architecture.md)
 
-This is the solution design for generating **many custom-looking maps** — full PBR-textured, per-Skin display packs for every World the universal venue builder ships — using **Palantir AIP and ontology patterns as design discipline** implemented on the stack this repo has already locked: the Node venue builder, GitHub Actions CI, and Databricks as batch back-office. **Palantir Foundry the platform is explicitly not used** (consistent with the park intelligence review's verdict and ADR-0008's "do not relitigate").
+This is the solution design for generating **many custom-looking maps** — full PBR-textured, per-Skin display packs for every World the universal venue builder ships — using **Palantir AIP and ontology patterns as design discipline** implemented on the stack this repo has already locked: the Node venue builder, GitHub Actions CI, and Databricks as batch back-office. **Palantir Foundry the platform is explicitly not used** (consistent with the park intelligence review's verdict and ADR-0008a's "do not relitigate").
 
 ---
 
@@ -90,7 +90,7 @@ Ontology rules applied (from the workflow doctrine): every `id` is a string buil
 | Publish pack | manifest entry | certification green | **human merges the draft PR** | phones see the new pack version |
 | Retire skin/material | tombstone in ledger | nothing links to it, or successor named | human | never re-issued |
 
-The draft PR **is** the Workshop review app for now — the recorded, permissioned, auditable human action (blueprint Wave 4: "merging is the recorded approval"). A Databricks App steward UI stays deferred per ADR-0010 until multiple stewards need it.
+The draft PR **is** the Workshop review app for now — the recorded, permissioned, auditable human action (blueprint Wave 4: "merging is the recorded approval"). A Databricks App steward UI stays deferred per ADR-0010a until multiple stewards need it.
 
 ---
 

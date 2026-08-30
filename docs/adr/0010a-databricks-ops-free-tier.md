@@ -1,8 +1,8 @@
-# ADR-0010: Databricks operations, free tier, and deferred work
+# ADR-0010a: Databricks operations, free tier, and deferred work
 
 **Status:** Accepted  
 **Date:** 2026-08-14  
-**Depends on:** [ADR-0008 databricks back-office](./0008-databricks-back-office.md), [ADR-0002 dual-layer park truth](./0002-dual-layer-park-truth.md)
+**Depends on:** [ADR-0008a databricks back-office](./0008a-databricks-back-office.md), [ADR-0002 dual-layer park truth](./0002-dual-layer-park-truth.md)
 
 ## Context
 
@@ -94,6 +94,6 @@ Contributions and traces are **write-behind** when online. Databricks never serv
 
 ## Non-goals
 
-- Replacing ADR-0008 architecture (batch back-office only)
+- Replacing ADR-0008a architecture (batch back-office only)
 - Committing secrets or PATs to the repo
 - Auto-merge consolidate PRs without steward review

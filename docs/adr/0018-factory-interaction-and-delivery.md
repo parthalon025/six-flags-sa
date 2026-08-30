@@ -1,7 +1,7 @@
 # ADR-0018 — Factory interaction and delivery
 
 **Status:** Accepted (owner-confirmed point by point, 2026-08-20) · Amended by [ADR-0019](./0019-zoomable-worlds.md) (delivery clauses 4–5) · [ADR-0021](./0021-zoomable-worlds-revised.md) (clause 5) · [ADR-0024](./0024-postdb-factory-bus.md) (clauses 1 and 5 — PostDB bus)
-**Depends on:** [ADR-0008](./0008-databricks-back-office.md) · [ADR-0010](./0010-databricks-ops-free-tier.md) · [ADR-0013](./0013-display-pipeline.md) · [ADR-0016](./0016-custom-map-worlds.md) · [ADR-0017](./0017-visual-factory-request-contract.md)
+**Depends on:** [ADR-0008a](./0008a-databricks-back-office.md) · [ADR-0010a](./0010a-databricks-ops-free-tier.md) · [ADR-0013](./0013-display-pipeline.md) · [ADR-0016](./0016-custom-map-worlds.md) · [ADR-0017](./0017-visual-factory-request-contract.md)
 
 ## Context
 
@@ -20,7 +20,7 @@ inventing runtime infrastructure this repo has rejected before.
    `basedOn` matches current truth, so a truth change without regenerated visuals cannot merge.
    The weekly drift and bake-drift watches remain the safety net. (The row itself lands with
    Train F.)
-3. **Databricks stays back-office only** per ADR-0008/0010/0013 (do not relitigate): a Delta
+3. **Databricks stays back-office only** per ADR-0008a/0010a/0013 (do not relitigate): a Delta
    mirror of ledgers and certifications, and the natural home for fleet-scale batch regeneration
    compute — never a phone-facing delivery path.
 4. **Delivery to the app is CDN + download manager** (the deferred ADR-0013 item): the phone

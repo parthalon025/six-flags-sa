@@ -16,7 +16,7 @@
 | [Custom map display factory](./2026-08-18-custom-map-display-factory.md) | Same doctrine on the Visual factory |
 | `packages/venue-builder/lib/build-pipeline.mjs` | Current Map + Visual stage list |
 
-The template is for builds **outside Palantir**. Foundry is a translation column, not a destination. That matches ADR-0008 / ADR-0010: Databricks is back-office only. For **factory outputs**, PostDB is the bus ([ADR-0024](../adr/0024-postdb-factory-bus.md)); git remains the bus for code and builder inputs.
+The template is for builds **outside Palantir**. Foundry is a translation column, not a destination. That matches ADR-0008a / ADR-0010a: Databricks is back-office only. For **factory outputs**, PostDB is the bus ([ADR-0024](../adr/0024-postdb-factory-bus.md)); git remains the bus for code and builder inputs.
 
 ---
 
@@ -110,7 +110,7 @@ Fill Stages −1 through 1 before opening a new factory tool. Everything downstr
 | **−1 Choose** | Scored candidate + kill/pivot per slice | Offline certified twin vs. live waits / server routing (rejected) | Certified display pack vs. runtime world-gen (rejected) | Score new venue classes (zoo, campus) before building them |
 | **0 Frame** | One sentence: user, decision, objects, metric | Party member offline: trust the map, heights, route | Profile offline: does this Skin feel like a prize, with zero coordinate deltas | Keep Mad Libs on every new factory slice |
 | **1 Slice** | Plumbing in the user's hands in days | `runVenuePipeline`: sources → geometry → … → certify → display | Display stages after truth certify; default on for flagship venues | Fleet refuse-done (Wave 1 remainder) |
-| **2 Projects / security** | Named owner, security table before real data | Builder vs phone runtimes; license markings at ingest | Same split; materials license-before-embed | Multi-steward review UI deferred (ADR-0010) |
+| **2 Projects / security** | Named owner, security table before real data | Builder vs phone runtimes; license markings at ingest | Same split; materials license-before-embed | Multi-steward review UI deferred (ADR-0010a) |
 | **3 Connect as-is** | One successful sync + row/file count + owner | Overpass, official cache, adapters, imagery ledger | Design-request + material fetch + grounding harvest | Token-gated adapters must carry `gaps.adapters.<id>` |
 | **4 Clean / type / test** | Green build, expectations pass, PK unique by query | Typed layers, `ids.json` uniqueness, route-qa numbers | Schema-valid specs, material compile | Profile-before-clean still informal on new sources |
 | **4.5 Resolve** | Match rules written, duplicate-rate recorded, fuzzy reviewed, reversible | Alias claims, ledger match, dissent recorded | `basedOn` binds a pack to a truth version | Operator-scale official≠OSM names (Wave 2) |

@@ -40,6 +40,10 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/git-env.test.mjs',
   'test/scripts/glance-rail-dead-code.test.mjs',
   'test/scripts/agent-docs.test.mjs',
+  // Guards docs/adr/** — a number claimed twice makes every "ADR-00NN"
+  // citation ambiguous, and the gate job runs on every PR, including the
+  // docs-only ones the static floor skips.
+  'test/scripts/adr-numbers.test.mjs',
   'test/scripts/credits.test.mjs',
   // design-bundle.test.mjs is deliberately NOT here. Every other entry is a
   // pure script test, which is what lets the Gate job run before a workspace
