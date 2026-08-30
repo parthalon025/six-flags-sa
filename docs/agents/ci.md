@@ -70,7 +70,7 @@ A branch that still carries the old tracked stamp files keeps working — the fi
 CONFLICT (modify/delete): scripts/ci/local-ci-pass.json deleted in main and modified in HEAD
 ```
 
-Resolve it with `git rm scripts/ci/local-ci-pass.json scripts/ci/matt-review-pass.json`, then re-stamp. Every merge after that is clean, which is the trade: one modify/delete per in-flight branch, instead of a content conflict on every branch↔main merge forever.
+Resolve it with `git rm --ignore-unmatch scripts/ci/local-ci-pass.json scripts/ci/matt-review-pass.json`, then re-stamp. `--ignore-unmatch` is load-bearing: `git rm` is all-or-nothing over its pathspec, and most branches only ever re-stamped `matt-review-pass.json` since their merge base — so `local-ci-pass.json` merged cleanly, is already gone from the index, and the bare command aborts with `fatal: pathspec … did not match any files` having removed *neither* file. Expect one conflicted path, not always two. Every merge after that is clean, which is the trade: one modify/delete per in-flight branch, instead of a content conflict on every branch↔main merge forever.
 
 ## `local-ci-verified` — skipping GitHub CI
 

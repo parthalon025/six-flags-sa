@@ -80,6 +80,9 @@ if (invoked) {
   const baseRef = arg(argv, '--base', 'origin/main');
   const specPath = arg(argv, '--spec', undefined);
   let code = 1;
+  // Matches scripts/ci/local-ci-pass.mjs: a git failure here should exit 1 with
+  // its message, not fail the job with a raw Node stack trace.
+  try {
   if (cmd === 'check') code = runCheck({ baseRef });
   else if (cmd === 'write')
     code = runWrite({
@@ -90,5 +93,9 @@ if (invoked) {
   else if (cmd === 'prompt') code = runPrompt({ baseRef });
   else if (cmd === 'two-axis') code = runTwoAxis({ baseRef, specPath });
   else console.error('Usage: matt-review.mjs <check|write|prompt|two-axis> [--base ref] [--model m] [--gitnexus s] [--spec path]');
+  } catch (err) {
+    console.error(`matt-review: ${err?.message || err}`);
+    code = 1;
+  }
   process.exit(code);
 }

@@ -118,7 +118,17 @@ function git(args, cwd) {
  * 40-character ids are identical everywhere.
  */
 export function buildMattReviewContext({ baseRef = 'origin/main', cwd = root } = {}) {
-  const mergeBase = git(['merge-base', 'HEAD', baseRef], cwd).trim();
+  // Degrades the way gitChangedFiles already does rather than throwing. In the
+  // select job merge-base fails whenever the base ref is missing or shallow,
+  // and an uncaught throw there failed the whole job with a raw Node stack
+  // trace instead of the actionable block reason. Every downstream check fails
+  // closed on a null diffHash, so the gate still blocks — it just says why.
+  let mergeBase;
+  try {
+    mergeBase = git(['merge-base', 'HEAD', baseRef], cwd).trim();
+  } catch {
+    return { schema: MATT_REVIEW_SCHEMA, baseRef, mergeBase: null, diffHash: null, files: null };
+  }
   const excludes = STAMP_EXCLUDES.map((p) => `:(exclude)${p}`);
   const patch = git(['diff', '--full-index', `${mergeBase}...HEAD`, '--', '.', ...excludes], cwd);
   const files = git(['diff', '--name-only', `${mergeBase}...HEAD`, '--', '.', ...excludes], cwd)
@@ -188,6 +198,13 @@ export function mattReviewBlockReason({ files, context, stamp }) {
   if (!reviewRequiredForFiles(files)) return null;
   if (stampCoversReview(stamp, context)) return null;
   const state = stamp ? 'stale (diff changed since the review)' : 'missing';
+  if (context && context.mergeBase === null && context.diffHash === null) {
+    return [
+      `matt-review cannot be checked: no merge-base against ${context.baseRef}.`,
+      'The base ref is missing or shallow in this checkout, so the diff under review is unknown.',
+      'Fetch the base ref at full depth, then re-run.',
+    ].join('\n');
+  }
   return [
     `matt-review stamp ${state} for this code diff.`,
     'Run the Sonnet two-axis review, then stamp:',
