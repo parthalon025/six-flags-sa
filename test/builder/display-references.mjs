@@ -106,6 +106,21 @@ await check('profiles bind kits to their pinned inspirations', () => {
   return true;
 });
 
+await check('bands block validates overlay keys and withdrawChecks', () => {
+  const base = profileForKit('rpg-overworld');
+  const clone = () => JSON.parse(JSON.stringify(base));
+  let p = clone();
+  p.bands = { overview: { colorFamilies: { lava: { anchor: '#F00', deltaE: 10 } } } };
+  assert.ok(validateProfile(p).some((x) => /unknown color family/.test(x)));
+  p = clone();
+  p.bands = { overview: { withdrawChecks: ['style_not_a_check'] } };
+  assert.ok(validateProfile(p).some((x) => /withdrawChecks names unknown/.test(x)));
+  p = clone();
+  p.bands = { overview: { colorFamilies: { grass: { anchor: '#8CBE74', deltaE: 14 } } } };
+  assert.deepEqual(validateProfile(p), [], 'valid overview overlay passes');
+  return true;
+});
+
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);
 if (FAIL.length) {
   FAIL.forEach((f) => console.log(' !', f));
