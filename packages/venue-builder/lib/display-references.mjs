@@ -273,6 +273,13 @@ export function validateGrounding(record) {
   if (!record || typeof record !== 'object') return [`${at}: not a record`];
   if (!record.venue) problems.push(`${at}: names no World`);
 
+  if (record.zones && Object.keys(record.zones).length) {
+    problems.push(
+      `${at}: still carries zones — per-Zone character belongs in display/zone-character.json `
+        + 'so a re-harvest cannot drop it',
+    );
+  }
+
   const bands = record.bands || [];
   for (const band of bands) {
     if (!GROUNDING_BANDS.includes(band)) {

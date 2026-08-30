@@ -145,7 +145,7 @@
       "source": "park",
       "source-layer": "building",
       "paint": {
-        "line-color": "#756276",
+        "line-color": "#9C5A45",
         "line-width": [
           "interpolate",
           [
@@ -257,7 +257,7 @@
       "source": "park",
       "source-layer": "coaster",
       "paint": {
-        "line-color": "#756276",
+        "line-color": "#9C5A45",
         "line-width": [
           "interpolate",
           [

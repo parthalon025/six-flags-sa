@@ -22,7 +22,7 @@
  *   node test/builder/display-grounding.mjs
  */
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, renameSync } from 'node:fs';
 
 const PASS = [];
 const FAIL = [];
@@ -47,6 +47,14 @@ const {
 const {
   validateGrounding, groundKit, readVenueGrounding, groundingFile,
 } = await import('../../packages/venue-builder/lib/display-references.mjs');
+
+const {
+  groundingWithZoneCharacter, readZoneCharacter, validateZoneCharacter,
+  zoneCharacterProblemsForWorld,
+} = await import('../../packages/venue-builder/lib/display-zone-character.mjs');
+
+const { readGrounding, runDisplayStage } =
+  await import('../../packages/venue-builder/lib/display-pack.mjs');
 
 const { impliedTerrainClasses } = await import('../../packages/venue-builder/lib/display-bake.mjs');
 const { rgbToLab, hexToRgb, deltaE } = await import('../../packages/venue-builder/lib/display-style-contract.mjs');
@@ -746,6 +754,109 @@ await check('a grounded profile still carries its Skin whole', () => {
   return true;
 });
 
+console.log('\nzone character — harvest-safe curation\n');
+
+await check('a re-harvest rewrite drops grounding zones but zone-character survives', () => {
+  const harvested = harvestSynth();
+  assert.equal(harvested.zones, undefined, 'harvest output must not carry zones');
+  const zoneCharacter = {
+    version: 1,
+    venue: 'synth-park',
+    zones: { Midway: { character: 'midway' } },
+  };
+  const merged = groundingWithZoneCharacter(harvested, zoneCharacter);
+  assert.deepEqual(merged.zones, zoneCharacter.zones);
+  return true;
+});
+
+await check('grounding.json must not carry zones once zone-character owns them', () => {
+  const problems = validateGrounding({
+    version: 1,
+    venue: 'synth-park',
+    bands: ['overview', 'mid'],
+    source: { source: 'planetary-computer:naip', license: 'public-domain', sha256: 'a'.repeat(64) },
+    classes: { grass: { sampleShare: 0.5, samples: 1, lightness: 0, redness: 0, warmth: 0, observed: '#808080' } },
+    zones: { Midway: { character: 'midway' } },
+  });
+  assert.ok(problems.some((p) => /zone-character\.json/.test(p)), problems.join('; '));
+  return true;
+});
+
+await check('kings-island character is read from zone-character.json, not grounding.json', () => {
+  const record = readVenueGrounding('kings-island');
+  assert.equal(record.zones, undefined, 'committed grounding must not carry zones');
+  const grounding = readGrounding('kings-island');
+  assert.ok(grounding?.zones?.Rivertown?.character === 'woodland');
+  assert.deepEqual(validateZoneCharacter(readZoneCharacter('kings-island')), []);
+  return true;
+});
+
+await check('every flagship declares zone character or an explicit uncharacterised policy', () => {
+  const flagships = ['kings-island', 'cedar-point', 'six-flags-fiesta-texas', 'big-kahunas'];
+  for (const venue of flagships) {
+    assert.deepEqual(
+      zoneCharacterProblemsForWorld(venue),
+      [],
+      `${venue}: zone-character curation does not validate`,
+    );
+  }
+  return true;
+});
+
+await check('kings-island landTones still reproduce with character outside grounding.json', () => {
+  const { packs } = runDisplayStage('kings-island', { write: false });
+  const committed = JSON.parse(readFileSync(
+    new URL('../../packages/venue-builder/data/venues/kings-island/display/trail.visual.json', import.meta.url),
+    'utf8',
+  ));
+  const computed = packs.trail.spec.landTones;
+  for (const zone of Object.keys(committed.landTones || {})) {
+    assert.equal(
+      committed.landTones[zone]?.day?.fill,
+      computed[zone]?.day?.fill,
+      `trail ${zone} fill must still reproduce`,
+    );
+  }
+  return true;
+});
+
+await check('every flagship recompiles landTones that match committed packs', () => {
+  const flagships = ['kings-island', 'cedar-point', 'six-flags-fiesta-texas', 'big-kahunas'];
+  for (const venue of flagships) {
+    const { packs } = runDisplayStage(venue, { write: false });
+    const displayDir = new URL(`../../packages/venue-builder/data/venues/${venue}/display/`, import.meta.url);
+    for (const [skinId, { spec }] of Object.entries(packs)) {
+      const visualPath = new URL(`${skinId}.visual.json`, displayDir);
+      if (!existsSync(visualPath)) continue;
+      const committed = JSON.parse(readFileSync(visualPath, 'utf8'));
+      for (const zone of Object.keys(committed.landTones || {})) {
+        assert.equal(
+          committed.landTones[zone]?.day?.fill,
+          spec.landTones[zone]?.day?.fill,
+          `${venue} ${skinId} ${zone} day fill must reproduce`,
+        );
+      }
+    }
+  }
+  return true;
+});
+
+await check('readGrounding fails when zone-character is missing for a grounded World', () => {
+  const zoneCharacterPath = new URL(
+    '../../packages/venue-builder/data/venues/kings-island/display/zone-character.json',
+    import.meta.url,
+  );
+  const backupPath = `${zoneCharacterPath.pathname}.test-bak`;
+  renameSync(zoneCharacterPath, backupPath);
+  try {
+    assert.throws(() => readGrounding('kings-island'), /missing/);
+  } finally {
+    renameSync(backupPath, zoneCharacterPath);
+  }
+  assert.deepEqual(zoneCharacterProblemsForWorld('kings-island'), []);
+  return true;
+});
+
 console.log('\ncommitted grounding records\n');
 
 await check('every committed record validates and still matches the truth it was measured on', () => {
@@ -757,6 +868,11 @@ await check('every committed record validates and still matches the truth it was
   for (const venue of venues) {
     const record = JSON.parse(readFileSync(new URL(`${venue}/display/grounding.json`, dir), 'utf8'));
     assert.deepEqual(validateGrounding(record), [], `${venue}: committed grounding does not validate`);
+    assert.deepEqual(
+      zoneCharacterProblemsForWorld(venue),
+      [],
+      `${venue}: zone-character curation does not validate`,
+    );
     assert.equal(record.venue, venue, `${venue}: record names a different World`);
 
     // Grounding is keyed to footprints. If truth moved, the record is stale —

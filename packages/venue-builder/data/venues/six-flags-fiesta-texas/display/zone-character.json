@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "venue": "six-flags-fiesta-texas",
+  "policy": "uncharacterised",
+  "_comment": "Every Zone's landTones already reproduce from cover alone — no per-Zone lean is authored. Zones nobody names here take the renderer's deterministic name-hue, which is what an uncharacterised World looks like and is fine."
+}
