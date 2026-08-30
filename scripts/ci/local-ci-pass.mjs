@@ -16,6 +16,7 @@ import {
   TAG_SKIPPED_JOBS,
   buildLocalCiContext,
   localCiDecision,
+  localCiStampRange,
   readLocalCiPass,
   writeLocalCiPass,
 } from '../lib/local-ci-pass.mjs';
@@ -71,7 +72,7 @@ export function runWrite({ baseRef, noBrowser, cwd = root, context } = {}) {
     { context: ctx, browserVertical: !noBrowser && ctx.needsBrowser, tag: null },
     cwd,
   );
-  console.log(`Wrote ${stamp.diffHash} → scripts/ci/local-ci-pass.json`);
+  console.log(`Wrote ${stamp.diffHash} → scripts/ci/local-ci-pass.json (cache — publish with scripts/ci/stamp-commit.mjs)`);
   console.log(`  modules: ${stamp.modules.join(', ') || '(none)'}`);
   console.log(`  browserVertical: ${stamp.browserVertical}`);
   console.log(
@@ -87,7 +88,10 @@ export function runWrite({ baseRef, noBrowser, cwd = root, context } = {}) {
 
 export function runCheck({ baseRef, headRef = 'HEAD', anyUi, forceFull = false, cwd = root } = {}) {
   const context = buildLocalCiContext({ baseRef, headRef, cwd });
-  const stamp = readLocalCiPass(cwd);
+  const stamp = readLocalCiPass(cwd, {
+    range: localCiStampRange(context),
+    diffHash: context.diffHash,
+  });
   const decision = localCiDecision(stamp, context, { anyUi, forceFull });
 
   console.log(decision.reason);

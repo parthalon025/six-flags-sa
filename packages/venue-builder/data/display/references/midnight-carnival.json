@@ -11,32 +11,44 @@
   "colorFamilies": {
     "ground": {
       "anchor": "#2A2140",
-      "members": ["#352A52"],
+      "members": [
+        "#352A52"
+      ],
       "deltaE": 14
     },
     "grass": {
       "anchor": "#1E3328",
-      "members": ["#2A4636"],
+      "members": [
+        "#2A4636"
+      ],
       "deltaE": 14
     },
     "wood": {
       "anchor": "#17281F",
-      "members": ["#223A2C"],
+      "members": [
+        "#223A2C"
+      ],
       "deltaE": 14
     },
     "water": {
       "anchor": "#101C2E",
-      "members": ["#3E6B9E"],
+      "members": [
+        "#3E6B9E"
+      ],
       "deltaE": 14
     },
     "lot": {
       "anchor": "#241F33",
-      "members": ["#3A3452"],
+      "members": [
+        "#3A3452"
+      ],
       "deltaE": 14
     },
     "road": {
       "anchor": "#C98A3B",
-      "members": ["#F5D9A0"],
+      "members": [
+        "#F5D9A0"
+      ],
       "deltaE": 12
     },
     "service": {
@@ -45,17 +57,29 @@
     },
     "outside": {
       "anchor": "#1A1226",
-      "members": ["#241833"],
+      "members": [
+        "#241833"
+      ],
       "deltaE": 12
     },
     "structure": {
       "anchor": "#8E88A9",
-      "members": ["#332C48", "#2C2740", "#3A3050"],
+      "members": [
+        "#332C48",
+        "#2C2740",
+        "#3A3050"
+      ],
       "deltaE": 16
     },
     "badge": {
       "anchor": "#FF4D6D",
-      "members": ["#FFA02E", "#3FB6FF", "#3DE08A", "#B06CFF", "#8A8F98"],
+      "members": [
+        "#FFA02E",
+        "#3FB6FF",
+        "#3DE08A",
+        "#B06CFF",
+        "#8A8F98"
+      ],
       "deltaE": 16
     }
   },
@@ -87,7 +111,14 @@
   "hierarchy": {
     "annotationOnTop": true,
     "oneBadgePerPoi": true,
-    "layerOrder": ["terrain", "roads", "tracks", "buildings", "trees", "badges"]
+    "layerOrder": [
+      "terrain",
+      "roads",
+      "tracks",
+      "buildings",
+      "trees",
+      "badges"
+    ]
   },
   "agentReview": [
     {
@@ -102,5 +133,55 @@
       "key": "style_reference_resemblance",
       "prompt": "Overall: a night-mode map a phone would show after sunset, not a dimmed day map"
     }
-  ]
+  ],
+  "bands": {
+    "overview": {
+      "colorFamilies": {
+        "outside": {
+          "anchor": "#1A1226",
+          "deltaE": 14
+        },
+        "ground": {
+          "anchor": "#294435",
+          "deltaE": 14
+        },
+        "grass": {
+          "anchor": "#294335",
+          "deltaE": 14
+        },
+        "wood": {
+          "anchor": "#21392B",
+          "deltaE": 14
+        },
+        "water": {
+          "anchor": "#3C6897",
+          "deltaE": 14
+        },
+        "lot": {
+          "anchor": "#2F2942",
+          "deltaE": 14
+        },
+        "road": {
+          "anchor": "#C3AF87",
+          "deltaE": 14
+        },
+        "service": {
+          "anchor": "#283A33",
+          "deltaE": 14
+        },
+        "structure": {
+          "anchor": "#BBB4CF",
+          "deltaE": 14
+        },
+        "badge": {
+          "anchor": "#FAF8F9",
+          "deltaE": 14
+        }
+      },
+      "withdrawChecks": [
+        "style_structure_presence",
+        "style_road_hierarchy"
+      ]
+    }
+  }
 }

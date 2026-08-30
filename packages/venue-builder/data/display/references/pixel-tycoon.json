@@ -11,32 +11,44 @@
   "colorFamilies": {
     "ground": {
       "anchor": "#D2A45C",
-      "members": ["#B8883C"],
+      "members": [
+        "#B8883C"
+      ],
       "deltaE": 12
     },
     "grass": {
       "anchor": "#3C9C34",
-      "members": ["#246824"],
+      "members": [
+        "#246824"
+      ],
       "deltaE": 12
     },
     "wood": {
       "anchor": "#1C5C1C",
-      "members": ["#0C3C0C"],
+      "members": [
+        "#0C3C0C"
+      ],
       "deltaE": 12
     },
     "water": {
       "anchor": "#2474C4",
-      "members": ["#6CACDC"],
+      "members": [
+        "#6CACDC"
+      ],
       "deltaE": 12
     },
     "lot": {
       "anchor": "#8C8474",
-      "members": ["#C4BCA8"],
+      "members": [
+        "#C4BCA8"
+      ],
       "deltaE": 12
     },
     "road": {
       "anchor": "#5C584C",
-      "members": ["#E8D49C"],
+      "members": [
+        "#E8D49C"
+      ],
       "deltaE": 10
     },
     "service": {
@@ -45,17 +57,29 @@
     },
     "outside": {
       "anchor": "#2A4A28",
-      "members": ["#1C341C"],
+      "members": [
+        "#1C341C"
+      ],
       "deltaE": 12
     },
     "structure": {
       "anchor": "#C44C3C",
-      "members": ["#E8A03C", "#3C6CAC", "#8C5C3C"],
+      "members": [
+        "#E8A03C",
+        "#3C6CAC",
+        "#8C5C3C"
+      ],
       "deltaE": 16
     },
     "badge": {
       "anchor": "#E83C3C",
-      "members": ["#F0A028", "#2474C4", "#2A9C3C", "#8C4CD4", "#6C6458"],
+      "members": [
+        "#F0A028",
+        "#2474C4",
+        "#2A9C3C",
+        "#8C4CD4",
+        "#6C6458"
+      ],
       "deltaE": 16
     }
   },
@@ -106,5 +130,55 @@
       "key": "style_reference_resemblance",
       "prompt": "A stranger looking at the kit tokens and this plate says they are the same 16-colour game-manager language, not a leftover iso park"
     }
-  ]
+  ],
+  "bands": {
+    "overview": {
+      "colorFamilies": {
+        "outside": {
+          "anchor": "#294927",
+          "deltaE": 14
+        },
+        "ground": {
+          "anchor": "#9C8838",
+          "deltaE": 14
+        },
+        "grass": {
+          "anchor": "#3A9932",
+          "deltaE": 14
+        },
+        "wood": {
+          "anchor": "#0C3C0C",
+          "deltaE": 14
+        },
+        "water": {
+          "anchor": "#66A7DA",
+          "deltaE": 14
+        },
+        "lot": {
+          "anchor": "#A8A08E",
+          "deltaE": 14
+        },
+        "road": {
+          "anchor": "#5F7D4E",
+          "deltaE": 14
+        },
+        "service": {
+          "anchor": "#394D32",
+          "deltaE": 14
+        },
+        "structure": {
+          "anchor": "#242214",
+          "deltaE": 14
+        },
+        "badge": {
+          "anchor": "#FAFAFC",
+          "deltaE": 14
+        }
+      },
+      "withdrawChecks": [
+        "style_structure_presence",
+        "style_road_hierarchy"
+      ]
+    }
+  }
 }

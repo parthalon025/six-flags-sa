@@ -26,6 +26,7 @@ import { startProductionServer, waitForHealth } from './party-tracker-ui.mjs';
 import {
   STATIC_STEPS,
   buildLocalCiContext,
+  localCiStampRange,
   readLocalCiPass,
   shouldSkipLocalPreMerge,
   staticNpmStepsForFiles,
@@ -49,6 +50,7 @@ import {
 import {
   buildMattReviewContext,
   mattReviewBlockReason,
+  mattReviewStampRange,
   readMattReview,
 } from '../lib/matt-review.mjs';
 import { workflowBlockReason } from '../lib/matt-workflow.mjs';
@@ -132,7 +134,10 @@ export async function runPreMergeVertical({
   cwd = root,
 } = {}) {
   const context = buildLocalCiContext({ baseRef, cwd });
-  const existing = readLocalCiPass(cwd);
+  const existing = readLocalCiPass(cwd, {
+    range: localCiStampRange(context),
+    diffHash: context.diffHash,
+  });
   if (shouldSkipLocalPreMerge(existing, context, { skipBrowser })) {
     console.log('pre-merge-vertical: local CI pass stamp covers this tree — skipping');
     return 0;
@@ -211,10 +216,14 @@ export async function runPreMergeVertical({
 
   // clerk gate treats an unknown diff as empty; matt-review instead fails
   // closed on null (reviewRequiredForFiles) — both are deliberate.
+  const reviewContext = buildMattReviewContext({ baseRef, cwd });
   const reviewBlock = mattReviewBlockReason({
     files,
-    context: buildMattReviewContext({ baseRef, cwd }),
-    stamp: readMattReview(cwd),
+    context: reviewContext,
+    stamp: readMattReview(cwd, {
+      range: mattReviewStampRange(reviewContext),
+      diffHash: reviewContext.diffHash,
+    }),
   });
   if (reviewBlock) {
     console.error(`pre-merge-vertical: ${reviewBlock}`);
@@ -292,6 +301,8 @@ export async function runPreMergeVertical({
       },
       cwd,
     );
+    // The cache is gitignored — GitHub only ever sees a published trailer.
+    console.log('\npre-merge-vertical: stamped. Publish it: node scripts/ci/stamp-commit.mjs');
   }
   return 0;
 }
