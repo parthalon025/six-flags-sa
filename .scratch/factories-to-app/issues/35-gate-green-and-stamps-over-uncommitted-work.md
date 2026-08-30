@@ -92,7 +92,7 @@ commit), the more reliably it fires.
       (vertical-e2e policy, "CI, deploy or stamp decisions").
 - [x] A run that aborts before completing its verticals leaves the existing stamp untouched rather
       than downgrading it.
-- [ ] `npm run test:pre-merge-vertical` green.
+- [x] `npm run test:pre-merge-vertical` green.
 
 ## Notes
 
