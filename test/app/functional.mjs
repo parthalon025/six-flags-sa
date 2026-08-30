@@ -595,6 +595,77 @@ await check('the camera follows this phone and snaps back after a free look', as
   return true;
 });
 
+await check('a held pan does not resume Follow mid-gesture', async () => {
+  const here = { lat: 39.34395, lng: -84.2673 };
+  await ensurePeek(a);
+  const map = a.locator('[data-testid="park-map-gl"]');
+  await until(async () => (await map.getAttribute('data-follow')) === '1', {
+    timeout: 8000,
+    label: 'Follow on before the held pan',
+  });
+  await until(async () => (await map.getAttribute('data-map-ready')) === '1', {
+    timeout: 15000,
+    label: 'MapLibre ready',
+  });
+  const box = await map.boundingBox();
+  if (!box) throw new Error('map has no box');
+  const startX = box.x + box.width * 0.5;
+  const startY = box.y + box.height * 0.28;
+  await a.mouse.move(startX, startY);
+  await a.mouse.down();
+  for (let step = 1; step <= 8; step += 1) {
+    await a.mouse.move(startX + 18 * step, startY + 12 * step);
+    await a.waitForTimeout(450);
+  }
+  const followHeld = await map.getAttribute('data-follow');
+  if (followHeld !== '0') {
+    throw new Error('Follow resumed while the finger was still panning');
+  }
+  await a.mouse.up();
+  await until(async () => (await map.getAttribute('data-follow')) === '1', {
+    timeout: FOLLOW_RESUME_MS + 2500,
+    label: 'Follow after the held pan ended',
+  });
+  await until(async () => {
+    const c = await a.evaluate(() => {
+      const center = globalThis.__parkMapLibre?.getCenter?.();
+      return center ? { lng: center.lng, lat: center.lat } : null;
+    });
+    return c && distance(here.lat, here.lng, c.lat, c.lng) < 80;
+  }, { timeout: 4000, label: 'camera back on this phone after held pan' });
+  return true;
+});
+
+await check('Follow snaps back after a flick leaves the map coasting', async () => {
+  await ensurePeek(a);
+  const map = a.locator('[data-testid="park-map-gl"]');
+  await until(async () => (await map.getAttribute('data-follow')) === '1', {
+    timeout: 8000,
+    label: 'Follow on before the flick',
+  });
+  await until(async () => (await map.getAttribute('data-map-ready')) === '1', {
+    timeout: 15000,
+    label: 'MapLibre ready',
+  });
+  const box = await map.boundingBox();
+  if (!box) throw new Error('map has no box');
+  const startX = box.x + box.width * 0.5;
+  const startY = box.y + box.height * 0.28;
+  await a.mouse.move(startX, startY);
+  await a.mouse.down();
+  await a.mouse.move(startX + 260, startY + 110, { steps: 4 });
+  await a.mouse.up();
+  await until(async () => (await map.getAttribute('data-follow')) === '0', {
+    timeout: 4000,
+    label: 'flick paused Follow',
+  });
+  await until(async () => (await map.getAttribute('data-follow')) === '1', {
+    timeout: FOLLOW_RESUME_MS + 3500,
+    label: 'Follow returns after coasting stops',
+  });
+  return true;
+});
+
 await check('park-wide rest shows Zone names and ride names, not every Place', async () => {
   await until(() => a.locator('[data-testid="park-map-gl"][data-map-ready="1"]').count().then((n) => n >= 1), {
     timeout: 20000,
