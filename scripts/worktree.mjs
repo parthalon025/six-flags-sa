@@ -251,9 +251,24 @@ function mergedPrHeads() {
   }
 }
 
+/** Local branch names.
+ *
+ *  `%(refname)` and strip, never `%(refname:short)`: git deliberately
+ *  disambiguates a short name to `heads/v9` when a tag shares it, and `preserve`
+ *  feeds these back into a full refspec, so a clash produced
+ *  `refs/heads/heads/v9` — a push that can never succeed, on every session
+ *  start, for as long as both refs exist. That turns the "this work is still
+ *  only on this disk" alarm into permanent noise, which is worse than silence
+ *  because a genuinely at-risk branch then hides in it. The full name strips
+ *  back to the true branch name, which is what every caller wants. */
 function localBranches(root) {
-  const out = gitOk(root, ['for-each-ref', '--format=%(refname:short)', 'refs/heads']);
-  return out ? out.split(/\r?\n/).filter(Boolean) : [];
+  const out = gitOk(root, ['for-each-ref', '--format=%(refname)', 'refs/heads']);
+  return out
+    ? out
+        .split(/\r?\n/)
+        .filter(Boolean)
+        .map((ref) => ref.replace(/^refs\/heads\//, ''))
+    : [];
 }
 
 function branchHasWorktree(root, name) {

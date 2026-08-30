@@ -309,9 +309,12 @@ assert.match(
     g(['config', 'core.hooksPath', '.husky']);
 
     assert.match(run(work, ['preserve']), /preserved 1 branch/, 'the at-risk branch is preserved');
+    // Anchored at end-of-line: an unanchored /archive\/slice-only-here/ is
+    // equally satisfied by the sha-suffixed fallback ref, so it would pass even
+    // if the plain archive had never been written.
     assert.match(
       originRefs(),
-      /refs\/heads\/archive\/slice-only-here/,
+      /^refs\/heads\/archive\/slice-only-here$/m,
       'the archive ref really exists on the origin, not just in the report',
     );
 
@@ -350,6 +353,26 @@ assert.match(
       archivedBefore,
       'the original archive is untouched — preserve must never force-push over a copy',
     );
+
+    // A tag sharing a branch's name makes %(refname:short) return `heads/v9`,
+    // which interpolated into refs/heads/${name} gave refs/heads/heads/v9 — a
+    // push that could never succeed, on every session start, for as long as
+    // both refs existed. The alarm becomes permanent noise and a genuinely
+    // at-risk branch hides in it.
+    g(['checkout', '-b', 'v9']);
+    writeFileSync(join(work, 'd.txt'), 'd\n');
+    g(['add', 'd.txt']);
+    g(['commit', '-m', 'work on a branch whose name a tag also claims']);
+    g(['tag', '-f', 'v9']);
+    const clash = run(work, ['preserve']);
+    assert.match(clash, /v9 \(\+\d+\) -> archive\/v9/, 'a name-clashing branch is preserved');
+    assert.doesNotMatch(clash, /heads\/v9/, 'the short name is never re-interpolated into a refspec');
+    assert.match(
+      originRefs(),
+      /^refs\/heads\/archive\/v9$/m,
+      'the clashing branch lands on the correct archive ref',
+    );
+    g(['checkout', 'slice-only-here']);
 
     // A rescue that saves nothing must say so through the exit code.
     writeFileSync(join(originDir, 'hooks', 'pre-receive'), '#!/bin/sh\nexit 1\n');
