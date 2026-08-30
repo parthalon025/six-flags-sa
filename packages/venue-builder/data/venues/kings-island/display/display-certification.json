@@ -157,166 +157,8 @@
       "confidence": "low",
       "falsifier": "tippecanoe runs and the archive is broken or exceeds the download budget",
       "soWhat": "the display pack rides the venue download; an oversized or broken archive blocks it, and a missing tiler leaves the vector tier unbuilt"
-    },
-    {
-      "key": "bake:watercolor-quest:reference_profile_resolves",
-      "claim": "kit \"watercolor-quest\" has a committed reference profile",
-      "pass": true,
-      "evidence": "profile watercolor-quest (style watercolor-quest)",
-      "confidence": 1,
-      "falsifier": "a kit on disk with no profile under data/display/references/",
-      "soWhat": "no contract, no certification — the look would drift unmeasured"
-    },
-    {
-      "key": "bake:watercolor-quest:style_terrain_palette",
-      "claim": "every sampled terrain class stays inside its profile color family",
-      "pass": true,
-      "evidence": "grass ΔE 0.3/14, wood ΔE 0/14, water ΔE 0/14, lot ΔE 0/14, road ΔE 0/12, service ΔE 0/12, outside ΔE 0/14",
-      "confidence": 0.9,
-      "falsifier": "worst class grass beyond tolerance on a rerun",
-      "soWhat": "palette drift is the first way a design language stops matching its reference"
-    },
-    {
-      "key": "bake:watercolor-quest:style_terrain_coverage",
-      "claim": "every terrain class the venue truth implies (map.grass, map.parking, map.water, …) survives to the sampled render",
-      "pass": true,
-      "evidence": "truth implies grass, lot, road, service, water, wood; all present",
-      "confidence": 1,
-      "falsifier": "a terrain class present in truth geometry vanishing from the composited render (e.g. a boundary-unaware paint order painting over it)",
-      "soWhat": "a bake that silently drops a class can certify clean while shipping an empty or wrong-looking world"
-    },
-    {
-      "key": "bake:watercolor-quest:style_world_geo",
-      "claim": "world anchors project onto truth through the pack bounds (≤ 0.05 cells), and every painted feature stays inside the 1.211 m alignment budget (no band — 3 px of this bake, pre-ADR-0021)",
-      "pass": true,
-      "evidence": "64 truth anchor(s) sampled, worst offset 0 cells = 0.002 m (projection tolerance 0.05 cells); declared stroke displacement 2 px = 0.808 m; alignment budget 1.211 m from no band — 3 px of this bake, pre-ADR-0021, at 6.46 m a cell and 0.404 m a baked pixel",
-      "confidence": 0.9,
-      "falsifier": "a model whose badge positions no longer derive from truth through its own bounds, or a band drawing a feature further from truth than its ground-metre budget allows",
-      "soWhat": "a world image that drifts from truth moves every Place a guest stands next to — at the close band a metre of drift is seven pixels of blue route crossing painted lawn"
-    },
-    {
-      "key": "bake:watercolor-quest:style_road_hierarchy",
-      "claim": "road centerline ink separates from paper (ΔE ≥ 20)",
-      "pass": true,
-      "evidence": "best roadline sample vs paper ΔE 54.6",
-      "confidence": 0.85,
-      "falsifier": "linework styles whose ink fades into the paper",
-      "soWhat": "near-monochrome styles carry hierarchy in ink, not fill"
-    },
-    {
-      "key": "bake:watercolor-quest:style_water_legibility",
-      "claim": "water reads as water (ΔE ≥ 12 vs vegetation and ground)",
-      "pass": true,
-      "evidence": "water vs grass ΔE 31.2, vs ground ΔE —",
-      "confidence": 0.9,
-      "falsifier": "a pool that reads as lawn",
-      "soWhat": "the kit brief’s own promise, now enforced"
-    },
-    {
-      "key": "bake:watercolor-quest:style_outside_distinct",
-      "claim": "the world outside the venue separates from the park floor (ΔE ≥ 6)",
-      "pass": true,
-      "evidence": "outside vs grass ΔE 10.1",
-      "confidence": 0.9,
-      "falsifier": "a bake where the park has no edge",
-      "soWhat": "the boundary is the first thing the reference maps establish"
-    },
-    {
-      "key": "bake:watercolor-quest:style_structure_presence",
-      "claim": "buildings paint in the profile's interior treatment",
-      "pass": true,
-      "evidence": "236/251 buildings show interior treatment (266 total)",
-      "confidence": 0.8,
-      "falsifier": "a kit whose buildings vanish into terrain",
-      "soWhat": "structures are the landmarks navigation hangs on"
-    },
-    {
-      "key": "bake:watercolor-quest:style_track_presence",
-      "claim": "ride tracks separate from the terrain under them (fill or casing, ΔE ≥ 10)",
-      "pass": true,
-      "evidence": "127 tracks sampled, 0 indistinct (noise floor 3)",
-      "confidence": 0.8,
-      "falsifier": "a flume whose fill AND casing both dissolve into the lawn",
-      "soWhat": "rides are why the map exists"
-    },
-    {
-      "key": "bake:watercolor-quest:style_annotation_on_top",
-      "claim": "every badge disc samples badge ink, never the terrain under it",
-      "pass": true,
-      "evidence": "64/64 badge discs in family",
-      "confidence": 0.85,
-      "falsifier": "a badge painted under a later layer (ADR-0012 rule: annotation pass last)",
-      "soWhat": "POI pins must survive every style"
-    },
-    {
-      "key": "bake:watercolor-quest:style_badge_dedup",
-      "claim": "one badge per POI position",
-      "pass": true,
-      "evidence": "64 badges, 64 distinct positions",
-      "confidence": 1,
-      "falsifier": "duplicate pins stacked on one POI",
-      "soWhat": "ADR-0012 declutter rule, model-side"
-    },
-    {
-      "key": "bake:watercolor-quest:style_no_baked_text",
-      "claim": "nothing readable is baked into the band — every painted badge kind resolves to an icon glyph, never a letter",
-      "pass": true,
-      "evidence": "6 painted badge kind(s) resolve to icon glyphs: food→parkbound-badge-food, gate→parkbound-badge-gate, restroom→parkbound-badge-restroom, service→parkbound-badge-service, shop→parkbound-badge-shop, show→parkbound-badge-show",
-      "confidence": 1,
-      "falsifier": "a painter falling back to a character when a badge kind has no icon, or a POI badge kind shipped with no glyph art",
-      "soWhat": "a baked word cannot be read aloud, cannot change language, cannot dodge a party dot, and cannot survive a rename without re-baking every Skin"
-    },
-    {
-      "key": "bake:watercolor-quest:style_bake_deterministic",
-      "claim": "a fresh render of the same model samples byte-identical pixels",
-      "pass": true,
-      "evidence": "render 9c820ad4 vs rerender 9c820ad4",
-      "confidence": 1,
-      "falsifier": "any clock or RNG sneaking into the compositor",
-      "soWhat": "determinism is the bake’s core guarantee"
-    },
-    {
-      "key": "bake:watercolor-quest:style_cross_kit_distinct",
-      "claim": "sibling kits of this venue sample distinct pixels",
-      "pass": true,
-      "evidence": "no sibling kits in this invocation — nothing to compare",
-      "confidence": 0.9,
-      "falsifier": "two kits that only differ in name",
-      "soWhat": "the factory exists to make different-looking maps"
-    },
-    {
-      "key": "bake_certs",
-      "claim": "every baked kit passes its reference-profile style contract",
-      "pass": true,
-      "evidence": "watercolor-quest:ok",
-      "confidence": "high",
-      "falsifier": "a kit whose style-cert.json reports certified:false, or no bakes at all",
-      "soWhat": "an uncertified look must not ride the venue download"
     }
   ],
-  "bakes": {
-    "watercolor-quest": {
-      "certified": true,
-      "signature": "9c820ad4",
-      "px": 16
-    }
-  },
-  "worlds": {
-    "watercolor-quest": {
-      "version": 1,
-      "skin": "watercolor-quest",
-      "kit": "watercolor-quest",
-      "projection": "top-down",
-      "bounds": {
-        "west": -84.2775,
-        "south": 39.3364963,
-        "east": -84.2595,
-        "north": 39.348
-      },
-      "file": "watercolor-quest.world.png",
-      "credits": "kings-island--watercolor-quest.credits.json"
-    }
-  },
   "skins": {
     "trail": {
       "version": 1,
@@ -361,6 +203,15 @@
           "soWhat": "a display file that can move a Place breaks the truth/display split"
         },
         {
+          "key": "palette_derives_tones",
+          "claim": "every Zone colour in the spec is one this Skin's own palette can make — Skins restyle from their own paint",
+          "pass": true,
+          "evidence": "254 colour(s) reachable from trail's tokens; every Zone tone is one of them",
+          "confidence": "high",
+          "falsifier": "a Zone tone carries a hex the Skin's tokens, bound materials and declared ramp cannot produce",
+          "soWhat": "a colour from outside the Skin is a World repainting a Skin — the inversion this gate exists to catch"
+        },
+        {
           "key": "references_resolve",
           "claim": "every styled land exists in truth geometry",
           "pass": true,
@@ -373,7 +224,7 @@
           "key": "budget",
           "claim": "spec ≤ 64 KB and materials ≤ 1024px",
           "pass": true,
-          "evidence": "spec 2057 bytes",
+          "evidence": "spec 2400 bytes",
           "confidence": "high",
           "falsifier": "a spec or bound material exceeds the phone budget",
           "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
@@ -423,6 +274,15 @@
           "soWhat": "a display file that can move a Place breaks the truth/display split"
         },
         {
+          "key": "palette_derives_tones",
+          "claim": "every Zone colour in the spec is one this Skin's own palette can make — Skins restyle from their own paint",
+          "pass": true,
+          "evidence": "265 colour(s) reachable from park-midnight's tokens; every Zone tone is one of them",
+          "confidence": "high",
+          "falsifier": "a Zone tone carries a hex the Skin's tokens, bound materials and declared ramp cannot produce",
+          "soWhat": "a colour from outside the Skin is a World repainting a Skin — the inversion this gate exists to catch"
+        },
+        {
           "key": "references_resolve",
           "claim": "every styled land exists in truth geometry",
           "pass": true,
@@ -435,7 +295,7 @@
           "key": "budget",
           "claim": "spec ≤ 64 KB and materials ≤ 1024px",
           "pass": true,
-          "evidence": "spec 2067 bytes",
+          "evidence": "spec 2429 bytes",
           "confidence": "high",
           "falsifier": "a spec or bound material exceeds the phone budget",
           "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
@@ -485,6 +345,15 @@
           "soWhat": "a display file that can move a Place breaks the truth/display split"
         },
         {
+          "key": "palette_derives_tones",
+          "claim": "every Zone colour in the spec is one this Skin's own palette can make — Skins restyle from their own paint",
+          "pass": true,
+          "evidence": "432 colour(s) reachable from layered-atlas's tokens; every Zone tone is one of them",
+          "confidence": "high",
+          "falsifier": "a Zone tone carries a hex the Skin's tokens, bound materials and declared ramp cannot produce",
+          "soWhat": "a colour from outside the Skin is a World repainting a Skin — the inversion this gate exists to catch"
+        },
+        {
           "key": "references_resolve",
           "claim": "every styled land exists in truth geometry",
           "pass": true,
@@ -497,7 +366,7 @@
           "key": "budget",
           "claim": "spec ≤ 64 KB and materials ≤ 1024px",
           "pass": true,
-          "evidence": "spec 2137 bytes",
+          "evidence": "spec 2480 bytes",
           "confidence": "high",
           "falsifier": "a spec or bound material exceeds the phone budget",
           "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
@@ -547,6 +416,15 @@
           "soWhat": "a display file that can move a Place breaks the truth/display split"
         },
         {
+          "key": "palette_derives_tones",
+          "claim": "every Zone colour in the spec is one this Skin's own palette can make — Skins restyle from their own paint",
+          "pass": true,
+          "evidence": "306 colour(s) reachable from watercolor-quest's tokens; every Zone tone is one of them",
+          "confidence": "high",
+          "falsifier": "a Zone tone carries a hex the Skin's tokens, bound materials and declared ramp cannot produce",
+          "soWhat": "a colour from outside the Skin is a World repainting a Skin — the inversion this gate exists to catch"
+        },
+        {
           "key": "references_resolve",
           "claim": "every styled land exists in truth geometry",
           "pass": true,
@@ -559,7 +437,149 @@
           "key": "budget",
           "claim": "spec ≤ 64 KB and materials ≤ 1024px",
           "pass": true,
-          "evidence": "spec 2140 bytes",
+          "evidence": "spec 2481 bytes",
+          "confidence": "high",
+          "falsifier": "a spec or bound material exceeds the phone budget",
+          "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
+        }
+      ]
+    },
+    "midnight-carnival": {
+      "version": 1,
+      "venue": "kings-island",
+      "skin": "midnight-carnival",
+      "certified": true,
+      "checks": [
+        {
+          "key": "material_textures_resolve",
+          "claim": "every bound material’s compiled textures resolve on disk (pin-verified), or the gap is recorded",
+          "pass": true,
+          "evidence": "6/9 bound materials compiled; recorded gaps: water--calm (no fetchable source (material-maker://graphs/water-calm) — authored graphs render flat until exported by hand), water--pool (no fetchable source (material-maker://graphs/water-pool) — authored graphs render flat until exported by hand), fiberglass--flume (no fetchable source (material-maker://graphs/fiberglass-flume) — authored graphs render flat until exported by hand)",
+          "confidence": "high",
+          "falsifier": "a ledger row claiming compiled bytes that are missing or sha-drifted",
+          "soWhat": "a bake told to tile a texture that is not there paints the authored flat and silently stops matching its certified look"
+        },
+        {
+          "key": "bindings_resolve",
+          "claim": "every bound surface resolves to a ledger material",
+          "pass": true,
+          "evidence": "9 bindings resolve",
+          "confidence": "high",
+          "falsifier": "a binding names a material absent from data/display/materials.json",
+          "soWhat": "an unresolved binding renders as a hole in the ground on every phone"
+        },
+        {
+          "key": "license_gate",
+          "claim": "every shipped material carries an allowed license with provenance",
+          "pass": true,
+          "evidence": "licenses ⊆ {CC0-1.0, original, licensed}",
+          "confidence": "high",
+          "falsifier": "a ledger row carries a license outside the allowed set",
+          "soWhat": "license before embed — an AGPL texture in the bundle is a shipping bug"
+        },
+        {
+          "key": "no_repositioning",
+          "claim": "every coordinate in the spec is one truth already published — skins restyle, never reposition",
+          "pass": true,
+          "evidence": "every coordinate in the spec matches a published bound",
+          "confidence": "high",
+          "falsifier": "a spec carries any position value the truth bounds do not already contain",
+          "soWhat": "a display file that can move a Place breaks the truth/display split"
+        },
+        {
+          "key": "palette_derives_tones",
+          "claim": "every Zone colour in the spec is one this Skin's own palette can make — Skins restyle from their own paint",
+          "pass": true,
+          "evidence": "310 colour(s) reachable from midnight-carnival's tokens; every Zone tone is one of them",
+          "confidence": "high",
+          "falsifier": "a Zone tone carries a hex the Skin's tokens, bound materials and declared ramp cannot produce",
+          "soWhat": "a colour from outside the Skin is a World repainting a Skin — the inversion this gate exists to catch"
+        },
+        {
+          "key": "references_resolve",
+          "claim": "every styled land exists in truth geometry",
+          "pass": true,
+          "evidence": "10 land tone(s) resolve",
+          "confidence": "high",
+          "falsifier": "a land tone names a district the map does not have",
+          "soWhat": "styling a district that does not exist means a tint silently never draws"
+        },
+        {
+          "key": "budget",
+          "claim": "spec ≤ 64 KB and materials ≤ 1024px",
+          "pass": true,
+          "evidence": "spec 2505 bytes",
+          "confidence": "high",
+          "falsifier": "a spec or bound material exceeds the phone budget",
+          "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
+        }
+      ]
+    },
+    "blueprint-survey": {
+      "version": 1,
+      "venue": "kings-island",
+      "skin": "blueprint-survey",
+      "certified": true,
+      "checks": [
+        {
+          "key": "material_textures_resolve",
+          "claim": "every bound material’s compiled textures resolve on disk (pin-verified), or the gap is recorded",
+          "pass": true,
+          "evidence": "6/9 bound materials compiled; recorded gaps: water--calm (no fetchable source (material-maker://graphs/water-calm) — authored graphs render flat until exported by hand), water--pool (no fetchable source (material-maker://graphs/water-pool) — authored graphs render flat until exported by hand), fiberglass--flume (no fetchable source (material-maker://graphs/fiberglass-flume) — authored graphs render flat until exported by hand)",
+          "confidence": "high",
+          "falsifier": "a ledger row claiming compiled bytes that are missing or sha-drifted",
+          "soWhat": "a bake told to tile a texture that is not there paints the authored flat and silently stops matching its certified look"
+        },
+        {
+          "key": "bindings_resolve",
+          "claim": "every bound surface resolves to a ledger material",
+          "pass": true,
+          "evidence": "9 bindings resolve",
+          "confidence": "high",
+          "falsifier": "a binding names a material absent from data/display/materials.json",
+          "soWhat": "an unresolved binding renders as a hole in the ground on every phone"
+        },
+        {
+          "key": "license_gate",
+          "claim": "every shipped material carries an allowed license with provenance",
+          "pass": true,
+          "evidence": "licenses ⊆ {CC0-1.0, original, licensed}",
+          "confidence": "high",
+          "falsifier": "a ledger row carries a license outside the allowed set",
+          "soWhat": "license before embed — an AGPL texture in the bundle is a shipping bug"
+        },
+        {
+          "key": "no_repositioning",
+          "claim": "every coordinate in the spec is one truth already published — skins restyle, never reposition",
+          "pass": true,
+          "evidence": "every coordinate in the spec matches a published bound",
+          "confidence": "high",
+          "falsifier": "a spec carries any position value the truth bounds do not already contain",
+          "soWhat": "a display file that can move a Place breaks the truth/display split"
+        },
+        {
+          "key": "palette_derives_tones",
+          "claim": "every Zone colour in the spec is one this Skin's own palette can make — Skins restyle from their own paint",
+          "pass": true,
+          "evidence": "109 colour(s) reachable from blueprint-survey's tokens; every Zone tone is one of them",
+          "confidence": "high",
+          "falsifier": "a Zone tone carries a hex the Skin's tokens, bound materials and declared ramp cannot produce",
+          "soWhat": "a colour from outside the Skin is a World repainting a Skin — the inversion this gate exists to catch"
+        },
+        {
+          "key": "references_resolve",
+          "claim": "every styled land exists in truth geometry",
+          "pass": true,
+          "evidence": "10 land tone(s) resolve",
+          "confidence": "high",
+          "falsifier": "a land tone names a district the map does not have",
+          "soWhat": "styling a district that does not exist means a tint silently never draws"
+        },
+        {
+          "key": "budget",
+          "claim": "spec ≤ 64 KB and materials ≤ 1024px",
+          "pass": true,
+          "evidence": "spec 2483 bytes",
           "confidence": "high",
           "falsifier": "a spec or bound material exceeds the phone budget",
           "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
@@ -609,6 +629,15 @@
           "soWhat": "a display file that can move a Place breaks the truth/display split"
         },
         {
+          "key": "palette_derives_tones",
+          "claim": "every Zone colour in the spec is one this Skin's own palette can make — Skins restyle from their own paint",
+          "pass": true,
+          "evidence": "41 colour(s) reachable from pixel-tycoon's tokens; every Zone tone is one of them",
+          "confidence": "high",
+          "falsifier": "a Zone tone carries a hex the Skin's tokens, bound materials and declared ramp cannot produce",
+          "soWhat": "a colour from outside the Skin is a World repainting a Skin — the inversion this gate exists to catch"
+        },
+        {
           "key": "references_resolve",
           "claim": "every styled land exists in truth geometry",
           "pass": true,
@@ -621,7 +650,7 @@
           "key": "budget",
           "claim": "spec ≤ 64 KB and materials ≤ 1024px",
           "pass": true,
-          "evidence": "spec 2064 bytes",
+          "evidence": "spec 2344 bytes",
           "confidence": "high",
           "falsifier": "a spec or bound material exceeds the phone budget",
           "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"

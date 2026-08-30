@@ -32,7 +32,7 @@ const workspacePkgPaths = [
 ];
 
 /** Internal workspace package names whose exact version pins must track the bump. */
-const INTERNAL_DEP_NAMES = ['@party-tracker/shared'];
+const INTERNAL_DEP_NAMES = ['@party-tracker/shared', '@party-tracker/venue-builder'];
 function git(args) {
   // Scrubbed: an inherited GIT_DIR outranks `cwd`. See scripts/lib/git-env.mjs.
   return execFileSync('git', args, { cwd: root, env: scrubGitEnv(), encoding: 'utf8' });

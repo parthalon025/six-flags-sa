@@ -1,121 +1,121 @@
 {
-  "version": 1,
-  "venue": "big-kahunas",
   "skin": "watercolor-quest",
+  "venue": "big-kahunas",
+  "tokens": {
+    "mode": "day",
+    "colors": {
+      "path": "#756276",
+      "grass": "#D9D0B5",
+      "label": "#57485C",
+      "water": "#8FB5C2",
+      "ground": "#F4EFDF",
+      "building": "#B8A68D",
+      "groundEdge": "#C9BFAE",
+      "pathCasing": "#F4EFDF",
+      "structureEdge": "#756276"
+    },
+    "labelHalo": true,
+    "landTones": {
+      "lean": 0.4,
+      "cover": 0.24,
+      "steps": 5,
+      "spread": 0.1
+    },
+    "contrastFloor": 4.5
+  },
   "basedOn": {
     "map": "2026-08-10"
   },
-  "tokens": {
-    "contrastFloor": 4.5,
-    "labelHalo": true,
-    "mode": "day",
-    "landTones": {
-      "cover": 0.24,
-      "lean": 0.4,
-      "spread": 0.1,
-      "steps": 5
-    },
-    "colors": {
-      "path": "#756276",
-      "ground": "#F4EFDF",
-      "water": "#8FB5C2",
-      "grass": "#D9D0B5",
-      "building": "#B8A68D",
-      "label": "#57485C",
-      "structureEdge": "#756276",
-      "groundEdge": "#C9BFAE",
-      "pathCasing": "#F4EFDF"
-    }
-  },
-  "surfaces": {
-    "walkway": {
-      "material": "paving-stones--warm",
-      "layers": [
-        "path"
-      ],
-      "color": "#7A6E76"
-    },
-    "service-road": {
-      "material": "asphalt--worn",
-      "layers": [
-        "service"
-      ],
-      "color": "#5D515B"
-    },
-    "vegetation": {
-      "material": "grass--meadow",
-      "layers": [
-        "grass",
-        "wood",
-        "park"
-      ],
-      "color": "#A3A17F"
-    },
-    "water": {
-      "material": "water--calm",
-      "layers": [
-        "water"
-      ],
-      "color": "#79B2CC"
-    },
-    "pool": {
-      "material": "water--pool",
-      "layers": [
-        "pool"
-      ],
-      "color": "#75BBD1"
-    },
-    "slide": {
-      "material": "fiberglass--flume",
-      "layers": [
-        "slide"
-      ],
-      "color": "#A36F64"
-    },
-    "structure": {
-      "material": "roofing--shingle",
-      "layers": [
-        "building"
-      ],
-      "color": "#8F8472"
-    }
-  },
-  "landTones": {},
-  "fallback": {
-    "landTone": "name-hue"
-  },
   "terrain": {
-    "source": "usgs-3dep",
     "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n31w087/USGS_13_n31w087.tif",
-    "resolution": 10,
-    "surfaceModel": false,
-    "cellMetres": 2.44,
-    "fitness": "coarse",
-    "relief": {
-      "min": 2.1,
-      "max": 17.6
-    },
     "grid": {
       "cols": 240,
       "rows": 271
     },
+    "bounds": {
+      "east": -86.46936,
+      "west": -86.47545,
+      "north": 30.39219,
+      "south": 30.38621
+    },
+    "relief": {
+      "max": 17.6,
+      "min": 2.1
+    },
+    "source": "usgs-3dep",
+    "fitness": "coarse",
     "hillshade": {
       "file": "hillshade.png",
       "azimuth": 315,
       "altitude": 45
     },
-    "bounds": {
-      "north": 30.39219,
-      "south": 30.38621,
-      "east": -86.46936,
-      "west": -86.47545
+    "cellMetres": 2.44,
+    "resolution": 10,
+    "constrained": {
+      "pads": 69,
+      "nodes": 95619,
+      "paths": 173,
+      "water": 4
     },
     "steepDegrees": 18,
-    "constrained": {
-      "paths": 173,
-      "water": 4,
-      "pads": 69,
-      "nodes": 95619
+    "surfaceModel": false
+  },
+  "version": 1,
+  "fallback": {
+    "landTone": "name-hue"
+  },
+  "surfaces": {
+    "pool": {
+      "color": "#75BBD1",
+      "layers": [
+        "pool"
+      ],
+      "material": "water--pool"
+    },
+    "slide": {
+      "color": "#A36F64",
+      "layers": [
+        "slide"
+      ],
+      "material": "fiberglass--flume"
+    },
+    "water": {
+      "color": "#79B2CC",
+      "layers": [
+        "water"
+      ],
+      "material": "water--calm"
+    },
+    "walkway": {
+      "color": "#7A6E76",
+      "layers": [
+        "path"
+      ],
+      "material": "paving-stones--warm"
+    },
+    "structure": {
+      "color": "#8F8472",
+      "layers": [
+        "building"
+      ],
+      "material": "roofing--shingle"
+    },
+    "vegetation": {
+      "color": "#A3A17F",
+      "layers": [
+        "grass",
+        "wood",
+        "park"
+      ],
+      "material": "grass--meadow"
+    },
+    "service-road": {
+      "color": "#5D515B",
+      "layers": [
+        "service"
+      ],
+      "material": "asphalt--worn"
     }
-  }
+  },
+  "landTones": {}
 }

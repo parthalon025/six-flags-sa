@@ -10,7 +10,9 @@
  */
 
 import path from 'node:path';
-import { OVERRIDE_DIR, readJson, venueSidecar } from './venue-io.mjs';
+// Imported from venue-fs.mjs, not venue-io.mjs: venue-io.mjs imports readSources
+// etc. from this file, so importing back from venue-io.mjs would be a cycle (#32).
+import { OVERRIDE_DIR, readJson, venueSidecar } from './venue-fs.mjs';
 
 const ROOT = path.dirname(path.dirname(OVERRIDE_DIR));
 

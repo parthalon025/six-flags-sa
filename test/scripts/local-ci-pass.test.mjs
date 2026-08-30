@@ -279,6 +279,39 @@ try {
   rmSync(outFile, { force: true });
 }
 
+// --- #604 / #606: the Gate job's `actions/checkout` (fetch-depth: 2) never
+// lands `origin/main` as a remote-tracking ref — it only fetches the PR/push
+// ref, not the wildcard `refs/heads/*:refs/remotes/origin/*` a full clone
+// gets. `git merge-base HEAD origin/main` then fails with
+// `fatal: Not a valid object name origin/main`. The fix is
+// `.github/workflows/test-app.yml` fetching `origin/main` explicitly before
+// Gate runs — this asserts the fallback the fetch step exists to make
+// unnecessary: with the ref genuinely absent, `buildLocalCiContext` must fail
+// closed (null mergeBase/diffHash, non-null head) rather than throw, so a
+// missed fetch degrades to "run full CI", not a crashed Gate job.
+{
+  const dir = mkdtempSync(join(tmpdir(), 'localci-noorigin-'));
+  const git = (...a) => execFileSync('git', a, { cwd: dir, env: scrubGitEnv(), stdio: 'pipe' });
+  git('init', '-qb', 'main');
+  git('config', 'user.email', 't@e.st');
+  git('config', 'user.name', 'T');
+  writeFileSync(join(dir, 'a.js'), 'export const a = 1;\n');
+  git('add', '.');
+  git('commit', '-qm', 'base');
+  // No remote at all — same as a Gate checkout that never fetched origin/main.
+  const ctx = buildLocalCiContext({ baseRef: 'origin/main', cwd: dir });
+  assert.ok(ctx.head, 'HEAD still resolves without origin/main');
+  assert.equal(ctx.mergeBase, null, 'a missing base ref yields no merge-base, not a throw');
+  assert.equal(ctx.diffHash, null, 'a missing base ref yields no diff hash, not a throw');
+  assert.equal(ctx.files, null, 'a missing base ref yields no file list, not a throw');
+  assert.equal(
+    shouldSkipGithubCi(readLocalCiPass(dir), ctx),
+    false,
+    'an unreadable diff can never skip GitHub CI, so Gate fails closed to a full run',
+  );
+  rmSync(dir, { recursive: true, force: true });
+}
+
 // --- Same environment-dependence bug as matt-review's stamp: `git diff` sizes
 // the blob ids in its `index` lines by `core.abbrev=auto`, which git scales
 // with the repository's object count. Hashing that made a stamp written on a

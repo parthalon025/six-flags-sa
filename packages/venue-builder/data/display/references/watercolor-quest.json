@@ -140,5 +140,60 @@
       "key": "style_reference_resemblance",
       "prompt": "Side-by-side with the worn watercolor-quest Skin on the phone, a stranger says the baked world and the palette skin are the same design language"
     }
-  ]
+  ],
+  "bands": {
+    "overview": {
+      "colorFamilies": {
+        "outside": {
+          "anchor": "#CCC1A2",
+          "deltaE": 14
+        },
+        "ground": {
+          "anchor": "#BDB492",
+          "deltaE": 14
+        },
+        "grass": {
+          "anchor": "#BEB592",
+          "deltaE": 14
+        },
+        "wood": {
+          "anchor": "#A6A07B",
+          "deltaE": 14
+        },
+        "water": {
+          "anchor": "#BBCBD2",
+          "deltaE": 14
+        },
+        "lot": {
+          "anchor": "#D5CBAF",
+          "deltaE": 14
+        },
+        "road": {
+          "anchor": "#918582",
+          "deltaE": 14
+        },
+        "service": {
+          "anchor": "#BDB190",
+          "deltaE": 14
+        },
+        "structure": {
+          "anchor": "#796976",
+          "deltaE": 14
+        },
+        "badge": {
+          "anchor": "#FBFAFA",
+          "deltaE": 14
+        }
+      },
+      "withdrawChecks": [
+        "style_structure_presence",
+        "style_road_hierarchy"
+      ],
+      "ground": {
+        "outsideVsInside": {
+          "minDeltaE": 5
+        }
+      }
+    }
+  }
 }

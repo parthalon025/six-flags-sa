@@ -31,9 +31,11 @@ const {
   questSeedsFromInventory,
   inventoryShipArtifacts,
 } = await import('../../packages/venue-builder/lib/inventory-gaps.mjs');
-const { shippedGapsDocument, SHIPPED_GAP_TYPES } = await import(
+const { shippedGapsDocument, shippedGapsForVenue, SHIPPED_GAP_TYPES } = await import(
   '../../packages/venue-builder/lib/ship-gaps.mjs'
 );
+const { serializeVenue } = await import('../../packages/venue-builder/lib/venue-io.mjs');
+const { normalizeGapsDocument } = await import('../../apps/party-tracker/lib/venue/store.js');
 const { SHIPPED_GAP_TYPES: PHONE_GAP_TYPES } = await import('../../apps/party-tracker/lib/venue/store.js');
 
 const ridePois = [
@@ -122,7 +124,10 @@ await check('shipped gaps document adds inventory rows without changing height g
   const pois = [{ n: 'The Beast', i: 'the-beast', c: 'coaster' }];
   const inventoryGaps = [{ type: 'inventory', target: 'Mystery Ride' }];
   const doc = shippedGapsDocument({ venueId: 'park', seeds: [], pois, inventoryGaps });
-  assert.ok(doc.gaps.some((g) => g.type === 'inventory' && g.target === 'Mystery Ride'));
+  assert.ok(
+    doc.gaps.some((g) => g.type === 'inventory' && g.target === 'Mystery Ride'),
+    'shippedGapsDocument should fold the inventoryGaps option into doc.gaps as a type:inventory row',
+  );
   assert.deepEqual(doc.gaps.filter((g) => g.type === 'height'), [{ type: 'height', target: 'the-beast' }]);
   return true;
 });
@@ -146,9 +151,85 @@ await check('above-threshold ship artifacts leave gaps document identical to no-
 });
 
 await check('inventory is on the builder and phone shipped-gap allowlists', () => {
-  assert.ok(SHIPPED_GAP_TYPES.includes('inventory'));
-  assert.ok(PHONE_GAP_TYPES.has('inventory'));
+  assert.ok(
+    SHIPPED_GAP_TYPES.includes('inventory'),
+    'builder allowlist (packages/venue-builder/lib/ship-gaps.mjs SHIPPED_GAP_TYPES) is missing "inventory"',
+  );
+  assert.ok(
+    PHONE_GAP_TYPES.has('inventory'),
+    'phone allowlist (apps/party-tracker/lib/venue/store.js SHIPPED_GAP_TYPES) is missing "inventory"',
+  );
   assert.equal(INVENTORY_COVERAGE_THRESHOLD, 0.5);
+  return true;
+});
+
+await check('a venue build below threshold ships inventory rows the phone accepts', () => {
+  /* The lane was built, tested and never called: `shippedGapsForVenue` — the one
+     production entry, reached from `venue-io.mjs` — neither accepted nor computed
+     inventory rows, so a real build could not emit one however bad its adapter
+     coverage got (#29). The assertion is on the bytes a phone downloads, not on
+     the seam: serialize the document the way `writeVenue` does, parse it back
+     through the phone's own normalizer, and look for the row there. */
+  const parksApiCache = { attractions: [{ name: 'Beta Ride' }] };
+  const doc = shippedGapsForVenue({
+    venueId: 'park',
+    meta: { id: 'park' },
+    pois: ridePois,
+    map: {},
+    adapterCaches: { 'parks-api': parksApiCache },
+  });
+
+  const shipped = JSON.parse(serializeVenue({ meta: { id: 'park' }, map: {}, pois: ridePois, gaps: doc }).gaps);
+  const onPhone = normalizeGapsDocument(shipped);
+  const inventory = onPhone.filter((g) => g.type === 'inventory');
+  assert.ok(inventory.length, 'a build below threshold ships no inventory row at all');
+  assert.deepEqual(
+    inventory.map((g) => g.target).sort(),
+    ['Alpha Coaster', 'Delta Coaster', 'Gamma Ride'],
+    'every rideable ParksAPI did not match reaches the phone by name',
+  );
+  return true;
+});
+
+await check('a venue build above threshold ships none — the lane is a floor, not routine output', () => {
+  /* What the four flagships are: ParksAPI and Queue-Times match 74-80% of their
+     rideables, well over the 0.5 floor, so none of them emits a row today. The
+     lane is the safety net under a venue whose adapters have gone bad, and a
+     wired lane that fired on a healthy venue would be worse than an unwired one. */
+  const parksApiCache = { attractions: ridePois.map((p) => ({ name: p.n })) };
+  const doc = shippedGapsForVenue({
+    venueId: 'park',
+    meta: { id: 'park' },
+    pois: ridePois,
+    map: {},
+    adapterCaches: { 'parks-api': parksApiCache },
+  });
+  assert.equal(doc.gaps.filter((g) => g.type === 'inventory').length, 0);
+  // And the rest of the document is untouched by the lane being wired.
+  const withoutCaches = shippedGapsForVenue({
+    venueId: 'park', meta: { id: 'park' }, pois: ridePois, map: {},
+  });
+  assert.deepEqual(doc, withoutCaches);
+  return true;
+});
+
+await check('the quest seeds the same build raises reach the shipped document', () => {
+  /* `questSeedsFromInventory` was the other function only tests called. Its seeds
+     are name_fix, which ships as its own gap type — so a wired lane has to leave
+     both kinds of row in the document, not silently drop one. */
+  const doc = shippedGapsForVenue({
+    venueId: 'park',
+    meta: { id: 'park' },
+    pois: ridePois,
+    map: {},
+    adapterCaches: { 'parks-api': { attractions: [{ name: 'Beta Ride' }] } },
+  });
+  for (const gap of doc.gaps) {
+    assert.ok(
+      SHIPPED_GAP_TYPES.includes(gap.type),
+      `${gap.type} is not on the builder allowlist, so the phone will drop it`,
+    );
+  }
   return true;
 });
 

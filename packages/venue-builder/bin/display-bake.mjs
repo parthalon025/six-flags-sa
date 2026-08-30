@@ -382,7 +382,7 @@ for (const id of ids) {
     );
     if (harvestProfile) {
       const draftFile = path.join(outRoot, `${base}.profile-draft.json`);
-      writeFileSync(draftFile, `${JSON.stringify(harvestProfileDraft({ points, samples }), null, 2)}\n`);
+      writeFileSync(draftFile, `${JSON.stringify(harvestProfileDraft({ points, samples, band }), null, 2)}\n`);
       console.error(`  profile draft (measured medians): ${draftFile}`);
     }
     const profile = profileForKit(kitId, profiles);

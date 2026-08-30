@@ -25,21 +25,40 @@ green-dominant palette.
 - Fixed cost: days (kit + sprite ledger rows). Variable: ~0. Benefit: proves the sprite lane at
   reference quality; the closest thing to a shipped look today.
 
-## G2 — "Quest atlas" (painted adventure world-map reference)
+## G2 — "Quest atlas" (painted adventure world-map style)
+
+**Split from the quest-node overlay by owner decision, 2026-08-27.** The reference image bundles
+two things that are not one thing: a painted look, and a way of drawing the quest ladder on a map.
+The look is a Skin. The overlay is a product feature that belongs to every Skin. G2 is now the
+look only — see [Quest-node overlay](#quest-node-overlay-universal-feature-not-a-goal) below.
 
 Reference: hand-painted terrain with dramatic relief (waterfalls, cliffs, volcano), saturated
-airbrushed color, and — the product-relevant part — a **node-and-path quest overlay**: numbered
-level nodes strung along dotted paths across the world.
+airbrushed color.
 
-- Pipeline: painted lane (watercolor-quest's displacement/wash machinery pushed toward opaque
-  gouache rendering + terrain relief shading from the DEM/hillshade) **plus a quest-node overlay
-  mode**: Side Quests / Gaps rendered as path-nodes — this goal ties the look to the XP loop
-  directly (the map literally displays the quest ladder).
-- Missing: relief-exaggerated shading pass, painted-texture fills, the node-path overlay renderer
-  (live layer, geo-true — nodes are real Places/Gaps).
-- Fixed cost: the largest procedural build of the five. Benefit: the strongest conversion asset —
-  this is the "does my Skin feel like a prize / is there a game here" screenshot; the quest-node
-  overlay doubles as a feature, not just a style.
+- Pipeline: painted lane — watercolor-quest's displacement/wash machinery pushed toward opaque
+  gouache rendering, plus terrain relief shading from the DEM/hillshade.
+- Missing: relief-exaggerated shading pass, painted-texture fills.
+- Fixed cost: the largest procedural build of the five, even without the overlay. Benefit: the
+  painted pole of the Skin range — the "is this Skin worth earning" screenshot.
+
+## Quest-node overlay (universal feature, not a goal)
+
+Side Quests and Gaps drawn as numbered nodes strung along dotted paths — the map displaying the
+quest ladder directly.
+
+This is **not** part of any goal and does not ship with a Skin. It is a live overlay layer,
+geo-true (nodes are real Places and Gaps), and it composes over **whatever Skin the guest is
+wearing** — painted, pixel, ink, tilemap or the base map. Binding it to G2 would have made a
+product feature earnable, and made four of the five goals unable to show the quest loop at all.
+
+- Pipeline: overlay renderer on the live layer, beside the existing category-glyph overlay. Reads
+  the same truth the Skins restyle; restyles nothing itself.
+- Per-Skin cost after the renderer exists: node and path token values in the Skin's style
+  contract, so the overlay reads correctly against that ground. Not a new renderer per Skin.
+- Sequence it against the **reward loop**, not against the Skin queue — it is wanted the moment
+  Side Quests need to be visible on the map, whichever Skins happen to have shipped by then.
+- Certification: the overlay is judged on legibility over every shipped Skin (Tier-0 figure-ground
+  and colour-alone gates against each ground), not on resemblance to the G2 reference.
 
 ## G3 — "Masterplan" (3D aerial park-render reference)
 
@@ -74,8 +93,9 @@ Reference: 16-bit pixel world map — hard-quantized palette, terraced cliff edg
 connecting landmark nodes, chunky landmark sprites (castles, gates), water dither patterns.
 
 - Pipeline: pixel pass from the research — low-res offscreen bake, palette quantization (image-q),
-  Sobel single-pixel outlines, terrace-step cliffs from the DEM, path-dot node overlay (shares G2's
-  node renderer). Pixel-tycoon's world conversion IS this goal.
+  Sobel single-pixel outlines, terrace-step cliffs from the DEM. Pixel-tycoon's world conversion IS
+  this goal. (The path-dot look of the reference is the universal quest-node overlay drawn over a
+  pixel ground, not a G5 renderer — see Quest-node overlay above.)
 - Fixed cost: small-moderate (quantize + outline passes over the existing bake). Benefit: converts
   the already-shipped pixel-tycoon Skin from live SVG to a certified baked world — retires the last
   color-swap-era renderer.
@@ -83,11 +103,15 @@ connecting landmark nodes, chunky landmark sprites (castles, gates), water dithe
 ## Sequencing (cost → benefit, per the standing frame)
 
 1. **G1** rides Train E's rails immediately after (existing kit lane, days, proves sprite quality).
-2. **G5** next (small fixed cost, retires legacy renderer, shares the node overlay with G2).
+2. **G5** next (small fixed cost, retires legacy renderer).
 3. **G4** (generalizes NPR — mostly reuses Train E machinery).
-4. **G2** (biggest procedural build; also delivers the quest-node feature — schedule when the
-   reward loop needs its showcase).
+4. **G2** (biggest procedural build, now the painted look alone).
 5. **G3** with the Blender tier (E.1) — flagship-only economics.
+
+The **quest-node overlay** is not in this sequence. It is a universal feature (see above) and is
+scheduled against the reward loop — whenever Side Quests need to be visible on the map — not
+against the Skin queue. Every Skin shipped before or after it gains the overlay for the cost of a
+few style-contract token values.
 
 ## Acceptance per goal
 

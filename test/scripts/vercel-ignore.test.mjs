@@ -152,7 +152,40 @@ assert.equal(
   true,
   'production app changes use automation budget without user directive',
 );
+// files == null (unreadable diff) must NOT fail open for an agent preview
+// branch — isAgentPreviewBranch must be checked before the files == null
+// branch, or every claude/worktree-/cursor/ push whose diff can't be read
+// builds a preview and burns the 100/day account budget.
+assert.equal(
+  decideVercelBuild({ files: null, gitRef: 'claude/foo', env: 'preview' }).build,
+  false,
+  'agent preview branch must skip even when the diff is unreadable',
+);
+assert.equal(
+  decideVercelBuild({ files: null, gitRef: 'claude/foo', env: 'preview' }).category,
+  'skip-agent-preview',
+  'unreadable-diff agent preview skip must report skip-agent-preview',
+);
+assert.equal(
+  decideVercelBuild({
+    files: null,
+    gitRef: 'claude/foo',
+    env: 'preview',
+    subject: 'feat: map [vercel build]',
+  }).build,
+  true,
+  'a user-directed build on an agent branch must still win, even with an unreadable diff',
+);
+
 assert.equal(isAgentPreviewBranch('worktree-fix-party', 'preview'), true);
+/* Claude Code agent branches are `claude/<slug>`, the prefix its harness mandates.
+   They were absent from AGENT_PREVIEW_BRANCH while the policy said agents must not
+   push branches hoping for a preview — so every agent push built one and drew from
+   the 100/day account budget, the opposite of what vercel-previews.md promises. */
+assert.equal(isAgentPreviewBranch('claude/factory-development-status-cc21re', 'preview'), true);
+assert.equal(isAgentPreviewBranch('claude/anything', 'preview'), true);
+// Not a blanket match: a real branch that merely contains the word must still build.
+assert.equal(isAgentPreviewBranch('feat/claude-integration', 'preview'), false);
 assert.equal(isAgentPreviewBranch('main', 'preview'), false);
 
 assert.equal(
@@ -195,6 +228,27 @@ assert.match(lib, /\^1/, 'must diff against the first parent');
 assert.match(lib, /version-stamp\.mjs/, 'must treat post-merge version bumps via shared stamp list');
 assert.match(lib, /bump push cancels the merge deploy/, 'production stamp bumps must deploy after merge cancel');
 assert.match(lib, /AGENT_PREVIEW_BRANCH/, 'must skip agent preview branches');
+
+// `worktree.mjs preserve` pushes one archive/* ref per local-only branch on
+// every session start. Those are backups of work in progress, never something
+// to deploy: without this every rescue builds a preview, the way claude/* did
+// until 2026-08-28. Asserted rather than assumed — deleting the pattern must
+// go red.
+assert.equal(
+  isAgentPreviewBranch('archive/slice-h14', 'preview'),
+  true,
+  'archive/* backups must never build a preview',
+);
+assert.equal(
+  isAgentPreviewBranch('archive/claude/train-h-i', 'preview'),
+  true,
+  'a nested archive ref is still a backup',
+);
+assert.equal(
+  isAgentPreviewBranch('feature/real-work', 'preview'),
+  false,
+  'a real feature branch still previews',
+);
 assert.match(lib, /USER_DEPLOY_RESERVE/, 'must document user reserve');
 assert.equal(USER_DEPLOY_RESERVE, 25);
 assert.equal(AUTOMATION_DEPLOY_BUDGET, 75);

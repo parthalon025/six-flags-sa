@@ -306,7 +306,16 @@ export function assignKeys(pois, ledger, { venue = ledger?.venue || null, keepOs
 
   /* -- the ledger this run would leave behind ------------------------------ */
   const keys = {};
-  for (const poi of list) if (!keys[poi.i]) keys[poi.i] = record(poi);
+  for (const poi of list) {
+    if (keys[poi.i]) continue;
+    /* A run with no OpenStreetMap source — `--reapply` reads the bundle, and a
+       bundle carries no `osm` — must not write the field away: it would strip
+       step 1 from every record and leave each place one rename away from
+       rotating its key (#27). The run wins when it has an element of its own;
+       otherwise the prior record's is carried forward. */
+    const carried = !poi.osm && prior[poi.i]?.osm ? { osm: prior[poi.i].osm } : {};
+    keys[poi.i] = record(poi, carried);
+  }
   /* Rebuilt with the key first, because the key is the first thing about a
      place and a generated file that reads well is a generated file people
      check. Provenance stays in the ledger; the bundle is a download. */

@@ -91,7 +91,7 @@ This backlog **strangles** toward the vision. It does not greenfield-rewrite the
 |----|------|-------|-----------|--------|
 | E1.1 | Pipeline integrity defects | Fixes from `park-intelligence-review` workstream (provenance, inventory stage, expect locks) | Tests green; KI bundle provenance coherent | open |
 | E1.2 | Deterministic entity ids | Stable ids for rides/POIs; overrides migrate off display-name-only keys where safe | Joins survive OSM rename; Fiesta duplicate names still OK | **partial** (ledger + `i` on POIs; some overrides still name-keyed) |
-| E1.3 | Static vs dynamic schema | Ride static record shape documented; live fields only in observation/realtime tables | No wait/open mixed into static JSON as “official” | open |
+| E1.3 | Static vs dynamic schema | Ride static record shape documented; live fields only in observation/realtime tables | No wait/open mixed into static JSON as “official” | **done** (docs/guide/venue-builder.md § The static ride record; never-publish enforced in `external-claims.mjs`) |
 | E1.4 | Bundle completeness gate | `venues:report` + expect locks; consolidate dry-run | KI (then all) pass report after rebuild | **done** (tooling + KI walkable lock) |
 
 ---

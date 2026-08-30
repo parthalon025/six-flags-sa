@@ -6,9 +6,11 @@
  * Shared by venue-certify (asks) and ship-gaps (gaps + seeds).
  */
 
-import { compareParksApiToBundle } from './adapters/parks-api.mjs';
-import { compareQueueTimesToBundle } from './adapters/queue-times.mjs';
-import { isRideable } from '@party-tracker/shared/ontology.js';
+import { compareParksApiToBundle, compareQueueTimesToBundle } from './inventory-compare.mjs';
+// Relative for the same reason as name-matching.mjs: ship-gaps.mjs imports this
+// module, and ship-gaps sits inside the import closure the pre-install CI gate
+// loads. A bare workspace specifier here fails on a runner before `npm ci`.
+import { isRideable } from '../../shared/ontology.js';
 
 export const INVENTORY_COVERAGE_THRESHOLD = 0.5;
 

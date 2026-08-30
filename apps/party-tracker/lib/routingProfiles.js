@@ -38,6 +38,30 @@ export const PROFILES = {
     segmentPenalty: () => 1,
     segmentExcluded: () => false,
   },
+  /**
+   * Avoids flights of stairs and ways OpenStreetMap explicitly says are not
+   * wheelchair accessible (`wheelchair=no`). Only hard exclusions — there is
+   * no lesser-but-still-avoid tier, because the tag vocabulary this reads is
+   * itself binary (WAY_FLAGS.WHEELCHAIR_NO is the denial only; presence of
+   * `wheelchair=yes` is not carried at all — see osm-tags.mjs). Offered only
+   * when a venue actually has one of those two signals recorded, matching
+   * `no_steps`'s own gate: a profile with nothing to avoid is the default
+   * profile wearing a second name.
+   */
+  wheelchair: {
+    id: 'wheelchair',
+    label: 'Wheelchair accessible',
+    description: 'Avoids stairs and ways marked not wheelchair accessible',
+    minCoverage: (cov) => cov.steps > 0 || cov.wheelchair > 0,
+    segmentPenalty: (seg) => {
+      if (hasWayFlag(seg.flags, WAY_FLAGS.STEPS) || hasWayFlag(seg.flags, WAY_FLAGS.WHEELCHAIR_NO)) {
+        return Infinity;
+      }
+      return hasWayFlag(seg.flags, WAY_FLAGS.RESTRICTED) ? 4 : 1;
+    },
+    segmentExcluded: (seg) =>
+      hasWayFlag(seg.flags, WAY_FLAGS.STEPS) || hasWayFlag(seg.flags, WAY_FLAGS.WHEELCHAIR_NO),
+  },
 };
 
 /** Profiles worth offering for a venue given its coverage counters. */

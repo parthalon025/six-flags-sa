@@ -1,178 +1,178 @@
 {
-  "version": 1,
-  "venue": "six-flags-fiesta-texas",
   "skin": "blueprint-survey",
+  "venue": "six-flags-fiesta-texas",
+  "tokens": {
+    "mode": "day",
+    "colors": {
+      "path": "#39567E",
+      "grass": "#F0F3E2",
+      "label": "#39567E",
+      "water": "#E3EDF6",
+      "ground": "#FBF7EC",
+      "building": "#FBF7EC",
+      "groundEdge": "#C9D4A8",
+      "pathCasing": "#FBF7EC",
+      "structureEdge": "#39567E"
+    },
+    "labelHalo": true,
+    "landTones": {
+      "lean": 0.18,
+      "cover": 0.12,
+      "steps": 3,
+      "spread": 0.04
+    },
+    "contrastFloor": 4.5
+  },
   "basedOn": {
     "map": "2026-08-09"
   },
-  "tokens": {
-    "contrastFloor": 4.5,
-    "labelHalo": true,
-    "mode": "day",
-    "landTones": {
-      "cover": 0.12,
-      "lean": 0.18,
-      "spread": 0.04,
-      "steps": 3
-    },
-    "colors": {
-      "path": "#39567E",
-      "ground": "#FBF7EC",
-      "water": "#E3EDF6",
-      "grass": "#F0F3E2",
-      "building": "#FBF7EC",
-      "label": "#39567E",
-      "structureEdge": "#39567E",
-      "groundEdge": "#C9D4A8",
-      "pathCasing": "#FBF7EC"
-    }
-  },
-  "surfaces": {
-    "walkway": {
-      "material": "paving-stones--warm",
-      "layers": [
-        "path"
-      ],
-      "color": "#56667B"
-    },
-    "service-road": {
-      "material": "asphalt--worn",
-      "layers": [
-        "service"
-      ],
-      "color": "#394A60"
-    },
-    "vegetation": {
-      "material": "grass--meadow",
-      "layers": [
-        "grass",
-        "wood",
-        "park"
-      ],
-      "color": "#B1B69A"
-    },
-    "water": {
-      "material": "water--calm",
-      "layers": [
-        "water"
-      ],
-      "color": "#ABD4EC"
-    },
-    "pool": {
-      "material": "water--pool",
-      "layers": [
-        "pool"
-      ],
-      "color": "#A8DCF0"
-    },
-    "coaster-track": {
-      "material": "steel--track",
-      "layers": [
-        "coaster"
-      ],
-      "color": "#4B607C"
-    },
-    "slide": {
-      "material": "fiberglass--flume",
-      "layers": [
-        "slide"
-      ],
-      "color": "#7F6869"
-    },
-    "structure": {
-      "material": "roofing--shingle",
-      "layers": [
-        "building"
-      ],
-      "color": "#B7B5AB"
-    },
-    "lot": {
-      "material": "concrete--lot",
-      "layers": [
-        "parking"
-      ],
-      "color": "#D9D6CE"
-    }
-  },
-  "landTones": {
-    "DC Universe": {
-      "day": {
-        "fill": "#F3EFE4",
-        "stroke": "#E4E6CF",
-        "label": "#39567E"
-      }
-    },
-    "Fiesta Bay Boardwalk": {
-      "day": {
-        "fill": "#F3F0E5",
-        "stroke": "#E4E6D0",
-        "label": "#39567E"
-      }
-    },
-    "Los Festivales": {
-      "day": {
-        "fill": "#E9E5DB",
-        "stroke": "#DEDFC9",
-        "label": "#39567E"
-      }
-    },
-    "Rockville": {
-      "day": {
-        "fill": "#E9E5DB",
-        "stroke": "#DEDFC9",
-        "label": "#39567E"
-      }
-    },
-    "Spassburg": {
-      "day": {
-        "fill": "#F3EFE4",
-        "stroke": "#E4E6CF",
-        "label": "#39567E"
-      }
-    },
-    "Texas State Square": {
-      "day": {
-        "fill": "#F3F0E5",
-        "stroke": "#E4E6D0",
-        "label": "#39567E"
-      }
-    }
-  },
-  "fallback": {
-    "landTone": "name-hue"
-  },
   "terrain": {
-    "source": "usgs-3dep",
     "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n30w099/USGS_13_n30w099.tif",
-    "resolution": 10,
-    "surfaceModel": false,
-    "cellMetres": 6.64,
-    "fitness": "marginal",
-    "relief": {
-      "min": 295.8,
-      "max": 375.9
-    },
     "grid": {
       "cols": 240,
       "rows": 254
     },
+    "bounds": {
+      "east": -98.60144,
+      "west": -98.61789,
+      "north": 29.60751,
+      "south": 29.59224
+    },
+    "relief": {
+      "max": 375.9,
+      "min": 295.8
+    },
+    "source": "usgs-3dep",
+    "fitness": "marginal",
     "hillshade": {
       "file": "hillshade.png",
       "azimuth": 315,
       "altitude": 45
     },
-    "bounds": {
-      "north": 29.60751,
-      "south": 29.59224,
-      "east": -98.60144,
-      "west": -98.61789
+    "cellMetres": 6.64,
+    "resolution": 10,
+    "constrained": {
+      "pads": 268,
+      "nodes": 163785,
+      "paths": 938,
+      "water": 40
     },
     "steepDegrees": 18,
-    "constrained": {
-      "paths": 938,
-      "water": 40,
-      "pads": 268,
-      "nodes": 163785
+    "surfaceModel": false
+  },
+  "version": 1,
+  "fallback": {
+    "landTone": "name-hue"
+  },
+  "surfaces": {
+    "lot": {
+      "color": "#D9D6CE",
+      "layers": [
+        "parking"
+      ],
+      "material": "concrete--lot"
+    },
+    "pool": {
+      "color": "#A8DCF0",
+      "layers": [
+        "pool"
+      ],
+      "material": "water--pool"
+    },
+    "slide": {
+      "color": "#7F6869",
+      "layers": [
+        "slide"
+      ],
+      "material": "fiberglass--flume"
+    },
+    "water": {
+      "color": "#ABD4EC",
+      "layers": [
+        "water"
+      ],
+      "material": "water--calm"
+    },
+    "walkway": {
+      "color": "#56667B",
+      "layers": [
+        "path"
+      ],
+      "material": "paving-stones--warm"
+    },
+    "structure": {
+      "color": "#B7B5AB",
+      "layers": [
+        "building"
+      ],
+      "material": "roofing--shingle"
+    },
+    "vegetation": {
+      "color": "#B1B69A",
+      "layers": [
+        "grass",
+        "wood",
+        "park"
+      ],
+      "material": "grass--meadow"
+    },
+    "service-road": {
+      "color": "#394A60",
+      "layers": [
+        "service"
+      ],
+      "material": "asphalt--worn"
+    },
+    "coaster-track": {
+      "color": "#4B607C",
+      "layers": [
+        "coaster"
+      ],
+      "material": "steel--track"
+    }
+  },
+  "landTones": {
+    "Rockville": {
+      "day": {
+        "fill": "#E9E5DB",
+        "label": "#39567E",
+        "stroke": "#DEDFC9"
+      }
+    },
+    "Spassburg": {
+      "day": {
+        "fill": "#F3EFE4",
+        "label": "#39567E",
+        "stroke": "#E4E6CF"
+      }
+    },
+    "DC Universe": {
+      "day": {
+        "fill": "#F3EFE4",
+        "label": "#39567E",
+        "stroke": "#E4E6CF"
+      }
+    },
+    "Los Festivales": {
+      "day": {
+        "fill": "#E9E5DB",
+        "label": "#39567E",
+        "stroke": "#DEDFC9"
+      }
+    },
+    "Texas State Square": {
+      "day": {
+        "fill": "#F3F0E5",
+        "label": "#39567E",
+        "stroke": "#E4E6D0"
+      }
+    },
+    "Fiesta Bay Boardwalk": {
+      "day": {
+        "fill": "#F3F0E5",
+        "label": "#39567E",
+        "stroke": "#E4E6D0"
+      }
     }
   }
 }

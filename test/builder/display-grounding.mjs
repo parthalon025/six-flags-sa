@@ -235,14 +235,34 @@ await check('the record carries relationships, never geometry or names', () => {
     }
   };
 
+  // A record with no `classes`/`groups` at all — an older pipeline's shape
+  // still on disk, or a truncated write — must fail this check with a clear
+  // message, never crash on `Object.keys(undefined)`. A gate that dies on
+  // malformed input cannot say which relationship is wrong.
+  const hasSubstance = (record, label) => {
+    assert.ok(
+      record.classes && Object.keys(record.classes).length >= 4,
+      `${label}: the record must have something in it`,
+    );
+    assert.ok(
+      record.groups?.structure?.groups?.length >= 1,
+      `${label}: and roof groups — the likeliest place to leak truth`,
+    );
+  };
+
+  assert.throws(
+    () => hasSubstance({ venue: 'malformed' }, 'malformed'),
+    /the record must have something in it/,
+    'a record with no classes at all must fail with a clear message, not crash converting undefined to an object',
+  );
+
   // The committed record for a real park, and one harvested in this process —
   // the first is what actually ships, the second covers the path that made it.
   const shipped = JSON.parse(readFileSync(
     new URL('../../packages/venue-builder/data/venues/kings-island/display/grounding.json', import.meta.url),
     'utf8',
   ));
-  assert.ok(Object.keys(shipped.classes).length >= 4, 'the shipped record must have something in it');
-  assert.ok(shipped.groups.structure.groups.length >= 1, 'and roof groups — the likeliest place to leak truth');
+  hasSubstance(shipped, 'kings-island');
   walk(shipped, 'kings-island');
   walk(harvestSynth(), 'synth-park');
   return true;
