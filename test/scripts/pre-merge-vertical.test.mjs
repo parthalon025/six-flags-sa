@@ -115,4 +115,65 @@ assert.deepEqual(stamp.verticals, []);
   rmSync(dir, { recursive: true, force: true });
 }
 
+// --- Uncommitted work in the tree must not get a pass or a stamp (#35).
+// The gate plans from commits; dirty-tree runs would certify code it never ran.
+{
+  const dir = mkdtempSync(join(tmpdir(), 'pre-merge-dirty-'));
+  const g = (...args) =>
+    execFileSync('git', args, {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...scrubGitEnv(),
+        GIT_AUTHOR_NAME: 'T',
+        GIT_AUTHOR_EMAIL: 'test@example.com',
+        GIT_COMMITTER_NAME: 'T',
+        GIT_COMMITTER_EMAIL: 'test@example.com',
+      },
+    });
+  g('init', '-q', '-b', 'main');
+  g('config', 'user.email', 'dirty-test@example.invalid');
+  g('config', 'user.name', 'Dirty Test');
+  mkdirSync(join(dir, 'scripts'), { recursive: true });
+  writeFileSync(join(dir, 'scripts/a.js'), 'export const a = 1;\n');
+  g('add', '.');
+  g('commit', '-qm', 'base');
+  // Branch matches main — empty committed diff — but the working tree has code.
+  writeFileSync(join(dir, 'scripts/a.js'), 'export const a = 99;\n');
+
+  const context = buildLocalCiContext({ baseRef: 'main', cwd: dir });
+  writeLocalCiPass(
+    {
+      context: { ...context, diffHash: 'real-diff-hash' },
+      browserVertical: true,
+      verticals: ['builder', 'app'],
+      factoryLegsRan: ['map'],
+    },
+    dir,
+  );
+  const stampBefore = readFileSync(join(dir, LOCAL_CI_PASS_REL), 'utf8');
+
+  const said = [];
+  const realErr = console.error;
+  console.error = (...parts) => said.push(parts.join(' '));
+  let dirtyCode;
+  try {
+    dirtyCode = await runPreMergeVertical({ baseRef: 'main', cwd: dir });
+  } finally {
+    console.error = realErr;
+  }
+  assert.equal(dirtyCode, 1, 'uncommitted code refuses with exit code 1');
+  assert.match(
+    said.join('\n'),
+    /uncommitted/i,
+    'the refusal names uncommitted work',
+  );
+  assert.equal(
+    readFileSync(join(dir, LOCAL_CI_PASS_REL), 'utf8'),
+    stampBefore,
+    'an aborted run does not downgrade the existing stamp',
+  );
+  rmSync(dir, { recursive: true, force: true });
+}
+
 console.log('pre-merge-vertical tests ok');

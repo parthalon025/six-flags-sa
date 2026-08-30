@@ -14,6 +14,7 @@
  * Interface:
  *   trackedTreeSnapshot(cwd)         → Map<path, status> | null when git is unreadable
  *   treeMutationReason(before, after)→ operator-facing string, or null
+ *   uncommittedWorkReason(cwd)       → operator-facing string, or null when tree is clean
  */
 import { execFileSync } from 'node:child_process';
 import { scrubGitEnv } from './git-env.mjs';
@@ -45,6 +46,35 @@ export function trackedTreeSnapshot(cwd = process.cwd()) {
     snapshot.set(line.slice(3).trim(), line.slice(0, 2));
   }
   return snapshot;
+}
+
+/**
+ * Fail-closed guard for pre-merge-vertical: the gate plans from commits, so
+ * uncommitted work in the tree is work the run cannot certify (#35).
+ *
+ * @param {string} [cwd]
+ * @returns {string|null}
+ */
+export function uncommittedWorkReason(cwd = process.cwd()) {
+  let out;
+  try {
+    out = execFileSync('git', ['status', '--porcelain'], {
+      cwd,
+      env: scrubGitEnv(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+  } catch {
+    return null;
+  }
+  const lines = out.split('\n').filter((line) => line.trim());
+  if (!lines.length) return null;
+  const paths = lines.map((line) => line.slice(3).trim());
+  return [
+    'the working tree has uncommitted changes the gate did not prove',
+    `(${paths.length} path(s): ${paths.join(', ')})`,
+    'Commit first — pre-merge-vertical plans from the committed diff only.',
+  ].join(' ');
 }
 
 /**
