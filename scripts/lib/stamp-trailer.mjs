@@ -55,6 +55,15 @@ export function stampRange({ mergeBase, headRef = 'HEAD' } = {}) {
   return `${mergeBase}..${headRef}`;
 }
 
+/**
+ * Same 256 MB cap as scripts/lib/{local-ci-pass,matt-review}.mjs, and for the
+ * same reason: `git log` over a branch range captures every commit message in
+ * it, and this repo's messages are long enough to blow past Node's 1 MB
+ * default. CI hit exactly that — `spawnSync git ENOBUFS` — and the range read
+ * returned nothing, which every caller renders as "stamp missing".
+ */
+const GIT_MAX_BUFFER = 256 * 1024 * 1024;
+
 function git(cwd, args, opts = {}) {
   // An inherited GIT_DIR outranks `cwd`, so a hook-spawned run would silently
   // operate on the hook's repository. See scripts/lib/git-env.mjs.
@@ -62,6 +71,7 @@ function git(cwd, args, opts = {}) {
     cwd,
     env: scrubGitEnv(),
     encoding: 'utf8',
+    maxBuffer: GIT_MAX_BUFFER,
     ...opts,
   });
 }
