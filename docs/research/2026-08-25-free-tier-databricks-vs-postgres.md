@@ -3,9 +3,9 @@
 **Date:** 2026-08-25  
 **Question:** Within a free or limited-cost constraint, what are the pros/cons and maximum capability of Databricks versus a Docker Postgres (or another hosted service) for Park Bound?
 
-**Does not relitigate ADR-0010.** This note prices the options. Architecture stays: phone never calls a warehouse; PostDB = Postgres; Databricks = optional batch.
+**Does not relitigate ADR-0010a.** This note prices the options. Architecture stays: phone never calls a warehouse; PostDB = Postgres; Databricks = optional batch.
 
-Related: [ADR-0008](../adr/0008-databricks-back-office.md), [ADR-0010](../adr/0010-databricks-ops-free-tier.md), [ADR-0024](../adr/0024-postdb-factory-bus.md), [free-tier API catalog](./2026-08-20-free-tier-api-catalog.md) (APIs, not databases).
+Related: [ADR-0008a](../adr/0008a-databricks-back-office.md), [ADR-0010a](../adr/0010a-databricks-ops-free-tier.md), [ADR-0024](../adr/0024-postdb-factory-bus.md), [free-tier API catalog](./2026-08-20-free-tier-api-catalog.md) (APIs, not databases).
 
 ---
 
@@ -15,7 +15,7 @@ Machine-readable canon (factory epic NOW + operate/park/do-not-add): [`scripts/l
 
 Owner accounts in hand: Clerk Pro, Vercel, Cloudflare, Databricks, local Docker, Higgsfield, Meshy, Unreal/Unity/Godot, Claude Code Max, Cursor, Google AI, Apple Developer, Google Play.
 
-**Invariant:** phone never calls a warehouse; factory writes PostDB (Postgres); app reads exported hash-verified bundles. ADR-0010 / 0016 / 0017 / 0023 / 0024.
+**Invariant:** phone never calls a warehouse; factory writes PostDB (Postgres); app reads exported hash-verified bundles. ADR-0010a / 0016 / 0017 / 0023 / 0024.
 
 ### Operate (this is the product)
 
@@ -79,9 +79,9 @@ Credit-line licenses ship via `scripts/lib/credits-registry.json`: `on-map` · `
 | Job | $0 maximum | Limited-cost maximum (~tens of $/mo) | Databricks unique value |
 |-----|------------|--------------------------------------|-------------------------|
 | **Factory bus (PostDB)** | Docker Postgres on the laptop + CI `postgres:16` service | Neon Launch (pay-as-you-go, scale-to-zero optional) | **None.** Lakebase is another Postgres with worse auth. |
-| **App API (E0)** | Neon Free (0.5 GB, 100 CU-hours) | Neon Launch | **None.** ADR-0010 already forbids Lakebase while the API is on Vercel. |
+| **App API (E0)** | Neon Free (0.5 GB, 100 CU-hours) | Neon Launch | **None.** ADR-0010a already forbids Lakebase while the API is on Vercel. |
 | **Batch analytics / traces / OSM joins** | **DuckDB files on the laptop** (unlimited within RAM/disk) | MotherDuck Lite overflow, or one Databricks serverless job run | Spark + Unity Catalog **only when data no longer fits DuckDB/Postgres**. |
-| **Steward lakehouse UI** | — | Databricks App is **not** limited-cost (~$100–400/mo idle per ADR-0010) | Real, and too expensive for this constraint. |
+| **Steward lakehouse UI** | — | Databricks App is **not** limited-cost (~$100–400/mo idle per ADR-0010a) | Real, and too expensive for this constraint. |
 | **App host (wear-time UI + E0 API)** | Vercel Hobby (non-commercial) | **Vercel Pro $20/mo** (required once the product is commercial) | None. |
 | **Delivery blobs (PMTiles / worlds)** | Seed in `public/` + jsDelivr, or Cloudflare R2 (egress $0) | R2 still cheaper than Vercel Blob / Fast Data Transfer | None. |
 
@@ -120,11 +120,11 @@ Source: [Free Edition limitations](https://docs.databricks.com/aws/en/getting-st
 
 Trial credits: [Databricks free trial (GCP docs)](https://docs.databricks.com/gcp/en/getting-started/free-trial) — credits cover **Databricks usage only**. A *classic* workspace still bills the cloud account for VMs/GKE/storage. A **serverless** trial workspace uses Databricks-managed infra (no extra GCP project bill during trial).
 
-After credits: serverless **jobs scale to zero**. Paused schedules ≈ **$0 compute**, which is the ADR-0010 posture. Each manual `databricks bundle run` spends DBUs.
+After credits: serverless **jobs scale to zero**. Paused schedules ≈ **$0 compute**, which is the ADR-0010a posture. Each manual `databricks bundle run` spends DBUs.
 
 Published serverless job list prices (third-party 2026 roundups of Databricks list SKUs; confirm in `system.billing.list_prices` before budgeting): roughly **$0.35–$0.45 / DBU** for serverless jobs (infra included). A 1 DBU-hour job is pocket change; an always-on SQL warehouse at ~$0.70/DBU is not “limited cost.”
 
-ADR-0010’s own guardrail still holds: **App deployed = $100–400/mo** — outside this constraint. **Scheduled jobs, empty = ~$15–40/mo.**
+ADR-0010a’s own guardrail still holds: **App deployed = $100–400/mo** — outside this constraint. **Scheduled jobs, empty = ~$15–40/mo.**
 
 **Pros at limited cost:** Unity Catalog, Delta time travel, Spark for huge joins, one nightly ingest that exports gold JSON the Node factory already consumes.  
 **Cons:** OAuth/M2M friction; no value until there is volume; Model Serving and Apps blow the budget; Lakebase as PostDB adds JWT-as-password without Spark benefit.
@@ -212,7 +212,7 @@ That stack already exceeds four parks of JSON. The bottleneck is factory *softwa
 - Run Databricks **by hand** when there is a real ingest (contributions/traces). One serverless job, gold JSON out, Node consolidate in.  
 - Still skip: Databricks App, always-on SQL warehouse, Model Serving, Lakebase-as-app-DB.
 
-**When Databricks finally beats Docker/DuckDB:** hundreds of worlds, contribution/trace firehose, Unity Catalog audit of batch, Spark spatial joins that melt a laptop. That is not a free-tier problem; it is a volume trigger already listed in ADR-0010.
+**When Databricks finally beats Docker/DuckDB:** hundreds of worlds, contribution/trace firehose, Unity Catalog audit of batch, Spark spatial joins that melt a laptop. That is not a free-tier problem; it is a volume trigger already listed in ADR-0010a.
 
 ---
 
@@ -257,7 +257,7 @@ Cloudflare **complements** Docker/Neon/Vercel. It does **not** replace Databrick
 
 ## 7. Vercel as an alternative
 
-Vercel is not one product either, and it is **already in the stack**: Next.js `apps/party-tracker` deploys here; E0 API routes run as Fluid Compute functions; seed bundles live under `public/venues/` and ride the same CDN ([ADR-0018](../adr/0018-factory-interaction-and-delivery.md), [ADR-0010](../adr/0010-databricks-ops-free-tier.md)).
+Vercel is not one product either, and it is **already in the stack**: Next.js `apps/party-tracker` deploys here; E0 API routes run as Fluid Compute functions; seed bundles live under `public/venues/` and ride the same CDN ([ADR-0018](../adr/0018-factory-interaction-and-delivery.md), [ADR-0010a](../adr/0010a-databricks-ops-free-tier.md)).
 
 Official: [Hobby](https://vercel.com/docs/plans/hobby), [Pro](https://vercel.com/docs/plans/pro-plan), [pricing](https://vercel.com/pricing), [Fair Use](https://vercel.com/docs/limits/fair-use-guidelines), [Blob](https://vercel.com/docs/vercel-blob/usage-and-pricing). Repo cost sheet: [parkbound-account-pricing](./2026-08-14-parkbound-account-pricing.md).
 
@@ -269,7 +269,7 @@ Do **not** run `venues:build` / OSM consolidates on Vercel Functions or as the p
 
 ### Vs Docker/Neon (PostDB / E0 API)
 
-**Vercel Postgres and Vercel KV are gone.** Storage is Marketplace: Neon Postgres + optional Upstash — already the ADR-0010 E0 choice. PostDB for the factory remains Docker locally / CI `postgres:16`; hosted PostDB = the same Neon, not a Vercel-native engine.
+**Vercel Postgres and Vercel KV are gone.** Storage is Marketplace: Neon Postgres + optional Upstash — already the ADR-0010a E0 choice. PostDB for the factory remains Docker locally / CI `postgres:16`; hosted PostDB = the same Neon, not a Vercel-native engine.
 
 Cron or a Function can *call* `venues:export` against Neon. That is a trigger, not moving the factory onto Vercel.
 
@@ -307,4 +307,4 @@ Same operating model as **Master recommended list** (top of this note).
 - Vercel Hobby / Pro / pricing: https://vercel.com/docs/plans/hobby , https://vercel.com/docs/plans/pro-plan , https://vercel.com/pricing  
 - Vercel Fair Use (Hobby non-commercial): https://vercel.com/docs/limits/fair-use-guidelines  
 - Vercel Blob pricing (512 MB cache, BDT): https://vercel.com/docs/vercel-blob/usage-and-pricing  
-- Repo cost lock: [ADR-0010](../adr/0010-databricks-ops-free-tier.md) , [parkbound-account-pricing](./2026-08-14-parkbound-account-pricing.md)
+- Repo cost lock: [ADR-0010a](../adr/0010a-databricks-ops-free-tier.md) , [parkbound-account-pricing](./2026-08-14-parkbound-account-pricing.md)

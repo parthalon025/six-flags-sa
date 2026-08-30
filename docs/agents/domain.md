@@ -9,7 +9,7 @@ How the engineering skills should consume this repo's domain documentation when 
 ## Before exploring, read these
 
 - **`CONTEXT.md`** at the repo root — **read to clarify** product vocabulary; do not edit it during exploration or implementation unless the owner is explicitly resolving terms (`domain-modeling` / `grilling`). Created lazily by `/domain-modeling` / `/grill-with-docs` — do not invent an empty stub.
-- **`docs/adr/`** — numbered ADRs (`0001-slug.md`, …) that touch the area you're about to work in.
+- **`docs/adr/`** — numbered ADRs (`0001-slug.md`, …) that touch the area you're about to work in. One number, one ADR — `node scripts/ci/adr-numbers.mjs` gates that and prints what to do when two files claim a number.
 
 If any of these files don't exist, **proceed silently**. Don't flag their absence; don't suggest creating them upfront. The `/domain-modeling` skill creates them when terms or decisions actually get resolved.
 

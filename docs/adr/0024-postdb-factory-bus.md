@@ -25,7 +25,7 @@ Owner Round 1 (factories-to-app Wayfinder) confirmed **PostDB** as that canonica
    - Either factory can run alone against PostDB; no runtime link between them.
    - **Git** still holds builder inputs, factory code, certification scripts, and seed bundles — not the authoritative head of factory outputs at scale.
 
-2. **ADR-0018 clauses 2–4 and 6 stand, with the 2026-08-25 operating-stack pause.** CI freshness gates, CDN + download manager delivery, and Train F sequencing stay. Databricks remains back-office only (ADR-0008 / ADR-0010) but jobs stay **PAUSED** — not Lakebase, not a Databricks App. Spark is the add-vendor trigger when DuckDB/Postgres cannot finish the join. Machine-readable list: [`scripts/lib/operating-stack.json`](../../scripts/lib/operating-stack.json).
+2. **ADR-0018 clauses 2–4 and 6 stand, with the 2026-08-25 operating-stack pause.** CI freshness gates, CDN + download manager delivery, and Train F sequencing stay. Databricks remains back-office only (ADR-0008a / ADR-0010a) but jobs stay **PAUSED** — not Lakebase, not a Databricks App. Spark is the add-vendor trigger when DuckDB/Postgres cannot finish the join. Machine-readable list: [`scripts/lib/operating-stack.json`](../../scripts/lib/operating-stack.json).
 
 3. **Supersedes ADR-0018 clause 5 (publication).** Publication is **export from PostDB to Delivery**, not "merge into `public/` as source of truth."
    - **Slice 1:** API manifest + same-origin blobs; seed bundles remain in the app for flagship venues. Query `?since=<revision_id>` is reserved (stub in `packages/venue-builder/lib/delivery/delta-sync.mjs`); delta filtering is ticket 17.

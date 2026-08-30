@@ -204,6 +204,7 @@ export const TEST_ESTATE = {
   'test/builder/world.mjs': ['test:unit', 'test:builder'],
 
   // --- test/scripts: the decisions the workflows call ----------------------
+  'test/scripts/adr-numbers.test.mjs': ['ci-gate'],
   'test/scripts/agent-docs.test.mjs': ['ci-gate'],
   'test/scripts/agent-policy-diff.test.mjs': ['ci-gate'],
   'test/scripts/app-store-connect-pack.test.mjs': ['ci-gate'],

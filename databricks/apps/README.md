@@ -1,6 +1,6 @@
 # Databricks Apps (optional steward surface — **deferred**)
 
-> **Default:** do not deploy. See [ADR-0010](../../docs/adr/0010-databricks-ops-free-tier.md). The registered app `park-bound` stays undeployed until stewards need a UI or Lakebase is chosen over Neon.
+> **Default:** do not deploy. See [ADR-0010a](../../docs/adr/0010a-databricks-ops-free-tier.md). The registered app `park-bound` stays undeployed until stewards need a UI or Lakebase is chosen over Neon.
 
 Parkbound's **batch pipeline** lives in the Asset Bundle ([`../databricks.yml`](../databricks.yml) + `resources/jobs/`). A **Databricks App** is optional — use it when you want a hosted operator UI or API on `*.databricksapps.com` with Lakebase Postgres.
 

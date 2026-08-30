@@ -3,8 +3,8 @@
 Parkbound phones stay offline-first on precached venue JSON. Databricks ingests contributions, guest traces, and builder artifacts — then exports sidecars the existing Node consolidate and venue-builder pipelines consume.
 
 **Full setup:** [docs/guide/databricks.md](../docs/guide/databricks.md)  
-**Decisions (do not relitigate):** [docs/adr/0010-databricks-ops-free-tier.md](../docs/adr/0010-databricks-ops-free-tier.md)  
-**ADR:** [docs/adr/0008-databricks-back-office.md](../docs/adr/0008-databricks-back-office.md)
+**Decisions (do not relitigate):** [docs/adr/0010a-databricks-ops-free-tier.md](../docs/adr/0010a-databricks-ops-free-tier.md)  
+**ADR:** [docs/adr/0008a-databricks-back-office.md](../docs/adr/0008a-databricks-back-office.md)
 
 ## Free tier (default pre-launch)
 
@@ -12,7 +12,7 @@ Parkbound phones stay offline-first on precached venue JSON. Databricks ingests 
 npm run databricks:free-setup
 ```
 
-Deploys **serverless** jobs with **PAUSED** schedules — $0 while idle. Do **not** deploy the App until ADR-0010 deferred-work triggers are met.
+Deploys **serverless** jobs with **PAUSED** schedules — $0 while idle. Do **not** deploy the App until ADR-0010a deferred-work triggers are met.
 
 ## Quick start (when promoting beyond free tier)
 

@@ -1,4 +1,4 @@
--- Profile subscription entitlements — one row per store transaction (ADR-0011).
+-- Profile subscription entitlements — one row per store transaction (ADR-0011a).
 -- Clerk owns identity; Apple/Google/web rails write here. Unique on store txn id
 -- so the same purchase cannot grant twice.
 
