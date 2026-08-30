@@ -5,9 +5,3 @@ skills-lock.json text eol=lf
 # GitNexus index — LadybugDB is binary; caches are generated. Do not CRLF-convert.
 .gitnexus/lbug binary
 .gitnexus/** linguist-generated
-
-# Regenerated CI stamps — a merge conflict here is noise: both gates key on
-# diffHash and fail closed, so a stale stamp makes CI run everything rather
-# than skip. Resolve to ours and let the gate demand a re-stamp.
-scripts/ci/local-ci-pass.json    merge=keep-ours
-scripts/ci/matt-review-pass.json merge=keep-ours

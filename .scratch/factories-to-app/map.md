@@ -23,6 +23,7 @@ the source of truth:
 
 - Owner Round 1: PostDB bus ([ADR-0024](../../docs/adr/0024-postdb-factory-bus.md)), factory module seams ([ADR-0025](../../docs/adr/0025-factory-module-seams.md)), operating stack ([`scripts/lib/operating-stack.json`](../../scripts/lib/operating-stack.json)).
 - Trains H and I: **built**. Do not restart.
+- [Delivery closeout — authority, trigger, bundle shape](issues/19-delivery-closeout.md) (owner, 2026-08-25): delivery authority is **same-origin** static `public/venues/*.bundle.json` on Vercel (R2 deferred behind `addVendorWhen`); export trigger is **steward publish** — `venues:export` run by hand after a PostDB promote, no automatic job in v1; bundle shape at sync is **delta** via `?since=<revision_id>`.
 
 ## Out of scope
 

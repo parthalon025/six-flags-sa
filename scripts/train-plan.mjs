@@ -160,8 +160,9 @@ ${ready.map((r) => `- **${r.id}** (${r.size}, train ${r.train}) — ${r.title}`)
    message before the code makes it pass. A probe or a test that cannot go
    false has proven nothing.
 4. Gate with \`npm run test:pre-merge-vertical\`. Exit 0 does not mean it ran —
-   confirm \`scripts/ci/local-ci-pass.json\`'s \`head\` equals
-   \`git rev-parse HEAD\`. Anything else means the gate aborted early.
+   confirm the \`local-ci-pass\` cache's \`head\` equals \`git rev-parse HEAD\`.
+   Anything else means the gate aborted early. Then publish the stamp with
+   \`node scripts/ci/stamp-commit.mjs\`.
 5. Commit to this branch and push it. Do not merge the PR: the standing
    instruction is one mega PR that merges only when both trains are complete.
 6. Before you stop, re-run \`node scripts/train-plan.mjs status\`. The slices

@@ -686,6 +686,33 @@ await check('the on-map OSM notice opens Settings straight to Credits, listing s
   if (!(await osmRow.count())) throw new Error('Credits screen missing the OpenStreetMap row');
   const license = (await osmRow.locator('.rowValue').innerText()).trim();
   if (!/ODbL/.test(license)) throw new Error(`OpenStreetMap row missing its license: ${license}`);
+
+  // A `credits-screen` row's credit line is the whole reason that row is on this
+  // screen, so it has to be legible here — the generator emitting it into
+  // credits.json is not the same as a guest being able to read it. The aerial
+  // imagery Big Kahuna's paths are surveyed from is served through Esri, and the
+  // owner's call is that the chain gets named rather than quietly re-pointed at a
+  // compliant channel after the fact.
+  const imageryRow = a.locator('.rowList a.row', { hasText: 'Okaloosa County' });
+  if (!(await imageryRow.count())) throw new Error('Credits screen missing the aerial imagery row');
+  const imageryText = (await imageryRow.first().innerText()).trim();
+  if (!/served via Esri World Imagery/i.test(imageryText)) {
+    throw new Error(`imagery row does not name its serving channel: ${imageryText}`);
+  }
+  if (!/Pictometry/i.test(imageryText)) {
+    throw new Error(`imagery row does not name who flew it: ${imageryText}`);
+  }
+  // CC BY 4.0 requires the credit line, so ESA's must render for the same reason.
+  // Unconditional on purpose: guarding this on the row existing would let the
+  // check quietly pass if ESA ever fell out of the registry, which is the case
+  // where a required attribution silently stops shipping.
+  const esaRow = a.locator('.rowList a.row', { hasText: 'ESA WorldCover' });
+  if (!(await esaRow.count())) throw new Error('Credits screen missing the ESA WorldCover row');
+  const esaText = (await esaRow.first().innerText()).trim();
+  if (!/©\s*ESA WorldCover project/i.test(esaText)) {
+    throw new Error(`ESA WorldCover row missing its required CC BY credit line: ${esaText}`);
+  }
+
   await a.locator('.tabItem[data-tab="explore"]').click();
   await a.waitForTimeout(200);
   return true;
