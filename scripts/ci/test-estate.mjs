@@ -271,6 +271,7 @@ export const TEST_ESTATE = {
   'test/scripts/import-closure.test.mjs': ['ci-gate'],
   'test/scripts/vercelignore-import-closures.test.mjs': ['ci-gate'],
   'test/scripts/stamp-trailer.test.mjs': ['ci-gate'],
+  'test/scripts/ci-base-ref-depth.test.mjs': ['ci-gate'],
   'test/scripts/production-redis-guard.test.mjs': ['ci-gate'],
   'test/scripts/upstash-budget.test.mjs': ['ci-gate'],
   'test/scripts/redis-key-census.test.mjs': ['ci-gate'],
