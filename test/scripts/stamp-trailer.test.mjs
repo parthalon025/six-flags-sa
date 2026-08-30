@@ -164,6 +164,12 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
     });
 
   git('init', '-q', '-b', 'main');
+  // In the repo config, not just this helper's env: publishStamps runs git
+  // through scrubGitEnv(), so an identity passed only as GIT_AUTHOR_* never
+  // reaches commit-tree — and a CI runner has no global identity to fall
+  // back on (`fatal: empty ident name`).
+  git('config', 'user.email', 'stamp-test@example.invalid');
+  git('config', 'user.name', 'Stamp Test');
   writeFileSync(join(dir, 'base.txt'), 'base\n');
   git('add', '.');
   git('commit', '-qm', 'base');
@@ -357,6 +363,12 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
       },
     });
   git('init', '-q', '-b', 'main');
+  // In the repo config, not just this helper's env: publishStamps runs git
+  // through scrubGitEnv(), so an identity passed only as GIT_AUTHOR_* never
+  // reaches commit-tree — and a CI runner has no global identity to fall
+  // back on (`fatal: empty ident name`).
+  git('config', 'user.email', 'stamp-test@example.invalid');
+  git('config', 'user.name', 'Stamp Test');
   mkdirSync(join(dir, 'scripts'), { recursive: true });
   writeFileSync(join(dir, 'scripts/a.js'), 'export const a = 1;\n');
   git('add', '.');

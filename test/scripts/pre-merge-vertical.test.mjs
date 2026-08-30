@@ -66,6 +66,10 @@ assert.deepEqual(stamp.verticals, []);
       },
     });
   g('init', '-q', '-b', 'main');
+  // In the repo config, not just g()'s env: publishStamps scrubs the git
+  // environment, so commit-tree sees no identity on a CI runner.
+  g('config', 'user.email', 'stamp-test@example.invalid');
+  g('config', 'user.name', 'Stamp Test');
   mkdirSync(join(dir, 'scripts'), { recursive: true });
   writeFileSync(join(dir, 'scripts/a.js'), 'export const a = 1;\n');
   g('add', '.');
