@@ -564,6 +564,13 @@ function preserve(root, { dryRun = false } = {}) {
     // something is on this disk. An `archive/*` ref is a backup, never merged
     // and never deployed (it is in AGENT_PREVIEW_BRANCH), so the gate has
     // nothing to protect there. Every push that matters is still gated.
+    //
+    // Checked before bypassing it: `.husky/pre-push` runs
+    // `scripts/ci/pre-push.mjs` and nothing else — it decides local CI versus
+    // GitHub Actions to save credits, and enforces the review stamp. No secret
+    // scanning, no credential check, nothing security-relevant is skipped. The
+    // hook documents its own escape hatch (`HUSKY=0 git push`) for exactly this
+    // kind of case; --no-verify is the same thing without assuming husky.
     // Not gitOk: it swallows a failure into '', and a successful push writes
     // to stderr with an empty stdout — so the two are indistinguishable by
     // return value. A rescue that reports success for a push that did not
