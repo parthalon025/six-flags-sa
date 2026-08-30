@@ -684,5 +684,11 @@
     "items": [
       "Trains H and I: align the code with the owner's answers (20/20) (#784)"
     ]
+  },
+  "1.35.15": {
+    "title": "What's new",
+    "items": [
+      "fix(ci): carry gate stamps in commit trailers, so branch merges stop conflicting on them (#778)"
+    ]
   }
 }
