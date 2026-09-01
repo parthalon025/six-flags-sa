@@ -34,7 +34,8 @@ const FAMILY_KEYS = new Set([...Object.values(TERRAIN_NAMES), 'structure', 'badg
 
 const BAND_IDS = new Set(BANDS.map((b) => b.id));
 
-/** Keys a per-band profile overlay may carry (mirrors kit band vocabulary in slice h14). */
+/** Keys a per-band profile overlay may carry (mirrors the kit band vocabulary in
+ *  `display-kit-bands.mjs`, which is `BAND_LOOK_BLOCKS` on the kit side). */
 const BAND_BLOCK_KEYS = new Set(['colorFamilies', 'withdrawChecks', 'ground']);
 
 /** Keys the optional per-profile `iso` block may carry. */

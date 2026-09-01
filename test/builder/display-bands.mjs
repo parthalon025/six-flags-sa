@@ -645,6 +645,143 @@ await check('the bin refuses --band with --max-cols, as a process', () => {
   return true;
 });
 
+/* ---------------------------------------- per-band kit vocabulary (slice h14)
+ *
+ * h5 gave a band the power to REMOVE (`bandGeneralization`). ADR-0021 clause 7
+ * names the other half, and display-bake.mjs's own note defers it: close-band
+ * specificity is "added content from kit vocabulary ... not this policy's job".
+ * `display-kit-bands.mjs` is that vocabulary — what a kit looks like at one
+ * band — and these cases hold it to the same clause-3 rule the removal half
+ * obeys: a band restyles, it never moves anything.
+ */
+const {
+  BAND_LOOK_BLOCKS, bandLookSpec, bandsDeclaredBy, mergeKitSpec,
+} = await import('../../packages/venue-builder/lib/display-kit-bands.mjs');
+
+await check('a band look merges over the kit, and only for that band', () => {
+  const spec = {
+    id: 'k',
+    terrain: { grass: { base: '#111111', texture: { kind: 'tuft', density: 0.3 } } },
+    sprites: { building: { drop: 0.25 } },
+    bands: {
+      overview: { terrain: { grass: { texture: { kind: 'none' } } }, sprites: { building: { drop: 0 } } },
+      close: { sprites: { building: { drop: 0.6 } } },
+    },
+  };
+  const overview = bandLookSpec(spec, 'overview');
+  assert.equal(overview.terrain.grass.texture.kind, 'none', 'the band overrides what it names');
+  assert.equal(overview.terrain.grass.texture.density, 0.3, 'and leaves the rest of the kit standing');
+  assert.equal(overview.terrain.grass.base, '#111111');
+  assert.equal(overview.sprites.building.drop, 0);
+  assert.equal(bandLookSpec(spec, 'close').sprites.building.drop, 0.6);
+  assert.equal(bandLookSpec(spec, 'close').terrain.grass.texture.kind, 'tuft', 'close names no terrain');
+
+  // A band the kit does not speak for is the kit itself. ADR-0019 clause 1
+  // calls mid "today's bake, unchanged", so a kit silent about mid is making
+  // that statement rather than leaving a hole.
+  assert.deepEqual(bandLookSpec(spec, 'mid'), bandLookSpec(spec, null), 'an unnamed band is the base kit');
+  return true;
+});
+
+await check('the bands block is consumed, never handed on', () => {
+  const spec = {
+    id: 'k',
+    terrain: { grass: { base: '#111111' } },
+    bands: { close: { terrain: { grass: { base: '#222222' } } } },
+  };
+  for (const band of [null, ...BANDS.map((b) => b.id)]) {
+    assert.ok(!('bands' in bandLookSpec(spec, band)), `bands survives into the ${band} look`);
+  }
+  // A painter that could still see the block could read one band's look while
+  // drawing another — the one way a band could end up carrying a fact of its own.
+  assert.equal(bandLookSpec(spec, 'close').terrain.grass.base, '#222222');
+  assert.equal(bandLookSpec(spec, 'overview').terrain.grass.base, '#111111');
+  return true;
+});
+
+await check('the kit spec handed in is not mutated', () => {
+  const spec = {
+    id: 'k',
+    terrain: { grass: { base: '#111111' } },
+    bands: { close: { terrain: { grass: { base: '#222222' } } } },
+  };
+  bandLookSpec(spec, 'close');
+  assert.equal(spec.terrain.grass.base, '#111111', 'the kit still says what it said');
+  assert.ok(spec.bands, 'and still declares its bands');
+  return true;
+});
+
+await check('a band look restyles only — clause 3 in the schema', () => {
+  // ADR-0021 clause 3 gives every band one permitted move: remove. A band that
+  // could raise the seeded-noise displacement would be a band MOVING truth, and
+  // the amplitude is stated in bake pixels, which are a different ground
+  // distance at every band — so it cannot be band-scoped even in principle.
+  assert.throws(
+    () => bandLookSpec({ id: 'k', bands: { close: { strokes: { displacement: { amplitude: 2 } } } } }, 'close'),
+    /strokes/,
+  );
+  // Nor may a band rename the kit: one kit reading as two Skins would fool the
+  // distinctness gate and the pack's Skin binding alike.
+  assert.throws(() => bandLookSpec({ id: 'k', bands: { close: { id: 'k-close' } } }, 'close'), /"id"/);
+  assert.throws(() => bandLookSpec({ id: 'k', bands: { close: { label: 'Close' } } }, 'close'), /"label"/);
+  // And no nesting: a band inside a band has no resolution to be.
+  assert.throws(() => bandLookSpec({ id: 'k', bands: { close: { bands: {} } } }, 'close'), /"bands"/);
+  for (const block of BAND_LOOK_BLOCKS) {
+    assert.doesNotThrow(
+      () => bandLookSpec({ id: 'k', bands: { close: { [block]: {} } } }, 'close'),
+      `${block} is a band-scopable block`,
+    );
+  }
+  // A bands block that is not a table of bands at all, and a band whose look is
+  // not a block of kit vocabulary: both are authoring mistakes with no reading.
+  assert.throws(() => bandLookSpec({ id: 'k', bands: [] }, null), /keyed by band id/);
+  assert.throws(() => bandLookSpec({ id: 'k', bands: { close: 'flat' } }, null), /must be an object of kit blocks/);
+  return true;
+});
+
+await check('an unknown band id is refused, not ignored', () => {
+  assert.throws(() => bandLookSpec({ id: 'k' }, 'gigantic'), /unknown band/i);
+  // Refused on every resolve, not only when that band is the one asked for — a
+  // typo'd band name silently dropped is a look nobody ever sees painted.
+  assert.throws(() => bandLookSpec({ id: 'k', bands: { gigantic: {} } }, 'close'), /gigantic/);
+  assert.throws(() => bandLookSpec({ id: 'k', bands: { gigantic: {} } }, null), /gigantic/);
+  return true;
+});
+
+await check('bandsDeclaredBy reports what a kit speaks for, coarsest first', () => {
+  assert.deepEqual(bandsDeclaredBy({ bands: { close: {}, overview: {} } }), ['overview', 'close']);
+  assert.deepEqual(bandsDeclaredBy({}), []);
+  return true;
+});
+
+await check('mergeKitSpec is the one merge the kit schema composes with', () => {
+  // Arrays replace wholesale (a palette is a statement, not a base to extend);
+  // objects merge key by key; an absent key leaves the base standing.
+  assert.deepEqual(mergeKitSpec({ roofs: ['#a', '#b'] }, { roofs: ['#c'] }), { roofs: ['#c'] });
+  assert.deepEqual(mergeKitSpec({ a: { b: 1, c: 2 } }, { a: { c: 3 } }), { a: { b: 1, c: 3 } });
+  assert.deepEqual(mergeKitSpec({ a: 1 }, { b: 2 }), { a: 1, b: 2 });
+  assert.deepEqual(mergeKitSpec({ a: 1 }, {}), { a: 1 });
+  return true;
+});
+
+await check('the shipped kit that speaks per band says something different at each', () => {
+  // The vocabulary is only worth having if a kit uses it. pixel-tycoon is the
+  // first ship (ADR-0021 clause 6), and its per-cell dither is exactly the
+  // declaration that cannot mean the same thing at 2.4 m/px and at 0.15.
+  const spec = JSON.parse(readFileSync(
+    path.join(REPO, 'packages/venue-builder/data/display/kits/pixel-tycoon.json'), 'utf8',
+  ));
+  assert.deepEqual(bandsDeclaredBy(spec), ['overview', 'close'], 'overview and close differ; mid is the base bake');
+  const at = (band) => bandLookSpec(spec, band);
+  assert.equal(at('overview').terrain.grass.texture.kind, 'none', 'overview flattens the per-cell dither');
+  assert.equal(at('mid').terrain.grass.texture.kind, spec.terrain.grass.texture.kind, 'mid is the base bake');
+  assert.ok(at('close').terrain.grass.texture.density > at('mid').terrain.grass.texture.density,
+    'close thickens the dither rather than only sharpening it');
+  assert.ok(at('close').sprites.building.drop > at('overview').sprites.building.drop,
+    'a side wall a quarter of a pixel wide at overview is painted at close');
+  return true;
+});
+
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);
 if (FAIL.length) {
   FAIL.forEach((f) => console.log(' !', f));

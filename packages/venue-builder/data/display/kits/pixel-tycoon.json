@@ -112,5 +112,32 @@
       "service": "#6C6458"
     }
   },
+  "bands": {
+    "overview": {
+      "terrain": {
+        "outside": { "texture": { "kind": "none" } },
+        "ground": { "texture": { "kind": "none" } },
+        "grass": { "texture": { "kind": "none" } },
+        "wood": { "base": "#185018", "texture": { "kind": "none" } },
+        "water": { "texture": { "kind": "none" } },
+        "lot": { "texture": { "kind": "none" } }
+      },
+      "sprites": {
+        "building": { "drop": 0 }
+      }
+    },
+    "close": {
+      "terrain": {
+        "ground": { "texture": { "density": 0.6 } },
+        "grass": { "texture": { "density": 0.72 } },
+        "wood": { "texture": { "density": 0.7 } },
+        "water": { "texture": { "density": 0.4 } }
+      },
+      "sprites": {
+        "tree": { "scale": 1.05 },
+        "building": { "drop": 0.28 }
+      }
+    }
+  },
   "prompt": "Pixel tycoon top-down park: hard 16-colour game-manager palette, chunky flat roofs, undersized sprite trees, double-cased sand roads, dashed service lanes, no painted type — axes (docs/goals/design-language-axes.md): A1 saturated tycoon palette, A3 hard pixel edges, B3 undersized round canopy, B4 flat roofs, B5 double-cased circulation, A6 top-down plate"
 }
