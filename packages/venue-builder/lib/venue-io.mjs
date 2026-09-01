@@ -95,9 +95,12 @@ function extractionsFor(id, extractions) {
  * internal, so this is a separate call from `gapsDocumentFor` rather than a
  * field inside it. See imagery-disputes.mjs.
  */
-export function imageryDisputesFor({ meta, map, extractions } = {}) {
+export function imageryDisputesFor({ meta, map, pois, extractions } = {}) {
   const list = extractionsFor(meta?.id, extractions);
-  return routeImageryExtractions(list, { map: map || {} }).disputes;
+  // `pois` is what lets a place-position dispute be found at all: without the
+  // Places OSM already carries there is nothing for an imagery read of one to
+  // disagree with, and the comparison silently degrades to "imagery adds".
+  return routeImageryExtractions(list, { map: map || {}, pois: pois || [] }).disputes;
 }
 
 /**
@@ -108,9 +111,9 @@ export function imageryDisputesFor({ meta, map, extractions } = {}) {
  * Silent when there is nothing in dispute: an empty file per venue per build
  * would be diff noise, and no record is the same fact as an empty one.
  */
-export function writeImageryDisputes({ meta, map, extractions, write } = {}) {
+export function writeImageryDisputes({ meta, map, pois, extractions, write } = {}) {
   const id = meta?.id;
-  const disputes = imageryDisputesFor({ meta, map, extractions });
+  const disputes = imageryDisputesFor({ meta, map, pois, extractions });
   if (!id || !disputes.length) return { wrote: false, reason: 'nothing in dispute' };
   const sink = write ?? ((doc) => writeJson(venueSidecar(id, DISPUTE_SIDECAR), doc, true));
   return recordDisputes(id, disputes, { write: sink, asOf: new Date().toISOString().slice(0, 10) });
@@ -164,7 +167,7 @@ export function writeVenue({ meta, map, pois, gaps }) {
   // The dispute record is written on the same pass that publishes the venue,
   // so a build can never ship a venue whose disputes went unrecorded. It lands
   // in the builder package, not under public/.
-  writeImageryDisputes({ meta, map });
+  writeImageryDisputes({ meta, map, pois });
   const bytes = serializeVenue({ meta, map, pois, gaps: shipped });
   mkdirSync(VENUE_DIR, { recursive: true });
   writeFileSync(path.join(VENUE_DIR, `${id}.map.json`), bytes.map);

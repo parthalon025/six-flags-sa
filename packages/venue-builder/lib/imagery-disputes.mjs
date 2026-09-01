@@ -42,6 +42,13 @@
  *
  * `path_disputed` — imagery puts a walkway somewhere OSM does not
  *                   (imagery-claims.mjs, ADR-0020 clause 5).
+ * `place_disputed` — imagery reads a Place OSM already carries, tens of metres
+ *                   from where OSM puts it. The same question as a disputed
+ *                   path position and settled the same way: OSM stays
+ *                   canonical, a steward weighs it, nothing is moved and no
+ *                   guest is asked. It is deliberately *not* a ride evidence
+ *                   conflict — that is two sources disagreeing about a ride
+ *                   *feature*, which the owner ruled stays visible on `verify`.
  *
  * Membership is not "sources disagree"; it is "sources disagree *and no guest
  * is asked about it*". Every member is stamped `shipped: false` by
@@ -56,7 +63,7 @@
  * enrolment: the wall below then keeps it off every guest-facing allowlist
  * automatically.
  */
-export const DISPUTE_KINDS = Object.freeze(['path_disputed']);
+export const DISPUTE_KINDS = Object.freeze(['path_disputed', 'place_disputed']);
 
 /** Builder-side sidecar filename. Under data/venues/<id>/, never under public/. */
 export const DISPUTE_SIDECAR = 'imagery-disputes.json';
