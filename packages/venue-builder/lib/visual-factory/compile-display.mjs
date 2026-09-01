@@ -6,9 +6,8 @@
 
 import { readTruthAsync } from '../map-factory/map-io.mjs';
 import {
-  applyMidPyramidToManifest,
   bakeOptsForVenue,
-  cutPackedMidPyramid,
+  cutPackedBandPyramids,
   runDisplayStage,
 } from '../display-pack.mjs';
 import { mirrorDisplayPacksToPostdb } from './postdb-sync.mjs';
@@ -41,26 +40,28 @@ export async function compileDisplay(venueId, opts = {}) {
     terrainResult = prepared?.terrain || null;
   }
 
+  // The band pyramids are cut BEFORE the stage: cutting is sharp (async)
+  // while the stage is synchronous, so the archives have to be on disk by the
+  // time it seals the manifest and the bundle that pin them.
+  const bakeOpts = bakeOptsForVenue(venueId);
+  const pyramids = bakeOpts.bake
+    ? await cutPackedBandPyramids({
+      id: venueId,
+      bakeDir: bakeOpts.bake.dir,
+      outDir: rest.outDir || displayDir(venueId),
+    })
+    : null;
+
   const disp = runDisplayStage(venueId, {
     tiles,
     terrain: terrainResult,
     skinIds,
-    ...bakeOptsForVenue(venueId),
+    ...bakeOpts,
+    ...(pyramids ? { pyramids } : {}),
     ...rest,
   });
 
   await mirrorDisplayPacksToPostdb(venueId, disp.packs);
-
-  if (disp.bakeCerts?.length) {
-    const cut = await cutPackedMidPyramid({
-      id: venueId,
-      bakeCerts: disp.bakeCerts,
-      bakeDir: disp.bakeDir,
-      outDir: disp.outDir,
-      primaryKit: disp.primaryKit,
-    });
-    if (!cut?.gap) applyMidPyramidToManifest(disp.outDir, { primaryKit: disp.primaryKit });
-  }
 
   return { ...disp, terrain: terrainResult };
 }

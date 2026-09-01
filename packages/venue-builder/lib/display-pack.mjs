@@ -21,6 +21,7 @@ import { readTruth } from './map-factory/map-io.mjs';
 import { buildTiles } from './display-tiles.mjs';
 import { buildWorldTier } from './display-world.mjs';
 import { buildPyramid, pyramidFile } from './display-pyramid.mjs';
+import { BANDS } from '@party-tracker/shared/zoomBands.js';
 import { materialTexturesRow, verifyCompiledMaterials } from './display-materials.mjs';
 import { crossRotationCoverageRow } from './display-style-contract.mjs';
 import { writeBundleManifest } from './venue-bundle.mjs';
@@ -635,6 +636,18 @@ export const pyramidGatePasses = (pyramid) => Boolean(
 );
 
 /**
+ * Does a whole band tier clear the gate?
+ *
+ * Stated in terms of the single-cut rule above so a set and its members cannot
+ * disagree. An empty set passes: a venue whose bakes declare no band is owed no
+ * pyramid, and that absence is carried in the manifest's gap rows rather than
+ * in this predicate.
+ *
+ * @param {{ ok?: boolean, gap?: boolean }[]} cuts
+ */
+export const pyramidTierGatePasses = (cuts) => (cuts || []).every(pyramidGatePasses);
+
+/**
  * The geo footprint a pyramid may georeference against.
  *
  * `cert.bounds` is the emitted PNG's own account of where it sits — the bake
@@ -687,29 +700,108 @@ export async function buildBandPyramidTier({
   });
 }
 
+/** The bands a pack may carry, coarsest first — the shared table, not a copy. */
+export const PACK_BAND_IDS = Object.freeze(BANDS.map((b) => b.id));
+
 /**
- * Cut the packed mid band after a display stage, if a bake PNG and its cert
- * are both on disk. The stage itself stays sync (its tests and the pipeline
- * call it as a function); the CLI and the pipeline await this.
+ * Which bake cuts which band — one archive per band, coarsest first.
  *
- * @param {{ id: string, bakeCerts?: { kit: string, cert: object }[], bakeDir: string, outDir: string, primaryKit?: string|null }} deps
+ * A pyramid is written flat into the pack as `<band>.pmtiles`, because that is
+ * the path the app reads: `pyramidBandIdFromPath` in
+ * `apps/party-tracker/lib/venue/download.js` matches
+ * `/display/(overview|close).pmtiles` on the bundle rows a guest opts into. So
+ * a band has exactly one producer even where two kits baked it. The primary
+ * kit wins that tie — the same choice the credits row makes — and the rest are
+ * read in their sorted order, so two runs over one bake dir plan the same cuts.
+ *
+ * A bake that declares no band is deliberately not planned. `--band` is what
+ * fixes the ground sample distance the tiles are addressed at (ADR-0021
+ * clause 2); calling an unbanded bake `mid` would invent that number, and the
+ * manifest records the absence instead.
+ *
+ * @param {{ kit: string, cert: object }[]} bakeCerts
+ * @param {{ primaryKit?: string|null }} [opts]
  */
-export async function cutPackedMidPyramid({
+export function planBandCuts(bakeCerts = [], { primaryKit = null } = {}) {
+  const ordered = [...bakeCerts].sort((a, b) => {
+    if (a.kit === primaryKit) return -1;
+    if (b.kit === primaryKit) return 1;
+    return a.kit < b.kit ? -1 : 1;
+  });
+  const byBand = new Map();
+  for (const { kit, cert } of ordered) {
+    if (!cert?.band || byBand.has(cert.band)) continue;
+    byBand.set(cert.band, { kit, band: cert.band, cert });
+  }
+  // Known bands in table order; a band the table does not name still rides
+  // along, so the cut can fail it rather than drop it silently.
+  const known = PACK_BAND_IDS.filter((band) => byBand.has(band));
+  const unknown = [...byBand.keys()].filter((band) => !PACK_BAND_IDS.includes(band)).sort();
+  return [...known, ...unknown].map((band) => byBand.get(band));
+}
+
+/**
+ * Cut every band this venue's bakes declare into the pack.
+ *
+ * ADR-0019 clause 5 splits the bands by delivery: mid is the offline floor a
+ * bundle always carries, overview and close are the bands a guest opts into
+ * (`OPTIONAL_PYRAMID_BANDS`, app-side). Both land in the same place —
+ * `<pack>/<band>.pmtiles` — and it is the bundle scope, not the path, that
+ * decides which ones a phone fetches.
+ *
+ * Cutting is `sharp`, so this is async while `runDisplayStage` is not: run it
+ * BEFORE the stage and hand the result back as `opts.pyramids`, so the stage
+ * seals a manifest and a bundle that pin the archives it names. Never throws —
+ * every planned band answers with an `ok`, a `gap` (an input or a toolchain
+ * that is absent, which says nothing about this venue) or a plain failure (a
+ * fact about this venue's bytes, which fails the pack).
+ *
+ * @param {{ id: string, bakeCerts?: { kit: string, cert: object }[]|null,
+ *           bakeDir?: string|null, outDir?: string|null, primaryKit?: string|null }} deps
+ * @returns {Promise<object[]>} one cut record per planned band
+ */
+export async function cutPackedBandPyramids({
   id,
-  bakeCerts = [],
-  bakeDir,
-  outDir,
+  bakeCerts = null,
+  bakeDir = null,
+  outDir = null,
   primaryKit = null,
 } = {}) {
-  const row = bakeCerts.find((r) => r.kit === primaryKit) || bakeCerts[0];
-  if (!row?.cert || !bakeDir) {
-    return { gap: true, reason: 'no bake cert — run venues:bake first' };
+  const dir = bakeDir || defaultBakeDir();
+  const packDir = outDir || venueSidecar(id, 'display');
+  const certs = bakeCerts || loadBakeCerts(id, dir);
+  const primary = primaryKit || primaryBakeKit(readSkinTemplates(), certs);
+  const cuts = [];
+  for (const { kit, band, cert } of planBandCuts(certs, { primaryKit: primary })) {
+    const row = { kit, band };
+    if (!PACK_BAND_IDS.includes(band)) {
+      cuts.push({
+        ...row,
+        ok: false,
+        reason: `bake of "${kit}" declares band "${band}", which is not one of ${PACK_BAND_IDS.join('/')}`,
+      });
+      continue;
+    }
+    const bakePng = path.join(dir, `${id}--${kit}.png`);
+    if (!existsSync(bakePng)) {
+      cuts.push({ ...row, ok: false, gap: true, reason: `${band} bake PNG missing — run venues:bake first` });
+      continue;
+    }
+    if (!cert?.bounds) {
+      cuts.push({
+        ...row,
+        ok: false,
+        gap: true,
+        reason: `bake of "${kit}" carries no geo bounds — rebake with the current builder`,
+      });
+      continue;
+    }
+    const cut = await buildBandPyramidTier({
+      id, bandId: band, bakePng, cert, outDir: packDir,
+    });
+    cuts.push({ ...row, ...cut });
   }
-  const bakePng = path.join(bakeDir, `${id}--${row.kit}.png`);
-  if (!existsSync(bakePng)) {
-    return { gap: true, reason: 'mid bake PNG missing' };
-  }
-  return buildBandPyramidTier({ id, cert: row.cert, bakePng, outDir });
+  return cuts;
 }
 
 /**
@@ -874,23 +966,19 @@ export function bakeOptsForVenue(id, bakeDir = defaultBakeDir()) {
 }
 
 /**
- * After an async mid-pyramid cut, rewrite the sealed pack contract so
- * `band:mid` names the file that now exists instead of the pre-cut gap.
+ * The venue's primary bake, which is a meaningful choice rather than directory
+ * order: the first active Skin's bakeKit binding (skins.json) wins — which kit
+ * fronts the credits carries real attribution weight — with the sorted first
+ * bake as the deterministic fallback. Shared so the band cut and the stage
+ * that manifests it name the same kit.
  */
-export function applyMidPyramidToManifest(outDir, { primaryKit = null } = {}) {
-  const manifestFile = path.join(outDir, 'manifest.json');
-  const mid = pyramidFile(outDir, 'mid');
-  if (!existsSync(manifestFile) || !mid) return { updated: false };
-  const manifest = readJson(manifestFile, null);
-  if (!manifest?.tiers) return { updated: false };
-  manifest.tiers['band:mid'] = {
-    file: path.basename(mid),
-    bytes: statSync(mid).size,
-    band: 'mid',
-    kit: primaryKit,
-  };
-  writeJson(manifestFile, manifest, true);
-  return { updated: true };
+export function primaryBakeKit(templates, bakeCerts = []) {
+  const baked = new Set(bakeCerts.map(({ kit }) => kit));
+  const boundKits = Object.keys(templates).sort()
+    .map((skinId) => templates[skinId])
+    .filter((t) => t.status === 'active' && t.bakeKit && baked.has(t.bakeKit))
+    .map((t) => t.bakeKit);
+  return boundKits[0] || bakeCerts[0]?.kit || null;
 }
 
 export function foldBakeCerts(bakeCerts) {
@@ -936,8 +1024,11 @@ const fileEntry = (name, file, meta) => (existsSync(file)
  * human-gated step — this writes builder data only.
  *
  * @param {string} id venue id
- * @param {{ map?: object, pois?: object[], skinIds?: string[], outDir?: string, write?: boolean }} opts
- *   map/pois inject truth (tests); outDir overrides data/venues/<id>/display/.
+ * @param {{ map?: object, pois?: object[], skinIds?: string[], outDir?: string,
+ *           write?: boolean, pyramids?: object[] }} opts
+ *   map/pois inject truth (tests); outDir overrides data/venues/<id>/display/;
+ *   pyramids is `cutPackedBandPyramids`' record of the band cuts this pack
+ *   ships, which the stage manifests and certifies but does not perform.
  */
 export function runDisplayStage(id, opts = {}) {
   const { map, pois } = opts.map ? { map: opts.map, pois: opts.pois || [] } : loadTruthFor(id);
@@ -1052,6 +1143,7 @@ export function runDisplayStage(id, opts = {}) {
   // absent ones as recorded gaps.
   let bakes = null;
   let worlds = null;
+  let pyramids = null;
   let bakeCerts = [];
   let primaryKit = null;
   let bakeDir = null;
@@ -1092,15 +1184,7 @@ export function runDisplayStage(id, opts = {}) {
       },
     ]));
 
-    // The venue's primary bake is a meaningful choice, not directory order:
-    // the first active Skin's bakeKit binding (skins.json) wins — which kit
-    // fronts the credits carries real attribution weight — with the sorted
-    // first bake as the deterministic fallback.
-    const boundKits = Object.keys(templates).sort()
-      .map((skinId) => templates[skinId])
-      .filter((t) => t.status === 'active' && t.bakeKit && bakes[t.bakeKit])
-      .map((t) => t.bakeKit);
-    primaryKit = boundKits[0] || bakeCerts[0]?.kit || null;
+    primaryKit = primaryBakeKit(templates, bakeCerts);
     // World tier (ADR-0016): each bakeKit-bound Skin's bake lands in the
     // pack as an image-on-truth-bounds world. This is what retired the
     // raster-PMTiles seam (lib/display-raster.mjs): that path recorded a
@@ -1108,7 +1192,48 @@ export function runDisplayStage(id, opts = {}) {
     const worldTier = buildWorldTier({ id, templates, bakeDir, bakeCerts, outDir, write });
     worlds = worldTier.worlds;
     written.push(...worldTier.written);
-    const midPyramid = pyramidFile(outDir, 'mid');
+    // Band tier (ADR-0019 clause 5): one row per band of the shared table,
+    // read off disk so a pack rebuilt without a re-cut still names the
+    // archives it has. The cut is `sharp` and this stage is not async, so it
+    // ran before the stage (`cutPackedBandPyramids`); `opts.pyramids` is that
+    // run's record, and it supplies the producing kit and the reason a band
+    // is missing.
+    pyramids = opts.pyramids || [];
+    const cutByBand = new Map(pyramids.map((c) => [c.band, c]));
+    const bandEntries = PACK_BAND_IDS.map((band) => {
+      const archive = pyramidFile(outDir, band);
+      if (archive) {
+        return fileEntry(`band:${band}`, archive, { band, kit: cutByBand.get(band)?.kit ?? primaryKit });
+      }
+      return {
+        name: `band:${band}`,
+        gap: true,
+        reason: cutByBand.get(band)?.reason
+          || `${band} pyramid not cut — rebake with --band ${band}, then cutPackedBandPyramids`,
+      };
+    });
+    // A band that will not cut is a fact about this venue's bytes and fails
+    // the pack; an absent sharp or an unbaked band is a recorded gap, exactly
+    // as the sibling tiles gate treats an absent tippecanoe.
+    const cutBands = pyramids.filter((c) => c.ok);
+    const brokenBands = pyramids.filter((c) => !c.ok && !c.gap);
+    const gapBands = pyramids.filter((c) => c.gap);
+    venueChecks.push(check({
+      key: 'pyramids',
+      claim: 'every band this venue baked is cut into a raster pyramid the shipped PMTiles reader can address, or the cut is a recorded gap',
+      pass: pyramidTierGatePasses(pyramids),
+      evidence: pyramids.length
+        ? [
+          cutBands.map((c) => `${c.band}:${c.kit} ${c.sizeKb} KB`).join(', '),
+          brokenBands.map((c) => `BROKEN ${c.reason}`).join('; '),
+          gapBands.map((c) => `gap: ${c.reason}`).join('; '),
+        ].filter(Boolean).join(' | ')
+        : 'no bake declares a band — this venue is owed no pyramid',
+      confidence: cutBands.length || brokenBands.length ? 'high' : 'moderate',
+      falsifier: 'sharp runs on a declared band and produces no readable archive',
+      soWhat: 'overview and close are the bands a guest opts into offline (ADR-0021 clause 5); a band with no pyramid is a zoom that never sharpens',
+    }));
+    written.push(...cutBands.map((c) => c.file));
     const manifest = tierManifest([
       fileEntry('vector', path.join(outDir, 'base.pmtiles')),
       ...worldTier.entries,
@@ -1116,9 +1241,7 @@ export function runDisplayStage(id, opts = {}) {
       primaryKit
         ? fileEntry('credits', path.join(bakeDir, `${id}--${primaryKit}.credits.json`), { kit: primaryKit })
         : { name: 'credits', gap: true, reason: 'no baked kits — run venues:bake first' },
-      midPyramid
-        ? fileEntry('band:mid', midPyramid, { band: 'mid', kit: primaryKit })
-        : { name: 'band:mid', gap: true, reason: 'mid pyramid not cut — run buildBandPyramidTier' },
+      ...bandEntries,
     ]);
     if (write) {
       const manifestFile = path.join(outDir, 'manifest.json');
@@ -1137,6 +1260,12 @@ export function runDisplayStage(id, opts = {}) {
     checks: venueChecks,
     ...(bakes ? { bakes } : {}),
     ...(worlds && Object.keys(worlds).length ? { worlds } : {}),
+    // The cert is a committed artifact and a no-op rerun must be byte-identical,
+    // so a band row carries the archive's own name, never the absolute path
+    // this machine happened to write it to.
+    ...(pyramids && pyramids.length
+      ? { pyramids: pyramids.map((c) => (c.file ? { ...c, file: path.basename(c.file) } : c)) }
+      : {}),
     skins: Object.fromEntries(
       Object.entries(packs).map(([skinId, p]) => [skinId, p.certification]),
     ),
@@ -1166,6 +1295,7 @@ export function runDisplayStage(id, opts = {}) {
     tiles,
     bakes,
     worlds,
+    pyramids,
     written,
     outDir,
     bakeDir,

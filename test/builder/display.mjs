@@ -1098,24 +1098,15 @@ await check('runDisplayStage with bakes: folds certs, binds the primary kit via 
     pyramidBoundsFromCert,
     loadBakeCerts,
     bakeOptsForVenue,
-    applyMidPyramidToManifest,
+    primaryBakeKit,
     defaultBakeDir,
   } = await import('../../packages/venue-builder/lib/display-pack.mjs');
   assert.deepEqual(bakeOptsForVenue('nobody-baked-this', bakeDir + '-empty'), {}, 'no certs → do not fold bake rows');
   assert.equal(loadBakeCerts('test-park', bakeDir).length, 2, 'iso rotation certs stay out of the pack fold');
   assert.deepEqual(bakeOptsForVenue('test-park', bakeDir), { bake: { dir: bakeDir } });
   assert.match(defaultBakeDir(), /display-bake/);
-  const sealedDir = mkdtempSync(path.join(tmpdir(), 'sealed-'));
-  writeFileSync(path.join(sealedDir, 'manifest.json'), JSON.stringify({
-    version: 1,
-    tiers: { 'band:mid': { gap: true, reason: 'not cut' } },
-  }));
-  writeFileSync(path.join(sealedDir, 'mid.pmtiles'), 'tiles');
-  assert.equal(applyMidPyramidToManifest(sealedDir, { primaryKit: 'rpg-overworld' }).updated, true);
-  const sealed = JSON.parse(readFileSync(path.join(sealedDir, 'manifest.json'), 'utf8'));
-  assert.equal(sealed.tiers['band:mid'].gap, undefined);
-  assert.equal(sealed.tiers['band:mid'].kit, 'rpg-overworld');
-  assert.ok(sealed.tiers['band:mid'].bytes > 0);
+  assert.equal(primaryBakeKit(readSkinTemplates(), loadBakeCerts('test-park', bakeDir)), 'rpg-overworld',
+    'the cut and the stage name one primary kit, from the skins binding');
   assert.throws(
     () => pyramidBoundsFromCert(null),
     /cert\.bounds/,
@@ -1147,6 +1138,205 @@ await check('runDisplayStage with bakes: folds certs, binds the primary kit via 
     map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir: mkdtempSync(path.join(tmpdir(), 'display-')), bake: { dir: mkdtempSync(path.join(tmpdir(), 'nobakes-')) },
   });
   assert.equal(empty.certified, false, 'no bakes = recorded gap, stage fails honestly');
+  return true;
+});
+
+/* -------------------------------------------------- the band pyramid tier -- */
+
+/*
+ * ADR-0019 clause 5 / ADR-0021 clause 5. Every band a venue bakes is cut into
+ * `<pack>/<band>.pmtiles`: mid is the offline floor every bundle carries, and
+ * overview and close are the bands a guest opts into. So the pack has to do
+ * four things these cases hold it to — cut a pyramid for every band a bake
+ * DECLARES, refuse to guess a band for a bake that declares none, name the
+ * archives at the path the app's download manager actually reads, and fail the
+ * pack when a declared band will not cut.
+ */
+
+const {
+  PACK_BAND_IDS,
+  planBandCuts,
+  pyramidTierGatePasses,
+  cutPackedBandPyramids,
+} = await import('../../packages/venue-builder/lib/display-pack.mjs');
+// The consumer, imported rather than restated: a produced path this module
+// spells by hand proves nothing about the path the phone matches.
+const {
+  OPTIONAL_PYRAMID_BANDS,
+  pyramidBandIdFromPath,
+  manifestFilesForScope,
+} = await import('../../apps/party-tracker/lib/venue/download.js');
+
+const BAND_BOUNDS = { west: 0, south: 0, east: 0.01, north: 0.01 };
+
+/** A flat-colour PNG of known size — a stand-in band bake sharp can really read. */
+async function paintBake(file, width, height) {
+  const sharp = (await import('sharp')).default;
+  const raw = Buffer.alloc(width * height * 3, 90);
+  await sharp(raw, { raw: { width, height, channels: 3 } }).png().toFile(file);
+  return file;
+}
+
+/** A bake dir holding one bake per named kit, each cert as given. */
+async function bakeDirWith(certs) {
+  const { writeFileSync } = await import('node:fs');
+  const dir = mkdtempSync(path.join(tmpdir(), 'bandbakes-'));
+  for (const [kit, spec] of Object.entries(certs)) {
+    const { band = null, png = 'real', bounds = BAND_BOUNDS } = spec;
+    writeFileSync(path.join(dir, `test-park--${kit}.style-cert.json`), JSON.stringify({
+      certified: true,
+      signature: `sig-${kit}`,
+      bounds,
+      ...(band ? { band } : {}),
+      checks: [{ key: 'style_terrain_palette', pass: true, evidence: 'fixture' }],
+    }));
+    writeFileSync(path.join(dir, `test-park--${kit}.credits.json`), '{"assets":[]}');
+    const bakePng = path.join(dir, `test-park--${kit}.png`);
+    if (png === 'real') await paintBake(bakePng, 640, 384);
+    else writeFileSync(bakePng, png);
+  }
+  return dir;
+}
+
+/** Cut this venue's bands, then pack over the archives the cut wrote. */
+async function packWithBands(bakeDir, outDir) {
+  const pyramids = await cutPackedBandPyramids({ id: 'test-park', bakeDir, outDir });
+  const result = runDisplayStage('test-park', {
+    map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir, bake: { dir: bakeDir }, pyramids,
+  });
+  return { pyramids, result };
+}
+
+const packDir = () => mkdtempSync(path.join(tmpdir(), 'display-'));
+
+await check('the band gate: an absent toolchain is a gap, a band that will not cut is a failure', () => {
+  // Driven through the exported gate rather than a local restatement of it: a
+  // test that re-implements the rule drifts from the rule the pack applies and
+  // passes anyway.
+  assert.equal(pyramidTierGatePasses([{ ok: false, gap: true, reason: 'sharp not installed' }]), true,
+    'an absent native module says nothing about this venue');
+  assert.equal(pyramidTierGatePasses([{ ok: false, reason: 'close pyramid failed: bake not found' }]), false,
+    'a cutter that ran and failed is a fact about this venue');
+  assert.equal(pyramidTierGatePasses([{ ok: true }, { ok: false, reason: 'boom' }]), false,
+    'one broken band fails the set');
+  assert.equal(pyramidTierGatePasses([{ ok: true }, { ok: false, gap: true, reason: 'no sharp' }]), true);
+  assert.equal(pyramidTierGatePasses([]), true, 'a venue owed no pyramid is not a failing one');
+  return true;
+});
+
+await check('one archive per band: the primary kit wins a tie, an unbanded bake is not planned', () => {
+  assert.deepEqual(PACK_BAND_IDS, ['overview', 'mid', 'close'], 'the shared band table, coarsest first');
+  const certs = [
+    { kit: 'island-brochure', cert: { band: 'close', bounds: BAND_BOUNDS } },
+    { kit: 'rpg-overworld', cert: { band: 'overview', bounds: BAND_BOUNDS } },
+  ];
+  assert.deepEqual(planBandCuts(certs).map((c) => c.band), ['overview', 'close'],
+    'planned coarsest first, whatever order the certs were read in');
+  const tie = [
+    { kit: 'island-brochure', cert: { band: 'mid', bounds: BAND_BOUNDS } },
+    { kit: 'rpg-overworld', cert: { band: 'mid', bounds: BAND_BOUNDS } },
+  ];
+  assert.deepEqual(planBandCuts(tie, { primaryKit: 'rpg-overworld' }).map((c) => c.kit), ['rpg-overworld'],
+    'one band is one flat archive, so the primary kit cuts it');
+  assert.deepEqual(planBandCuts(tie).map((c) => c.kit), ['island-brochure'],
+    'no primary named — sorted order decides, so two runs plan the same cut');
+  assert.deepEqual(planBandCuts([{ kit: 'island-brochure', cert: { bounds: BAND_BOUNDS } }]), [],
+    'an unbanded bake has no ground resolution to address tiles at');
+  return true;
+});
+
+await check('a band bake is cut to the pmtiles path the app downloads', async () => {
+  const { existsSync } = await import('node:fs');
+  const outDir = packDir();
+  const bakeDir = await bakeDirWith({
+    'island-brochure': { band: 'overview' },
+    'rpg-overworld': { band: 'mid' },
+  });
+  const { pyramids, result } = await packWithBands(bakeDir, outDir);
+  assert.deepEqual(pyramids.map((c) => `${c.band}:${c.ok}`), ['overview:true', 'mid:true'],
+    JSON.stringify(pyramids));
+
+  const manifest = JSON.parse(readFileSync(path.join(outDir, 'manifest.json'), 'utf8'));
+  const row = manifest.tiers['band:overview'];
+  assert.ok(row && !row.gap, `expected an overview tier, got ${JSON.stringify(row)}`);
+  assert.equal(row.file, 'overview.pmtiles', 'flat in the pack, which is what the app matches');
+  assert.equal(row.band, 'overview');
+  assert.equal(row.kit, 'island-brochure', 'the row names the kit that actually cut it');
+  assert.ok(row.bytes > 0, 'the archive has bytes');
+  assert.ok(existsSync(path.join(outDir, 'overview.pmtiles')), 'on disk where the manifest says');
+  assert.equal(manifest.tiers['band:mid'].file, 'mid.pmtiles');
+  assert.equal(manifest.tiers['band:close'].gap, true, 'a band nothing baked stays a recorded gap');
+
+  // The assertion this tier exists for: the bundle row a guest opts into is the
+  // row the app's OWN reader recognizes as an optional band. Main ships the
+  // consumer (OPTIONAL_PYRAMID_BANDS behind the offline-download opt-in) and
+  // matches `/display/(overview|close).pmtiles`; produce anything else and the
+  // guest is offered a band nothing built.
+  const bundle = JSON.parse(readFileSync(path.join(outDir, 'bundle.json'), 'utf8'));
+  const optional = manifestFilesForScope(bundle, 'pyramid').map((f) => f.path);
+  assert.deepEqual(optional, ['/venues/test-park/display/overview.pmtiles'],
+    `the opt-in scope must name the produced archive: ${JSON.stringify(bundle.files.map((f) => f.path))}`);
+  assert.equal(pyramidBandIdFromPath(optional[0]), 'overview');
+  assert.ok(OPTIONAL_PYRAMID_BANDS.includes(pyramidBandIdFromPath(optional[0])));
+  const floor = manifestFilesForScope(bundle, 'floor').map((f) => f.path);
+  assert.ok(floor.includes('/venues/test-park/display/mid.pmtiles'),
+    `mid is the offline floor, never an opt-in band: ${JSON.stringify(floor)}`);
+  assert.ok(!floor.includes(optional[0]), 'an opt-in band is not dragged into the floor download');
+  assert.ok(bundle.files.every((f) => !f.path.endsWith('.pmtiles') || f.sha256.length === 64),
+    'every shipped archive is hash-pinned');
+
+  const cert = JSON.parse(readFileSync(path.join(outDir, 'display-certification.json'), 'utf8'));
+  const gate = cert.checks.find((c) => c.key === 'pyramids');
+  assert.ok(gate, 'the pack certifies its pyramids');
+  assert.equal(gate.pass, true, gate.evidence);
+  assert.match(gate.evidence, /overview:island-brochure/, gate.evidence);
+  assert.deepEqual(cert.pyramids.map((c) => c.file), ['overview.pmtiles', 'mid.pmtiles'],
+    'a committed cert names the archives, never this machine’s absolute paths');
+  assert.equal(result.certified, true);
+  assert.ok(result.written.includes(path.join(outDir, 'overview.pmtiles')),
+    'the stage reports the archive it ships');
+  return true;
+});
+
+await check('an unbanded bake gets no guessed band — a recorded gap, not a broken pack', async () => {
+  const outDir = packDir();
+  const bakeDir = await bakeDirWith({ 'island-brochure': {} });
+  const { pyramids, result } = await packWithBands(bakeDir, outDir);
+  assert.deepEqual(pyramids, [], 'nothing is cut for a bake that declares no ground resolution');
+  const manifest = JSON.parse(readFileSync(path.join(outDir, 'manifest.json'), 'utf8'));
+  for (const band of PACK_BAND_IDS) {
+    const row = manifest.tiers[`band:${band}`];
+    assert.equal(row.gap, true, `expected a gap for ${band}, got ${JSON.stringify(row)}`);
+    assert.match(row.reason, /--band/, row.reason);
+  }
+  const bundle = JSON.parse(readFileSync(path.join(outDir, 'bundle.json'), 'utf8'));
+  assert.deepEqual(manifestFilesForScope(bundle, 'pyramid'), [], 'no band cut, nothing to opt into');
+  // A venue that has only ever baked the one-band world still certifies: the
+  // missing pyramid costs prettiness, not function (ADR-0021 clause 1).
+  const cert = JSON.parse(readFileSync(path.join(outDir, 'display-certification.json'), 'utf8'));
+  assert.equal(cert.checks.find((c) => c.key === 'pyramids').pass, true);
+  assert.equal(result.certified, true, 'an unbanded pack is not a broken pack');
+  return true;
+});
+
+await check('a declared band that will not cut fails the pack', async () => {
+  const outDir = packDir();
+  // Declares a band, so a pyramid is owed; the bytes are not a PNG, so sharp
+  // runs and fails. That is a fact about this venue, not an absent toolchain.
+  const bakeDir = await bakeDirWith({ 'island-brochure': { band: 'close', png: 'not-a-png' } });
+  const { pyramids, result } = await packWithBands(bakeDir, outDir);
+  assert.equal(pyramids.length, 1, JSON.stringify(pyramids));
+  assert.equal(pyramids[0].ok, false);
+  assert.equal(pyramids[0].gap, undefined, 'sharp ran, so this is not a toolchain gap');
+  const cert = JSON.parse(readFileSync(path.join(outDir, 'display-certification.json'), 'utf8'));
+  const gate = cert.checks.find((c) => c.key === 'pyramids');
+  assert.equal(gate.pass, false, gate.evidence);
+  assert.match(gate.evidence, /close/, gate.evidence);
+  assert.equal(result.certified, false, 'a band the guest can never sharpen fails the gate');
+  const manifest = JSON.parse(readFileSync(path.join(outDir, 'manifest.json'), 'utf8'));
+  assert.equal(manifest.tiers['band:close'].gap, true);
+  assert.match(manifest.tiers['band:close'].reason, /close pyramid failed/,
+    manifest.tiers['band:close'].reason);
   return true;
 });
 

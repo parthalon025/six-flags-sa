@@ -23,7 +23,7 @@
  */
 
 import path from 'node:path';
-import { runDisplayStage, loadTruthFor } from '../lib/display-pack.mjs';
+import { cutPackedBandPyramids, runDisplayStage, loadTruthFor } from '../lib/display-pack.mjs';
 import { VENUE_DIR, readJson, venueSidecar } from '../lib/venue-io.mjs';
 import { prepareVenueTerrain } from '../lib/terrain/venue-terrain.mjs';
 import { mirrorDisplayPacksToPostdb } from '../lib/visual-factory/postdb-sync.mjs';
@@ -84,18 +84,13 @@ for (const id of targets) {
       terrain = prepared?.terrain || null;
       if (!json && !terrain) console.log(`${id}: no DEM coverage — compiling flat`);
     }
-    const result = runDisplayStage(id, { tiles, terrain, ...(bake ? { bake: {} } : {}) });
+    // Bands are cut before the stage: cutting is sharp (async), the stage is
+    // not, and the manifest and bundle it seals must pin the archives.
+    const pyramids = bake ? await cutPackedBandPyramids({ id }) : null;
+    const result = runDisplayStage(id, {
+      tiles, terrain, ...(bake ? { bake: {} } : {}), ...(pyramids ? { pyramids } : {}),
+    });
     await mirrorDisplayPacksToPostdb(id, result.packs);
-    if (bake && result.bakeCerts?.length) {
-      const { cutPackedMidPyramid } = await import('../lib/display-pack.mjs');
-      await cutPackedMidPyramid({
-        id,
-        bakeCerts: result.bakeCerts,
-        bakeDir: result.bakeDir,
-        outDir: result.outDir,
-        primaryKit: result.primaryKit,
-      });
-    }
     results.push(result);
     if (!json) {
       const mark = result.certified ? 'ok' : 'FAILED';
