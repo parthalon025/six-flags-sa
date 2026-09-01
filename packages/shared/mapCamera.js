@@ -21,6 +21,64 @@ export const DEFAULT_EASE_MARGIN = 0.4;
 /** Tilt at the end of the ease, degrees. ADR-0019 clause 2 asks for 30-45. */
 export const DEFAULT_MAX_PITCH = 45;
 
+/* ------------------------------------------------- per-Skin camera feel
+ *
+ * ADR-0019 clause 2: "Camera feel (bearing/pitch presets) is a per-Skin
+ * declared trait of the design request." Clause 6 then makes one of those
+ * presets load-bearing rather than decorative. pixel-tycoon used to be drawn
+ * by a live isometric painter on its own camera; the clause retires that
+ * projection and hands the Skin "the iso flavor painted into the sprites (the
+ * G5 pixel-overworld reference's own convention) plus a camera preset" in
+ * exchange. This is the second half of that exchange.
+ *
+ * Why a bearing does the work. MapLibre's pitch is measured from straight
+ * down, so the 35.264-degree camera elevation that makes a true isometric
+ * view would be a pitch of 54.7 — outside the 30-45 clause 2 fixed, and
+ * ADR-0021 rejected reopening that door ("not two renderers forever"). The
+ * quarter-turn is the part of the iso read that IS reachable: an RCT-shaped
+ * world seen corner-on rather than face-on, with every degree of tilt the ADR
+ * allows. Everything else is the kit's job.
+ *
+ * A preset is a CEILING on the ease, not an offset onto it: every Skin is
+ * still flat top-down when zoomed out, and still eases inside the gap between
+ * band handoffs that ADR-0021 clause 4 requires. It enters the map view once,
+ * at mount (`mountMapView` derives it from the Skin it was handed), and never
+ * per frame — a caller that could set pitch per frame could land a tilt and a
+ * restyle in one instant, which is the thing clause 4 exists to prevent.
+ *
+ * Deliberately not a kit field. `skin-distinct.mjs` records A6 (projection and
+ * camera) as unmapped precisely because "the pitch/zoom preset lives in
+ * mapCamera, not the kit", and giving the kit schema a camera is a decision
+ * about what a kit should be able to say rather than a mechanical move.
+ */
+
+/** North-up, and the full ease. What a Skin gets by saying nothing. */
+export const DEFAULT_CAMERA_PRESET = Object.freeze({ maxPitch: DEFAULT_MAX_PITCH, bearing: 0 });
+
+/** Camera feel each Skin declares. Absent means `DEFAULT_CAMERA_PRESET`.
+ *
+ *  Declared as a contrasting set rather than one by one: an atlas and a
+ *  painted-paper brochure are things you read flat, so they take the bottom of
+ *  clause 2's range, and pixel-tycoon takes the top plus the turn. That
+ *  contrast is itself part of what makes them read as separate worlds — on an
+ *  axis `skin-distinct.mjs` cannot see, which is why it is written down here.
+ *
+ *  pixel-tycoon's row is a camera, not a bake: clause 6 owes the Skin this
+ *  preset for the projection it gave up, and that debt is settled here whether
+ *  or not a certified kings-island world PNG exists to preview it on
+ *  (`PIXEL_TYCOON_SHIP_NOTE`). Guests wearing it ride the vector tier, on this
+ *  camera. */
+export const SKIN_CAMERA_PRESETS = Object.freeze({
+  'pixel-tycoon': Object.freeze({ maxPitch: DEFAULT_MAX_PITCH, bearing: 45 }),
+  'watercolor-quest': Object.freeze({ maxPitch: 30, bearing: 0 }),
+  'layered-atlas': Object.freeze({ maxPitch: 30, bearing: 0 }),
+});
+
+/** The camera feel to mount a view with for this Skin. */
+export function skinCameraPreset(skinId) {
+  return SKIN_CAMERA_PRESETS[skinId] || DEFAULT_CAMERA_PRESET;
+}
+
 /** The zoom range over which pitch eases in, chosen to clear every band
  *  handoff. Picks the widest gap bounded by two handoffs and insets it. */
 export function pitchEaseRange({ latitude = 0, margin = DEFAULT_EASE_MARGIN } = {}) {

@@ -4,13 +4,19 @@
    staged so it never overlaps a Zoom band handoff, or one pinch would tilt
    the world and restyle it in the same instant. */
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { bandBoundaryZooms } from '../../packages/shared/zoomBands.js';
 import {
+  DEFAULT_CAMERA_PRESET,
+  DEFAULT_MAX_PITCH,
+  SKIN_CAMERA_PRESETS,
   frameBounds,
   offsetCentre,
   pitchEaseRange,
   pitchForZoom,
+  skinCameraPreset,
 } from '../../packages/shared/mapCamera.js';
+import { PREVIEW_SKINS } from '../../apps/party-tracker/lib/bandedWorldPreview.js';
 
 // The clause 4 invariant, at several latitudes because the boundaries move.
 for (const latitude of [0, 39.34, 60]) {
@@ -135,5 +141,82 @@ assert.throws(() => frameBounds({ west: 0, east: 1, south: 0 }, { width: 512, he
 assert.throws(() => offsetCentre({ lng: 0, lat: 0 }, { metres: Number.NaN, bearing: 0 }), /metres/i);
 assert.throws(() => offsetCentre({ lng: 0, lat: 0 }, { metres: 10, bearing: '90' }), /bearing/i);
 assert.throws(() => offsetCentre({ lng: 0, lat: 'north' }, { metres: 10, bearing: 0 }), /centre|lat/i);
+
+/* --- Per-Skin camera feel. ADR-0019 clause 2 makes bearing and pitch presets
+   "a per-Skin declared trait of the design request", and clause 6 makes one of
+   them load-bearing: pixel-tycoon lost the iso projection that carried its
+   distinctness and gets "the iso flavor painted into the sprites ... plus a
+   camera preset" in exchange. This is that preset, and it lives here rather
+   than in the kit for the reason skin-distinct's UNMAPPED_AXES A6 already
+   states — the kit schema has no camera field, and giving it one is a separate
+   decision about what a kit should be able to say. */
+{
+  const plain = skinCameraPreset(null);
+  assert.deepEqual(plain, DEFAULT_CAMERA_PRESET, 'no Skin, the default feel');
+  assert.deepEqual(skinCameraPreset('no-such-skin'), DEFAULT_CAMERA_PRESET, 'an unknown Skin falls back');
+  assert.equal(plain.bearing, 0, 'the map is north-up unless a Skin says otherwise');
+
+  const tycoon = skinCameraPreset('pixel-tycoon');
+  assert.notEqual(tycoon.bearing, DEFAULT_CAMERA_PRESET.bearing, 'the quarter-turn is the iso read');
+  assert.equal(tycoon.bearing, 45, 'a quarter-turn, the angle the projection used to draw at');
+  assert.equal(tycoon.maxPitch, DEFAULT_MAX_PITCH, 'and every degree of tilt ADR-0019 clause 2 allows');
+
+  // Every declared preset stays inside clause 2's stated range. A preset is a
+  // design knob, and a design knob that can leave the range the ADR fixed is
+  // how the camera ends up somewhere no ADR agreed to.
+  for (const [skin, preset] of Object.entries(SKIN_CAMERA_PRESETS)) {
+    assert.ok(preset.maxPitch >= 30 && preset.maxPitch <= 45, `${skin} maxPitch ${preset.maxPitch} outside 30-45`);
+    assert.ok(preset.bearing >= 0 && preset.bearing < 360, `${skin} bearing ${preset.bearing} out of range`);
+  }
+
+  /* Every Skin whose world actually previews declares one. The two that do are
+     both flat-read looks and share a camera on purpose, so the contrast that
+     makes a preset worth having is asserted across the declared table rather
+     than across the previewed pair — a table where every Skin shared one
+     camera would be a per-Skin trait in name only. */
+  for (const skin of PREVIEW_SKINS) {
+    assert.ok(SKIN_CAMERA_PRESETS[skin], `${skin} ships without a declared camera feel`);
+  }
+  const declared = Object.values(SKIN_CAMERA_PRESETS);
+  const bearings = new Set(declared.map((p) => p.bearing));
+  const pitches = new Set(declared.map((p) => p.maxPitch));
+  assert.ok(bearings.size + pitches.size > 2, 'the declared Skins do not all share one camera');
+
+  // The preset is the ceiling mountMapView eases to, so it has to move the
+  // curve rather than merely be reported. Measured at the top of the ease,
+  // where the two presets are furthest apart.
+  const { endZoom } = pitchEaseRange({ latitude: 39.34 });
+  const flat = skinCameraPreset('layered-atlas');
+  assert.ok(
+    pitchForZoom(endZoom, { latitude: 39.34, maxPitch: tycoon.maxPitch })
+      > pitchForZoom(endZoom, { latitude: 39.34, maxPitch: flat.maxPitch }),
+    'pixel-tycoon reaches a steeper tilt than the flat-painted Skins',
+  );
+  assert.equal(
+    pitchForZoom(0, { latitude: 39.34, maxPitch: tycoon.maxPitch }),
+    0,
+    'and every Skin is still flat top-down zoomed out — a preset is a ceiling, not an offset',
+  );
+}
+
+/* The half of a preset the seam does not own. The pitch ceiling is derived
+   from the Skin inside `mountMapView`, but the bearing is the opening camera's
+   and stays with the caller: a gesture that turns the world comes straight
+   back through setCamera, and a seam that reimposed the preset would spin it
+   back on every pan. So the preview map has to open on the Skin's own bearing
+   itself — asserted by reading it, because the component needs a browser to
+   run and a preset nobody passes is exactly the failure this slice ported. */
+{
+  const source = readFileSync(
+    new URL('../../apps/party-tracker/components/BandedWorldMap.jsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(source, /skinCameraPreset/, "the preview map asks for the Skin's camera feel");
+  assert.match(
+    source,
+    /bearing:\s*skinCameraPreset\(skin\)\.bearing/,
+    'and opens on its bearing, rather than north-up whatever the Skin declared',
+  );
+}
 
 console.log('map-camera: ok');

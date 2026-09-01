@@ -28,14 +28,15 @@
  *   Pitch is derived, never passed. ADR-0019 clause 2 makes pitch a function of
  *   zoom and ADR-0021 clause 4 stages that ease clear of every band handoff, so
  *   a caller that could set pitch could land a tilt and a restyle in the same
- *   instant. A Skin's declared camera feel enters at mount, as `maxPitch`,
- *   which is where a per-Skin trait belongs.
+ *   instant. A Skin's declared camera feel enters at mount — derived from the
+ *   Skin itself, or overridden by an explicit `maxPitch` — which is where a
+ *   per-Skin trait belongs.
  *
  * No renderer import, no DOM, no fetch: the renderer arrives as an argument.
  * That is what lets this be driven from plain Node, and it is the same seam the
  * SVG map, the MapLibre map and ADR-0013's real-time PBR tier all sit behind.
  */
-import { pitchForZoom } from '@party-tracker/shared/mapCamera.js';
+import { pitchForZoom, skinCameraPreset } from '@party-tracker/shared/mapCamera.js';
 import { bandDrawPlan } from './bandPlan.js';
 import { OVERLAY_LAYERS } from './overlayGeo.js';
 import { worldLodGroups, worldPlanZoom } from './worldLod.js';
@@ -207,8 +208,14 @@ export function mountMapView(
   assertRenderer(renderer);
   const latitude = worldLatitude(world);
   let held = [...(available ?? PACKED_BANDS)];
-  const pitchAt = (zoom) =>
-    pitchForZoom(zoom, { latitude, ...(maxPitch == null ? {} : { maxPitch }) });
+  // ADR-0019 clause 2 makes the pitch preset a per-Skin declared trait, so a
+  // caller that has named the Skin has already named the feel. Deriving the
+  // default here rather than making every caller look it up removes the way a
+  // Skin quietly mounts on the wrong camera — the failure would be silent,
+  // since a wrong ceiling still produces a perfectly valid tilt. An explicit
+  // `maxPitch` still wins: the seam supplies a default, it does not overrule.
+  const ceiling = maxPitch == null ? skinCameraPreset(skin).maxPitch : maxPitch;
+  const pitchAt = (zoom) => pitchForZoom(zoom, { latitude, maxPitch: ceiling });
 
   const cameraFor = (next, ease = null) => {
     if (next == null || typeof next !== 'object') {
