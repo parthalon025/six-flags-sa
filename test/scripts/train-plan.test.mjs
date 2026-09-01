@@ -27,10 +27,12 @@
  *   node test/scripts/train-plan.test.mjs
  */
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { scrubGitEnv } from '../../scripts/lib/git-env.mjs';
 import {
   DECISIONS,
   REPO,
@@ -166,6 +168,11 @@ const FIXTURES = {
       // switch flipped but the replacement was never built: a retirement with
       // nothing to retire into, which two bare negations would call done
       { 'apps/party-tracker/lib/mapLibreConfigured.js': "const PARK_MAP_RENDERERS = ['gl'];" },
+      // the switch itself gone: no renderer choice at all is not a retirement,
+      // and without this clause a file that never mentions PARK_MAP_RENDERERS
+      // satisfies the "no 'svg'" negation for free
+      { 'apps/party-tracker/components/ParkMapGl.jsx': 'export default function ParkMapGl() {}',
+        'apps/party-tracker/lib/mapLibreConfigured.js': 'export const NOTHING = 1;' },
     ],
     after: {
       'apps/party-tracker/components/ParkMapGl.jsx': 'export default function ParkMapGl() {}',
@@ -332,6 +339,18 @@ for (const s of SLICES) {
     );
   });
 }
+
+// A fixture for a slice that no longer exists is a stale claim, and it reads as
+// deliberate: someone finding it later has to work out whether the slice was
+// dropped on purpose or lost. The loop above catches a slice with no fixture;
+// this is the same guard pointing the other way, and without it a renamed slice
+// leaves its old fixture behind to be run against nothing, forever green.
+const sliceIds = new Set(SLICES.map((sl) => sl.id));
+assert.deepEqual(
+  Object.keys(FIXTURES).filter((id) => !sliceIds.has(id)),
+  [],
+  'FIXTURES names slices that are not in SLICES — remove them, or restore the slice',
+);
 
 for (const rel of Object.keys(FIXTURES).flatMap((id) => [
   ...FIXTURES[id].before.flatMap((f) => Object.keys(f)),
@@ -637,6 +656,101 @@ assert.ok(
   'one throwing probe must not mark the other slices as errored',
 );
 
+// Every probe must read NOT BUILT against a real tree from before this work.
+//
+// Fixtures prove a probe CAN move. They cannot prove it describes real code,
+// because the fixture is written to satisfy the probe — so a probe that never
+// matches anything real still passes its fixtures happily. h18's third clause
+// grepped `PARK_MAP_RENDERERS = [` while every real tree has said
+// `= Object.freeze([`; it was false on all real code and true only against the
+// fixture invented for it. A real tree is the check fixtures cannot be.
+//
+// The baseline is PINNED rather than derived. The first version of this guard
+// used origin/main on the reasoning that none of the trains' work was there —
+// true until PR #585 merged, at which point main carried all of it and the
+// check inverted, reporting sixteen slices "built" on the baseline. A baseline
+// that moves is not a baseline. This commit predates every slice; if it ever
+// becomes unreachable the guard FAILS rather than skips, so re-pointing it is a
+// visible decision instead of a silent loss of cover.
+const PRE_TRAIN_BASELINE = '4727a110';
+{
+  let baselineOk = true;
+  try {
+    execFileSync('git', ['rev-parse', '--verify', `${PRE_TRAIN_BASELINE}^{commit}`], {
+      cwd: REPO, env: scrubGitEnv(), stdio: 'ignore',
+    });
+  } catch (err) {
+    if (err?.code === 'ENOENT' || typeof err?.status === 'number') baselineOk = false;
+    else throw err;
+  }
+  assert.ok(
+    baselineOk,
+    `the pinned pre-train baseline ${PRE_TRAIN_BASELINE} is unreachable, so no probe is being `
+      + 'checked against real code any more. Re-point it at a commit predating every slice '
+      + 'rather than deleting this check',
+  );
+
+  // Locally the commit is simply there. The `gate` job checks out fetch-depth: 2
+  // and would not reach five hundred commits back, so the workflow fetches this
+  // one by name — and two files naming one sha drift, so the pin is asserted
+  // rather than hoped for. Without this the guard fails closed in CI only, which
+  // is the slowest possible way to find out.
+  const gateWorkflow = readFileSync(path.join(REPO, '.github/workflows/test-app.yml'), 'utf8');
+  assert.ok(
+    new RegExp(`git fetch origin ${PRE_TRAIN_BASELINE}[0-9a-f]*\\s`).test(gateWorkflow),
+    `.github/workflows/test-app.yml no longer fetches ${PRE_TRAIN_BASELINE} in the gate job, so `
+      + 'this guard fails closed there. Re-point the fetch whenever the baseline moves',
+  );
+
+  // A reader over a git ref rather than a checkout: the same three methods
+  // treeAt() offers, so the probes cannot tell the difference, without paying
+  // for a worktree just to answer "was this there in August?".
+  const at = (ref) => {
+    const read = (rel) => {
+      try {
+        return execFileSync('git', ['show', `${ref}:${rel}`], {
+          cwd: REPO,
+          env: scrubGitEnv(),
+          encoding: 'utf8',
+          maxBuffer: 64 * 1024 * 1024,
+          stdio: ['ignore', 'pipe', 'ignore'],
+        });
+      } catch {
+        return '';
+      }
+    };
+    const has = (rel) => {
+      try {
+        execFileSync('git', ['cat-file', '-e', `${ref}:${rel}`], {
+          cwd: REPO, env: scrubGitEnv(), stdio: 'ignore',
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    };
+    const t = { root: ref, read, has };
+    t.wiredInto = (rel, importer) => has(rel) && read(importer).includes(path.basename(rel, path.extname(rel)));
+    return Object.freeze(t);
+  };
+
+  const baselineRows = status(at(PRE_TRAIN_BASELINE));
+  assert.ok(
+    baselineRows.every((r) => r.probeError === null),
+    `probe error at ${PRE_TRAIN_BASELINE}: `
+      + `${baselineRows.filter((r) => r.probeError).map((r) => `${r.id}: ${r.probeError}`).join('; ')} — `
+      + 'a probe that throws against the baseline is not being checked against real code',
+  );
+  const builtAtBaseline = baselineRows.filter((r) => r.done).map((r) => r.id);
+  assert.deepEqual(
+    builtAtBaseline,
+    [],
+    `these slices report BUILT at ${PRE_TRAIN_BASELINE}, a real commit predating all of this `
+      + `work: ${builtAtBaseline.join(', ')}. Either the probe is true of any tree — a negation `
+      + 'with no positive anchor does that — or it greps for something that was already there',
+  );
+}
+
 // ------------------------------------------- how far a chain of sessions gets
 
 // The case that makes this worth computing: `sg` is not blocked itself and its
@@ -725,7 +839,6 @@ assert.ok(
 
 // The CLI is what a fresh cloud session runs; if it cannot start, the session
 // has no way to find out what to build.
-const { execFileSync } = await import('node:child_process');
 for (const cmd of ['status', 'next', 'blocked', 'session']) {
   const out = execFileSync('node', [path.join(REPO, 'scripts/train-plan.mjs'), cmd], { encoding: 'utf8' });
   assert.ok(out.trim().length > 0, `train-plan.mjs ${cmd} printed nothing`);
