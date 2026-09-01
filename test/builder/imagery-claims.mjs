@@ -6,11 +6,19 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   CI_PROVEN_PASSES,
+  CLAIM_KINDS,
+  RNG_TAINTED_PRIMITIVES,
+  claimFromFinding,
+  claimsFromPass,
   compareToOsm,
+  determinismProof,
   osmPathMap,
   routeImageryExtractions,
   runImageryClaims,
+  truthEligibility,
+  unmitigatedPrimitives,
 } from '../../packages/venue-builder/lib/imagery-claims.mjs';
+import { imagerySignedFeatures } from '../../packages/venue-builder/lib/imagery-ledger.mjs';
 import { run as runGooglePlaces } from '../../packages/venue-builder/lib/adapters/google-places.mjs';
 import { getAdapter } from '../../packages/venue-builder/lib/adapters/registry.mjs';
 import {
@@ -142,6 +150,353 @@ assert.match(
   /spells dispute kind\(s\)/,
   'the refusal must come from assertNoDisputeKinds, not from an unrelated load error',
 );
+
+// ---------------------------------------------------------------------------
+// Determinism is derived from digests, never read off a flag.
+//
+// ADR-0020 clause 3: "determinism is proven per pass, never assumed". A
+// `deterministic: true` flag is the assumption written down, so the gate reads
+// the recorded output digests instead — two of them, and identical.
+
+assert.equal(determinismProof({}).proven, false, 'no recorded run proves nothing');
+assert.equal(determinismProof({}).runs, 0);
+assert.match(
+  determinismProof({ determinism: { digests: ['a'.repeat(64)] } }).why,
+  /two consecutive runs/,
+  'one run is the same number twice only if you count it twice',
+);
+assert.equal(
+  determinismProof({ determinism: { digests: ['a'.repeat(64), 'b'.repeat(64)] } }).proven,
+  false,
+  'two runs that disagree are the opposite of a proof',
+);
+assert.match(
+  determinismProof({ determinism: { digests: ['a'.repeat(64), 'b'.repeat(64)] } }).why,
+  /digests differ across runs/,
+);
+const twice = determinismProof({ determinism: { digests: ['a'.repeat(64), 'a'.repeat(64)] } });
+assert.equal(twice.proven, true, 'two byte-identical runs are the proof the ADR asks for');
+assert.equal(twice.runs, 2);
+assert.equal(twice.digest, 'a'.repeat(64), 'the proof carries the digest it rests on');
+
+const provenPass = {
+  lane: 'deterministic',
+  passId: 'canny-path-edges',
+  determinism: { digests: ['c'.repeat(64), 'c'.repeat(64)] },
+};
+const provenRun = routeImageryExtractions(
+  [{ ...provenPass, kind: 'path', at: far, label: 'new-walk' }],
+  { map: factoryMap },
+);
+assert.equal(
+  provenRun.truth.length,
+  1,
+  'a deterministic pass whose digests agree across two runs may write truth',
+);
+assert.equal(provenRun.claims.length, 0);
+assert.equal(
+  routeImageryExtractions(
+    [{ lane: 'deterministic', deterministic: true, kind: 'path', at: far }],
+    { map: factoryMap },
+  ).truth.length,
+  0,
+  'a pass asserting `deterministic: true` about itself has still proven nothing (ADR-0020 clause 3)',
+);
+assert.equal(
+  routeImageryExtractions(
+    [{
+      lane: 'deterministic',
+      kind: 'path',
+      at: far,
+      determinism: { digests: ['c'.repeat(64), 'd'.repeat(64)] },
+    }],
+    { map: factoryMap },
+  ).truth.length,
+  0,
+  'digests that disagree keep the pass in the evidence graph',
+);
+assert.equal(
+  routeImageryExtractions([{ ...provenPass, lane: 'model', kind: 'path', at: far }], { map: factoryMap })
+    .truth.length,
+  0,
+  'proof does not promote a lane — a pinned model is claims-only however identical its runs',
+);
+assert.equal(
+  routeImageryExtractions(
+    [{ ...provenPass, deterministic: false, kind: 'path', at: far }],
+    { map: factoryMap },
+  ).truth.length,
+  0,
+  'the flag is not the gate, but a pass that says out loud it is nondeterministic is believed',
+);
+
+// ---------------------------------------------------------------------------
+// RNG-tainted OpenCV primitives, as data rather than as prose in the research
+// note. A pass that routes through one of them cannot write truth until it
+// declares the mitigations, however well its digests agree.
+
+assert.deepEqual(
+  Object.keys(RNG_TAINTED_PRIMITIVES).sort(),
+  ['findfundamentalmat', 'findhomography', 'grabcut', 'kmeans', 'ransac'],
+  'the five primitives the CV research note names as adopt-on-trigger',
+);
+const kmeansPass = { ...provenPass, primitives: ['cv2.kmeans', 'cv2.Canny'] };
+assert.deepEqual(
+  unmitigatedPrimitives(kmeansPass).map((p) => p.primitive),
+  ['kmeans'],
+  'a primitive is matched by its bare name, however the pass spells it',
+);
+assert.deepEqual(
+  unmitigatedPrimitives(kmeansPass)[0].unmet,
+  ['seeded', 'single-thread', 'ipp-disabled'],
+);
+assert.equal(
+  routeImageryExtractions([{ ...kmeansPass, kind: 'path', at: far }], { map: factoryMap }).truth.length,
+  0,
+  'GrabCut-grade k-means with no declared mitigation never writes truth',
+);
+assert.match(
+  truthEligibility(kmeansPass).reasons.join(' | '),
+  /cv2\.kmeans is RNG-tainted .*still undeclared: seeded, single-thread, ipp-disabled/,
+  'the refusal names the primitive and what is still missing',
+);
+assert.equal(
+  routeImageryExtractions(
+    [{
+      ...kmeansPass,
+      mitigations: ['seeded', 'single-thread', 'ipp-disabled'],
+      kind: 'path',
+      at: far,
+    }],
+    { map: factoryMap },
+  ).truth.length,
+  1,
+  'a fully mitigated pass with a real proof behind it is the one case that writes truth',
+);
+assert.equal(
+  routeImageryExtractions(
+    [{ ...provenPass, primitives: ['cv2.findHomography'], kind: 'path', at: far }],
+    { map: factoryMap },
+  ).truth.length,
+  0,
+  'a RANSAC homography fit is tainted too — its estimator ignores setRNGSeed',
+);
+assert.deepEqual(
+  unmitigatedPrimitives({ primitives: ['cv2.findHomography'], mitigations: ['lmeds-refit'] }),
+  [],
+  'an LMedS refit is the declared mitigation for the homography row',
+);
+
+// ---------------------------------------------------------------------------
+// Findings become `src`-signed claims, refused up front on ledger provenance.
+
+const LEDGER = {
+  'naip-oh-2024': {
+    id: 'naip-oh-2024',
+    source: 'planetary-computer:naip',
+    served_via: 'Microsoft Planetary Computer STAC',
+    captured: '2024-05-11',
+    sha256: 'a'.repeat(64),
+    license: 'public-domain',
+    path: null,
+  },
+  'county-via-esri': {
+    id: 'county-via-esri',
+    source: 'some-county-gis',
+    served_via: 'Esri World Imagery',
+    captured: '2025-03-01',
+    sha256: 'b'.repeat(64),
+    license: 'public-domain',
+    path: null,
+  },
+};
+const goodProv = { by: 'aerial', tile: 'naip-oh-2024', source: 'planetary-computer:naip' };
+
+const signed = claimFromFinding({ kind: 'path', at: far, label: 'new-walk' }, goodProv);
+assert.ok(signed.src, 'a finding becomes a claim with a src block on it, or it is not a claim');
+assert.equal(signed.src.by, 'aerial');
+assert.equal(signed.src.tile, 'naip-oh-2024', 'the claim carries the tile it was read off');
+assert.deepEqual(signed.at, far, 'a signed claim keeps its position');
+assert.equal(
+  imagerySignedFeatures({ path: [signed] }).length,
+  1,
+  'a signed claim is visible to the imagery_ledger gate — an unsigned row is invisible to it',
+);
+assert.equal(
+  imagerySignedFeatures({ path: [{ kind: 'path', at: far }] }).length,
+  0,
+  'guard: it is the src block doing that work, not the row existing',
+);
+
+const passed = claimsFromPass({
+  pass: { lane: 'agent', passId: 'agent-brief-read' },
+  findings: [{ kind: 'path', at: far, label: 'new-walk' }],
+  provenance: goodProv,
+  ledger: LEDGER,
+  map: factoryMap,
+});
+assert.deepEqual(passed.refused, [], 'a ledgered NAIP tile is refused nothing');
+assert.equal(passed.claims.length, 1);
+assert.equal(passed.claims[0].src.tile, 'naip-oh-2024');
+
+const refusedFor = (over) => claimsFromPass({
+  pass: { lane: 'agent', passId: 'agent-brief-read' },
+  findings: [{ kind: 'path', at: far, label: 'new-walk', ...over.finding }],
+  provenance: { ...goodProv, ...over.provenance },
+  ledger: LEDGER,
+  map: factoryMap,
+});
+
+const esri = refusedFor({ provenance: { tile: 'county-via-esri', source: 'some-county-gis' } });
+assert.equal(esri.claims.length, 0, 'an Esri-served tile produces no claim at all');
+assert.equal(esri.refused.length, 1, 'it is refused, not merely dropped');
+assert.match(
+  esri.refused[0].problems.join(' | '),
+  /rejects esri for derivation/,
+  'the refusal is the ledger\'s own words on ADR-0020 clause 2, not a re-decision here',
+);
+const unledgered = refusedFor({ provenance: { tile: 'naip-oh-2099', source: 'planetary-computer:naip' } });
+assert.equal(unledgered.refused.length, 1, 'an unledgered tile is refused');
+assert.match(
+  unledgered.refused[0].problems.join(' | '),
+  /is not in the imagery ledger/,
+  'a tile nothing pinned has no provenance to stand on',
+);
+const traced = refusedFor({ provenance: { by: 'traced' } });
+assert.equal(traced.refused.length, 1, 'a non-imagery evidence class is refused');
+assert.match(
+  traced.refused[0].problems.join(' | '),
+  /is not an imagery evidence class/,
+  'this lane derives from pixels or not at all',
+);
+const wait = refusedFor({ finding: { kind: 'queue_wait' } });
+assert.equal(
+  wait.refused.length,
+  1,
+  'a queue wait is not something imagery reads, whatever provenance is attached',
+);
+assert.match(wait.refused[0].problems.join(' | '), /is not something imagery reads/);
+assert.equal(wait.claims.length, 0);
+const nowhere = refusedFor({ finding: { at: null } });
+assert.equal(nowhere.refused.length, 1, 'a finding with no position is refused');
+assert.equal(nowhere.refused[0].problems.join(' | '), 'new-walk: no position');
+assert.deepEqual(
+  claimsFromPass({
+    pass: { lane: 'agent' },
+    findings: [{ kind: 'path', at: offset, label: 'moved-walk' }],
+    provenance: { ...goodProv, tile: 'county-via-esri' },
+    ledger: LEDGER,
+    map: factoryMap,
+  }).disputes,
+  [],
+  'a refused finding disputes nothing either — it never reached the router',
+);
+
+// The closed vocabulary is enforced on the router itself, not only on the
+// provenance path: `extractions.json` is a builder sidecar a hand can edit.
+const invented = routeImageryExtractions(
+  [{ lane: 'agent', kind: 'height_requirement', at: offset, label: 'nope' }],
+  { map: factoryMap },
+);
+assert.equal(invented.claims.length, 0, 'an invented kind produces no claim');
+assert.equal(invented.disputes.length, 0, 'and no dispute wearing imagery\'s provenance');
+assert.equal(invented.refused.length, 1);
+assert.ok(CLAIM_KINDS.includes('path') && CLAIM_KINDS.includes('place'));
+
+// ---------------------------------------------------------------------------
+// Place positions: the comparison that used to be made against walkable
+// geometry or not at all.
+
+const M_PER_DEG_LAT = 110540;
+const north = (at, m) => ({ lat: at.lat + m / M_PER_DEG_LAT, lng: at.lng });
+const pois = [
+  { i: 'vortex', n: 'Vortex', c: 'coaster', ...near },
+  { i: 'twins-a', n: 'The Twins', c: 'ride', ...north(near, 500) },
+  { i: 'twins-b', n: 'The Twins', c: 'ride', ...north(near, 520) },
+];
+const placeAt = north(near, 20);
+
+const moved = routeImageryExtractions(
+  [{ lane: 'agent', kind: 'place', target: 'vortex', at: placeAt, label: 'Vortex' }],
+  { map: factoryMap, pois },
+);
+assert.equal(moved.disputes.length, 1, 'imagery reading a Place twenty metres off is a dispute');
+assert.equal(
+  moved.disputes[0].kind,
+  'place_disputed',
+  'a Place in the wrong spot is its own kind of disagreement, not a path one',
+);
+assert.equal(moved.disputes[0].target, 'vortex', 'the dispute names the Place it is about');
+assert.equal(moved.disputes[0].shipped, false, 'a place dispute never ships either');
+assert.equal(
+  moved.disputes[0].extraction.comparison.matchedBy,
+  'target',
+  'and records how the two were matched, for the steward weighing it',
+);
+assert.ok(moved.claims.some((c) => c.dissent === true), 'the dissenting claim survives');
+assert.equal(
+  routeImageryExtractions(
+    [{ lane: 'agent', kind: 'place', at: placeAt, label: 'Vortex' }],
+    { map: factoryMap, pois },
+  ).disputes[0].target,
+  'vortex',
+  'a Place is identified by its title too, through ship-gaps own resolver',
+);
+// Forty metres off twins-a and sixty off twins-b: near enough to either that a
+// resolver willing to pick one would raise a dispute against it.
+assert.equal(
+  routeImageryExtractions(
+    [{ lane: 'agent', kind: 'place', at: north(near, 460), label: 'The Twins' }],
+    { map: factoryMap, pois },
+  ).disputes.length,
+  0,
+  'an ambiguous title is skipped rather than forked across two same-named rides',
+);
+assert.equal(
+  routeImageryExtractions(
+    [{ lane: 'agent', kind: 'place', category: 'coaster', at: north(near, 20) }],
+    { map: factoryMap, pois },
+  ).disputes[0].extraction.comparison.matchedBy,
+  'nearest',
+  'a categorised read matches the nearest Place of that category',
+);
+assert.equal(
+  compareToOsm({ kind: 'place', category: 'coaster', at: north(near, 300) }, { pois }).relation,
+  'adds',
+  'far enough out it is a different Place, so imagery is adding rather than arguing',
+);
+assert.equal(
+  compareToOsm({ kind: 'place', target: 'vortex', at: near }, { pois }).relation,
+  'agrees',
+  'and on top of OSM the two agree',
+);
+assert.equal(
+  compareToOsm({ kind: 'place', target: 'vortex', at: placeAt }, { map: factoryMap }).relation,
+  'adds',
+  'with no Places to compare against there is nothing to dispute',
+);
+assert.equal(
+  compareToOsm({ kind: 'tree', at: offset }, { map: factoryMap }).relation,
+  'adds',
+  'a tree is not a walkway: OSM carries none, so imagery can only add one',
+);
+assert.deepEqual(
+  pois.map((p) => `${p.i}:${p.lat},${p.lng}`),
+  [`vortex:${near.lat},${near.lng}`, `twins-a:${north(near, 500).lat},${near.lng}`, `twins-b:${north(near, 520).lat},${near.lng}`],
+  'the dispute detector reads truth and writes none — the Places handed in are untouched',
+);
+
+const placeRun = runImageryClaims('kings-island', {
+  map: factoryMap,
+  pois,
+  extractions: [{ lane: 'agent', kind: 'place', target: 'vortex', at: placeAt, label: 'Vortex' }],
+});
+assert.equal(
+  placeRun.disputes.length,
+  1,
+  'a run given Places compares against them — dropping them loses the dispute silently',
+);
+assert.equal(placeRun.disputes[0].kind, 'place_disputed');
 
 const run = runImageryClaims('kings-island', { map: factoryMap, extractions: [] });
 assert.equal(run.venue, 'kings-island');
@@ -343,6 +698,12 @@ const probeMeta = {
   center: { lat: 39.3445, lng: -84.2675 },
   bounds: { north: 39.345, south: 39.344, east: -84.267, west: -84.268 },
 };
+// A Place for imagery to disagree with, and the read that disagrees with it.
+// `writeVenue` is the only caller that has both the extractions and the Places
+// in hand, so a place-position dispute is found there or nowhere.
+const probeRide = { i: 'probe-ride', n: 'Probe Ride', c: 'coaster', lat: 39.3445, lng: -84.2675 };
+const probePois = [probeRide];
+const probeRideMoved = { lat: probeRide.lat + 20 / 110540, lng: probeRide.lng };
 const probeGapsFile = path.join(VENUE_DIR, `${PROBE_ID}.gaps.json`);
 const probeSidecar = venueSidecar(PROBE_ID, DISPUTE_SIDECAR);
 
@@ -356,11 +717,14 @@ const venueDirBefore = new Set(readdirSync(VENUE_DIR));
 try {
   writeJson(
     venueSidecar(PROBE_ID, 'extractions.json'),
-    [{ lane: 'agent', kind: 'path', at: offset, label: 'moved-walk' }],
+    [
+      { lane: 'agent', kind: 'path', at: offset, label: 'moved-walk' },
+      { lane: 'agent', kind: 'place', target: 'probe-ride', at: probeRideMoved, label: 'Probe Ride' },
+    ],
     true,
   );
 
-  writeVenue({ meta: probeMeta, map: probeMap, pois: [] });
+  writeVenue({ meta: probeMeta, map: probeMap, pois: probePois });
 
   assert.ok(
     existsSync(probeSidecar),
@@ -369,13 +733,18 @@ try {
   const published = readJson(probeSidecar);
   assert.equal(published.venue, PROBE_ID);
   assert.equal(published.shipped, false);
-  assert.equal(published.disputes.length, 1, 'the dispute this build found is in the record');
+  assert.equal(published.disputes.length, 2, 'the disputes this build found are in the record');
   assert.equal(published.disputes[0].kind, 'path_disputed');
   assert.equal(
     published.disputes[0].extraction?.label,
     'moved-walk',
     'the dissenting evidence is recorded with it, not just the fact of a dispute',
   );
+  // The place dispute only exists if writeVenue handed its Places down: with no
+  // POIs to compare against, an imagery read of a Place degrades silently to
+  // "imagery adds a Place" and this row is simply absent.
+  assert.equal(published.disputes[1].kind, 'place_disputed');
+  assert.equal(published.disputes[1].target, 'probe-ride', 'and it names the Place OSM already has');
   for (const gap of readJson(probeGapsFile).gaps) {
     assert.ok(!DISPUTE_KINDS.includes(gap.type), `${gap.type} reached the published gaps file`);
   }
