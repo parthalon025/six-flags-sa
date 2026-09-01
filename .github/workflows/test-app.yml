@@ -33,6 +33,15 @@ jobs:
         # that case (and any transient fetch hiccup) from failing the job —
         # scripts already fail closed (full CI) when the ref stays missing.
         run: git fetch origin main:refs/remotes/origin/main --depth=1 || true
+      - name: Fetch the pinned pre-train baseline
+        # train-plan.test.mjs runs every slice probe against 4727a110 — a real
+        # commit predating Trains H and I — and fails any slice that reports
+        # BUILT there. It is the only check a vacuous probe cannot satisfy, so
+        # it fails closed when the commit is unreachable, and fetch-depth: 2
+        # does not reach five hundred commits back. `|| true` keeps a transient
+        # hiccup from masquerading as a workflow error; the guard itself still
+        # fails, and says which commit it wanted.
+        run: git fetch origin 4727a1102eeb9a1aa20be73e6226cf2207ea178d --depth=1 || true
       - name: Gate checks
         id: check
         run: |
