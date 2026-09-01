@@ -116,4 +116,36 @@ for (const skin of PAIR) {
   assert.match(stdout, /encode null for/, '--null prints the measured floor');
 }
 
+// --- --set runs every pair and answers for the set (ADR-0021 clause 6).
+// Spawned rather than called, for the reason this whole suite exists: a gate
+// nothing runs is a library, and its exit code is the part a caller depends on.
+{
+  const { status, stdout } = run([VENUE, ...PAIR, '--set']);
+  // Two Skins is the near-miss clause 6 rejected, and it is what ships: only
+  // these two have a certified bake. The one pair may well pass; the SET still
+  // cannot, and the run must say which of those two it means. 3, never 1 — a
+  // short set is a withheld pass, not a proven failure, so this cannot become
+  // a red build for shipping two Skins.
+  assert.equal(status, 3, 'a set below the floor is INDETERMINATE (3), not a pass and not a failure');
+  assert.match(stdout, /fewer than 3 Skins/, 'and the output says why the pass is withheld');
+  assert.match(stdout, new RegExp(`${PAIR[0]}.*${PAIR[1]}`), 'the pair it did compare is named');
+
+  const parsed = JSON.parse(run([VENUE, ...PAIR, '--set', '--json']).stdout);
+  assert.equal(parsed.outcome, 'INDETERMINATE', '--json agrees with the human table');
+  assert.equal(parsed.pass, false);
+  assert.deepEqual(parsed.failing, [], 'no pair of the shipped set is proven not distinct');
+  assert.equal(parsed.pairs.length, 1, 'one unordered pair from two Skins');
+  assert.deepEqual(parsed.skins, PAIR);
+  assert.equal(
+    run([VENUE, ...PAIR, '--set', '--json']).status,
+    3,
+    'the two output modes are one gate and exit the same way, --set included',
+  );
+
+  // A set naming a Skin with no bake cannot be judged at all, and that is a
+  // usage error rather than a verdict — the same line the pair path holds.
+  assert.equal(run([VENUE, ...PAIR, 'no-such-skin', '--set']).status, 2);
+  assert.equal(run([VENUE, PAIR[0], '--set']).status, 2, 'a set of one is not a set');
+}
+
 console.log('display-distinct-cli: ok');
