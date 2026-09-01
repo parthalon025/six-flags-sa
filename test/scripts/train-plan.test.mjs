@@ -27,10 +27,12 @@
  *   node test/scripts/train-plan.test.mjs
  */
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { scrubGitEnv } from '../../scripts/lib/git-env.mjs';
 import {
   DECISIONS,
   REPO,
@@ -166,6 +168,11 @@ const FIXTURES = {
       // switch flipped but the replacement was never built: a retirement with
       // nothing to retire into, which two bare negations would call done
       { 'apps/party-tracker/lib/mapLibreConfigured.js': "const PARK_MAP_RENDERERS = ['gl'];" },
+      // the switch itself gone: no renderer choice at all is not a retirement,
+      // and without this clause a file that never mentions PARK_MAP_RENDERERS
+      // satisfies the "no 'svg'" negation for free
+      { 'apps/party-tracker/components/ParkMapGl.jsx': 'export default function ParkMapGl() {}',
+        'apps/party-tracker/lib/mapLibreConfigured.js': 'export const NOTHING = 1;' },
     ],
     after: {
       'apps/party-tracker/components/ParkMapGl.jsx': 'export default function ParkMapGl() {}',
@@ -332,6 +339,18 @@ for (const s of SLICES) {
     );
   });
 }
+
+// A fixture for a slice that no longer exists is a stale claim, and it reads as
+// deliberate: someone finding it later has to work out whether the slice was
+// dropped on purpose or lost. The loop above catches a slice with no fixture;
+// this is the same guard pointing the other way, and without it a renamed slice
+// leaves its old fixture behind to be run against nothing, forever green.
+const sliceIds = new Set(SLICES.map((sl) => sl.id));
+assert.deepEqual(
+  Object.keys(FIXTURES).filter((id) => !sliceIds.has(id)),
+  [],
+  'FIXTURES names slices that are not in SLICES — remove them, or restore the slice',
+);
 
 for (const rel of Object.keys(FIXTURES).flatMap((id) => [
   ...FIXTURES[id].before.flatMap((f) => Object.keys(f)),
@@ -637,6 +656,287 @@ assert.ok(
   'one throwing probe must not mark the other slices as errored',
 );
 
+// Every probe must read NOT BUILT against a real tree from before this work.
+//
+// Fixtures prove a probe CAN move. They cannot prove it describes real code,
+// because the fixture is written to satisfy the probe — so a probe that never
+// matches anything real still passes its fixtures happily. What that catches
+// is one direction: a probe reporting BUILT on a tree where nothing was built,
+// which is how two bare negations ("the SVG is gone, the switch says nothing")
+// read as done in an empty checkout. A real tree is the check fixtures cannot
+// be. (The other direction — a probe that is false on every tree, including
+// one where the slice IS built — this does not see; a baseline says nothing
+// about what a probe does once the code lands.)
+//
+// The baseline is PINNED rather than derived. The first version of this guard
+// used origin/main on the reasoning that none of the trains' work was there —
+// true until PR #585 merged, at which point main carried all of it and the
+// check inverted, reporting sixteen slices "built" on the baseline. A baseline
+// that moves is not a baseline. This commit predates every slice; if it ever
+// becomes unreachable the guard FAILS rather than skips, so re-pointing it is a
+// visible decision instead of a silent loss of cover.
+const PRE_TRAIN_BASELINE = '4727a110';
+{
+  let baselineOk = true;
+  try {
+    execFileSync('git', ['rev-parse', '--verify', `${PRE_TRAIN_BASELINE}^{commit}`], {
+      cwd: REPO, env: scrubGitEnv(), stdio: 'ignore',
+    });
+  } catch (err) {
+    if (err?.code === 'ENOENT' || typeof err?.status === 'number') baselineOk = false;
+    else throw err;
+  }
+  assert.ok(
+    baselineOk,
+    `the pinned pre-train baseline ${PRE_TRAIN_BASELINE} is unreachable, so no probe is being `
+      + 'checked against real code any more. Re-point it at a commit predating every slice '
+      + 'rather than deleting this check',
+  );
+
+  // ---- the CI side of the pin -------------------------------------------
+  //
+  // Locally the commit is simply there. The `gate` job — the one that runs
+  // this file — checks out fetch-depth: 2 and would not reach five hundred
+  // commits back, so the workflow fetches this one by name. Two files naming
+  // one sha drift, so the pin is asserted rather than hoped for.
+  //
+  // The question has to be asked of the gate JOB, not of the file. A substring
+  // match over the whole workflow answers "is this sha written down anywhere",
+  // which stays true when the step is commented out (the sha survives in the
+  // comment) and when the step is moved to an unrelated job (the sha survives
+  // in `lint`) — both of which leave the gate job fetching nothing. It also
+  // says no to a gate job switched to fetch-depth: 0, which already has the
+  // commit and needs no fetch at all. So: take the named job's block, drop
+  // commented-out lines, read the values of `run:` keys, and accept full
+  // history as an answer.
+  const jobLines = (workflow, jobId) => {
+    const lines = workflow.split('\n');
+    const start = lines.findIndex((l) => l === `  ${jobId}:`);
+    if (start === -1) return [];
+    const end = lines.findIndex((l, i) => i > start && l.trim() !== '' && !l.startsWith('    '));
+    return lines
+      .slice(start + 1, end === -1 ? lines.length : end)
+      .filter((l) => !/^\s*#/.test(l));
+  };
+  const liveRunLines = (workflow, jobId) => {
+    const out = [];
+    let scalarIndent = null;
+    for (const line of jobLines(workflow, jobId)) {
+      if (scalarIndent !== null) {
+        if (line.trim() === '') continue;
+        if (line.match(/^ */)[0].length > scalarIndent) { out.push(line.trim()); continue; }
+        scalarIndent = null;
+      }
+      const m = line.match(/^( *)(?:- +)?run:(.*)$/);
+      if (!m) continue;
+      if (/^\s*[|>][-+\d]*\s*$/.test(m[2])) scalarIndent = m[1].length;
+      else if (m[2].trim()) out.push(m[2].trim());
+    }
+    return out;
+  };
+  const fetchesBaseline = new RegExp(`git fetch origin ${PRE_TRAIN_BASELINE}[0-9a-f]*(\\s|$)`);
+  const gatePinnedFetch = (workflow) =>
+    liveRunLines(workflow, 'gate').some((l) => fetchesBaseline.test(l))
+    || jobLines(workflow, 'gate').some((l) => /^\s*fetch-depth:\s*0\s*$/.test(l));
+
+  const WORKFLOW = '.github/workflows/test-app.yml';
+  const gateWorkflow = readFileSync(path.join(REPO, WORKFLOW), 'utf8');
+  assert.ok(
+    gatePinnedFetch(gateWorkflow),
+    `${WORKFLOW}'s gate job neither fetches ${PRE_TRAIN_BASELINE} in a live \`run:\` nor checks `
+      + 'out fetch-depth: 0, so this guard fails closed there. Re-point the fetch whenever the '
+      + 'baseline moves',
+  );
+
+  // And gatePinnedFetch() is itself asserted the way the probes are: against
+  // workflows written to break it. Not against mutations of the real file —
+  // the fourth case below legitimately removes the step, and a fixture derived
+  // from the file would then have nothing to mutate, which is the same
+  // "reddens a legitimate change" defect one level up. This sample carries the
+  // shape that matters: a gate job with a shallow checkout and a pinned fetch,
+  // a comment naming the sha, a block-scalar `run:`, and a second job to move
+  // the step into. The old whole-file substring match answered TRUE to all
+  // four, because the sha is in the comment in every one of them.
+  const SAMPLE_FETCH = `run: git fetch origin ${PRE_TRAIN_BASELINE}abcdef --depth=1 || true`;
+  const SAMPLE = [
+    'jobs:',
+    '  gate:',
+    '    steps:',
+    '      - uses: actions/checkout@v4',
+    '        with:',
+    '          fetch-depth: 2',
+    '      - name: Fetch the pinned pre-train baseline',
+    `        # names ${PRE_TRAIN_BASELINE} so the sha is in the file either way`,
+    `        ${SAMPLE_FETCH}`,
+    '      - name: Gate checks',
+    '        run: |',
+    '          node scripts/ci/gate-tests.mjs',
+    '  lint:',
+    '    steps:',
+    '      - run: npm run lint',
+    '',
+  ].join('\n');
+  assert.deepEqual(
+    liveRunLines(SAMPLE, 'gate'),
+    [SAMPLE_FETCH.slice('run: '.length), 'node scripts/ci/gate-tests.mjs'],
+    'liveRunLines() must return one job\'s run: values — block scalars included, the next job\'s '
+      + 'steps excluded',
+  );
+  assert.ok(gatePinnedFetch(SAMPLE), 'a gate job that fetches the baseline must satisfy the pin');
+
+  const commentedOut = SAMPLE.replace(`\n        ${SAMPLE_FETCH}`, `\n        # ${SAMPLE_FETCH}`);
+  assert.notEqual(commentedOut, SAMPLE, 'the commented-out mutation did not change anything');
+  assert.ok(
+    !gatePinnedFetch(commentedOut),
+    'a gate job whose fetch step is commented out fetches nothing, however many times the sha '
+      + 'still appears in the file',
+  );
+
+  const movedToLint = commentedOut.replace('      - run: npm run lint', `      - ${SAMPLE_FETCH}`);
+  assert.deepEqual(
+    liveRunLines(movedToLint, 'lint'),
+    [SAMPLE_FETCH.slice('run: '.length)],
+    'the moved-to-lint mutation did not land the fetch in the lint job',
+  );
+  assert.ok(
+    !gatePinnedFetch(movedToLint),
+    'a fetch living in `lint` does nothing for the gate job, which is the job that runs this file',
+  );
+
+  const fullHistory = commentedOut.replace('fetch-depth: 2', 'fetch-depth: 0');
+  assert.notEqual(fullHistory, commentedOut, 'the full-history mutation did not change anything');
+  assert.ok(
+    gatePinnedFetch(fullHistory),
+    'a gate job checked out at fetch-depth: 0 already has the baseline commit; reddening that '
+      + 'because the now-redundant fetch step went with it would be a false alarm',
+  );
+
+  // ---- the reader --------------------------------------------------------
+  //
+  // treeAt()'s four members over `git show`, so the probes cannot tell the
+  // difference, without paying for a worktree just to answer "was this there
+  // in August?". It has to match treeAt()'s CONTRACT, not merely its shape:
+  // treeAt() turns exactly two errors into '' — the path is absent (ENOENT) or
+  // is a directory (EISDIR) — and rethrows everything else, because a read
+  // that failed for any other reason is not evidence of absence. A bare
+  // `catch { return ''; }` here would answer '' to a broken git, an unreadable
+  // object store, or a ref that vanished mid-run, and every probe would then
+  // read NOT BUILT against what is effectively an empty tree: this guard
+  // passing while checking nothing, which is the exact failure it exists to
+  // catch. Same for the path validation — treeAt() validates BOTH of
+  // wiredInto's paths before using either, so a typo'd importer errors instead
+  // of quietly returning false forever.
+  const ABSENT_IN_REF = /does not exist in|exists on disk, but not in/;
+  const gitAt = (ref) => {
+    const objectFor = (rel) => {
+      if (typeof rel !== 'string' || rel.length === 0) {
+        throw new Error('probe paths must be non-empty strings');
+      }
+      if (path.isAbsolute(rel) || rel.split('/').includes('..')) {
+        throw new Error(`probe paths must be repo-relative and inside the tree: ${rel}`);
+      }
+      return `${ref}:${rel}`;
+    };
+    const git = (args) => execFileSync('git', args, {
+      cwd: REPO,
+      env: scrubGitEnv(),
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    /** 'blob' | 'tree' | null, where null means "not in this ref" and anything
+     *  else — a bad ref, a corrupt object store, no git at all — throws. */
+    const typeOf = (rel) => {
+      const object = objectFor(rel);
+      try {
+        return git(['cat-file', '-t', object]).trim();
+      } catch (err) {
+        if (typeof err?.status === 'number' && ABSENT_IN_REF.test(String(err.stderr ?? ''))) return null;
+        throw err;
+      }
+    };
+    const read = (rel) => {
+      const type = typeOf(rel);
+      if (type === null || type === 'tree') return ''; // treeAt()'s ENOENT / EISDIR
+      return git(['cat-file', 'blob', objectFor(rel)]);
+    };
+    const has = (rel) => typeOf(rel) !== null;
+    const wiredInto = (rel, importer) => {
+      objectFor(rel);
+      objectFor(importer);
+      return has(rel) && read(importer).includes(path.basename(rel, path.extname(rel)));
+    };
+    return Object.freeze({ root: ref, read, has, wiredInto });
+  };
+
+  // Sealed the same way treeAt() is, and asserted the same way — see "reader is
+  // sealed" above. The last case is the one a short-circuiting wiredInto() gets
+  // wrong: the module is absent from this ref, so `has(rel) && ...` never
+  // reaches the importer, and a probe naming an unreadable importer would go on
+  // answering false — "not built yet" — forever.
+  const refReader = gitAt(PRE_TRAIN_BASELINE);
+  for (const bad of ['/etc/passwd', '../outside', 'a/../../b', '']) {
+    assert.throws(
+      () => refReader.read(bad),
+      /repo-relative|non-empty/,
+      `the ref reader accepted ${JSON.stringify(bad)} for read()`,
+    );
+    assert.throws(
+      () => refReader.has(bad),
+      /repo-relative|non-empty/,
+      `the ref reader accepted ${JSON.stringify(bad)} for has()`,
+    );
+    assert.throws(
+      () => refReader.wiredInto(bad, 'package.json'),
+      /repo-relative|non-empty/,
+      `the ref reader accepted ${JSON.stringify(bad)} as wiredInto()'s module`,
+    );
+  }
+  assert.throws(
+    () => refReader.wiredInto('nope/missing.mjs', '/etc/passwd'),
+    /repo-relative/,
+    "the ref reader validated wiredInto()'s importer only when the module happened to be "
+      + 'present — treeAt() checks both paths before using either, and a reader that does not '
+      + 'lets a probe with an unreadable importer read as unbuilt forever',
+  );
+
+  // Nothing below proves the reader READ anything, and a reader that answered
+  // '' to everything sails through both: every probe reads NOT BUILT against
+  // an empty tree. So the reader is anchored on real bytes first — this is the
+  // manifest h18's own first clause greps for maplibre in.
+  const manifest = refReader.read('apps/party-tracker/package.json');
+  assert.ok(
+    manifest.includes('"name"') && manifest.length > 200,
+    `the baseline reader returned ${manifest.length} bytes for apps/party-tracker/package.json at `
+      + `${PRE_TRAIN_BASELINE}, which is not that file. Every probe would then read NOT BUILT `
+      + 'against an empty tree and this guard would report all-clear having checked nothing',
+  );
+  assert.ok(
+    refReader.has('apps/party-tracker/package.json'),
+    `the baseline reader cannot see a file that is certainly at ${PRE_TRAIN_BASELINE}`,
+  );
+  assert.ok(
+    !refReader.has('apps/party-tracker/lib/no-such-file-here.js'),
+    'the baseline reader says yes to a path that is in no tree',
+  );
+
+  const baselineRows = status(refReader);
+  assert.ok(
+    baselineRows.every((r) => r.probeError === null),
+    `probe error at ${PRE_TRAIN_BASELINE}: `
+      + `${baselineRows.filter((r) => r.probeError).map((r) => `${r.id}: ${r.probeError}`).join('; ')} — `
+      + 'a probe that throws against the baseline is not being checked against real code',
+  );
+  const builtAtBaseline = baselineRows.filter((r) => r.done).map((r) => r.id);
+  assert.deepEqual(
+    builtAtBaseline,
+    [],
+    `these slices report BUILT at ${PRE_TRAIN_BASELINE}, a real commit predating all of this `
+      + `work: ${builtAtBaseline.join(', ')}. Either the probe is true of any tree — a negation `
+      + 'with no positive anchor does that — or it greps for something that was already there',
+  );
+}
+
 // ------------------------------------------- how far a chain of sessions gets
 
 // The case that makes this worth computing: `sg` is not blocked itself and its
@@ -725,7 +1025,6 @@ assert.ok(
 
 // The CLI is what a fresh cloud session runs; if it cannot start, the session
 // has no way to find out what to build.
-const { execFileSync } = await import('node:child_process');
 for (const cmd of ['status', 'next', 'blocked', 'session']) {
   const out = execFileSync('node', [path.join(REPO, 'scripts/train-plan.mjs'), cmd], { encoding: 'utf8' });
   assert.ok(out.trim().length > 0, `train-plan.mjs ${cmd} printed nothing`);
