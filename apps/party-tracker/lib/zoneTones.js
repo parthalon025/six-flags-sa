@@ -52,7 +52,8 @@ export function tonesFromSpec(spec) {
 
 /* One fetch per url per session: a Wear toggle must not refetch a spec the
    phone already holds, and a World with no published pack must answer "none"
-   once rather than on every render. Mirrors CustomMapLayer's sidecar cache. */
+   once rather than on every render. The sidecar cache the retired SVG layer
+   kept, held here now that the paint is the map style's. */
 const specs = new Map();
 
 export function fetchZoneTones(url) {

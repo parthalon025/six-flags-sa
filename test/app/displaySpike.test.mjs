@@ -10,6 +10,8 @@
 
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const emitWarning = process.emitWarning.bind(process);
 process.emitWarning = (warning, ...rest) => {
@@ -114,9 +116,9 @@ check('malformed and unsatisfiable ranges come back null (the route 416s)', () =
 
 /* ------------------------------------------------- which renderer draws -- */
 /* Slice h11 ports ParkMap behind the map view seam. ADR-0019 clause 3 makes
-   MapLibre the one renderer; docs/train-h-seams.md keeps the SVG adapter as
-   the escape hatch until the ported one passes the gate, so which of the two
-   draws is a decision, and a decision with a default worth pinning. */
+   MapLibre the one renderer, and slice h18 retired the SVG adapter that was
+   the escape hatch, so what is left to pin is that a stale answer — a build
+   env, a bookmarked query string — still resolves to the engine that ships. */
 
 check('the shipped renderer is MapLibre', () => {
   assert.deepEqual([...PARK_MAP_RENDERERS], ['gl']);
@@ -136,6 +138,79 @@ check('a renderer nobody wrote falls back rather than blanking the map', () => {
     assert.equal(parkMapRenderer({ env: asked, search: '' }), 'gl', `env ${JSON.stringify(asked)}`);
   }
   assert.equal(parkMapRenderer({ env: undefined, search: '?parkMap=webgpu' }), 'gl');
+});
+
+/* -------------------------------------------- the retired SVG renderer -- */
+/* Slice h18 deleted components/ParkMapSvg.jsx and the layer only it mounted,
+   components/CustomMapLayer.jsx. An import of a deleted file cannot survive a
+   build, so what can still be wrong is everything that names one in prose: a
+   test-estate row routing a file nobody can touch, a header comment saying the
+   SVG adapter draws the World, docs/train-h-seams.md calling it the shipped
+   one. Prose outlives code unless something reads it. */
+
+const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const read = (rel) => readFileSync(path.join(ROOT, rel), 'utf8');
+const RETIRED = [
+  'apps/party-tracker/components/ParkMapSvg.jsx',
+  'apps/party-tracker/components/CustomMapLayer.jsx',
+];
+
+/** Every app source a comment can hide in — components and lib, nesting included. */
+function appSources(rel) {
+  const out = [];
+  for (const entry of readdirSync(path.join(ROOT, rel), { withFileTypes: true })) {
+    const next = `${rel}/${entry.name}`;
+    if (entry.isDirectory()) out.push(...appSources(next));
+    else if (/\.(js|jsx)$/.test(entry.name)) out.push(next);
+  }
+  return out;
+}
+
+const SOURCES = [
+  ...appSources('apps/party-tracker/components'),
+  ...appSources('apps/party-tracker/lib'),
+];
+
+check('the retired components are gone, and no test-estate row still routes one', () => {
+  const manifest = JSON.parse(read('test/app/modules.json'));
+  const routed = [...manifest.fullSuitePaths, ...manifest.modules.flatMap((m) => m.paths)];
+  for (const rel of RETIRED) {
+    assert.equal(existsSync(path.join(ROOT, rel)), false, `${rel} is deleted`);
+    assert.equal(routed.includes(rel), false, `modules.json still routes ${rel}`);
+  }
+});
+
+check('nothing in the app still names CustomMapLayer', () => {
+  // One importer and no story worth telling: the name should be absent rather
+  // than explained.
+  assert.deepEqual(SOURCES.filter((f) => read(f).includes('CustomMapLayer')), []);
+});
+
+check('ParkMapSvg is named only as the renderer that went', () => {
+  // It does have a story — the seam existed so it could be retired — so the
+  // name stays, in the past tense. A sentence that still has it drawing is the
+  // bug this check is for.
+  for (const f of [...SOURCES, 'docs/train-h-seams.md']) {
+    for (const sentence of read(f).split(/(?<=[.!?])\s+/)) {
+      if (!sentence.includes('ParkMapSvg')) continue;
+      assert.match(
+        sentence,
+        /\b(retired|deleted|replaced|was)\b/,
+        `${f} still speaks of ParkMapSvg in the present: ${sentence.trim().replace(/\s+/g, ' ')}`,
+      );
+    }
+  }
+});
+
+check('docs/train-h-seams.md names the renderers the code has, and no other', () => {
+  const seams = read('docs/train-h-seams.md');
+  const shipped = `\`${JSON.stringify([...PARK_MAP_RENDERERS]).replace(/"/g, "'")}\``;
+  assert.ok(seams.includes(shipped), `the seam note should quote PARK_MAP_RENDERERS as ${shipped}`);
+  // A bare backticked engine id in the prose is a claim about what draws.
+  for (const [, token] of seams.matchAll(/`([a-z]+)`/g)) {
+    if (!['gl', 'svg', 'webgpu'].includes(token)) continue;
+    assert.ok(PARK_MAP_RENDERERS.includes(token), `the note still names \`${token}\` as a renderer`);
+  }
 });
 
 if (FAIL.length) {

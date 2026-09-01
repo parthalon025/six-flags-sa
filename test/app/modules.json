@@ -72,7 +72,6 @@
         "apps/party-tracker/components/ParkMap.jsx",
         "apps/party-tracker/lib/parkMapView.js",
         "apps/party-tracker/components/ParkMapGl.jsx",
-        "apps/party-tracker/components/CustomMapLayer.jsx",
         "apps/party-tracker/components/Sheet.jsx",
         "apps/party-tracker/components/NavBar.jsx",
         "apps/party-tracker/app/globals.css",

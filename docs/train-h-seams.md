@@ -58,10 +58,11 @@ grow any surface a caller has not asked for before those seams land.
 
 ## 2. Map view — `apps/party-tracker/lib/mapView.js` + one component
 
-**The seam is real, and both adapters now sit behind it.** `ParkMapSvg.jsx` draws the world as SVG;
-`ParkMapGl.jsx` draws it through MapLibre over this interface (slice h11), and `ParkMap.jsx` is the
-one caller that picks between them. `DisplayMap.jsx` is still there as the #527 spike behind
-`mapLibreDisplayEnabled()`, outside the seam. ADR-0013 item 4's real-time PBR tier is the third
+**The seam is real, and one adapter sits behind it.** `ParkMapGl.jsx` draws the world through
+MapLibre over this interface (slice h11), and `ParkMap.jsx` is the one caller. The SVG adapter
+`ParkMapSvg.jsx` was the second while the port was proven beside it, and slice h18 deleted it —
+ADR-0019 clause 3's convergence, finished. `DisplayMap.jsx` is still there as the #527 spike behind
+`mapLibreDisplayEnabled()`, outside the seam. ADR-0013 item 4's real-time PBR tier is the next
 adapter this seam is being shaped for.
 
 **Interface.** What a caller must know, and no more:
@@ -103,12 +104,12 @@ what a Member's dot *means*; as data, the view only decides how it looks. It als
 alignment rule enforceable — the overlay is drawn from Truth, never snapped to art
 (ADR-0021 clause 3).
 
-**Retirement, not deletion.** The SVG adapter stays behind this interface until the MapLibre one
-passes the gate. That is the escape hatch, and it costs nothing extra because the seam has to
-exist anyway. Since slice h11 the hatch has a switch — `parkMapRenderer()` in
-`lib/mapLibreConfigured.js`, answering `svg` unless a build or a reviewer asks for `gl` — and the
-gate it is waiting on is named: slice h15's perf rows, plus the browser suites' own assertions on
-`svg.mapSvg`.
+**Retirement, then deletion.** The SVG adapter stayed behind this interface while the MapLibre one
+was proven beside it — the escape hatch, which cost nothing extra because the seam had to exist
+anyway. Slice h11 gave the hatch a switch; slice h18 closed it. `PARK_MAP_RENDERERS` is now
+`['gl']`, and what `parkMapRenderer()` in `lib/mapLibreConfigured.js` is still for is resolving a
+*stale* answer: a deployment env or a bookmarked `?parkMap=` outlives the engine it names, and
+every one of those has to draw the shipped map rather than nothing.
 
 ---
 
@@ -168,16 +169,20 @@ caller passes (`theme ?? null`). MapLibre takes its style at construction, so ke
 the Skin is the honest way to restyle without a style-diff — but it means switching Skin destroys
 the WebGL context and builds a new one, where the SVG renderer simply repainted in place. Nobody
 has measured what that costs on a mid-range phone, and it is the one place the port is
-*structurally* slower than what it replaces rather than differently fast. Slice h15's perf rows
-should be written knowing it: either they measure a Skin switch as its own row, or they say
-explicitly that they do not. The fix, if the number is bad, is a `setPaintProperty` pass over the
-live style instead of a remount — which is a change behind this seam and not a change to it.
+*structurally* slower than what it replaces rather than differently fast. Slice h15's gate landed
+without it: `scripts/lib/map-perf-gate.mjs` sweeps pan, zoom and pitch under one Skin and never
+switches, so the remount stays unmeasured — said out loud rather than assumed away. The fix, if
+the number is ever bad, is a `setPaintProperty` pass over the live style instead of a remount —
+which is a change behind this seam and not a change to it.
 
-**The SVG adapter is still the shipped one**, through `parkMapRenderer()` — the escape hatch this
-note has always named. Two things hold it open and neither is h11's to close: the gate is slice
-h15's perf rows, which wait on an owner decision (ADR-0021 Open, "The perf gate rows"), and the
-browser suites still assert on `svg.mapSvg`. Set `NEXT_PUBLIC_PARKMAP_RENDERER=gl`, or add
-`?parkMap=gl`, to draw through the ported one. The second adapter is now the code's, not the
-design's.
+**The ported adapter is the shipped one** since slice h18, and the SVG one is deleted. Neither of
+the two things that held the hatch open is a reason to keep a renderer any more: ADR-0021's Open
+answered the perf gate (regression-only CI throttle, 4× CPU, a 30 fps floor), which
+`scripts/lib/map-perf-gate.mjs` now runs as a scripted pan/zoom/pitch sweep; and the browser
+suites' `svg.mapSvg` selectors mostly kept working, because the marks they name are drawn by
+`ParkMapGl.jsx`'s own overlay `<svg className="mapSvg">`. Where a suite named the retired
+renderer's world DOM it reads the mechanism instead — the `world-lands` source's `tint`, in
+`test/app/functional.mjs`. There is nothing to set: `parkMapRenderer()` answers `gl` however it is
+asked.
 
 Seam 3 is designed here and not yet implemented.
