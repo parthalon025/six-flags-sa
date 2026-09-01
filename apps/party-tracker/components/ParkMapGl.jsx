@@ -8,17 +8,18 @@
  * in for one that has not arrived, what tilt the camera holds, and how a
  * Member's dot is painted are all answered behind the seam — which is what
  * lets those be tested in plain Node and what lets ADR-0013's real-time PBR
- * tier arrive as a third renderer rather than as a fork of this file.
+ * tier arrive as the next renderer rather than as a fork of this file.
  *
  * What it *does* own is the two conversions a browser is needed for: pixels
  * (a tap, the viewport a route has to fit into) and the effect lifecycle that
  * a WebGL context lives and dies by. Everything above that — Truth into map
  * data, props into a camera — is ParkMap.jsx's, and pure.
  *
- * The counterpart it replaces is components/ParkMapSvg.jsx, which projected
- * all of this by hand. Two projections of one Truth is how a party dot and the
- * route it is walking end up disagreeing on screen, which is the failure
- * ADR-0021 clause 3 is written against.
+ * The counterpart it replaced was components/ParkMapSvg.jsx, which projected
+ * all of this by hand and retired with slice h18. Two projections of one Truth
+ * is how a party dot and the route it is walking end up disagreeing on screen,
+ * which is the failure ADR-0021 clause 3 is written against; there is one
+ * projection now.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
