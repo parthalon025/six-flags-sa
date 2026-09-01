@@ -51,6 +51,10 @@ packages/venue-builder/lib/*
 !packages/venue-builder/lib/evidence-graph.mjs
 !packages/venue-builder/lib/imagery-claims.mjs
 !packages/venue-builder/lib/imagery-disputes.mjs
+# Reached by imagery-claims.mjs since claims are refused on ledger provenance
+# rather than checked for coverage after the fact. Pure, and it only touches the
+# filesystem when a caller asks for coverage without handing it a ledger.
+!packages/venue-builder/lib/imagery-ledger.mjs
 !packages/venue-builder/lib/quest-seeds.mjs
 !packages/venue-builder/lib/ship-gaps.mjs
 !packages/venue-builder/lib/ambient-signal-seeds.mjs
