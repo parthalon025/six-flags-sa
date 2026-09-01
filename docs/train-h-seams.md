@@ -48,11 +48,15 @@ boundary" cannot be a hardcoded zoom range in the camera config. Seam 2 has to d
 **Deletion test.** Delete this module and the band table reappears in the baker, the tiler, the
 map view, and the certification rows — four copies that drift.
 
-**No adapters yet.** Nothing outside its own test imports this module: seams 2 and 3 are its
-consumers and neither is built. That makes it a table without a caller for now, which is worth
-naming — it is only defensible because every value is fixed by an accepted ADR rather than
-invented here, and because the whole interface is exercised through its own tests. It should not
-grow any surface a caller has not asked for before those seams land.
+**Callers on both sides of the divide.** Fifteen non-test modules import this table now, which is
+the leverage it was built for: the phone reads it through `lib/bandPlan.js`, `lib/bandViewport.js`,
+`lib/worldLod.js`, `lib/mapViewStyle.js`, `lib/mapViewMaplibre.js`, `components/ParkMapGl.jsx` and
+`components/BandedWorldMap.jsx`; the builder through `lib/display-bands.mjs`, `lib/display-bake.mjs`,
+`bin/display-bake.mjs`, `lib/display-pack.mjs`, `lib/display-references.mjs`,
+`lib/display-style-contract.mjs` and `lib/display-kit-bands.mjs`; and `packages/shared/mapCamera.js` sits across both. One table, two
+consumers, as designed — no second copy has appeared in the baker, the tiler, the map view or the
+certification rows, which is the deletion test above still passing. It should still grow no
+surface a caller has not asked for.
 
 ---
 
@@ -120,8 +124,9 @@ them sits a deterministic transform with a lot of machinery and almost nothing a
 
 **Interface.** One export:
 
-- `buildPyramid({ id, bandId, bakePng, outDir, cellMetres })` → written files plus the manifest
-  rows that pin them.
+- `buildPyramid({ id, bandId, bakePng, bounds, outDir, maxRootBytes })` → written files plus the
+  manifest rows that pin them. The bake's ground `bounds` cross rather than a cell size, and
+  `maxRootBytes` caps the PMTiles root directory.
 
 **Depth.** The sharp resize chain, tile cutting on MapLibre's 512 px convention, WebP encoding
 (playbook row 13), PMTiles assembly, and the byte-identity that certification asserts.
@@ -170,7 +175,7 @@ the Skin is the honest way to restyle without a style-diff — but it means swit
 the WebGL context and builds a new one, where the SVG renderer simply repainted in place. Nobody
 has measured what that costs on a mid-range phone, and it is the one place the port is
 *structurally* slower than what it replaces rather than differently fast. Slice h15's gate landed
-without it: `scripts/lib/map-perf-gate.mjs` sweeps pan, zoom and pitch under one Skin and never
+without it: `scripts/lib/map-perf-gate.mjs` sweeps zoom and pitch under one Skin and never
 switches, so the remount stays unmeasured — said out loud rather than assumed away. The fix, if
 the number is ever bad, is a `setPaintProperty` pass over the live style instead of a remount —
 which is a change behind this seam and not a change to it.
@@ -178,11 +183,24 @@ which is a change behind this seam and not a change to it.
 **The ported adapter is the shipped one** since slice h18, and the SVG one is deleted. Neither of
 the two things that held the hatch open is a reason to keep a renderer any more: ADR-0021's Open
 answered the perf gate (regression-only CI throttle, 4× CPU, a 30 fps floor), which
-`scripts/lib/map-perf-gate.mjs` now runs as a scripted pan/zoom/pitch sweep; and the browser
+`scripts/lib/map-perf-gate.mjs` now runs as a scripted zoom/pitch sweep — two `easeTo`s, no
+pan: the gate never moves the centre, so panning cost stays unmeasured alongside the remount; and
+the browser
 suites' `svg.mapSvg` selectors mostly kept working, because the marks they name are drawn by
 `ParkMapGl.jsx`'s own overlay `<svg className="mapSvg">`. Where a suite named the retired
 renderer's world DOM it reads the mechanism instead — the `world-lands` source's `tint`, in
 `test/app/functional.mjs`. There is nothing to set: `parkMapRenderer()` answers `gl` however it is
 asked.
 
-Seam 3 is designed here and not yet implemented.
+Seam 3 is built: `packages/venue-builder/lib/display-pyramid.mjs` exports `buildPyramid`,
+`packages/venue-builder/lib/display-pack.mjs` is its caller, and `test/builder/display-pyramid.mjs`
+covers it end to end. Since the port, the pack cuts every band a bound Skin declares rather than
+the mid band alone — the producer for the `overview` and `close` bands
+`apps/party-tracker/lib/venue/download.js` already offers a guest.
+
+## 4. Custom-map vocabulary — `apps/party-tracker/lib/customMap.js`
+
+Not a seam — a closed vocabulary, recorded here because this note is where Train H's interfaces
+are named. `CUSTOM_MAP_RENDERERS` and `CUSTOM_MAP_CAMERAS` are the words a custom map may use and
+`assertCustomMap()` refuses any other, so ADR-0019 clause 6's retirement of `iso` cannot be undone
+by a data edit. Before it, `renderer: 'iso'` was still an accepted word with nothing to refuse it.
