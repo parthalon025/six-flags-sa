@@ -2,6 +2,10 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
+  CUSTOM_MAPS,
+  CUSTOM_MAP_CAMERAS,
+  CUSTOM_MAP_RENDERERS,
+  assertCustomMap,
   bakedWorldBands,
   customMapCamera,
   hidesBaseLayer,
@@ -15,6 +19,11 @@ assert.equal(resolveCustomMap('day'), null);
 assert.equal(resolveCustomMap('night'), null);
 assert.equal(resolveCustomMap(null), null);
 
+/* ADR-0019 clause 6: "Iso retires from the map path. pixel-tycoon converts to
+   top-down banded art with the iso flavor painted into the sprites ... plus a
+   camera preset." So the Skin that carried the live iso painter now consumes a
+   baked world like every other, hides nothing, and takes the same mercator
+   camera. */
 const tycoon = resolveCustomMap('pixel-tycoon');
 assert.equal(tycoon.id, 'pixel-tycoon');
 assert.equal(tycoon.placement, 'overlay');
@@ -26,6 +35,30 @@ assert.equal(hidesBaseLayer(tycoon, 'building'), false);
 assert.equal(hidesBaseLayer(tycoon, 'coaster'), false);
 assert.equal(hidesBaseLayer(tycoon, 'path'), false);
 assert.equal(hidesBaseLayer(tycoon, 'park'), false);
+assert.equal(tycoon.template, undefined, 'no iso template survives the conversion');
+
+/* The retirement is in the vocabulary, not only in the one declaration that
+   used it. ADR-0021 reaffirms the rejection of "a true-iso path kept for
+   pixel-tycoon" — if painted-iso plus a camera preset cannot carry the
+   feeling, the answers are a kit redesign or retiring the Skin, "not two
+   renderers forever". A schema that still accepted `iso` would let the second
+   renderer back in as data, with no code change to notice. */
+assert.deepEqual(CUSTOM_MAP_RENDERERS, ['baked'], 'baked is the only renderer on the map path');
+assert.deepEqual(CUSTOM_MAP_CAMERAS, ['mercator'], 'mercator is the only camera on the map path');
+assert.throws(() => assertCustomMap({ id: 'x', renderer: 'iso' }), /iso/, 'an iso renderer is refused');
+assert.throws(() => assertCustomMap({ id: 'x', camera: 'iso' }), /iso/, 'an iso camera is refused');
+assert.throws(() => assertCustomMap({ id: 'x', renderer: 'raymarched' }), /raymarched/);
+assert.doesNotThrow(() => assertCustomMap({ id: 'x', renderer: 'baked', camera: 'mercator' }));
+for (const spec of Object.values(CUSTOM_MAPS)) assert.doesNotThrow(() => assertCustomMap(spec), spec.id);
+/* The closed word list is frozen: a reopening has to be a code change here,
+   not a push onto an array someone holds a reference to. */
+assert.throws(() => CUSTOM_MAP_RENDERERS.push('iso'), TypeError);
+assert.throws(() => CUSTOM_MAP_CAMERAS.push('iso'), TypeError);
+/* resolveCustomMap is the door every caller uses, so the refusal has to be on
+   it and not only on the raw assert. */
+CUSTOM_MAPS['iso-smuggler'] = { id: 'iso-smuggler', placement: 'overlay', renderer: 'iso' };
+assert.throws(() => resolveCustomMap('iso-smuggler'), /iso/, 'a smuggled iso declaration is refused');
+delete CUSTOM_MAPS['iso-smuggler'];
 
 /* Three contrasting Skins consume baked worlds (ADR-0021 clause 6). */
 const ledger = JSON.parse(
