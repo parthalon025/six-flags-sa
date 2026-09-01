@@ -67,11 +67,17 @@ function recordingRenderer(overrides = {}) {
 
 const CONTAINER = { nodeName: 'DIV' };
 
+/* A Skin name with no declared camera preset, deliberately. The seam derives
+   its pitch ceiling from the Skin, so a fixture naming a SHIPPED Skin would
+   silently import that Skin's design decision into every case below — and the
+   curve cases here are about the curve, not about anyone's feel. The preset
+   derivation gets its own block further down, where the Skin is the subject
+   rather than the scenery. */
 const mount = (opts = {}) =>
   mountMapView(CONTAINER, {
     renderer: recordingRenderer(),
     world: WORLD,
-    skin: 'watercolor-quest',
+    skin: 'fixture-skin',
     places: PLACES,
     camera: { center: { lng: -84.2678, lat: 39.3422 }, zoom: 15 },
     ...opts,
@@ -107,7 +113,7 @@ assert.throws(() => mount({ renderer: null }), /renderer/i, 'no renderer at all 
   assert.equal(attached.call, 'attach');
   assert.equal(attached.container, CONTAINER, 'the renderer is attached to the caller container');
   assert.equal(attached.view.world, WORLD, 'the World crosses whole');
-  assert.equal(attached.view.skin, 'watercolor-quest');
+  assert.equal(attached.view.skin, 'fixture-skin', 'the Skin it wears crosses whole');
 
   // Places cross as positions, because a renderer that cannot see where a
   // Place is cannot draw a pin on it or answer a tap. What it does not get is
@@ -191,6 +197,35 @@ const EASE_MIDPOINT = 15.622402608729476;
   near(gentle.state().camera.pitch, 15, 'a gentler Skin eases to its own maximum');
   gentle.setCamera({ center: CENTRE, zoom: 16.5 });
   near(gentle.state().camera.pitch, 30, 'and tops out there');
+}
+
+/* And the Skin does not have to be asked twice. ADR-0019 clause 2 makes the
+   pitch preset a per-Skin declared trait, so a caller that names the Skin has
+   already named the feel — a second argument repeating it is a second place for
+   the two to disagree, and the way a Skin quietly mounts on the default camera.
+   An explicit maxPitch still wins: the seam derives a default, it does not
+   overrule its caller. */
+{
+  const renderer = recordingRenderer();
+  const declared = mount({ skin: 'watercolor-quest', renderer });
+  declared.setCamera({ center: CENTRE, zoom: 16.5 });
+  near(declared.state().camera.pitch, 30, "the Skin's own declared ceiling, unasked");
+  // The curve the renderer tilts a live pinch with is the same one, or the
+  // preset would be a number the seam reports and the glass never shows.
+  const [attached] = renderer.calls;
+  near(attached.view.pitchAt(16.5), 30, 'and the curve the renderer pitches by carries it too');
+
+  const tycoon = mount({ skin: 'pixel-tycoon' });
+  tycoon.setCamera({ center: CENTRE, zoom: 16.5 });
+  near(tycoon.state().camera.pitch, 45, 'and a Skin that wants the full tilt gets it');
+
+  const overridden = mount({ skin: 'pixel-tycoon', maxPitch: 30 });
+  overridden.setCamera({ center: CENTRE, zoom: 16.5 });
+  near(overridden.state().camera.pitch, 30, 'an explicit maxPitch outranks the preset');
+
+  const unknown = mount({ skin: 'no-such-skin' });
+  unknown.setCamera({ center: CENTRE, zoom: 16.5 });
+  near(unknown.state().camera.pitch, 45, 'an unknown Skin falls back to the default feel');
 }
 
 // A renderer is also where camera moves come *from*: gestures happen inside it,
