@@ -50,6 +50,78 @@ export const HEAVY_AXES = ['A1', 'A2', 'A3', 'A4', 'B4', 'C1'];
 export const REQUIRED_AXES = 6;
 export const REQUIRED_HEAVY = 3;
 
+/* ------------------------------------------------------------- the set gate
+ *
+ * Everything above answers one question: is Skin B a different world from
+ * Skin A? ADR-0021 clause 6 asks a different one of the first ship, and is
+ * explicit about why the count is load-bearing rather than a round number:
+ *
+ *   "One Skin cannot fail the beyond-palette distinctness gate, so it cannot
+ *    tell you the kit is wrong; three Skins chosen far apart on the design
+ *    axes can."
+ *
+ * and, rejecting the two-Skin near-miss: a pair that passes may be passing on
+ * a single axis, and three is the smallest set where that cannot hide.
+ *
+ * So a set clears only when EVERY unordered pair clears, and a set below the
+ * floor cannot clear at all however clean its one pair looks. The floor
+ * WITHHOLDS a PASS; it never launders a proven FAIL into "cannot tell", which
+ * would be the same mistake in the other direction, and it never manufactures
+ * a FAIL out of a short set either. That distinction is what makes the gate
+ * runnable today: only watercolor-quest and layered-atlas have a certified
+ * kings-island bake, so the shipped set is two and reports INDETERMINATE with
+ * its reason — an honest "not yet decidable", not a build failure and not a
+ * silent pass.
+ */
+
+/** The smallest set of shipped Skins whose distinctness can be decided. */
+export const MIN_SHIP_SKINS = 3;
+
+/** Every unordered pair of a shipped set, in declaration order.
+ *
+ *  Declaration order rather than sorted, so the set's own ordering survives
+ *  into the report a human reads. */
+export function skinSetPairs(skins = []) {
+  const seen = new Set();
+  for (const id of skins) {
+    if (seen.has(id)) throw new Error(`skin "${id}" appears twice — a Skin is not distinct from itself`);
+    seen.add(id);
+  }
+  const pairs = [];
+  for (let i = 0; i < skins.length; i += 1) {
+    for (let j = i + 1; j < skins.length; j += 1) pairs.push([skins[i], skins[j]]);
+  }
+  return pairs;
+}
+
+/**
+ * Roll per-pair verdicts into one answer for the set.
+ *
+ * @param {{a: string, b: string, verdict: {outcome: string}}[]} pairs
+ * @returns the set outcome, the pairs that proved it wrong (`failing`), the
+ *   pairs the instrument could not decide (`unproven`), and — when the set is
+ *   too small to decide at all — the `reason` it is being withheld, so a
+ *   caller reports the clause rather than a bare unknown.
+ */
+export function setVerdict(pairs = []) {
+  const failing = pairs.filter((p) => p.verdict?.outcome === 'FAIL').map(({ a, b }) => [a, b]);
+  const unproven = pairs.filter((p) => p.verdict?.outcome === 'INDETERMINATE').map(({ a, b }) => [a, b]);
+  // A pair count below the floor is `MIN_SHIP_SKINS choose 2`. Derived rather
+  // than written as 3, so raising the floor cannot leave a stale literal here.
+  const enough = pairs.length >= (MIN_SHIP_SKINS * (MIN_SHIP_SKINS - 1)) / 2;
+  const outcome = failing.length ? 'FAIL' : (unproven.length || !enough) ? 'INDETERMINATE' : 'PASS';
+  return {
+    outcome,
+    pass: outcome === 'PASS',
+    failing,
+    unproven,
+    reason: enough
+      ? ''
+      : `a set of fewer than ${MIN_SHIP_SKINS} Skins cannot clear the gate: one cannot fail it, and a `
+        + 'pair that passes may be passing on a single axis (ADR-0021 clause 6)',
+  };
+}
+
 /** Kit-spec paths that move each axis. A leading `!` marks a knob whose mere
  *  presence-or-absence is the difference (wash either exists or it does not).
  *  Wildcard `*` walks every key at that level, so terrain classes stay covered

@@ -2,6 +2,7 @@
 /** Is Skin B a different world from Skin A, or the same drawing recoloured?
  *
  *   node packages/venue-builder/bin/display-distinct.mjs <venue> <skinA> <skinB> [--json]
+ *   node packages/venue-builder/bin/display-distinct.mjs <venue> <skin…> --set [--json]
  *   node packages/venue-builder/bin/display-distinct.mjs <venue> <skin> --null
  *
  * Reads the two kit specs and the two baked worlds, scores every AXIS_KNOBS-
@@ -9,6 +10,13 @@
  * axis. The axes in UNMAPPED_AXES are not scored at all and are listed on every
  * run. Exits 0 when the gate in docs/goals/design-language-axes.md is cleared,
  * 1 when it provably cannot be, and 3 when the instrument cannot tell.
+ *
+ * `--set` asks the question ADR-0021 clause 6 asks of the first ship: are these
+ * Skins EACH their own world? Every unordered pair is scored and the set is
+ * only as distinct as its closest pair. A set below MIN_SHIP_SKINS cannot clear
+ * the gate however clean its one pair looks — clause 6's own argument, that a
+ * passing pair "may be passing on a single axis" — so it exits 3, the honest
+ * "cannot tell", rather than a failure the instrument has not proven.
  *
  * Deterministic: same inputs, same verdict. No sampling, no clock.
  */
@@ -24,8 +32,11 @@ import {
   ENCODE_NULL,
   THRESHOLDS,
   UNMAPPED_AXES,
+  MIN_SHIP_SKINS,
   assertPixelMeasuredMatches,
   pixelAxisDeltas,
+  setVerdict,
+  skinSetPairs,
   specAxesDiffering,
   verdict,
 } from '../lib/skin-distinct.mjs';
@@ -33,12 +44,20 @@ import {
 const BUILDER = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REPO = path.resolve(BUILDER, '../..');
 
-const [venue, skinA, skinB] = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+const positional = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+const [venue, skinA, skinB] = positional;
+const skins = positional.slice(1);
 const asJson = process.argv.includes('--json');
 const asNull = process.argv.includes('--null');
-if (!venue || !skinA || (!skinB && !asNull)) {
+const asSet = process.argv.includes('--set');
+if (!venue || !skinA || (!skinB && !asNull && !asSet)) {
   console.error('usage: display-distinct <venue> <skinA> <skinB> [--json]');
+  console.error('       display-distinct <venue> <skin…> --set [--json]');
   console.error('       display-distinct <venue> <skin> --null');
+  process.exit(2);
+}
+if (asSet && skins.length < 2) {
+  console.error(`--set needs at least two Skins to make a pair (the gate needs ${MIN_SHIP_SKINS})`);
   process.exit(2);
 }
 
@@ -79,14 +98,84 @@ if (asNull) {
 const bakePath = (skin) =>
   path.join(REPO, 'apps/party-tracker/public/venues', venue, 'display', `${skin}.world.png`);
 
-for (const skin of [skinA, skinB]) {
-  for (const f of [kitPath(skin), bakePath(skin)]) {
-    if (!existsSync(f)) {
-      console.error(`missing ${path.relative(REPO, f)} — cannot compare soundly`);
-      process.exit(2);
+function requireInputs(list) {
+  for (const skin of list) {
+    for (const f of [kitPath(skin), bakePath(skin)]) {
+      if (!existsSync(f)) {
+        console.error(`missing ${path.relative(REPO, f)} — cannot compare soundly`);
+        process.exit(2);
+      }
     }
   }
 }
+
+/* --- The set gate. ADR-0021 clause 6 asks whether a shipped SET of Skins is
+   each its own world, which is a stronger question than any one pair answers,
+   and a missing input is still a usage error rather than a verdict. */
+if (asSet) {
+  requireInputs(skins);
+  let setPairs;
+  try {
+    setPairs = skinSetPairs(skins);
+  } catch (err) {
+    console.error(err.message);
+    process.exit(2);
+  }
+  const scored = [];
+  for (const [a, b] of setPairs) {
+    const pairSpec = specAxesDiffering(
+      JSON.parse(readFileSync(kitPath(a), 'utf8')),
+      JSON.parse(readFileSync(kitPath(b), 'utf8')),
+    );
+    const pairPixel = await pixelAxisDeltas(bakePath(a), bakePath(b));
+    // The "never earned" banner is only true if PIXEL_MEASURED still names
+    // exactly what pixelAxisDeltas returns. Asserted on every run, --set too.
+    assertPixelMeasuredMatches(pairPixel);
+    scored.push({
+      a,
+      b,
+      spec: pairSpec,
+      pixel: pairPixel,
+      verdict: verdict({ spec: pairSpec, pixel: pairPixel, thresholds: THRESHOLDS }),
+    });
+  }
+  const set = setVerdict(scored);
+
+  if (asJson) {
+    console.log(JSON.stringify({
+      venue,
+      skins,
+      pairs: scored.map(({ a, b, spec: s, pixel: p, verdict: v }) => ({ a, b, spec: s, pixel: p, ...v })),
+      unmapped: UNMAPPED_AXES,
+      ...set,
+    }, null, 2));
+    process.exit(exitFor(set.outcome));
+  }
+
+  console.log(`\n  ${venue}: the set ${skins.join(' · ')}\n`);
+  console.log('  pair                                        outcome         proven / could reach');
+  console.log('  ' + '─'.repeat(84));
+  for (const { a, b, verdict: v } of scored) {
+    console.log(
+      `  ${`${a} vs ${b}`.padEnd(42)}  ${v.outcome.padEnd(14)}  `
+        + `${v.lowerBound}/${REQUIRED_AXES} (${v.heavyDistinct.length}/${REQUIRED_HEAVY} heavy)`
+        + `   up to ${v.upperBound}/${REQUIRED_AXES}`,
+    );
+  }
+  console.log('  ' + '─'.repeat(84));
+  console.log(`\n  Not modelled by this tool at all: ${Object.keys(UNMAPPED_AXES).join(', ')}`);
+  if (set.failing.length) {
+    console.log(`\n  Proven not distinct: ${set.failing.map(([a, b]) => `${a} vs ${b}`).join(', ')}`);
+  }
+  if (set.unproven.length) {
+    console.log(`\n  The instrument could not decide: ${set.unproven.map(([a, b]) => `${a} vs ${b}`).join(', ')}`);
+  }
+  if (set.reason) console.log(`\n  ${set.reason}`);
+  console.log(`\n  ${set.outcome} — a set is only as distinct as its closest pair\n`);
+  process.exit(exitFor(set.outcome));
+}
+
+requireInputs([skinA, skinB]);
 
 const spec = specAxesDiffering(
   JSON.parse(readFileSync(kitPath(skinA), 'utf8')),
