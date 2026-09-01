@@ -270,11 +270,15 @@ export const SLICES = Object.freeze([
     probe: (t) =>
       t.has('apps/party-tracker/components/ParkMapGl.jsx')
       && !t.has('apps/party-tracker/components/ParkMapSvg.jsx')
-      //  Matched on content, not on syntax. This clause used to grep
-      //  `PARK_MAP_RENDERERS = [` while every real tree has said
-      //  `= Object.freeze([`, so it was false on all real code and true only
-      //  against the fixture written to satisfy it — a fixture proves a probe
-      //  CAN move, not that it describes the code.
+      //  Matched on content, not on syntax. This clause used to be a
+      //  negated regex — `!/PARK_MAP_RENDERERS\s*=\s*\[\s*'svg'/` — anchored
+      //  on a spelling no real tree writes, every one of them saying
+      //  `= Object.freeze([`. A pattern that never matches, negated, is
+      //  permanently TRUE: the clause passed against any tree at all and
+      //  narrowed nothing. It enabled a false positive; it was not merely
+      //  dead. The before-fixture that withholds this evidence is what
+      //  catches it — a fixture proves a probe CAN move, not that it
+      //  describes the code.
       && t.read('apps/party-tracker/lib/mapLibreConfigured.js').includes('PARK_MAP_RENDERERS')
       && !/PARK_MAP_RENDERERS[^\n]*'svg'/.test(t.read('apps/party-tracker/lib/mapLibreConfigured.js')),
   },
