@@ -308,7 +308,13 @@ for (const id of ids) {
   // files from an older code version.
   const results = [];
   for (const kitId of kitIds) {
-    const kit = resolveKit(kitSpecs[kitId], { assets: LEDGER, overlay, materials: MATERIALS });
+    // `band` reaches the kit as well as the model: h5 gave the band the power
+    // to remove marks, and the kit's own per-band look is the other half of
+    // ADR-0019 clause 1 — a speckle that reads at 0.15 m/px is one pixel of
+    // noise at 2.4, so the same declaration must not paint all three bands.
+    const kit = resolveKit(kitSpecs[kitId], {
+      assets: LEDGER, overlay, materials: MATERIALS, band,
+    });
     const model = bakeModel(map, pois, gridOpts);
     let base;
     let server;
