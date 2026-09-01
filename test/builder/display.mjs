@@ -692,6 +692,56 @@ await check('a venue design theme overlays a kit; custom sprite refs are gated',
   return true;
 });
 
+await check('resolveKit paints a kit at a band, and validates what the band said', async () => {
+  const { readAssetLedger } = await import('../../packages/venue-builder/lib/display-assets.mjs');
+  const assets = readAssetLedger();
+  // Slice h14: the kit schema learned to speak per band (display-kit-bands.mjs).
+  // resolveKit is where that reaches the painter, and the order matters — the
+  // band look merges BEFORE validation, so a band overlay faces every check the
+  // base spec does rather than sneaking an unknown texture past the gate.
+  const spec = {
+    id: 'banded',
+    terrain: { grass: { base: '#111111', texture: { kind: 'tuft', density: 0.3 } } },
+    sprites: { building: { drop: 0.25 } },
+    bands: {
+      overview: { terrain: { grass: { texture: { kind: 'none' } } }, sprites: { building: { drop: 0 } } },
+      close: { sprites: { building: { drop: 0.6 } } },
+    },
+  };
+  assert.equal(resolveKit(spec, { assets, band: 'overview' }).terrain.grass.texture.kind, 'none');
+  assert.equal(resolveKit(spec, { assets, band: 'overview' }).sprites.building.drop, 0);
+  assert.equal(resolveKit(spec, { assets, band: 'close' }).sprites.building.drop, 0.6);
+  assert.equal(resolveKit(spec, { assets, band: 'close' }).terrain.grass.texture.kind, 'tuft');
+  assert.equal(resolveKit(spec, { assets }).sprites.building.drop, 0.25, 'no band, no band look');
+  assert.equal(resolveKit(spec, { assets, band: 'mid' }).sprites.building.drop, 0.25, 'mid is the base bake');
+  // (No case here for `bands` being absent from the resolved kit: resolveKit
+  // returns an explicit whitelist object that never spreads the spec, so that
+  // assertion could not fail whatever bandLookSpec did. The falsifiable version
+  // — the block being consumed by the merge itself — is in
+  // test/builder/display-bands.mjs, on bandLookSpec's own return.)
+  assert.throws(
+    () => resolveKit({ id: 'x', bands: { close: { terrain: { water: { texture: { kind: 'sparkle' } } } } } }, { assets, band: 'close' }),
+    /Unknown texture kind/,
+    'a band look is validated, not trusted',
+  );
+  assert.throws(
+    () => resolveKit({ id: 'x', bands: { close: { terrain: { lava: {} } } } }, { assets, band: 'close' }),
+    /Unknown terrain piece/,
+  );
+  assert.throws(() => resolveKit({ id: 'x', bands: { gigantic: {} } }, { assets }), /gigantic/);
+
+  // A venue's design theme still wins over the kit, band look included: the
+  // band says how this kit paints at this resolution, the World's own theme
+  // says how this World paints, and the World is the more specific authority.
+  const themed = resolveKit(spec, {
+    assets,
+    band: 'close',
+    overlay: { sprites: { building: { drop: 0.9 } } },
+  });
+  assert.equal(themed.sprites.building.drop, 0.9, 'the venue theme outranks the band look');
+  return true;
+});
+
 await check('every Skin bakeKit binding names a kit on disk', async () => {
   const { readSkinTemplates } = await import('../../packages/venue-builder/lib/display-pack.mjs');
   const { existsSync } = await import('node:fs');
@@ -1428,9 +1478,10 @@ await check('every POI badge kind resolves to a glyph — style_no_baked_text is
   return true;
 });
 
-await check('the seven shipped kits still certify clause 1 — every kind glyphs', async () => {
+await check('the seven shipped kits still certify clause 1 — every kind glyphs, at every band', async () => {
   const { readAssetLedger, assetPath } = await import('../../packages/venue-builder/lib/display-assets.mjs');
   const { existsSync } = await import('node:fs');
+  const { BANDS } = await import('../../packages/shared/zoomBands.js');
   const assets = readAssetLedger();
   const materials = readMaterials();
   const files = readdirSync(KIT_DIR).filter((f) => f.endsWith('.json')).sort();
@@ -1439,28 +1490,38 @@ await check('the seven shipped kits still certify clause 1 — every kind glyphs
     'midnight-carnival.json', 'pixel-tycoon.json', 'rpg-overworld.json',
     'watercolor-quest.json',
   ], 'the shipped kit set changed — re-check clause 1 against the new kit');
+  // Every band, not only the base spec: a kit's per-band look is a partial
+  // merged over it, so a band could rebind a badge icon to something with a
+  // letter on it. Clause 1 is "no band bakes text", which is a claim about all
+  // three bands and not about the spec they share. No kit on disk declares a
+  // band look today, so today every band resolves to the same kit — this is the
+  // guard standing ready for the first one that does.
+  const bands = [null, ...BANDS.map((b) => b.id)];
   for (const file of files) {
-    const kit = resolveKit(
-      JSON.parse(readFileSync(new URL(file, KIT_DIR), 'utf8')),
-      { assets, materials },
-    );
-    const cert = certifyStyleContract({
-      model: clause1Model(BADGE_KINDS.map((kind, i) => ({ kind, x: i, y: i }))),
-      points: [],
-      samples: [],
-      profile: { ...CLAUSE1_PROFILE, kit: kit.id },
-      kit,
-    });
-    const row = rowOf(cert, 'style_no_baked_text');
-    assert.equal(row.pass, true, `${file} would now bake a letter: ${row.evidence}`);
-    // The row proves the kit NAMES a glyph; this proves the painter will
-    // find one. `sheetImages[BD.icons[kind].asset]` is only truthy when the
-    // ledger serves real bytes, and a falsy one is exactly what used to be
-    // lettered — so the removed fallback cannot have been load-bearing.
-    for (const kind of BADGE_KINDS) {
-      const id = kit.sprites.badge.icons[kind].asset;
-      assert.equal(assets[id]?.kind, 'icon', `${file}: badge ${kind} → ${id} is not a ledger icon`);
-      assert.ok(existsSync(assetPath(assets[id])), `${file}: badge ${kind} glyph missing on disk`);
+    for (const band of bands) {
+      const kit = resolveKit(
+        JSON.parse(readFileSync(new URL(file, KIT_DIR), 'utf8')),
+        { assets, materials, band },
+      );
+      const at = `${file}${band ? ` @${band}` : ''}`;
+      const cert = certifyStyleContract({
+        model: clause1Model(BADGE_KINDS.map((kind, i) => ({ kind, x: i, y: i }))),
+        points: [],
+        samples: [],
+        profile: { ...CLAUSE1_PROFILE, kit: kit.id },
+        kit,
+      });
+      const row = rowOf(cert, 'style_no_baked_text');
+      assert.equal(row.pass, true, `${at} would now bake a letter: ${row.evidence}`);
+      // The row proves the kit NAMES a glyph; this proves the painter will
+      // find one. `sheetImages[BD.icons[kind].asset]` is only truthy when the
+      // ledger serves real bytes, and a falsy one is exactly what used to be
+      // lettered — so the removed fallback cannot have been load-bearing.
+      for (const kind of BADGE_KINDS) {
+        const id = kit.sprites.badge.icons[kind].asset;
+        assert.equal(assets[id]?.kind, 'icon', `${at}: badge ${kind} → ${id} is not a ledger icon`);
+        assert.ok(existsSync(assetPath(assets[id])), `${at}: badge ${kind} glyph missing on disk`);
+      }
     }
   }
   return true;
