@@ -1,6 +1,6 @@
 {
   "version": 8,
-  "name": "six-flags-fiesta-texas — watercolor-quest",
+  "name": "big-kahunas — pixel-tycoon",
   "sources": {
     "park": {
       "type": "vector",
@@ -11,20 +11,20 @@
       "url": "hillshade.png",
       "coordinates": [
         [
-          -98.61789,
-          29.60751
+          -86.47545,
+          30.39219
         ],
         [
-          -98.60144,
-          29.60751
+          -86.46936,
+          30.39219
         ],
         [
-          -98.60144,
-          29.59224
+          -86.46936,
+          30.38621
         ],
         [
-          -98.61789,
-          29.59224
+          -86.47545,
+          30.38621
         ]
       ]
     }
@@ -34,7 +34,7 @@
       "id": "background",
       "type": "background",
       "paint": {
-        "background-color": "#F4EFDF"
+        "background-color": "#C4A46C"
       }
     },
     {
@@ -43,7 +43,7 @@
       "source": "park",
       "source-layer": "sea",
       "paint": {
-        "fill-color": "#8FB5C2"
+        "fill-color": "#3C7CBC"
       }
     },
     {
@@ -52,7 +52,7 @@
       "source": "park",
       "source-layer": "venue",
       "paint": {
-        "fill-color": "#F4EFDF"
+        "fill-color": "#C4A46C"
       }
     },
     {
@@ -61,7 +61,7 @@
       "source": "park",
       "source-layer": "park",
       "paint": {
-        "fill-color": "#A3A17F",
+        "fill-color": "#588240",
         "fill-opacity": 0.35
       }
     },
@@ -71,26 +71,7 @@
       "source": "park",
       "source-layer": "lands",
       "paint": {
-        "fill-color": [
-          "match",
-          [
-            "get",
-            "name"
-          ],
-          "DC Universe",
-          "#DCD5C5",
-          "Fiesta Bay Boardwalk",
-          "#DED7C8",
-          "Los Festivales",
-          "#D1CABB",
-          "Rockville",
-          "#C6C0B1",
-          "Spassburg",
-          "#DCD5C5",
-          "Texas State Square",
-          "#E0D9CB",
-          "rgba(0,0,0,0)"
-        ],
+        "fill-color": "rgba(0,0,0,0)",
         "fill-opacity": 0.45
       }
     },
@@ -100,7 +81,7 @@
       "source": "park",
       "source-layer": "grass",
       "paint": {
-        "fill-color": "#A3A17F"
+        "fill-color": "#588240"
       }
     },
     {
@@ -109,7 +90,7 @@
       "source": "park",
       "source-layer": "wood",
       "paint": {
-        "fill-color": "#A3A17F",
+        "fill-color": "#588240",
         "fill-opacity": 0.8
       }
     },
@@ -127,7 +108,7 @@
       "source": "park",
       "source-layer": "parking",
       "paint": {
-        "fill-color": "#B0A595",
+        "fill-color": "#B45C4C",
         "fill-opacity": 0.6
       }
     },
@@ -137,7 +118,7 @@
       "source": "park",
       "source-layer": "water",
       "paint": {
-        "fill-color": "#79B2CC"
+        "fill-color": "#4790C9"
       }
     },
     {
@@ -146,7 +127,7 @@
       "source": "park",
       "source-layer": "pool",
       "paint": {
-        "fill-color": "#75BBD1"
+        "fill-color": "#4498CE"
       }
     },
     {
@@ -155,7 +136,7 @@
       "source": "park",
       "source-layer": "building",
       "paint": {
-        "fill-color": "#8F8472"
+        "fill-color": "#8D584B"
       }
     },
     {
@@ -164,7 +145,7 @@
       "source": "park",
       "source-layer": "building",
       "paint": {
-        "line-color": "#9C5A45",
+        "line-color": "#E8D49C",
         "line-width": [
           "interpolate",
           [
@@ -186,7 +167,7 @@
       "source": "park",
       "source-layer": "service",
       "paint": {
-        "line-color": "#5D515B",
+        "line-color": "#A29672",
         "line-width": [
           "interpolate",
           [
@@ -209,7 +190,7 @@
       "source": "park",
       "source-layer": "path",
       "paint": {
-        "line-color": "#F4EFDF",
+        "line-color": "#C4A46C",
         "line-width": [
           "interpolate",
           [
@@ -231,7 +212,7 @@
       "source": "park",
       "source-layer": "path",
       "paint": {
-        "line-color": "#7A6E76",
+        "line-color": "#BFB28D",
         "line-width": [
           "interpolate",
           [
@@ -253,7 +234,7 @@
       "source": "park",
       "source-layer": "slide",
       "paint": {
-        "line-color": "#A36F64",
+        "line-color": "#E8B47B",
         "line-width": [
           "interpolate",
           [
@@ -276,7 +257,7 @@
       "source": "park",
       "source-layer": "coaster",
       "paint": {
-        "line-color": "#5D5867",
+        "line-color": "#1C140C",
         "line-width": [
           "interpolate",
           [

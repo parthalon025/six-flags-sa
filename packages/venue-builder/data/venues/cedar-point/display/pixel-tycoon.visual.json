@@ -1,7 +1,7 @@
 {
   "version": 1,
   "venue": "cedar-point",
-  "skin": "watercolor-quest",
+  "skin": "pixel-tycoon",
   "basedOn": {
     "map": "2026-08-09"
   },
@@ -9,22 +9,13 @@
     "contrastFloor": 4.5,
     "labelHalo": true,
     "mode": "day",
-    "landTones": {
-      "cover": 0.24,
-      "lean": 0.4,
-      "spread": 0.1,
-      "steps": 5
-    },
     "colors": {
-      "path": "#756276",
-      "ground": "#F4EFDF",
-      "water": "#8FB5C2",
-      "grass": "#D9D0B5",
-      "building": "#B8A68D",
-      "label": "#57485C",
-      "structureEdge": "#9C5A45",
-      "groundEdge": "#C9BFAE",
-      "pathCasing": "#F4EFDF"
+      "path": "#E8D49C",
+      "ground": "#C4A46C",
+      "water": "#3C7CBC",
+      "grass": "#5C9C4C",
+      "building": "#B45C4C",
+      "label": "#1C140C"
     }
   },
   "surfaces": {
@@ -33,14 +24,14 @@
       "layers": [
         "path"
       ],
-      "color": "#7A6E76"
+      "color": "#BFB28D"
     },
     "service-road": {
       "material": "asphalt--worn",
       "layers": [
         "service"
       ],
-      "color": "#5D515B"
+      "color": "#A29672"
     },
     "vegetation": {
       "material": "grass--meadow",
@@ -49,7 +40,7 @@
         "wood",
         "park"
       ],
-      "color": "#A3A17F"
+      "color": "#588240"
     },
     "water": {
       "material": "water--calm",
@@ -57,127 +48,127 @@
         "water",
         "sea"
       ],
-      "color": "#79B2CC"
+      "color": "#4790C9"
     },
     "pool": {
       "material": "water--pool",
       "layers": [
         "pool"
       ],
-      "color": "#75BBD1"
+      "color": "#4498CE"
     },
     "coaster-track": {
       "material": "steel--track",
       "layers": [
         "coaster"
       ],
-      "color": "#5D5867"
+      "color": "#393937"
     },
     "slide": {
       "material": "fiberglass--flume",
       "layers": [
         "slide"
       ],
-      "color": "#A36F64"
+      "color": "#E8B47B"
     },
     "structure": {
       "material": "roofing--shingle",
       "layers": [
         "building"
       ],
-      "color": "#8F8472"
+      "color": "#8D584B"
     },
     "lot": {
       "material": "concrete--lot",
       "layers": [
         "parking"
       ],
-      "color": "#B0A595"
+      "color": "#AE796E"
     }
   },
   "landTones": {
     "Camp Snoopy": {
       "day": {
-        "fill": "#DED7C8",
-        "stroke": "#D7CFBF",
-        "label": "#57485C"
+        "fill": "#B9956A",
+        "stroke": "#826849",
+        "label": "#1C140C"
       }
     },
     "Cedar Point Shores": {
       "day": {
-        "fill": "#DED7C8",
-        "stroke": "#D7CFBF",
-        "label": "#57485C"
+        "fill": "#B9956A",
+        "stroke": "#826849",
+        "label": "#1C140C"
       }
     },
     "Frontier Town": {
       "day": {
-        "fill": "#DCD5C5",
-        "stroke": "#D5CDBD",
-        "label": "#57485C"
+        "fill": "#B69164",
+        "stroke": "#806545",
+        "label": "#1C140C"
       }
     },
     "Frontier Trail": {
       "day": {
-        "fill": "#DCD5C5",
-        "stroke": "#D5CDBD",
-        "label": "#57485C"
+        "fill": "#B69164",
+        "stroke": "#806545",
+        "label": "#1C140C"
       }
     },
     "Gemini Midway": {
       "day": {
-        "fill": "#C6C0B1",
-        "stroke": "#C7C0B0",
-        "label": "#57485C"
+        "fill": "#A7855C",
+        "stroke": "#765D40",
+        "label": "#1C140C"
       }
     },
     "Kiddy Kingdom": {
       "day": {
-        "fill": "#DED7C8",
-        "stroke": "#D7CFBF",
-        "label": "#57485C"
+        "fill": "#B9956A",
+        "stroke": "#826849",
+        "label": "#1C140C"
       }
     },
     "Lakeside Midway": {
       "day": {
-        "fill": "#D1CABB",
-        "stroke": "#CEC6B6",
-        "label": "#57485C"
+        "fill": "#AF8B60",
+        "stroke": "#7C6143",
+        "label": "#1C140C"
       }
     },
     "Lighthouse Point": {
       "day": {
-        "fill": "#D1CABB",
-        "stroke": "#CEC6B6",
-        "label": "#57485C"
+        "fill": "#AF8B60",
+        "stroke": "#7C6143",
+        "label": "#1C140C"
       }
     },
     "Main Midway": {
       "day": {
-        "fill": "#C6C0B1",
-        "stroke": "#C7C0B0",
-        "label": "#57485C"
+        "fill": "#A7855C",
+        "stroke": "#765D40",
+        "label": "#1C140C"
       }
     },
     "Millennium Midway": {
       "day": {
-        "fill": "#D1CABB",
-        "stroke": "#CEC6B6",
-        "label": "#57485C"
+        "fill": "#AF8B60",
+        "stroke": "#7C6143",
+        "label": "#1C140C"
       }
     },
     "Planet Snoopy": {
       "day": {
-        "fill": "#E0D9CB",
-        "stroke": "#D8D0C1",
-        "label": "#57485C"
+        "fill": "#BC9A70",
+        "stroke": "#846B4D",
+        "label": "#1C140C"
       }
     },
     "Professor Delbert's Frontier Fling": {
       "day": {
-        "fill": "#E0D9CB",
-        "stroke": "#D8D0C1",
-        "label": "#57485C"
+        "fill": "#BC9A70",
+        "stroke": "#846B4D",
+        "label": "#1C140C"
       }
     }
   },

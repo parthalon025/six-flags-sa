@@ -5,7 +5,7 @@ drop it again, and restore it for the three venues still missing it.
 
 **Blocked by:** None
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 ## Evidence
 
@@ -53,13 +53,13 @@ them again, and nothing fails. Two things are missing —
 
 ## Acceptance
 
-- [ ] Decide where per-Zone character lives so a re-harvest cannot drop it, and record why
-- [ ] cedar-point, big-kahunas and six-flags-fiesta-texas carry character for every Zone, or
+- [x] Decide where per-Zone character lives so a re-harvest cannot drop it, and record why
+- [x] cedar-point, big-kahunas and six-flags-fiesta-texas carry character for every Zone, or
       the record says explicitly that they are meant to read as uncharacterised
-- [ ] A committed grounding record that lost its character map fails a gate, on its own message
-- [ ] `npm run venues:display -- <id>` for all four flagships is a no-op against the
+- [x] A committed grounding record that lost its character map fails a gate, on its own message
+- [x] `npm run venues:display -- <id>` for all four flagships is a no-op against the
       committed packs — the reproducibility this ticket is really about
-- [ ] `npm run test:pre-merge-vertical` green
+- [x] `npm run test:pre-merge-vertical` green
 
 ## Notes
 
