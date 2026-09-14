@@ -26,6 +26,7 @@ the reason — do not relitigate casually).
 |---|---|---|
 | tippecanoe | vector tiles → PMTiles | **in** — export escape hatch; inline `map.json` ships per [ADR-0026](./adr/0026-venue-geometry-inline-vs-tiles.md) |
 | PMTiles (protomaps) | single-file tile archives over HTTP ranges — vector tier today; zoom-band raster pyramids with viewport streaming per ADR-0019 | **in** |
+| MapLibre Tile format (MLT) | column-oriented tile encoding, smaller & faster-decoding than MVT on polygon-heavy geometry (buildings/water — this project's shape) per independent benchmarks; packs inside the existing PMTiles container, doesn't touch the container decision | watch — trigger: ADR-0026's PMTiles revisit fires *and* a CI-reproducible encoder exists. No drop-in: tippecanoe doesn't emit MLT, so adopting it swaps the encoder (freestiler / reference `mlt-core`), not a flag. Real-world gains reported by freestiler are far more modest than the spec's headline numbers — re-check maturity, don't assume the benchmark, when the trigger fires |
 | maplibre-gl (app renderer) | the one map view: banded raster worlds, vector tier, pitch-eases-with-zoom camera, GL overlay layers | adopt: Train H (decided, ADR-0019) |
 | raster tiler (sharp-based, in-repo) | banded bake PNG → deterministic raster tile pyramid → PMTiles | adopt: Train H (ADR-0019) — deterministic and seeded like every certified stage |
 | @maplibre/maplibre-gl-style-spec | style.json validation in CI (gl-style-validate) | adopt: first style regression that certification misses |
