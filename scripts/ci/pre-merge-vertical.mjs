@@ -33,7 +33,7 @@ import {
   writeLocalCiPass,
 } from '../lib/local-ci-pass.mjs';
 import { canonLanePlan } from '../lib/ci-lane-plan.mjs';
-import { trackedTreeSnapshot, treeMutationReason } from '../lib/tree-mutation.mjs';
+import { trackedTreeSnapshot, treeMutationReason, uncommittedWorkReason } from '../lib/tree-mutation.mjs';
 import { clerkE2eBlockReason } from '../lib/clerk-e2e.mjs';
 import { ensureClerkEnvForCi } from '../lib/cloud-agent-clerk-env.mjs';
 import {
@@ -133,6 +133,12 @@ export async function runPreMergeVertical({
   noStamp = false,
   cwd = root,
 } = {}) {
+  const dirty = uncommittedWorkReason(cwd);
+  if (dirty) {
+    console.error(`pre-merge-vertical: ${dirty}`);
+    return 1;
+  }
+
   const context = buildLocalCiContext({ baseRef, cwd });
   const existing = readLocalCiPass(cwd, {
     range: localCiStampRange(context),
