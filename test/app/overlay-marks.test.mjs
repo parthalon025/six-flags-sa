@@ -195,6 +195,17 @@ assert.deepEqual(
   const layout = { zoom: 13.2, latitude: 39.34, width: 390, height: 654 };
   const named = (marks) => marks.filter((m) => m.kind === 'zone' && m.label).map((m) => m.id);
 
+  // Tracked caps are wider than plain textWidth — two long names that would
+  // overlap without letter-spacing must not both print.
+  const tracked = layoutOverlayLabels(
+    [
+      zone('zone:Intl', 'International Street', 180, 300, 900),
+      zone('zone:Oktober', 'Oktoberfest', 240, 310, 800),
+    ],
+    layout,
+  );
+  assert.ok(named(tracked).length <= 1, `tracked caps overlap: ${named(tracked).join(', ')}`);
+
   // Two Zones on the same pixel: largest land wins, not array order.
   const stacked = layoutOverlayLabels(
     [
@@ -205,16 +216,16 @@ assert.deepEqual(
   );
   assert.deepEqual(named(stacked), ['zone:Large']);
 
-  // A Zone already on screen keeps the cell when a larger land arrives on the
-  // same quantised anchor — pinned claims stop flicker at declutter boundaries.
-  const pinned = layoutOverlayLabels(
+  // A Zone already on screen outranks a larger newcomer on the same quantised
+  // anchor — priority boost, not a pinned claim that would survive a zoom back.
+  const heldCell = layoutOverlayLabels(
     [
       zone('zone:Small', 'SMALL', 195, 327, 10),
       zone('zone:Large', 'LARGE', 195, 327, 1000),
     ],
     { ...layout, shownIds: ['zone:Small'] },
   );
-  assert.deepEqual(named(pinned), ['zone:Small']);
+  assert.deepEqual(named(heldCell), ['zone:Small']);
 
   // Hysteresis: a Zone already shown keeps its name when the centroid jitters
   // a few pixels during a pan — the declutter grid must not re-bid every frame.

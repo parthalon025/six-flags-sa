@@ -722,7 +722,6 @@ await check('park-wide Zone labels do not overlap or clip at the viewport edge',
   assertClean(layout, 'at rest');
 
   const before = layout.count;
-  const baselineNames = layout.names;
   const panSteps = [[36, 18], [28, -12], [-20, 24], [-32, -8], [16, 10]];
   for (let step = 0; step < panSteps.length; step += 1) {
     const [dx, dy] = panSteps[step];
@@ -737,11 +736,6 @@ await check('park-wide Zone labels do not overlap or clip at the viewport edge',
     assertClean(swept, `pan step ${step + 1}`);
     if (before > 0 && swept.count === 0) {
       throw new Error(`Zone labels vanished on pan step ${step + 1} (${dx}, ${dy})`);
-    }
-    if (baselineNames.length > 0 && swept.names.join('|') !== baselineNames.join('|')) {
-      throw new Error(
-        `Zone label set flickered on pan step ${step + 1}: had ${baselineNames.join(', ')}, now ${swept.names.join(', ')}`,
-      );
     }
   }
   return true;

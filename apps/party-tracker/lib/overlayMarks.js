@@ -37,6 +37,19 @@ const ICON_R = 8;
  *  every frame — the same step `planZoom` uses for place-name membership. */
 const ZONE_LABEL_POS_STEP = 16;
 const VIEWPORT_LABEL_PAD = 4;
+/** Matches `.landLabel { letter-spacing: .12em }` in globals.css. */
+const ZONE_LABEL_TRACKING_EM = 0.12;
+function zoneLabelHalfExtents(mark) {
+  const { size } = markLabelStyle(mark.kind, mark.category);
+  const tracking = size * ZONE_LABEL_TRACKING_EM;
+  /* `.landLabel` stroke-width is 3.5px; geometricPrecision caps need the
+     claimed box to cover the painted stroke, not just the em box. */
+  const stroke = 3.5;
+  return {
+    halfW: Math.max(8, textWidth(mark.name || '', size, tracking) / 2 + stroke + 2),
+    halfH: size * 0.55 + stroke,
+  };
+}
 
 const ZONE_LABEL = Object.freeze({
   size: ZONE_LABEL_SIZE,
@@ -80,6 +93,10 @@ function iconBox(mark) {
 
 function labelBox(mark, x = mark.x, y = mark.y) {
   const { size, dy } = markLabelStyle(mark.kind, mark.category);
+  if (mark.kind === 'zone') {
+    const { halfW, halfH } = zoneLabelHalfExtents(mark);
+    return boxAround(x, y + dy, halfW, halfH);
+  }
   const halfW = Math.max(8, textWidth(mark.name || '', size) / 2 + 2);
   return boxAround(x, y + dy, halfW, size * 0.55);
 }
@@ -90,9 +107,8 @@ function quantizeLabelCoord(v) {
 
 /** Pull a Zone anchor inside the viewport so tracked caps are not clipped. */
 function clampZoneAnchor(mark, width, height) {
-  const { size, dy } = markLabelStyle(mark.kind, mark.category);
-  const halfW = Math.max(8, textWidth(mark.name || '', size) / 2 + 2);
-  const halfH = size * 0.55;
+  const { dy } = markLabelStyle(mark.kind, mark.category);
+  const { halfW, halfH } = zoneLabelHalfExtents(mark);
   const rect = {
     x0: VIEWPORT_LABEL_PAD + halfW,
     x1: width - VIEWPORT_LABEL_PAD - halfW,
@@ -210,7 +226,9 @@ export function layoutOverlayLabels(marks, layout = null) {
     const anchor = hasViewport ? clampZoneAnchor(mark, width, height) : { x: mark.x, y: mark.y };
     const qx = quantizeLabelCoord(anchor.x);
     const qy = quantizeLabelCoord(anchor.y);
-    tryLabel(mark, wasShown, { x: qx, y: qy });
+    /* Priority boost from wasShown handles pan jitter; pinned claims would keep
+       high-zoom labels on screen after a pinch back to park-wide. */
+    tryLabel(mark, false, { x: qx, y: qy });
   }
 
   const priorityOf = ({ mark, index }) => markerDeclutterPriority({
