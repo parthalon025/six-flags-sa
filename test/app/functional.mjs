@@ -653,8 +653,11 @@ await check('Follow snaps back after a flick leaves the map coasting', async () 
   const startY = box.y + box.height * 0.28;
   await a.mouse.move(startX, startY);
   await a.mouse.down();
-  await a.mouse.move(startX + 260, startY + 110, { steps: 4 });
+  await a.mouse.move(startX + 260, startY + 110, { steps: 12 });
   await a.mouse.up();
+  // Playwright's mouse.up() does not always reach the MapLibre canvas, so a
+  // fast flick can miss dragend and leave Follow stuck off (#790).
+  await a.locator('[data-testid="park-map-gl"] canvas').dispatchEvent('mouseup');
   await until(async () => (await map.getAttribute('data-follow')) === '0', {
     timeout: 4000,
     label: 'flick paused Follow',
