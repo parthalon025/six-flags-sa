@@ -37,6 +37,9 @@ const ICON_R = 8;
  *  every frame — the same step `planZoom` uses for place-name membership. */
 const ZONE_LABEL_POS_STEP = 16;
 const VIEWPORT_LABEL_PAD = 4;
+/** Extra ink the layout box claims beyond textWidth — stroke, tracking, and
+ *  geometricPrecision caps paint wider/taller than the estimate alone. */
+const ZONE_LABEL_RENDER_SLACK = 6;
 /** Matches `.landLabel { letter-spacing: .12em }` in globals.css. */
 const ZONE_LABEL_TRACKING_EM = 0.12;
 function zoneLabelHalfExtents(mark) {
@@ -46,8 +49,8 @@ function zoneLabelHalfExtents(mark) {
      claimed box to cover the painted stroke, not just the em box. */
   const stroke = 3.5;
   return {
-    halfW: Math.max(8, textWidth(mark.name || '', size, tracking) / 2 + stroke + 2),
-    halfH: size * 0.55 + stroke,
+    halfW: Math.max(8, textWidth(mark.name || '', size, tracking) / 2 + stroke + 2 + ZONE_LABEL_RENDER_SLACK),
+    halfH: size * 0.55 + stroke + ZONE_LABEL_RENDER_SLACK,
   };
 }
 
@@ -117,6 +120,27 @@ function clampZoneAnchor(mark, width, height) {
   };
   const [x, y] = clampInto(mark.x, mark.y, rect);
   return { x, y };
+}
+
+/** Quantize can nudge a clamped anchor back toward the edge — walk the
+ *  claimed label box inside the viewport until it fits. */
+function nudgeZoneLabelIntoViewport(mark, x, y, width, height) {
+  const pad = VIEWPORT_LABEL_PAD;
+  let cx = x;
+  let cy = y;
+  for (let i = 0; i < 8; i += 1) {
+    const box = labelBox(mark, cx, cy);
+    let nx = cx;
+    let ny = cy;
+    if (box.x0 < pad) nx += pad - box.x0;
+    if (box.x1 > width - pad) nx -= box.x1 - (width - pad);
+    if (box.y0 < pad) ny += pad - box.y0;
+    if (box.y1 > height - pad) ny -= box.y1 - (height - pad);
+    if (nx === cx && ny === cy) return { x: cx, y: cy };
+    cx = nx;
+    cy = ny;
+  }
+  return { x: cx, y: cy };
 }
 
 function ringArea(ring) {
@@ -224,8 +248,13 @@ export function layoutOverlayLabels(marks, layout = null) {
     const wasShown = shown.has(mark.id);
     if (!zoneWantsLabel(zPlanForZones, wasShown)) continue;
     const anchor = hasViewport ? clampZoneAnchor(mark, width, height) : { x: mark.x, y: mark.y };
-    const qx = quantizeLabelCoord(anchor.x);
-    const qy = quantizeLabelCoord(anchor.y);
+    let qx = quantizeLabelCoord(anchor.x);
+    let qy = quantizeLabelCoord(anchor.y);
+    if (hasViewport) {
+      const nudged = nudgeZoneLabelIntoViewport(mark, qx, qy, width, height);
+      qx = nudged.x;
+      qy = nudged.y;
+    }
     /* Priority boost from wasShown handles pan jitter; pinned claims would keep
        high-zoom labels on screen after a pinch back to park-wide. */
     tryLabel(mark, false, { x: qx, y: qy });

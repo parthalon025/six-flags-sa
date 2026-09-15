@@ -485,6 +485,7 @@ export default function ParkMapGl({
                   <text
                     className={`${style.className}${state === 'not' ? ' barred' : ''}`}
                     y={style.dy}
+                    dominantBaseline={mark.kind === 'zone' ? 'middle' : undefined}
                     style={{
                       fontSize: `${style.size}px`,
                       ...(nameInk ? { fill: nameInk } : {}),
