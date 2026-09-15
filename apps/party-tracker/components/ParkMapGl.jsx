@@ -356,29 +356,42 @@ export default function ParkMapGl({
   // carry `originalEvent` when the guest did it; programmatic easeTo does not.
   // Continuous events refresh the pause clock while the finger is down; moveend
   // stamps it once inertia has finished so Follow is not stuck off forever.
+  // MapLibre can keep emitting drag/zoom/rotate/pitch with the original pointer
+  // through post-release inertia — refreshing the clock there disarms the
+  // resume timeout without re-arming it, and Follow stays off (#790).
   useEffect(() => {
     if (!mapReady) return undefined;
     const map = viewRef.current?.engine?.();
     if (!map?.on) return undefined;
     const isGuestGesture = (event) => event?.originalEvent;
+    let guestGesturesActive = 0;
     const started = (event) => {
       if (!isGuestGesture(event)) return;
+      guestGesturesActive += 1;
       awaitSettleRef.current = true;
       handlers.current.onUserPan?.();
     };
+    const ended = () => {
+      guestGesturesActive = Math.max(0, guestGesturesActive - 1);
+    };
     const moved = (event) => {
       if (!isGuestGesture(event)) return;
+      if (guestGesturesActive <= 0) return;
       handlers.current.onUserPan?.();
     };
     const settled = () => {
       if (!awaitSettleRef.current) return;
       awaitSettleRef.current = false;
+      guestGesturesActive = 0;
       handlers.current.onUserGestureSettled?.();
     };
     map.on('dragstart', started);
     map.on('zoomstart', started);
     map.on('rotatestart', started);
     map.on('pitchstart', started);
+    map.on('dragend', ended);
+    map.on('zoomend', ended);
+    map.on('rotateend', ended);
     map.on('drag', moved);
     map.on('zoom', moved);
     map.on('rotate', moved);
@@ -389,6 +402,9 @@ export default function ParkMapGl({
       map.off?.('zoomstart', started);
       map.off?.('rotatestart', started);
       map.off?.('pitchstart', started);
+      map.off?.('dragend', ended);
+      map.off?.('zoomend', ended);
+      map.off?.('rotateend', ended);
       map.off?.('drag', moved);
       map.off?.('zoom', moved);
       map.off?.('rotate', moved);
