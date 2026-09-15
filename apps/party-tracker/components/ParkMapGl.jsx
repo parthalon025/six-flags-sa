@@ -84,6 +84,8 @@ export default function ParkMapGl({
   onSelectPlace = null,
   onMapTap = null,
   onUserPan = null,
+  /** Guest stopped moving the map — after inertia, not on every drag frame. */
+  onUserGestureSettled = null,
   /** Map chrome — the key, the attribution — drawn over the canvas. */
   children = null,
 }) {
@@ -104,8 +106,10 @@ export default function ParkMapGl({
   // Read through refs inside the mount effect: a tap handler that depended on
   // the current callbacks would tear down and rebuild the WebGL context every
   // time the parent re-rendered with a fresh inline arrow.
-  const handlers = useRef({ onSelectPlace, onMapTap, onUserPan });
-  handlers.current = { onSelectPlace, onMapTap, onUserPan };
+  const handlers = useRef({ onSelectPlace, onMapTap, onUserPan, onUserGestureSettled });
+  handlers.current = { onSelectPlace, onMapTap, onUserPan, onUserGestureSettled };
+  const awaitSettleRef = useRef(false);
+  const guestGesturesActiveRef = useRef(0);
   const overlayRef = useRef(overlay);
   overlayRef.current = overlay;
   const worldRef = useRef(world);
@@ -253,6 +257,9 @@ export default function ParkMapGl({
         // round trip settles instead of echoing.
         onCameraMoved: (moved) => {
           if (!alive || !viewRef.current) return;
+          // jumpTo from the seam during a guest gesture stops inertia and can leave
+          // the map isMoving forever — moveend/idle never settles (#790).
+          if (awaitSettleRef.current) return;
           viewRef.current.setCamera(moved);
           viewport?.tick();
           paintMarks();
@@ -326,6 +333,7 @@ export default function ParkMapGl({
   }, [overlay, alternatives, routeDone, puck, heading, rotation, navId, planNextId, selectedId, laidOut, mapReady, world]);
 
   useEffect(() => {
+    if (awaitSettleRef.current) return;
     applyCamera(camera);
   }, [camera, applyCamera, laidOut]);
 
@@ -351,22 +359,98 @@ export default function ParkMapGl({
   // used to clear Follow on the press that selected a Place, and then the
   // leftover focus point yanked the camera back. MapLibre's gesture starts
   // carry `originalEvent` when the guest did it; programmatic easeTo does not.
+  // Continuous events refresh the pause clock while the finger is down; moveend
+  // stamps it once inertia has finished so Follow is not stuck off forever.
+  // MapLibre can keep emitting drag/zoom/rotate/pitch with the original pointer
+  // through post-release inertia — refreshing the clock there disarms the
+  // resume timeout without re-arming it, and Follow stays off (#790).
   useEffect(() => {
     if (!mapReady) return undefined;
     const map = viewRef.current?.engine?.();
     if (!map?.on) return undefined;
+    const isGuestGesture = (event) => event?.originalEvent;
+    let sawDragEnd = false;
     const started = (event) => {
-      if (event?.originalEvent) handlers.current.onUserPan?.();
+      if (!isGuestGesture(event)) return;
+      sawDragEnd = false;
+      guestGesturesActiveRef.current += 1;
+      awaitSettleRef.current = true;
+      handlers.current.onUserPan?.();
     };
+    const ended = () => {
+      sawDragEnd = true;
+      guestGesturesActiveRef.current = Math.max(0, guestGesturesActiveRef.current - 1);
+    };
+    const moved = (event) => {
+      if (!isGuestGesture(event)) return;
+      if (guestGesturesActiveRef.current <= 0) return;
+      handlers.current.onUserPan?.();
+    };
+    const syncViewToMap = () => {
+      const view = viewRef.current;
+      if (!view) return;
+      const center = map.getCenter();
+      view.setCamera({
+        center: { lng: center.lng, lat: center.lat },
+        zoom: map.getZoom(),
+        bearing: map.getBearing(),
+      });
+    };
+    const settled = () => {
+      if (!awaitSettleRef.current) return;
+      // MapLibre can emit moveend between drag frames on a fast flick. Clearing
+      // awaitSettleRef there would ignore the real settle after inertia (#790).
+      if (guestGesturesActiveRef.current > 0) {
+        if (map.isDragging?.() || map.isMoving?.()) return;
+        guestGesturesActiveRef.current = 0;
+      }
+      awaitSettleRef.current = false;
+      guestGesturesActiveRef.current = 0;
+      syncViewToMap();
+      handlers.current.onUserGestureSettled?.();
+    };
+    const idle = () => {
+      settled();
+    };
+    const canvas = map.getCanvas?.();
+    const onMouseUp = () => {
+      if (guestGesturesActiveRef.current > 0) ended();
+      // Playwright's synthetic mouse can lift without a MapLibre dragend, leaving
+      // isMoving stuck and Follow off forever (#790). Real pointers fire dragend
+      // first; only stop when that hook was missed.
+      if (!sawDragEnd && awaitSettleRef.current && map.isMoving?.()) {
+        map.stop();
+      }
+    };
+    canvas?.addEventListener('mouseup', onMouseUp);
     map.on('dragstart', started);
     map.on('zoomstart', started);
     map.on('rotatestart', started);
     map.on('pitchstart', started);
+    map.on('dragend', ended);
+    map.on('zoomend', ended);
+    map.on('rotateend', ended);
+    map.on('drag', moved);
+    map.on('zoom', moved);
+    map.on('rotate', moved);
+    map.on('pitch', moved);
+    map.on('moveend', settled);
+    map.on('idle', idle);
     return () => {
+      canvas?.removeEventListener('mouseup', onMouseUp);
       map.off?.('dragstart', started);
       map.off?.('zoomstart', started);
       map.off?.('rotatestart', started);
       map.off?.('pitchstart', started);
+      map.off?.('dragend', ended);
+      map.off?.('zoomend', ended);
+      map.off?.('rotateend', ended);
+      map.off?.('drag', moved);
+      map.off?.('zoom', moved);
+      map.off?.('rotate', moved);
+      map.off?.('pitch', moved);
+      map.off?.('moveend', settled);
+      map.off?.('idle', idle);
     };
   }, [mapReady]);
 
