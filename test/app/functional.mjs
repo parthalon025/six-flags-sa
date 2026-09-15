@@ -677,7 +677,7 @@ await check('park-wide Zone labels do not overlap or clip at the viewport edge',
     timeout: 20000,
     label: 'map ready',
   });
-  const layout = await a.evaluate(() => {
+  const zoneLabelLayout = () => a.evaluate(() => {
     const svg = document.querySelector('svg.mapSvg');
     const labels = [...svg.querySelectorAll('.landLabel')];
     const rects = labels.map((el) => {
@@ -706,55 +706,44 @@ await check('park-wide Zone labels do not overlap or clip at the viewport edge',
     const clipped = rects.filter((r) => (
       r.x0 < 1 || r.y0 < 1 || r.x1 > r.width - 1 || r.y1 > r.height - 1
     ));
-    return { overlaps, clipped: clipped.map((r) => r.name), count: rects.length };
+    return {
+      overlaps,
+      clipped: clipped.map((r) => r.name),
+      count: rects.length,
+      names: rects.map((r) => r.name).sort(),
+    };
   });
-  if (layout.count < 1) throw new Error('park-wide map printed no Zone names');
-  if (layout.overlaps.length) throw new Error(`Zone labels overlap: ${layout.overlaps.join(', ')}`);
-  if (layout.clipped.length) throw new Error(`Zone labels clip viewport: ${layout.clipped.join(', ')}`);
+  const assertClean = (layout, phase) => {
+    if (layout.count < 1) throw new Error(`park-wide map printed no Zone names (${phase})`);
+    if (layout.overlaps.length) throw new Error(`Zone labels overlap (${phase}): ${layout.overlaps.join(', ')}`);
+    if (layout.clipped.length) throw new Error(`Zone labels clip viewport (${phase}): ${layout.clipped.join(', ')}`);
+  };
+  const layout = await zoneLabelLayout();
+  assertClean(layout, 'at rest');
 
-  const before = await a.locator('svg.mapSvg .landLabel').count();
-  await a.evaluate(() => {
-    const map = globalThis.__parkMapLibre;
-    map.panBy([36, 18], { duration: 0 });
-  });
-  await a.evaluate(() => new Promise((resolve) => {
-    requestAnimationFrame(() => requestAnimationFrame(resolve));
-  }));
-  const after = await a.locator('svg.mapSvg .landLabel').count();
-  if (before > 0 && after === 0) throw new Error('Zone labels vanished on a small pan');
-  const afterPan = await a.evaluate(() => {
-    const svg = document.querySelector('svg.mapSvg');
-    const labels = [...svg.querySelectorAll('.landLabel')];
-    const rects = labels.map((el) => {
-      const r = el.getBoundingClientRect();
-      const root = svg.getBoundingClientRect();
-      return {
-        name: el.textContent?.trim() || '',
-        x0: r.left - root.left,
-        x1: r.right - root.left,
-        y0: r.top - root.top,
-        y1: r.bottom - root.top,
-        width: root.width,
-        height: root.height,
-      };
-    });
-    const overlaps = [];
-    for (let i = 0; i < rects.length; i += 1) {
-      for (let j = i + 1; j < rects.length; j += 1) {
-        const one = rects[i];
-        const two = rects[j];
-        if (one.x0 < two.x1 && two.x0 < one.x1 && one.y0 < two.y1 && two.y0 < one.y1) {
-          overlaps.push(`${one.name}/${two.name}`);
-        }
-      }
+  const before = layout.count;
+  const baselineNames = layout.names;
+  const panSteps = [[36, 18], [28, -12], [-20, 24], [-32, -8], [16, 10]];
+  for (let step = 0; step < panSteps.length; step += 1) {
+    const [dx, dy] = panSteps[step];
+    await a.evaluate(([x, y]) => {
+      const map = globalThis.__parkMapLibre;
+      map.panBy([x, y], { duration: 0 });
+    }, panSteps[step]);
+    await a.evaluate(() => new Promise((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
+    }));
+    const swept = await zoneLabelLayout();
+    assertClean(swept, `pan step ${step + 1}`);
+    if (before > 0 && swept.count === 0) {
+      throw new Error(`Zone labels vanished on pan step ${step + 1} (${dx}, ${dy})`);
     }
-    const clipped = rects.filter((r) => (
-      r.x0 < 1 || r.y0 < 1 || r.x1 > r.width - 1 || r.y1 > r.height - 1
-    ));
-    return { overlaps, clipped: clipped.map((r) => r.name) };
-  });
-  if (afterPan.overlaps.length) throw new Error(`Zone labels overlap after pan: ${afterPan.overlaps.join(', ')}`);
-  if (afterPan.clipped.length) throw new Error(`Zone labels clip after pan: ${afterPan.clipped.join(', ')}`);
+    if (baselineNames.length > 0 && swept.names.join('|') !== baselineNames.join('|')) {
+      throw new Error(
+        `Zone label set flickered on pan step ${step + 1}: had ${baselineNames.join(', ')}, now ${swept.names.join(', ')}`,
+      );
+    }
+  }
   return true;
 });
 

@@ -9,10 +9,15 @@
  * `layoutOverlayLabels` applies the shared zoom ranks and the Declutter grid
  * so a name appears only when it has earned the zoom and the space.
  */
-import { sizeAtZoom, symbolFor } from '@party-tracker/shared/mapSymbols.js';
+import { planZoom, sizeAtZoom, symbolFor } from '@party-tracker/shared/mapSymbols.js';
 import { worldPlanZoom } from './worldLod.js';
 import { Declutter, boxAround, clampInto, onScreen, textWidth } from './mapLabels.js';
-import { markerDeclutterPriority, markerWantsLabel, zoneDeclutterPriority } from './mapVisual.js';
+import {
+  markerDeclutterPriority,
+  markerWantsLabel,
+  zoneDeclutterPriority,
+  zoneWantsLabel,
+} from './mapVisual.js';
 
 /** Kinds that keep a name without earning zoom. Places are the crowded
  *  set. Members, Meet, the car, and World Zones are sparse enough to pin. */
@@ -134,9 +139,12 @@ function ringArea(ring) {
  * @param {*} [layout.navId]
  * @param {*} [layout.planNextId]
  * @param {*} [layout.selectedId]
+ * @returns marks with `label` set; Zone marks may have `x`/`y` rewritten to
+ *   the clamped, quantised anchor the declutter grid claimed.
  */
 export function layoutOverlayLabels(marks, layout = null) {
   const zPlan = layout ? labelPlanZoom(layout.zoom, layout.latitude) : 0;
+  const zPlanForZones = planZoom(zPlan);
   const list = (marks || []).map((mark) => ({
     ...mark,
     label: false,
@@ -197,14 +205,12 @@ export function layoutOverlayLabels(marks, layout = null) {
 
   for (const { mark } of zones) {
     if (!mark.name) continue;
+    const wasShown = shown.has(mark.id);
+    if (!zoneWantsLabel(zPlanForZones, wasShown)) continue;
     const anchor = hasViewport ? clampZoneAnchor(mark, width, height) : { x: mark.x, y: mark.y };
     const qx = quantizeLabelCoord(anchor.x);
     const qy = quantizeLabelCoord(anchor.y);
-    tryLabel(mark, false, { x: qx, y: qy });
-    if (mark.label) {
-      mark.x = qx;
-      mark.y = qy;
-    }
+    tryLabel(mark, wasShown, { x: qx, y: qy });
   }
 
   const priorityOf = ({ mark, index }) => markerDeclutterPriority({

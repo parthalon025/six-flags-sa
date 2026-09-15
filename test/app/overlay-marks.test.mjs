@@ -205,6 +205,17 @@ assert.deepEqual(
   );
   assert.deepEqual(named(stacked), ['zone:Large']);
 
+  // A Zone already on screen keeps the cell when a larger land arrives on the
+  // same quantised anchor — pinned claims stop flicker at declutter boundaries.
+  const pinned = layoutOverlayLabels(
+    [
+      zone('zone:Small', 'SMALL', 195, 327, 10),
+      zone('zone:Large', 'LARGE', 195, 327, 1000),
+    ],
+    { ...layout, shownIds: ['zone:Small'] },
+  );
+  assert.deepEqual(named(pinned), ['zone:Small']);
+
   // Hysteresis: a Zone already shown keeps its name when the centroid jitters
   // a few pixels during a pan — the declutter grid must not re-bid every frame.
   const held = layoutOverlayLabels(
