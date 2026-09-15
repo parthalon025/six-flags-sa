@@ -3,7 +3,12 @@
  * ADR-0012 + root CONTEXT.md.
  */
 
-import { labelWantedAtZoom } from './mapSymbols.js';
+import { LABEL_ZOOM_HYSTERESIS, labelWantedAtZoom, layerVisible } from './mapSymbols.js';
+
+/** px/m at which a World Zone name first earns declutter membership. */
+export const ZONE_LABEL_ENTER = 0.15;
+/** px/m below which a shown Zone name is taken away — enter minus hysteresis. */
+export const ZONE_LABEL_LEAVE = ZONE_LABEL_ENTER - LABEL_ZOOM_HYSTERESIS;
 
 /** First ship-polish Skins (store + delight tier). */
 export const SHIP_SKIN_IDS = [
@@ -108,6 +113,26 @@ export function markerDeclutterPriority({
   if (isNav) return -900;
   if (isPlanNext) return -850;
   return rank * 1000 + (barred ? 250 : 0) + index;
+}
+
+/** Whether a Zone should attempt a name at this px/m scale. Uses the same
+ *  enter/leave split as `layerVisible` so membership does not strobe on a
+ *  jittery pinch or pan. */
+export function zoneWantsLabel(zPlan, wasShown = false) {
+  const z = Number.isFinite(zPlan) ? zPlan : 0;
+  return layerVisible(z, ZONE_LABEL_ENTER, ZONE_LABEL_LEAVE, wasShown);
+}
+
+/** Declutter priority for a World Zone name (lower wins). Larger lands and
+ *  names already on screen outrank newcomers so collisions resolve the same
+ *  way every frame instead of by array order. */
+export function zoneDeclutterPriority({
+  wasShown = false,
+  area = 0,
+  index = 0,
+}) {
+  const shownBoost = wasShown ? -5000 : 0;
+  return shownBoost - area + index * 0.001;
 }
 
 /**
