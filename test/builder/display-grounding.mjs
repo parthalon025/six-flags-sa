@@ -49,8 +49,8 @@ const {
 } = await import('../../packages/venue-builder/lib/display-references.mjs');
 
 const {
-  groundingWithZoneCharacter, readZoneCharacter, validateZoneCharacter,
-  zoneCharacterProblemsForWorld,
+  groundingWithZoneCharacter, preflightGroundingHarvest, readZoneCharacter,
+  validateZoneCharacter, zoneCharacterProblemsForWorld,
 } = await import('../../packages/venue-builder/lib/display-zone-character.mjs');
 
 const { readGrounding, runDisplayStage } =
@@ -837,6 +837,23 @@ await check('every flagship recompiles landTones that match committed packs', ()
         );
       }
     }
+  }
+  return true;
+});
+
+await check('grounding harvest preflight refuses when zone-character is missing', () => {
+  const zoneCharacterPath = new URL(
+    '../../packages/venue-builder/data/venues/kings-island/display/zone-character.json',
+    import.meta.url,
+  );
+  const backupPath = `${zoneCharacterPath.pathname}.test-bak`;
+  renameSync(zoneCharacterPath, backupPath);
+  try {
+    const record = readVenueGrounding('kings-island');
+    const problems = preflightGroundingHarvest('kings-island', record, validateGrounding);
+    assert.ok(problems.some((p) => /missing/.test(p)), problems.join('; '));
+  } finally {
+    renameSync(backupPath, zoneCharacterPath);
   }
   return true;
 });

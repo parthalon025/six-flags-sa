@@ -101,3 +101,14 @@ export function zoneCharacterProblemsForWorld(venueId) {
   });
 }
 
+/**
+ * Problems that must be empty before a grounding harvest may write.
+ * Combines the harvested record gate with zone-character curation (#791).
+ */
+export function preflightGroundingHarvest(venueId, record, validateGroundingFn) {
+  return [
+    ...validateGroundingFn(record),
+    ...zoneCharacterProblemsForWorld(venueId),
+  ];
+}
+
