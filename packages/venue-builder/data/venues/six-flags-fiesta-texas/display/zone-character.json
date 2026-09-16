@@ -1,6 +1,25 @@
 {
   "version": 1,
   "venue": "six-flags-fiesta-texas",
-  "policy": "uncharacterised",
-  "_comment": "Every Zone's landTones already reproduce from cover alone — no per-Zone lean is authored. Zones nobody names here take the renderer's deterministic name-hue, which is what an uncharacterised World looks like and is fine."
+  "zones": {
+    "Rockville": {
+      "character": "steel"
+    },
+    "DC Universe": {
+      "character": "steel"
+    },
+    "Spassburg": {
+      "character": "built"
+    },
+    "Los Festivales": {
+      "character": "midway"
+    },
+    "Fiesta Bay Boardwalk": {
+      "character": "water"
+    },
+    "Texas State Square": {
+      "character": "civic"
+    }
+  },
+  "_comment": "What each Zone IS, never what colour it should be (ADR-0020: design owns treatment, the venue owns relationships). Hand-authored curation lives outside grounding.json so a re-harvest onto the classes schema (#26) cannot drop it (#35, #791). Rockville and DC Universe are the steel coaster quarters; Spassburg is the German village streetscape; Los Festivales the festival midway; Fiesta Bay Boardwalk the lakeside promenade; Texas State Square the civic plaza you enter through."
 }

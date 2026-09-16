@@ -88,22 +88,22 @@
   "landTones": {
     "DC Universe": {
       "day": {
-        "fill": "#B69164",
-        "stroke": "#806545",
+        "fill": "#BC9A70",
+        "stroke": "#846B4D",
         "label": "#1C140C"
       }
     },
     "Fiesta Bay Boardwalk": {
       "day": {
-        "fill": "#B9956A",
-        "stroke": "#826849",
+        "fill": "#B69164",
+        "stroke": "#806545",
         "label": "#1C140C"
       }
     },
     "Los Festivales": {
       "day": {
-        "fill": "#AF8B60",
-        "stroke": "#7C6143",
+        "fill": "#B69164",
+        "stroke": "#806545",
         "label": "#1C140C"
       }
     },
@@ -123,8 +123,8 @@
     },
     "Texas State Square": {
       "day": {
-        "fill": "#BC9A70",
-        "stroke": "#846B4D",
+        "fill": "#B69164",
+        "stroke": "#806545",
         "label": "#1C140C"
       }
     }

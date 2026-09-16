@@ -89,15 +89,15 @@
   "landTones": {
     "Camp Snoopy": {
       "day": {
-        "fill": "#B9956A",
-        "stroke": "#826849",
+        "fill": "#BC9A70",
+        "stroke": "#846B4D",
         "label": "#1C140C"
       }
     },
     "Cedar Point Shores": {
       "day": {
-        "fill": "#B9956A",
-        "stroke": "#826849",
+        "fill": "#BC9A70",
+        "stroke": "#846B4D",
         "label": "#1C140C"
       }
     },
@@ -110,8 +110,8 @@
     },
     "Frontier Trail": {
       "day": {
-        "fill": "#B69164",
-        "stroke": "#806545",
+        "fill": "#A7855C",
+        "stroke": "#765D40",
         "label": "#1C140C"
       }
     },
@@ -131,29 +131,29 @@
     },
     "Lakeside Midway": {
       "day": {
-        "fill": "#AF8B60",
-        "stroke": "#7C6143",
+        "fill": "#B69164",
+        "stroke": "#806545",
         "label": "#1C140C"
       }
     },
     "Lighthouse Point": {
-      "day": {
-        "fill": "#AF8B60",
-        "stroke": "#7C6143",
-        "label": "#1C140C"
-      }
-    },
-    "Main Midway": {
       "day": {
         "fill": "#A7855C",
         "stroke": "#765D40",
         "label": "#1C140C"
       }
     },
-    "Millennium Midway": {
+    "Main Midway": {
       "day": {
         "fill": "#AF8B60",
         "stroke": "#7C6143",
+        "label": "#1C140C"
+      }
+    },
+    "Millennium Midway": {
+      "day": {
+        "fill": "#B69164",
+        "stroke": "#806545",
         "label": "#1C140C"
       }
     },
@@ -166,8 +166,8 @@
     },
     "Professor Delbert's Frontier Fling": {
       "day": {
-        "fill": "#BC9A70",
-        "stroke": "#846B4D",
+        "fill": "#B69164",
+        "stroke": "#806545",
         "label": "#1C140C"
       }
     }

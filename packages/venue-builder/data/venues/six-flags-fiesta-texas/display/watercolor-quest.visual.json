@@ -97,43 +97,43 @@
   "landTones": {
     "DC Universe": {
       "day": {
-        "fill": "#DCD5C5",
-        "stroke": "#D5CDBD",
+        "fill": "#C8AD9D",
+        "stroke": "#C8B3A3",
         "label": "#57485C"
       }
     },
     "Fiesta Bay Boardwalk": {
       "day": {
-        "fill": "#DED7C8",
-        "stroke": "#D7CFBF",
+        "fill": "#BDC8C4",
+        "stroke": "#C1C5BC",
         "label": "#57485C"
       }
     },
     "Los Festivales": {
       "day": {
-        "fill": "#D1CABB",
-        "stroke": "#CEC6B6",
+        "fill": "#B3A7A5",
+        "stroke": "#BBAFA8",
         "label": "#57485C"
       }
     },
     "Rockville": {
       "day": {
-        "fill": "#C6C0B1",
-        "stroke": "#C7C0B0",
+        "fill": "#AF9483",
+        "stroke": "#B8A392",
         "label": "#57485C"
       }
     },
     "Spassburg": {
       "day": {
-        "fill": "#DCD5C5",
-        "stroke": "#D5CDBD",
+        "fill": "#CEC2AF",
+        "stroke": "#CCC1AF",
         "label": "#57485C"
       }
     },
     "Texas State Square": {
       "day": {
-        "fill": "#E0D9CB",
-        "stroke": "#D8D0C1",
+        "fill": "#A79D9B",
+        "stroke": "#B3A9A2",
         "label": "#57485C"
       }
     }
