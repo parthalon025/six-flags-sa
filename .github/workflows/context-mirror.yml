@@ -1,0 +1,42 @@
+name: Context mirror audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'CONTEXT.md'
+      - 'apps/party-tracker/**'
+      - 'packages/shared/**'
+      - 'scripts/context-mirror.mjs'
+      - 'scripts/lib/context-mirror.mjs'
+      - '.github/workflows/context-mirror.yml'
+  pull_request:
+    paths:
+      - 'CONTEXT.md'
+      - 'apps/party-tracker/**'
+      - 'packages/shared/**'
+      - 'scripts/context-mirror.mjs'
+      - 'scripts/lib/context-mirror.mjs'
+      - '.github/workflows/context-mirror.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Context mirror (advisory)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Run context mirror audit
+        run: npm run context:mirror -- --out context-mirror-audit.md
+      - name: Upload audit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: context-mirror-audit
+          path: context-mirror-audit.md
+          if-no-files-found: error
