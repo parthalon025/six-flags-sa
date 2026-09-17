@@ -206,6 +206,7 @@ export const TEST_ESTATE = {
   // --- test/scripts: the decisions the workflows call ----------------------
   'test/scripts/agent-docs.test.mjs': ['ci-gate'],
   'test/scripts/agent-policy-diff.test.mjs': ['ci-gate'],
+  'test/scripts/context-mirror.test.mjs': ['ci-gate'],
   'test/scripts/app-store-connect-pack.test.mjs': ['ci-gate'],
   'test/scripts/app-test-origin.test.mjs': ['ci-gate'],
   'test/scripts/app-store-connect.test.mjs': ['ci-gate'],

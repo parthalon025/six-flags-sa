@@ -9,6 +9,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/matt-workflow.test.mjs',
   'test/scripts/operating-stack.test.mjs',
   'test/scripts/agent-policy-diff.test.mjs',
+  'test/scripts/context-mirror.test.mjs',
   'test/scripts/executive-resume.test.mjs',
   'test/scripts/executive-resume-brief.test.mjs',
   'test/scripts/wayfinder-committed.test.mjs',

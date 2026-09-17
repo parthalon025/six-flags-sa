@@ -121,6 +121,7 @@
     "resume:subscribe-timer": "node scripts/executive-resume.mjs subscribe-timer",
     "agent-docs:build": "node scripts/agent-docs.mjs build",
     "agent-docs:check": "node scripts/agent-docs.mjs check",
+    "context:mirror": "node scripts/context-mirror.mjs",
     "orchestrator:brief": "node scripts/orchestrator.mjs brief",
     "orchestrator:list": "node scripts/orchestrator.mjs list",
     "orchestrator:route": "node scripts/orchestrator.mjs route",
