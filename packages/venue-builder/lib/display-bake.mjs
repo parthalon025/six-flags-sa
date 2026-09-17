@@ -16,7 +16,7 @@
 
 import { bandResolution } from '@party-tracker/shared/zoomBands.js';
 import { LINE_LAYERS } from './osm-tags.mjs';
-import { bandBakePlan } from './display-bands.mjs';
+import { bandBakePlan, refuseOverCeilingCanvas } from './display-bands.mjs';
 import { densityFromSpecies, fillRows, scatterPoints } from './display-scatter.mjs';
 
 /**
@@ -470,7 +470,15 @@ export function resolveBakeGrid(mapMeta, flags = {}) {
   assertBakeGridFlags(flags);
   const { band = null, maxCols = null, px = null } = flags;
   if (band == null) {
-    return { band: null, tileMetres: null, maxCols: maxCols ?? DEFAULT_MAX_COLS, px: px ?? DEFAULT_PX };
+    const resolvedMaxCols = maxCols ?? DEFAULT_MAX_COLS;
+    const resolvedPx = px ?? DEFAULT_PX;
+    const { cols, rows } = projector({ meta: mapMeta }, { maxCols: resolvedMaxCols });
+    refuseOverCeilingCanvas(
+      cols * resolvedPx,
+      rows * resolvedPx,
+      `--max-cols ${resolvedMaxCols} at ${resolvedPx} px a cell`,
+    );
+    return { band: null, tileMetres: null, maxCols: resolvedMaxCols, px: resolvedPx };
   }
   const plan = bandBakePlan(mapMeta, band);
   return { band, tileMetres: plan.tileMetres, maxCols: null, px: plan.px };
