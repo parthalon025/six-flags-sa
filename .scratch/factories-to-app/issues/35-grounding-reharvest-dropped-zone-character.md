@@ -5,7 +5,11 @@ drop it again, and restore it for the three venues still missing it.
 
 **Blocked by:** None
 
+<<<<<<< HEAD
 **Status:** resolved
+=======
+**Status:** resolved — PR #793 (`worktree-fix-35-grounding-character`), CI green, ready-for-human
+>>>>>>> origin/main
 
 ## Evidence
 
