@@ -246,6 +246,7 @@ export const TEST_ESTATE = {
   'test/scripts/matt-standards.test.mjs': ['ci-gate'],
   'test/scripts/orchestrator.test.mjs': ['ci-gate'],
   'test/scripts/pre-push.test.mjs': ['ci-gate'],
+  'test/scripts/git-hooks.test.mjs': ['ci-gate'],
   'test/scripts/profile-max-rank.test.mjs': ['ci-gate'],
   'test/scripts/release-cycle.test.mjs': ['ci-gate', 'test:unit'],
   'test/scripts/store-app-preview.test.mjs': ['test:unit'],
