@@ -185,6 +185,7 @@ export const TEST_ESTATE = {
   'test/builder/iso-world.mjs': ['test:builder'],
   'test/builder/llm-agent.mjs': ['test:builder'],
   'test/builder/mapillary-video.mjs': ['test:builder'],
+  'test/builder/rcdb.mjs': ['test:builder'],
   'test/builder/naip.mjs': ['test:builder'],
   'test/builder/overture-buildings.mjs': ['test:builder'],
   'test/builder/paths.mjs': ['test:builder'],

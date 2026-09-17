@@ -1,21 +1,40 @@
 /**
  * RCDB cross-check adapter — unofficial coaster stats for comparison.
  * Uses community API https://rcdb-api.vercel.app (scrapes rcdb.com).
+ *
+ * Operator contract: compare-only judge/QA evidence. RCDB stats never overwrite
+ * official or OSM-derived bundle values. Unofficial scrape — licensing caveat applies.
  */
 
-import { cachePath, readCache, writeCache, fetchJson } from './_cache.mjs';
+import { cachePath, readCache, writeCache, fetchJson, retryAsync } from './_cache.mjs';
 import { pairSuggestions } from '../venue-judge.mjs';
 
 const API = 'https://rcdb-api.vercel.app/api/coasters';
 
+async function fetchCoasterCatalog({ fetchImpl, retry } = {}) {
+  const fetcher = fetchImpl ?? ((url) => fetchJson(url));
+  return retryAsync(() => fetcher(API), retry);
+}
+
 export const rcdbCacheFile = (id) => cachePath(id, 'rcdb');
 
-export async function loadRcdbData(venueId, { venueName, fetch = false, offline = false } = {}) {
+export function isRcdbErrorStub(cached) {
+  return Boolean(cached?.error);
+}
+
+function isRcdbCacheHit(cached) {
+  return Boolean(cached && !isRcdbErrorStub(cached) && cached.fetched);
+}
+
+export async function loadRcdbData(
+  venueId,
+  { venueName, fetch = false, offline = false, fetchImpl, retry } = {},
+) {
   const cached = readCache(venueId, 'rcdb');
   if (offline) return cached || { fetched: null, coasters: [], error: 'No cache on disk.' };
-  if (!fetch && cached?.coasters?.length) return cached;
+  if (!fetch && isRcdbCacheHit(cached)) return cached;
 
-  const all = await fetchJson(API);
+  const all = await fetchCoasterCatalog({ fetchImpl, retry });
   const parkName = venueName || venueId;
   const coasters = (all || []).filter((c) => {
     const p = (c.park || '').toLowerCase();
@@ -76,11 +95,17 @@ export function rcdbClaims(data, compare) {
   }));
 }
 
-export async function run(ctx = {}) {
+export async function run(ctx = {}, { fetchImpl, retry } = {}) {
   const id = ctx.venueId;
   if (!id) return { adapterId: 'rcdb', ok: false, error: 'venueId_required' };
   try {
-    const data = await loadRcdbData(id, { venueName: ctx.venueName, fetch: ctx.fetch ?? true, offline: ctx.offline });
+    const data = await loadRcdbData(id, {
+      venueName: ctx.venueName,
+      fetch: ctx.fetch ?? true,
+      offline: ctx.offline,
+      fetchImpl,
+      retry: retry ?? ctx.retry,
+    });
     return {
       adapterId: 'rcdb',
       ok: true,

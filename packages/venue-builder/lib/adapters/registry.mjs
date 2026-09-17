@@ -807,7 +807,8 @@ const ENTRIES = [
     evidence_sources: ['rcdb'],
     integration: 'low',
     overlap: 'Height sidecar from official sites',
-    notes: 'Compare-only; never overrides official height rules.',
+    notes:
+      'Compare-only judge/QA evidence — RCDB stats never overwrite official or OSM-derived bundle values. Unofficial community scrape of rcdb.com; licensing caveat applies.',
   },
   {
     id: 'accessibility-cloud',
