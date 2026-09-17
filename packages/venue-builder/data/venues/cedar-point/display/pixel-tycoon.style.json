@@ -1,6 +1,6 @@
 {
   "version": 8,
-  "name": "six-flags-fiesta-texas — blueprint-survey",
+  "name": "cedar-point — pixel-tycoon",
   "sources": {
     "park": {
       "type": "vector",
@@ -11,20 +11,20 @@
       "url": "hillshade.png",
       "coordinates": [
         [
-          -98.61789,
-          29.60751
+          -82.69661,
+          41.4926
         ],
         [
-          -98.60144,
-          29.60751
+          -82.67521,
+          41.4926
         ],
         [
-          -98.60144,
-          29.59224
+          -82.67521,
+          41.4753
         ],
         [
-          -98.61789,
-          29.59224
+          -82.69661,
+          41.4753
         ]
       ]
     }
@@ -34,7 +34,7 @@
       "id": "background",
       "type": "background",
       "paint": {
-        "background-color": "#FBF7EC"
+        "background-color": "#C4A46C"
       }
     },
     {
@@ -43,7 +43,7 @@
       "source": "park",
       "source-layer": "sea",
       "paint": {
-        "fill-color": "#E3EDF6"
+        "fill-color": "#4790C9"
       }
     },
     {
@@ -52,7 +52,7 @@
       "source": "park",
       "source-layer": "venue",
       "paint": {
-        "fill-color": "#FBF7EC"
+        "fill-color": "#C4A46C"
       }
     },
     {
@@ -61,7 +61,7 @@
       "source": "park",
       "source-layer": "park",
       "paint": {
-        "fill-color": "#B1B69A",
+        "fill-color": "#588240",
         "fill-opacity": 0.35
       }
     },
@@ -77,18 +77,30 @@
             "get",
             "name"
           ],
-          "DC Universe",
-          "#D4D5D4",
-          "Fiesta Bay Boardwalk",
-          "#F0EFE7",
-          "Los Festivales",
-          "#D2D3D2",
-          "Rockville",
-          "#CACBCA",
-          "Spassburg",
-          "#F4F0E5",
-          "Texas State Square",
-          "#D2D3D2",
+          "Camp Snoopy",
+          "#BC9A70",
+          "Cedar Point Shores",
+          "#BC9A70",
+          "Frontier Town",
+          "#B69164",
+          "Frontier Trail",
+          "#A7855C",
+          "Gemini Midway",
+          "#A7855C",
+          "Kiddy Kingdom",
+          "#B9956A",
+          "Lakeside Midway",
+          "#B69164",
+          "Lighthouse Point",
+          "#A7855C",
+          "Main Midway",
+          "#AF8B60",
+          "Millennium Midway",
+          "#B69164",
+          "Planet Snoopy",
+          "#BC9A70",
+          "Professor Delbert's Frontier Fling",
+          "#B69164",
           "rgba(0,0,0,0)"
         ],
         "fill-opacity": 0.45
@@ -100,7 +112,7 @@
       "source": "park",
       "source-layer": "grass",
       "paint": {
-        "fill-color": "#B1B69A"
+        "fill-color": "#588240"
       }
     },
     {
@@ -109,7 +121,7 @@
       "source": "park",
       "source-layer": "wood",
       "paint": {
-        "fill-color": "#B1B69A",
+        "fill-color": "#588240",
         "fill-opacity": 0.8
       }
     },
@@ -127,7 +139,7 @@
       "source": "park",
       "source-layer": "parking",
       "paint": {
-        "fill-color": "#D9D6CE",
+        "fill-color": "#AE796E",
         "fill-opacity": 0.6
       }
     },
@@ -137,7 +149,7 @@
       "source": "park",
       "source-layer": "water",
       "paint": {
-        "fill-color": "#ABD4EC"
+        "fill-color": "#4790C9"
       }
     },
     {
@@ -146,7 +158,7 @@
       "source": "park",
       "source-layer": "pool",
       "paint": {
-        "fill-color": "#A8DCF0"
+        "fill-color": "#4498CE"
       }
     },
     {
@@ -155,7 +167,7 @@
       "source": "park",
       "source-layer": "building",
       "paint": {
-        "fill-color": "#B7B5AB"
+        "fill-color": "#8D584B"
       }
     },
     {
@@ -164,7 +176,7 @@
       "source": "park",
       "source-layer": "building",
       "paint": {
-        "line-color": "#39567E",
+        "line-color": "#E8D49C",
         "line-width": [
           "interpolate",
           [
@@ -186,7 +198,7 @@
       "source": "park",
       "source-layer": "service",
       "paint": {
-        "line-color": "#394A60",
+        "line-color": "#A29672",
         "line-width": [
           "interpolate",
           [
@@ -209,7 +221,7 @@
       "source": "park",
       "source-layer": "path",
       "paint": {
-        "line-color": "#FBF7EC",
+        "line-color": "#C4A46C",
         "line-width": [
           "interpolate",
           [
@@ -231,7 +243,7 @@
       "source": "park",
       "source-layer": "path",
       "paint": {
-        "line-color": "#56667B",
+        "line-color": "#BFB28D",
         "line-width": [
           "interpolate",
           [
@@ -253,7 +265,7 @@
       "source": "park",
       "source-layer": "slide",
       "paint": {
-        "line-color": "#7F6869",
+        "line-color": "#E8B47B",
         "line-width": [
           "interpolate",
           [
@@ -276,7 +288,7 @@
       "source": "park",
       "source-layer": "coaster",
       "paint": {
-        "line-color": "#4B607C",
+        "line-color": "#393937",
         "line-width": [
           "interpolate",
           [

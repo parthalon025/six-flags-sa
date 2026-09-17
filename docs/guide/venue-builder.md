@@ -258,12 +258,14 @@ does publish per-row detail.
 `lands` used to live here too — hand-picked `{fill, stroke, label}` tints per district, day
 and night, copied into `map.json`'s `meta.lands`. They are gone: that was treatment written
 into truth, and it outranked the Visual factory's own derivation, so every Skin painted a
-World's Zones identically. What a Zone *is* now lives in the World's grounding harvest,
-`data/venues/<id>/display/grounding.json` — `{"zones": {"Rivertown": {"character":
-"woodland"}}}` — and every Skin re-expresses that in its own palette. A Zone nobody has
-characterised takes a colour derived from its own name, which is what a venue nobody has
-harvested looks like and is fine. A build whose `overrides.json` still carries `lands`
-prints a warning and ignores it.
+World's Zones identically. What a Zone *is* now lives in hand-authored curation beside the
+harvest, `data/venues/<id>/display/zone-character.json` — `{"zones": {"Rivertown":
+{"character": "woodland"}}}` — merged at compile time with the measured grounding record.
+Keeping character out of `grounding.json` means a NAIP re-harvest cannot drop it. Worlds that
+deliberately carry no per-Zone lean declare `"policy": "uncharacterised"` there instead.
+Every Skin re-expresses character in its own palette. A Zone nobody has characterised takes
+a colour derived from its own name, which is what a venue nobody has harvested looks like and
+is fine. A build whose `overrides.json` still carries `lands` prints a warning and ignores it.
 
 Correcting a height does not need a rebuild — the geometry is not what changed:
 
@@ -681,7 +683,10 @@ consumes the committed result. It reads NAIP aerial imagery through
 `lib/adapters/naip-planetary.mjs`, samples the venue's own truth rings, and
 writes `data/venues/<id>/display/grounding.json`: per-class colour
 relationships, the pairwise contrasts, and up to three material groups per
-class keyed by a hash of the footprint they were measured on.
+class keyed by a hash of the footprint they were measured on. Per-Zone
+character is **not** harvested — it lives in `display/zone-character.json`
+(see above) so a re-harvest cannot overwrite hand-authored district
+relationships.
 
 What it writes is **relationships, never colours and never truth**. Class
 coordinates are Lab values centred on that park's own mean, the record

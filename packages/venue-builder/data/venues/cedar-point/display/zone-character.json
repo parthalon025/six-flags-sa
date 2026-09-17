@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "venue": "cedar-point",
+  "zones": {
+    "Lighthouse Point": {
+      "character": "water"
+    },
+    "Frontier Town": {
+      "character": "built"
+    },
+    "Main Midway": {
+      "character": "midway"
+    },
+    "Frontier Trail": {
+      "character": "woodland"
+    },
+    "Millennium Midway": {
+      "character": "midway"
+    },
+    "Gemini Midway": {
+      "character": "midway"
+    },
+    "Cedar Point Shores": {
+      "character": "water"
+    },
+    "Lakeside Midway": {
+      "character": "midway"
+    },
+    "Camp Snoopy": {
+      "character": "woodland"
+    },
+    "Kiddy Kingdom": {
+      "character": "midway"
+    },
+    "Planet Snoopy": {
+      "character": "midway"
+    },
+    "Professor Delbert's Frontier Fling": {
+      "character": "open"
+    }
+  },
+  "_comment": "What each Zone IS, never what colour it should be (ADR-0020: design owns treatment, the venue owns relationships). Hand-authored curation lives outside grounding.json so a re-harvest onto the classes schema (#26) cannot drop it (#35, #791). Lighthouse Point and Cedar Point Shores are the lake-edge water districts; Frontier Town is the western streetscape; Frontier Trail and Camp Snoopy the wooded connectors and kids' grove; the four Midways and Kiddy Kingdom/Planet Snoopy are classic midway fairways; Professor Delbert's Frontier Fling is the open carnival pad at the peninsula tip."
+}
