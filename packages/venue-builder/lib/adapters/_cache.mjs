@@ -80,7 +80,3 @@ export async function retryAsync(fn, { attempts = 3, backoffMs = 200 } = {}) {
   }
   throw lastErr;
 }
-
-export async function fetchJsonWithRetry(url, { attempts = 3, backoffMs = 200, ...fetchOpts } = {}) {
-  return retryAsync(() => fetchJson(url, fetchOpts), { attempts, backoffMs });
-}

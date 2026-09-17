@@ -103,6 +103,33 @@ await check('a cached error stub does not satisfy a later read — re-fetch succ
   scrub(TEST_VENUE_2);
 });
 
+await check('a successful fetch with zero coasters is a cache hit on later read', async () => {
+  const id = '__test-rcdb-empty-hit__';
+  scrub(id);
+  const { writeCache } = await import('../../packages/venue-builder/lib/adapters/_cache.mjs');
+  writeCache(id, 'rcdb', {
+    fetched: '2026-01-01',
+    coasters: [],
+    park: 'Empty Park',
+    license: 'unofficial scrape — compare only',
+  });
+
+  let calls = 0;
+  const data = await loadRcdbData(id, {
+    venueName: 'Empty Park',
+    fetch: false,
+    fetchImpl: async () => {
+      calls += 1;
+      return [];
+    },
+  });
+
+  assert.equal(calls, 0, 'empty successful cache should not re-fetch');
+  assert.equal(data.coasters.length, 0);
+  assert.equal(data.fetched, '2026-01-01');
+  scrub(id);
+});
+
 await check('compareRcdbToBundle pairs bundle coasters with RCDB names', () => {
   const compare = compareRcdbToBundle({
     rcdb: { coasters: [{ name: 'The Beast', height: 65 }] },
