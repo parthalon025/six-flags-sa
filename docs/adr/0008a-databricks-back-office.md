@@ -1,4 +1,4 @@
-# ADR-0008: Databricks as back-office (not runtime truth)
+# ADR-0008a: Databricks as back-office (not runtime truth)
 
 **Status:** Accepted  
 **Date:** 2026-08-14  
@@ -29,7 +29,7 @@ LLMs on Databricks follow master spec §8: research/extract only; code decides c
 - Optional `pg` dependency when `DATABASE_URL` is set; in-memory fallback for dev.
 - GitHub workflow validates bundle on demand (manual dispatch — no Vercel coupling).
 
-See [ADR-0010 operations & free tier](./0010-databricks-ops-free-tier.md) for setup defaults, deferred work, and cost guardrails — **do not relitigate** App vs bundle, Lakebase vs Neon, or cron enablement without superseding that ADR.
+See [ADR-0010a operations & free tier](./0010a-databricks-ops-free-tier.md) for setup defaults, deferred work, and cost guardrails — **do not relitigate** App vs bundle, Lakebase vs Neon, or cron enablement without superseding that ADR.
 
 ## Non-goals
 

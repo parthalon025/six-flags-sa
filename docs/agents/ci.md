@@ -7,6 +7,7 @@ Matt-standard layout: **workflows orchestrate; scripts own policy.** Do not dupl
 | File | Interface | Role |
 |------|-----------|------|
 | `manifest.mjs` | `GATE_SCRIPT_TESTS` | Single list of fast guard tests |
+| `adr-numbers.mjs` | `runAdrNumbersCheck()` (`scripts/lib/adr-numbers.mjs`: `adrDriftReport()`) | Gate — one `docs/adr/` number, one ADR |
 | `gate-tests.mjs` | `runGateScriptTests()` | Gate job — runs manifest |
 | `stage-version-stamps.mjs` | `stageVersionStamps()` | Bump workflow — `git add` from `version-stamp-paths.json` |
 | `party-tracker-ui.mjs` | `unpackBuildArtifact()`, `waitForHealth()` | Playwright jobs — unpack artifact + health wait |

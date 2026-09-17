@@ -95,8 +95,8 @@ See [`packages/venue-builder/lib/venue-llm.mjs`](../../packages/venue-builder/li
 
 ## Related
 
-- [ADR-0010 ops & free tier](../adr/0010-databricks-ops-free-tier.md) — **decision lock; read before changing Databricks setup**
+- [ADR-0010a ops & free tier](../adr/0010a-databricks-ops-free-tier.md) — **decision lock; read before changing Databricks setup**
 - [Databricks decisions (quick ref)](./databricks-decisions.md)
-- [ADR-0008 databricks back-office](../adr/0008-databricks-back-office.md)
+- [ADR-0008a databricks back-office](../adr/0008a-databricks-back-office.md)
 - [E0 backlog](../superpowers/specs/park-bound-implementation-backlog.md)
 - [`databricks/README.md`](../../databricks/README.md)

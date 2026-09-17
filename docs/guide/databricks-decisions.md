@@ -1,8 +1,8 @@
 # Databricks decisions — do not relitigate
 
-**Canonical ADR:** [ADR-0010](../adr/0010-databricks-ops-free-tier.md)
+**Canonical ADR:** [ADR-0010a](../adr/0010a-databricks-ops-free-tier.md)
 
-Quick reference for agents and future sessions. If a proposal contradicts this page, cite ADR-0010 and stop unless the user explicitly wants to supersede it.
+Quick reference for agents and future sessions. If a proposal contradicts this page, cite ADR-0010a and stop unless the user explicitly wants to supersede it.
 
 ## Stack (accepted)
 
@@ -46,4 +46,4 @@ Requires prior `databricks auth login`.
 
 ## When to revisit
 
-See **Deferred work** table in ADR-0010. Do not reopen App/Lakebase/cron questions until the listed trigger is met.
+See **Deferred work** table in ADR-0010a. Do not reopen App/Lakebase/cron questions until the listed trigger is met.
