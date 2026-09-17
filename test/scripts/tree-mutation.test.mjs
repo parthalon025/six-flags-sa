@@ -8,7 +8,12 @@
  * making the ticket's own mistake.
  */
 import assert from 'node:assert/strict';
-import { trackedTreeSnapshot, treeMutationReason } from '../../scripts/lib/tree-mutation.mjs';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { scrubGitEnv } from '../../scripts/lib/git-env.mjs';
+import { trackedTreeSnapshot, treeMutationReason, uncommittedWorkReason } from '../../scripts/lib/tree-mutation.mjs';
 
 const FIXTURE = 'packages/venue-builder/data/venues/fixture-park/google-places-cache.json';
 
@@ -79,6 +84,75 @@ check('a snapshot of a real repository reads paths, not status columns', () => {
 
 check('a snapshot outside a git checkout is null, not a throw', () => {
   assert.equal(trackedTreeSnapshot('/'), null);
+});
+
+check('uncommitted work outside a git checkout is refused fail-closed', () => {
+  assert.match(uncommittedWorkReason('/'), /could not be read/);
+});
+
+function withTempRepo(name, fn) {
+  const dir = mkdtempSync(join(tmpdir(), name));
+  const g = (...args) =>
+    execFileSync('git', args, {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...scrubGitEnv(),
+        GIT_AUTHOR_NAME: 'T',
+        GIT_AUTHOR_EMAIL: 'test@example.com',
+        GIT_COMMITTER_NAME: 'T',
+        GIT_COMMITTER_EMAIL: 'test@example.com',
+      },
+    });
+  try {
+    fn({ dir, g });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+check('a clean working tree has no uncommitted-work reason', () => {
+  withTempRepo('tree-mutation-clean-', ({ dir, g }) => {
+    g('init', '-q', '-b', 'main');
+    g('config', 'user.email', 'clean@example.invalid');
+    g('config', 'user.name', 'Clean Tree');
+    writeFileSync(join(dir, 'README.md'), 'base\n');
+    g('add', '.');
+    g('commit', '-qm', 'base');
+    assert.equal(uncommittedWorkReason(dir), null);
+  });
+});
+
+check('a modified tracked file is named in the uncommitted-work reason', () => {
+  withTempRepo('tree-mutation-dirty-', ({ dir, g }) => {
+    g('init', '-q', '-b', 'main');
+    g('config', 'user.email', 'dirty@example.invalid');
+    g('config', 'user.name', 'Dirty Tree');
+    writeFileSync(join(dir, 'README.md'), 'base\n');
+    g('add', '.');
+    g('commit', '-qm', 'base');
+    writeFileSync(join(dir, 'README.md'), 'dirty\n');
+    const reason = uncommittedWorkReason(dir);
+    assert.ok(reason, 'modified tracked work must refuse');
+    assert.match(reason, /uncommitted changes/i);
+    assert.match(reason, /README\.md/);
+    assert.match(reason, /Commit first/);
+  });
+});
+
+check('an untracked file counts as uncommitted work', () => {
+  withTempRepo('tree-mutation-untracked-', ({ dir, g }) => {
+    g('init', '-q', '-b', 'main');
+    g('config', 'user.email', 'untracked@example.invalid');
+    g('config', 'user.name', 'Untracked Tree');
+    writeFileSync(join(dir, 'README.md'), 'base\n');
+    g('add', '.');
+    g('commit', '-qm', 'base');
+    writeFileSync(join(dir, 'scratch.txt'), 'new\n');
+    const reason = uncommittedWorkReason(dir);
+    assert.ok(reason, 'untracked work must refuse');
+    assert.match(reason, /scratch\.txt/);
+  });
 });
 
 console.log(`\n==== ${passed} passed, ${failed} failed ====\n`);
