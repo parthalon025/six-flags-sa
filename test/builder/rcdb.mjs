@@ -122,6 +122,26 @@ await check('registry row documents the compare-only operator contract', () => {
   assert.match(notes, /unofficial|scrape|licen/);
 });
 
+await check('run() writes an error stub only after retries are exhausted', async () => {
+  const id = '__test-rcdb-run-stub__';
+  scrub(id);
+  let calls = 0;
+  const fetchImpl = async () => {
+    calls += 1;
+    throw new Error('503 upstream');
+  };
+
+  const res = await run(
+    { venueId: id, venueName: 'Kings Island', fetch: true },
+    { fetchImpl, retry: { attempts: 3, backoffMs: 1 } },
+  );
+
+  assert.equal(res.ok, false);
+  assert.equal(calls, 3, 'all retry attempts before stub');
+  assert.equal(isRcdbErrorStub(readCache(id, 'rcdb')), true);
+  scrub(id);
+});
+
 await check('run() requires a venueId', async () => {
   const res = await run({});
   assert.equal(res.ok, false);

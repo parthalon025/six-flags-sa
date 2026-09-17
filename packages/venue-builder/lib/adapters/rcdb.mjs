@@ -108,7 +108,7 @@ export function rcdbClaims(data, compare) {
   }));
 }
 
-export async function run(ctx = {}) {
+export async function run(ctx = {}, { fetchImpl, retry } = {}) {
   const id = ctx.venueId;
   if (!id) return { adapterId: 'rcdb', ok: false, error: 'venueId_required' };
   try {
@@ -116,7 +116,8 @@ export async function run(ctx = {}) {
       venueName: ctx.venueName,
       fetch: ctx.fetch ?? true,
       offline: ctx.offline,
-      retry: ctx.retry,
+      fetchImpl,
+      retry: retry ?? ctx.retry,
     });
     return {
       adapterId: 'rcdb',
