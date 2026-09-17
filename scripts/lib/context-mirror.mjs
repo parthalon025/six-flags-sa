@@ -12,6 +12,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadAppPaths, isAppPath } from './app-paths.mjs';
+import { normalizeRepoPath } from './repo-path.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -24,8 +25,8 @@ export function contextMirrorScanRoots() {
 }
 
 function normalizePath(file, cwd = root) {
-  const rel = relative(cwd, file).replace(/\\/g, '/');
-  return rel.startsWith('..') ? String(file).replace(/\\/g, '/') : rel;
+  const rel = normalizeRepoPath(relative(cwd, file));
+  return rel.startsWith('..') ? normalizeRepoPath(String(file)) : rel;
 }
 
 /** Parse glossary entries: canonical term plus forbidden surface forms from _Avoid_ lines. */
@@ -111,7 +112,7 @@ function extractStringLiterals(source) {
 }
 
 function walkSourceFiles(dir, cwd, out = []) {
-  for (const name of readdirSync(dir)) {
+  for (const name of readdirSync(dir).sort()) {
     const abs = join(dir, name);
     if (SKIP_DIRS.has(name)) continue;
     const st = statSync(abs);
@@ -121,7 +122,9 @@ function walkSourceFiles(dir, cwd, out = []) {
     }
     const rel = normalizePath(abs, cwd);
     if (!SOURCE_EXTENSIONS.has(name.slice(name.lastIndexOf('.')))) continue;
-    if (rel.includes('/test/') || rel.includes('/__tests__/')) continue;
+    if (rel.includes('/test/') || rel.includes('/__tests__/') || rel.includes('/app/api/')) {
+      continue;
+    }
     out.push({ path: rel, abs });
   }
   return out;
@@ -173,18 +176,23 @@ export function auditContextMirror({
     }
   }
 
+  findings.sort((a, b) =>
+    a.path.localeCompare(b.path) ||
+    a.line - b.line ||
+    a.column - b.column ||
+    a.forbidden.localeCompare(b.forbidden),
+  );
+
   return {
     rules,
     findings,
-    scannedFiles: fileSources.map((s) => s.path),
+    scannedFiles: fileSources.map((s) => s.path).sort(),
   };
 }
 
-export function renderContextMirrorReport(audit, { generatedAt = new Date().toISOString() } = {}) {
+export function renderContextMirrorReport(audit) {
   const lines = [
     '# Context mirror audit',
-    '',
-    `Generated: ${generatedAt}`,
     '',
     'Advisory only — findings do not gate merges.',
     '',
