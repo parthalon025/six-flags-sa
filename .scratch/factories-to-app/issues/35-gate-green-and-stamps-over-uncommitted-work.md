@@ -6,7 +6,7 @@ prove. Either fail closed on a dirty tree, or include the working tree in the di
 
 **Blocked by:** None
 
-**Status:** ready-for-agent
+**Status:** resolved — PR #806 (`worktree-fix-35-dirty-tree-gate`), CI green, ready-for-human
 
 ## Evidence
 
