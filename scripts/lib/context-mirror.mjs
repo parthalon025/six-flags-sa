@@ -40,8 +40,10 @@ export function parseContextAvoidRules(markdown) {
     const canonical = termMatch[1].trim();
     const forbidden = [];
     for (const segment of avoidMatch[1].split(';')) {
-      const token = extractForbiddenToken(segment);
-      if (token) forbidden.push(token);
+      for (const part of segment.split(',')) {
+        const token = extractForbiddenToken(part);
+        if (token) forbidden.push(token);
+      }
     }
     if (forbidden.length) rules.push({ canonical, forbidden });
   }

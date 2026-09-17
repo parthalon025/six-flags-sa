@@ -27,6 +27,20 @@ const rules = parseContextAvoidRules(SAMPLE_CONTEXT);
 assert.ok(rules.some((r) => r.canonical === 'World' && r.forbidden.includes('Venue')));
 assert.ok(rules.some((r) => r.canonical === 'Place' && r.forbidden.includes('POI')));
 
+const COMMA_CONTEXT = `# Glossary
+
+**Party**:
+The people you came with.
+_Avoid_: Session, room, lobby
+`;
+const commaRules = parseContextAvoidRules(COMMA_CONTEXT);
+const partyRule = commaRules.find((r) => r.canonical === 'Party');
+assert.ok(partyRule, 'Party rule parsed');
+assert.deepEqual(partyRule.forbidden.sort(), ['lobby', 'room', 'Session'].sort());
+const roomDrift = findAvoidMatchesInText('Enter the room', commaRules);
+assert.equal(roomDrift.length, 1);
+assert.equal(roomDrift[0].forbidden, 'room');
+
 const drift = findAvoidMatchesInText('Pick your Venue from the list', rules);
 assert.equal(drift.length, 1);
 assert.equal(drift[0].forbidden, 'Venue');
