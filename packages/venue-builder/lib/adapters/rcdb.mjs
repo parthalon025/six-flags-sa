@@ -6,27 +6,14 @@
  * official or OSM-derived bundle values. Unofficial scrape — licensing caveat applies.
  */
 
-import { cachePath, readCache, writeCache, fetchJsonWithRetry } from './_cache.mjs';
+import { cachePath, readCache, writeCache, fetchJson, retryAsync } from './_cache.mjs';
 import { pairSuggestions } from '../venue-judge.mjs';
 
 const API = 'https://rcdb-api.vercel.app/api/coasters';
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function fetchCoasterCatalog({ fetchImpl, retry } = {}) {
-  if (!fetchImpl) return fetchJsonWithRetry(API, retry);
-
-  const attempts = retry?.attempts ?? 3;
-  const backoffMs = retry?.backoffMs ?? 200;
-  let lastErr;
-  for (let i = 0; i < attempts; i++) {
-    try {
-      return await fetchImpl(API);
-    } catch (err) {
-      lastErr = err;
-      if (i < attempts - 1) await sleep(backoffMs * (i + 1));
-    }
-  }
-  throw lastErr;
+  const fetcher = fetchImpl ?? ((url) => fetchJson(url));
+  return retryAsync(() => fetcher(API), retry);
 }
 
 export const rcdbCacheFile = (id) => cachePath(id, 'rcdb');
