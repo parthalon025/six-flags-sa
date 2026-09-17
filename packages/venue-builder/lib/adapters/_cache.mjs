@@ -64,3 +64,19 @@ export async function fetchJson(url, { timeoutMs = 25000, headers = {}, method =
   if (!res.ok) throw new Error(`${url} returned ${res.status}`);
   return res.json();
 }
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Bounded retry with linear backoff for transient adapter fetch failures. */
+export async function fetchJsonWithRetry(url, { attempts = 3, backoffMs = 200, ...fetchOpts } = {}) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fetchJson(url, fetchOpts);
+    } catch (err) {
+      lastErr = err;
+      if (i < attempts - 1) await sleep(backoffMs * (i + 1));
+    }
+  }
+  throw lastErr;
+}

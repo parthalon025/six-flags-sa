@@ -1,21 +1,53 @@
 /**
  * RCDB cross-check adapter — unofficial coaster stats for comparison.
  * Uses community API https://rcdb-api.vercel.app (scrapes rcdb.com).
+ *
+ * Operator contract: compare-only judge/QA evidence. RCDB stats never overwrite
+ * official or OSM-derived bundle values. Unofficial scrape — licensing caveat applies.
  */
 
-import { cachePath, readCache, writeCache, fetchJson } from './_cache.mjs';
+import { cachePath, readCache, writeCache, fetchJsonWithRetry } from './_cache.mjs';
 import { pairSuggestions } from '../venue-judge.mjs';
 
 const API = 'https://rcdb-api.vercel.app/api/coasters';
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function fetchCoasterCatalog({ fetchImpl, retry } = {}) {
+  if (!fetchImpl) return fetchJsonWithRetry(API, retry);
+
+  const attempts = retry?.attempts ?? 3;
+  const backoffMs = retry?.backoffMs ?? 200;
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fetchImpl(API);
+    } catch (err) {
+      lastErr = err;
+      if (i < attempts - 1) await sleep(backoffMs * (i + 1));
+    }
+  }
+  throw lastErr;
+}
 
 export const rcdbCacheFile = (id) => cachePath(id, 'rcdb');
 
-export async function loadRcdbData(venueId, { venueName, fetch = false, offline = false } = {}) {
+export function isRcdbErrorStub(cached) {
+  return Boolean(cached?.error);
+}
+
+function isRcdbCacheHit(cached) {
+  return Boolean(cached && !isRcdbErrorStub(cached) && cached.fetched);
+}
+
+export async function loadRcdbData(
+  venueId,
+  { venueName, fetch = false, offline = false, fetchImpl, retry } = {},
+) {
   const cached = readCache(venueId, 'rcdb');
   if (offline) return cached || { fetched: null, coasters: [], error: 'No cache on disk.' };
-  if (!fetch && cached?.coasters?.length) return cached;
+  if (!fetch && isRcdbCacheHit(cached)) return cached;
 
-  const all = await fetchJson(API);
+  const all = await fetchCoasterCatalog({ fetchImpl, retry });
   const parkName = venueName || venueId;
   const coasters = (all || []).filter((c) => {
     const p = (c.park || '').toLowerCase();
@@ -80,7 +112,12 @@ export async function run(ctx = {}) {
   const id = ctx.venueId;
   if (!id) return { adapterId: 'rcdb', ok: false, error: 'venueId_required' };
   try {
-    const data = await loadRcdbData(id, { venueName: ctx.venueName, fetch: ctx.fetch ?? true, offline: ctx.offline });
+    const data = await loadRcdbData(id, {
+      venueName: ctx.venueName,
+      fetch: ctx.fetch ?? true,
+      offline: ctx.offline,
+      retry: ctx.retry,
+    });
     return {
       adapterId: 'rcdb',
       ok: true,
