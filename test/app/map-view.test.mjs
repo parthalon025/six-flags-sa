@@ -30,6 +30,10 @@ import {
   worldWithLandTints,
 } from '../../apps/party-tracker/lib/parkMapView.js';
 import {
+  createFollowResumeTimer,
+  followResumeWaitMs,
+} from '../../apps/party-tracker/lib/followResumeTimer.js';
+import {
   OVERLAY_SOURCES,
   PLACES_LAYER,
   bandedWorldStyle,
@@ -1352,6 +1356,74 @@ const MAP_JSON = {
     /finite `now`/,
     'must not read the clock itself',
   );
+}
+
+/* The resume timer must re-arm whenever the guest moves again. A ref write
+   alone does not re-run a React effect, so the clock and the timeout live
+   together behind one seam. */
+{
+  const T0 = 1_700_000_000_000;
+  assert.equal(
+    followResumeWaitMs({ gesturedAt: T0, now: T0 + 400 }),
+    FOLLOW_RESUME_MS - 400,
+    'wait shrinks as the pause ages',
+  );
+  assert.equal(
+    followResumeWaitMs({ gesturedAt: T0, now: T0 + FOLLOW_RESUME_MS }),
+    0,
+    'due gestures wait zero ms',
+  );
+  assert.equal(followResumeWaitMs({ gesturedAt: null, now: T0 }), null, 'no gesture, no wait');
+
+  let clock = T0;
+  const pending = [];
+  const timer = createFollowResumeTimer({
+    now: () => clock,
+    schedule: (fn, ms) => {
+      const id = { ms, fn };
+      pending.push(id);
+      return id;
+    },
+    cancel: (id) => {
+      const i = pending.indexOf(id);
+      if (i >= 0) pending.splice(i, 1);
+    },
+    onResume: () => {
+      resumed = true;
+    },
+  });
+  let resumed = false;
+
+  timer.stamp(T0);
+  timer.arm(false);
+  assert.equal(pending.length, 1, 'one timeout after the first stamp');
+  assert.equal(pending[0].ms, FOLLOW_RESUME_MS, 'full pause from a fresh gesture');
+
+  clock = T0 + 5000;
+  timer.stamp(clock);
+  timer.arm(false);
+  assert.equal(pending.length, 1, 're-arm drops the old timeout');
+  assert.equal(pending[0].ms, FOLLOW_RESUME_MS, 'a held pan resets the full pause');
+
+  clock = T0 + 5000 + FOLLOW_RESUME_MS;
+  pending[0].fn();
+  assert.equal(resumed, true, 'resume fires once the refreshed pause elapses');
+
+  resumed = false;
+  pending.length = 0;
+  clock = T0;
+  timer.clearGesture();
+  timer.stamp(T0);
+  timer.arm(false);
+  clock = T0 + 3000;
+  timer.stamp(clock);
+  timer.disarm();
+  assert.equal(pending.length, 0, 'disarm cancels a resume armed before lift');
+  clock = T0 + 5000;
+  timer.stamp(clock);
+  timer.arm(false);
+  assert.equal(pending.length, 1, 'arm after settle schedules one timeout');
+  assert.equal(pending[0].ms, FOLLOW_RESUME_MS, 'from the settle stamp, not the drag frames');
 }
 
 // ---------------------------------------------------------------------------
