@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { frameBounds } from '@party-tracker/shared/mapCamera.js';
 import { overlayGeoJson } from '../../apps/party-tracker/lib/overlayGeo.js';
 import { worldGeoJson } from '../../apps/party-tracker/lib/worldGeo.js';
+import { textWidth } from '../../apps/party-tracker/lib/mapLabels.js';
 import {
   LABEL_DY,
   PIN_LABEL_SIZE,
@@ -14,6 +15,21 @@ import {
   overlayChrome,
   overlayMarks,
 } from '../../apps/party-tracker/lib/overlayMarks.js';
+
+/** Mirror the smoke suite's viewport clip check on laid-out Zone marks.
+ *  `slack` covers stroke/geometricPrecision ink the layout estimate misses. */
+function zoneLabelViewportClipped(mark, width, height, slack = 6) {
+  const { size, dy } = markLabelStyle('zone');
+  const tracking = size * 0.12;
+  const stroke = 3.5;
+  const halfW = Math.max(8, textWidth(mark.name || '', size, tracking) / 2 + stroke + 2 + slack);
+  const halfH = size * 0.55 + stroke + slack;
+  const x0 = mark.x - halfW;
+  const x1 = mark.x + halfW;
+  const y0 = mark.y + dy - halfH;
+  const y1 = mark.y + dy + halfH;
+  return x0 < 1 || y0 < 1 || x1 > width - 1 || y1 > height - 1;
+}
 
 const overlay = {
   places: {
@@ -178,6 +194,95 @@ assert.deepEqual(
     { zoom: 16.48, latitude: 29.6, width: 390, height: 654 },
   );
   assert.equal(fresh[0].label, false);
+}
+
+{
+  const zone = (id, name, x, y, area = 1) => ({
+    kind: 'zone',
+    className: 'landMarker',
+    id,
+    name,
+    self: false,
+    label: false,
+    x,
+    y,
+    area,
+  });
+  const layout = { zoom: 13.2, latitude: 39.34, width: 390, height: 654 };
+  const named = (marks) => marks.filter((m) => m.kind === 'zone' && m.label).map((m) => m.id);
+
+  // Tracked caps are wider than plain textWidth — two long names that would
+  // overlap without letter-spacing must not both print.
+  const tracked = layoutOverlayLabels(
+    [
+      zone('zone:Intl', 'International Street', 180, 300, 900),
+      zone('zone:Oktober', 'Oktoberfest', 240, 310, 800),
+    ],
+    layout,
+  );
+  assert.ok(named(tracked).length <= 1, `tracked caps overlap: ${named(tracked).join(', ')}`);
+
+  // Two Zones on the same pixel: largest land wins, not array order.
+  const stacked = layoutOverlayLabels(
+    [
+      zone('zone:Small', 'SMALL', 195, 327, 10),
+      zone('zone:Large', 'LARGE', 195, 327, 1000),
+    ],
+    layout,
+  );
+  assert.deepEqual(named(stacked), ['zone:Large']);
+
+  // A Zone already on screen outranks a larger newcomer on the same quantised
+  // anchor — priority boost, not a pinned claim that would survive a zoom back.
+  const heldCell = layoutOverlayLabels(
+    [
+      zone('zone:Small', 'SMALL', 195, 327, 10),
+      zone('zone:Large', 'LARGE', 195, 327, 1000),
+    ],
+    { ...layout, shownIds: ['zone:Small'] },
+  );
+  assert.deepEqual(named(heldCell), ['zone:Small']);
+
+  // Hysteresis: a Zone already shown keeps its name when the centroid jitters
+  // a few pixels during a pan — the declutter grid must not re-bid every frame.
+  const held = layoutOverlayLabels(
+    [zone('zone:Midway', 'MIDWAY', 100, 100, 500)],
+    { ...layout, shownIds: ['zone:Midway'] },
+  );
+  assert.equal(held[0].label, true);
+  const jittered = layoutOverlayLabels(
+    [zone('zone:Midway', 'MIDWAY', 108, 104, 500)],
+    { ...layout, shownIds: ['zone:Midway'] },
+  );
+  assert.equal(jittered[0].label, true, 'shown Zone survives a small pan jitter');
+  const freshJitter = layoutOverlayLabels(
+    [zone('zone:Midway', 'MIDWAY', 108, 104, 500)],
+    layout,
+  );
+  assert.equal(freshJitter[0].label, true, 'new Zone still prints at park-wide');
+
+  // Viewport clamp: a centroid on the left edge nudges inside so the caps
+  // are not clipped to "AK CITY".
+  const edge = layoutOverlayLabels(
+    [zone('zone:Oak', 'OAK CITY', 2, 327, 800)],
+    layout,
+  );
+  assert.equal(edge[0].label, true);
+  assert.ok(edge[0].x > 40, `Zone anchor clamped in from x=${edge[0].x}`);
+
+  // Smoke viewport (390×844): a northern Zone whose centroid hugs the top edge
+  // must not paint clipped caps — the failure CI saw on Soak City.
+  const phone = { zoom: 13.2, latitude: 39.34, width: 390, height: 844 };
+  const topEdge = layoutOverlayLabels(
+    [zone('zone:Soak City', 'Soak City', 80, 6, 800)],
+    phone,
+  );
+  assert.equal(topEdge[0].label, true);
+  assert.equal(
+    zoneLabelViewportClipped(topEdge[0], phone.width, phone.height),
+    false,
+    `top-edge Zone anchor y=${topEdge[0].y} still clips`,
+  );
 }
 
 {

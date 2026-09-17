@@ -648,7 +648,12 @@ function ParkApp({ isSignedIn }) {
       const id = target || tabRef.current;
       const { stacks: cur } = navRef.current;
       const onIt = cur[id] || EMPTY_STACK;
-      if (id === tabRef.current && onIt[onIt.length - 1] === next) return;
+      if (id === tabRef.current && onIt[onIt.length - 1] === next) {
+        // During a walk the sheet is stowed but route may already sit on the
+        // stack from preview — reopen it instead of no-oping (navSummary tap).
+        if (next === 'route') growSheet(stops.half);
+        return;
+      }
       goForward(
         { tab: id, stacks: { ...cur, [id]: [...onIt, next] } },
         'fromRight',

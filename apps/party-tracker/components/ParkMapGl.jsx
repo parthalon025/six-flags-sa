@@ -28,8 +28,15 @@ import { distance } from '@/lib/geo';
 import { mountMapView } from '@/lib/mapView';
 import { createBandViewport, requestStreamedBands } from '@/lib/bandViewport';
 import { createMapLibreRenderer } from '@/lib/mapViewMaplibre';
-import { PIN_LABEL_SIZE, PLACE_LABEL_SIZE, ZONE_LABEL_SIZE, markLabelStyle, overlayChrome } from '@/lib/overlayMarks';
-import { labelInk } from '@party-tracker/shared/mapSymbols.js';
+import {
+  PIN_LABEL_SIZE,
+  PLACE_LABEL_SIZE,
+  ZONE_LABEL_SIZE,
+  labelPlanZoom,
+  markLabelStyle,
+  overlayChrome,
+} from '@/lib/overlayMarks';
+import { labelInk, planZoom } from '@party-tracker/shared/mapSymbols.js';
 import { Glyph, PoiMarker } from './MapSymbols';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -95,6 +102,7 @@ export default function ParkMapGl({
   const [paths, setPaths] = useState([]);
   const [cone, setCone] = useState(null);
   const shownLabelsRef = useRef(new Set());
+  const labelZoomBucketRef = useRef(null);
   /* A World opens framed on its own bounds, and framing needs a viewport. On
      the first render the container has not been laid out yet and is zero
      pixels wide, so mounting then would open every park at a zoom worked out
@@ -125,6 +133,12 @@ export default function ParkMapGl({
     }
     const camera = view.state().camera;
     const node = containerRef.current;
+    const zPlan = labelPlanZoom(camera.zoom, camera.center.lat);
+    const zoomBucket = planZoom(zPlan);
+    if (labelZoomBucketRef.current !== null && zoomBucket !== labelZoomBucketRef.current) {
+      shownLabelsRef.current = new Set();
+    }
+    labelZoomBucketRef.current = zoomBucket;
     const next = overlayChrome(model, (lngLat) => view.project(lngLat), {
       ...chromeRef.current,
       lands: worldRef.current?.geometry?.lands,
@@ -412,6 +426,8 @@ export default function ParkMapGl({
         style={{
           position: 'absolute',
           inset: 0,
+          width: '100%',
+          height: '100%',
           pointerEvents: 'none',
           overflow: 'visible',
           '--map-place-label': `${PLACE_LABEL_SIZE}px`,
@@ -469,6 +485,7 @@ export default function ParkMapGl({
                   <text
                     className={`${style.className}${state === 'not' ? ' barred' : ''}`}
                     y={style.dy}
+                    dominantBaseline={mark.kind === 'zone' ? 'middle' : undefined}
                     style={{
                       fontSize: `${style.size}px`,
                       ...(nameInk ? { fill: nameInk } : {}),

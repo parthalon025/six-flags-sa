@@ -9,10 +9,15 @@
  * `layoutOverlayLabels` applies the shared zoom ranks and the Declutter grid
  * so a name appears only when it has earned the zoom and the space.
  */
-import { sizeAtZoom, symbolFor } from '@party-tracker/shared/mapSymbols.js';
+import { planZoom, sizeAtZoom, symbolFor } from '@party-tracker/shared/mapSymbols.js';
 import { worldPlanZoom } from './worldLod.js';
-import { Declutter, boxAround, onScreen, textWidth } from './mapLabels.js';
-import { markerDeclutterPriority, markerWantsLabel } from './mapVisual.js';
+import { Declutter, boxAround, clampInto, onScreen, textWidth } from './mapLabels.js';
+import {
+  markerDeclutterPriority,
+  markerWantsLabel,
+  zoneDeclutterPriority,
+  zoneWantsLabel,
+} from './mapVisual.js';
 
 /** Kinds that keep a name without earning zoom. Places are the crowded
  *  set. Members, Meet, the car, and World Zones are sparse enough to pin. */
@@ -28,6 +33,26 @@ const PLACE_LABEL_BY_RANK = Object.freeze({ 1: 16, 2: 15, 3: 14, 4: 13, 5: 13 })
    The renderer reads the same export — two offsets is two truths. */
 export const LABEL_DY = 24;
 const ICON_R = 8;
+/** Quantize Zone label anchors for declutter so a slow pan does not re-bid
+ *  every frame — the same step `planZoom` uses for place-name membership. */
+const ZONE_LABEL_POS_STEP = 16;
+const VIEWPORT_LABEL_PAD = 4;
+/** Extra ink the layout box claims beyond textWidth — stroke, tracking, and
+ *  geometricPrecision caps paint wider/taller than the estimate alone. */
+const ZONE_LABEL_RENDER_SLACK = 6;
+/** Matches `.landLabel { letter-spacing: .12em }` in globals.css. */
+const ZONE_LABEL_TRACKING_EM = 0.12;
+function zoneLabelHalfExtents(mark) {
+  const { size } = markLabelStyle(mark.kind, mark.category);
+  const tracking = size * ZONE_LABEL_TRACKING_EM;
+  /* `.landLabel` stroke-width is 3.5px; geometricPrecision caps need the
+     claimed box to cover the painted stroke, not just the em box. */
+  const stroke = 3.5;
+  return {
+    halfW: Math.max(8, textWidth(mark.name || '', size, tracking) / 2 + stroke + 2 + ZONE_LABEL_RENDER_SLACK),
+    halfH: size * 0.55 + stroke + ZONE_LABEL_RENDER_SLACK,
+  };
+}
 
 const ZONE_LABEL = Object.freeze({
   size: ZONE_LABEL_SIZE,
@@ -69,10 +94,71 @@ function iconBox(mark) {
   return boxAround(mark.x, mark.y, r, r);
 }
 
-function labelBox(mark) {
+function labelBox(mark, x = mark.x, y = mark.y) {
   const { size, dy } = markLabelStyle(mark.kind, mark.category);
+  if (mark.kind === 'zone') {
+    const { halfW, halfH } = zoneLabelHalfExtents(mark);
+    return boxAround(x, y + dy, halfW, halfH);
+  }
   const halfW = Math.max(8, textWidth(mark.name || '', size) / 2 + 2);
-  return boxAround(mark.x, mark.y + dy, halfW, size * 0.55);
+  return boxAround(x, y + dy, halfW, size * 0.55);
+}
+
+function quantizeLabelCoord(v) {
+  return Math.round(v / ZONE_LABEL_POS_STEP) * ZONE_LABEL_POS_STEP;
+}
+
+/** Pull a Zone anchor inside the viewport so tracked caps are not clipped. */
+function clampZoneAnchor(mark, width, height) {
+  const { dy } = markLabelStyle(mark.kind, mark.category);
+  const { halfW, halfH } = zoneLabelHalfExtents(mark);
+  const rect = {
+    x0: VIEWPORT_LABEL_PAD + halfW,
+    x1: width - VIEWPORT_LABEL_PAD - halfW,
+    y0: VIEWPORT_LABEL_PAD + halfH,
+    y1: height - VIEWPORT_LABEL_PAD - halfH - dy,
+  };
+  const [x, y] = clampInto(mark.x, mark.y, rect);
+  return { x, y };
+}
+
+/** Quantize can nudge a clamped anchor back toward the edge — walk the
+ *  claimed label box inside the viewport until it fits. */
+function nudgeZoneLabelIntoViewport(mark, x, y, width, height) {
+  const pad = VIEWPORT_LABEL_PAD;
+  let cx = x;
+  let cy = y;
+  for (let i = 0; i < 8; i += 1) {
+    const box = labelBox(mark, cx, cy);
+    let nx = cx;
+    let ny = cy;
+    if (box.x0 < pad) nx += pad - box.x0;
+    if (box.x1 > width - pad) nx -= box.x1 - (width - pad);
+    if (box.y0 < pad) ny += pad - box.y0;
+    if (box.y1 > height - pad) ny -= box.y1 - (height - pad);
+    if (nx === cx && ny === cy) return { x: cx, y: cy };
+    cx = nx;
+    cy = ny;
+  }
+  return { x: cx, y: cy };
+}
+
+function ringArea(ring) {
+  if (!Array.isArray(ring) || ring.length < 3) return 0;
+  const first = ring[0];
+  const last = ring[ring.length - 1];
+  const closed = ring.length > 1
+    && Array.isArray(first) && Array.isArray(last)
+    && first[0] === last[0] && first[1] === last[1];
+  const verts = closed ? ring.slice(0, -1) : ring;
+  let area = 0;
+  for (let i = 0; i < verts.length; i += 1) {
+    const a = verts[i];
+    const b = verts[(i + 1) % verts.length];
+    if (!Array.isArray(a) || !Array.isArray(b)) continue;
+    area += a[0] * b[1] - b[0] * a[1];
+  }
+  return Math.abs(area) / 2;
 }
 
 /**
@@ -93,9 +179,12 @@ function labelBox(mark) {
  * @param {*} [layout.navId]
  * @param {*} [layout.planNextId]
  * @param {*} [layout.selectedId]
+ * @returns marks with `label` set; Zone marks may have `x`/`y` rewritten to
+ *   the clamped, quantised anchor the declutter grid claimed.
  */
 export function layoutOverlayLabels(marks, layout = null) {
   const zPlan = layout ? labelPlanZoom(layout.zoom, layout.latitude) : 0;
+  const zPlanForZones = planZoom(zPlan);
   const list = (marks || []).map((mark) => ({
     ...mark,
     label: false,
@@ -124,20 +213,51 @@ export function layoutOverlayLabels(marks, layout = null) {
     grid.claim(iconBox(mark), true);
   }
 
-  const tryLabel = (mark, pinned) => {
+  const tryLabel = (mark, pinned, anchor = null) => {
     if (!mark.name) return;
-    const box = labelBox(mark);
+    const x = anchor?.x ?? mark.x;
+    const y = anchor?.y ?? mark.y;
+    const box = labelBox(mark, x, y);
     if (!visible(box)) return;
-    if (grid.claim(box, pinned)) mark.label = true;
+    if (grid.claim(box, pinned)) {
+      mark.label = true;
+      mark.x = x;
+      mark.y = y;
+    }
   };
 
   for (const mark of list) {
     if (isPinnedKind(mark.kind) && mark.kind !== 'zone') tryLabel(mark, true);
   }
-  // Zones always try at park-wide, but they yield to each other — pinning
-  // them prints all six land titles on one pixel.
-  for (const mark of list) {
-    if (mark.kind === 'zone') tryLabel(mark, false);
+
+  const zones = list
+    .map((mark, index) => ({ mark, index }))
+    .filter(({ mark }) => mark.kind === 'zone')
+    .sort((a, b) => zoneDeclutterPriority({
+      wasShown: shown.has(a.mark.id),
+      area: a.mark.area || 0,
+      index: a.index,
+    }) - zoneDeclutterPriority({
+      wasShown: shown.has(b.mark.id),
+      area: b.mark.area || 0,
+      index: b.index,
+    }));
+
+  for (const { mark } of zones) {
+    if (!mark.name) continue;
+    const wasShown = shown.has(mark.id);
+    if (!zoneWantsLabel(zPlanForZones, wasShown)) continue;
+    const anchor = hasViewport ? clampZoneAnchor(mark, width, height) : { x: mark.x, y: mark.y };
+    let qx = quantizeLabelCoord(anchor.x);
+    let qy = quantizeLabelCoord(anchor.y);
+    if (hasViewport) {
+      const nudged = nudgeZoneLabelIntoViewport(mark, qx, qy, width, height);
+      qx = nudged.x;
+      qy = nudged.y;
+    }
+    /* Priority boost from wasShown handles pan jitter; pinned claims would keep
+       high-zoom labels on screen after a pinch back to park-wide. */
+    tryLabel(mark, false, { x: qx, y: qy });
   }
 
   const priorityOf = ({ mark, index }) => markerDeclutterPriority({
@@ -226,6 +346,7 @@ export function overlayMarks(overlay, project, extras = {}) {
       id: `zone:${name}`,
       name,
       self: false,
+      area: ringArea(ring),
       x: Math.round(point.x),
       y: Math.round(point.y),
     });

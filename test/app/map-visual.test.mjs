@@ -6,6 +6,8 @@ import {
   fogMapStyle,
   markerDeclutterPriority,
   markerWantsLabel,
+  zoneDeclutterPriority,
+  zoneWantsLabel,
   resolvePalette,
   rosterHasDeviceLess,
   SHIP_SKIN_IDS,
@@ -14,6 +16,7 @@ import {
   LABEL_ZOOM_HYSTERESIS,
   labelWantedAtZoom,
   labelZoomFor,
+  planZoom,
 } from '@party-tracker/shared/mapSymbols.js';
 import { landTint } from '../../apps/party-tracker/lib/theme.js';
 import { ledgerSkinFor, tonesFromSpec, zoneTonesUrl } from '../../apps/party-tracker/lib/zoneTones.js';
@@ -40,6 +43,27 @@ assert.equal(
   -850,
 );
 assert.ok(markerDeclutterPriority({ isNav: true }) < markerDeclutterPriority({ isPlanNext: true }));
+
+assert.ok(
+  zoneDeclutterPriority({ wasShown: true, area: 10, index: 0 })
+  < zoneDeclutterPriority({ wasShown: false, area: 1000, index: 0 }),
+  'a Zone already on screen outranks a larger newcomer',
+);
+assert.ok(
+  zoneDeclutterPriority({ wasShown: false, area: 1000, index: 0 })
+  < zoneDeclutterPriority({ wasShown: false, area: 10, index: 1 }),
+  'larger lands outrank smaller ones at the same shown state',
+);
+
+{
+  const parkWide = planZoom(0.25);
+  assert.equal(zoneWantsLabel(parkWide, false), true, 'a Zone earns a name at park-wide');
+  const belowEnter = planZoom(0.12);
+  assert.equal(zoneWantsLabel(belowEnter, false), false, 'a Zone below enter does not print cold');
+  assert.equal(zoneWantsLabel(belowEnter, true), true, 'a shown Zone survives a dip below enter');
+  const belowLeave = planZoom(0.12 - LABEL_ZOOM_HYSTERESIS - 0.02);
+  assert.equal(zoneWantsLabel(belowLeave, true), false, 'a shown Zone drops only past leave');
+}
 
 const fog = fogMapStyle(
   {
