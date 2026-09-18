@@ -313,7 +313,7 @@
     "plan :: selectParks can filter by rank range and skip existing recipes",
     "plan :: every catalog park has an official website URL for height research",
     "plan :: heightsSidecarFromOfficial pairs official listings to bundle rides",
-    "plan :: unified build pipeline lists all ten stages",
+    "plan :: unified build pipeline lists all eleven stages",
     "plan :: unified build pipeline dry-run covers research and agent",
     "plan :: display stage defaults on for big-kahunas, off for everyone else",
     "plan :: parseCatalogArgs leaves display unset unless --display is passed, so the per-park default applies",

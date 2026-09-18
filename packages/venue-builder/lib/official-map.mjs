@@ -122,7 +122,7 @@ export function scaffoldOfficialMapTrace(venueId, opts = {}) {
       + '(building corner, path junction, pool end). Spread to the park corners. '
       + `For ${pick.mapKind} maps prefer ≥${policy.minControls} controls. `
       + 'Features: entrance/exit (of: ride name), place (n + c), route/path (walking lines). '
-      + `Run: npm run venues:trace -- data/venues/${venueId}/trace.json`,
+      + `Run: npm run venues:trace-fit -- ${venueId}`,
     controls: [],
     features: [],
   };

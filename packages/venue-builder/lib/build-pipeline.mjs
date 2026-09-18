@@ -6,11 +6,12 @@
  *   2. geometry  — build-venue from OpenStreetMap (--allow-no-heights)
  *   3. research  — official site + ParksAPI via the build-agent research stack
  *   4. heights   — write heights.json from official cache matched to bundle rides
- *   5. rebuild   — build-venue --rebuild (imagery, trace, merge wired from sources)
- *   6. attractions — entrance inventory and evidence sidecar
- *   7. agent     — QA, GIS, vision, validation (--apply publishes entrances)
- *   8. certify   — report + compare + route-qa + ask; writes certification.json
- *   9. display   — per-Skin visual specs + display-certify (on by default for
+ *   5. trace     — trace.json → georef fit → traced.geojson + georef-report (#417)
+ *   6. rebuild   — build-venue --rebuild (imagery, trace, merge wired from sources)
+ *   7. attractions — entrance inventory and evidence sidecar
+ *   8. agent     — QA, GIS, vision, validation (--apply publishes entrances)
+ *   9. certify   — report + compare + route-qa + ask; writes certification.json
+ *  10. display   — per-Skin visual specs + display-certify (on by default for
  *                  DISPLAY_DEFAULT_VENUES, opt-in via --display elsewhere).
  *                  Terrain and the constraint solver are ON by default here, as
  *                  they are in venues:display: --no-terrain / --no-constrain opt
@@ -36,6 +37,7 @@ import { loadParksApiData } from './adapters/parks-api.mjs';
 import { readSources } from './venue-sources.mjs';
 import { loadOfficialData } from './venue-official-site.mjs';
 import { catalogHeightsOptional, zeroHeightsGate } from './top-parks-catalog.mjs';
+import { runGeorefTraceLoop } from './georef-trace-loop.mjs';
 
 const BUILDER_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const BUILDER_BIN = path.join(BUILDER_ROOT, '..', 'bin', 'build-venue.mjs');
@@ -56,6 +58,7 @@ export const STAGES = [
   'research',
   'aliases',
   'heights',
+  'trace',
   'rebuild',
   'attractions',
   'agent',
@@ -149,6 +152,7 @@ export async function runVenuePipeline(park, opts = {}) {
     if (!skip.includes('heights') && !allowNoHeights) {
       console.log(`#   heights → data/venues/${park.id}.heights.json`);
     }
+    if (!skip.includes('trace')) console.log(`#   trace → georef fit when trace.json exists`);
     if (!skip.includes('rebuild') && !allowNoHeights) {
       await runBuildWithRetries('rebuild', ['--rebuild', park.id], { dryRun: true });
     }
@@ -288,6 +292,26 @@ export async function runVenuePipeline(park, opts = {}) {
           matched: heights.matched,
           rideCount: heights.rideCount,
         });
+      }
+    }
+
+    if (!skip.includes('trace')) {
+      console.error('  · trace: georef fit from trace.json when present');
+      const trace = runGeorefTraceLoop(park.id, { wire: true });
+      logStage('trace', {
+        status: trace.status,
+        rmsM: trace.report?.accuracy?.rms ?? null,
+        accepted: trace.report?.accepted ?? null,
+        tracedFile: trace.tracedFile || null,
+      });
+      if (trace.status === 'rejected') {
+        return {
+          id: park.id,
+          rank: park.rank,
+          status: 'failed',
+          error: `georef trace fit rejected: ${trace.reason}`,
+          stages,
+        };
       }
     }
 

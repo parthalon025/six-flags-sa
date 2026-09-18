@@ -36,6 +36,7 @@ The ordered stage list lives in `packages/venue-builder/lib/build-pipeline.mjs` 
 | research | Official site + ParksAPI via the research agent | `--allow-no-heights`; `--no-browser` alters fetch, does not skip |
 | aliases | Pair official / ParksAPI names onto built POIs | `--allow-no-heights`; `--no-aliases` |
 | heights | Write `heights.json` from the official cache | `--allow-no-heights` |
+| trace | `venues:trace-fit` when `trace.json` exists (georef fit → `traced.geojson` + `georef-report`) | no-op with notice when no trace file; fails closed when fit is over budget |
 | rebuild | `build-venue --rebuild` (imagery, trace, merge from sources) | `--allow-no-heights` |
 | attractions | Entrance inventory + evidence sidecar (`attractions.mjs`) | `--no-attractions` |
 | agent | QA, GIS, vision, validation (`--apply` publishes entrances) | `--allow-no-heights`; `--no-agent` |
@@ -424,6 +425,8 @@ a picture's are not. `trace-venue.mjs` ties the picture to the ground.
 ```
 npm run venues:research -- big-kahunas --ai   # required LLM park-map search → llm-research-cache.json
 npm run venues:trace -- --scaffold big-kahunas
+npm run venues:trace-fit -- big-kahunas            # one-command trace→fit→write + georef-report
+npm run venues:trace-fit -- big-kahunas --wire --report
 npm run venues:trace -- packages/venue-builder/data/venues/big-kahunas/trace.json
 npm run venues:trace -- <file> --model tps --max-error 6
 npm run venues:trace -- <file> --report          # the fit, as markdown

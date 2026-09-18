@@ -5759,9 +5759,9 @@ await check('heightsSidecarFromOfficial pairs official listings to bundle rides'
 const { runVenuePipeline, runVenueBatch, STAGES, parseCatalogArgs, pipelineOptsFromCatalogArgs } =
   await import('../../packages/venue-builder/lib/build-pipeline.mjs');
 
-await check('unified build pipeline lists all ten stages', () => {
+await check('unified build pipeline lists all eleven stages', () => {
   assert.deepEqual(STAGES, [
-    'sources', 'geometry', 'research', 'aliases', 'heights', 'rebuild', 'attractions', 'agent', 'certify', 'display',
+    'sources', 'geometry', 'research', 'aliases', 'heights', 'trace', 'rebuild', 'attractions', 'agent', 'certify', 'display',
   ]);
   return true;
 });
