@@ -18,8 +18,15 @@
  * browser process down with it (#534). HERMETIC=0 opts back into real egress.
  */
 import { chromium } from 'playwright';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { appOrigin } from '../../scripts/lib/app-test-origin.mjs';
+
+const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
+const WAIT_FAIL_SHOTS = join(REPO_ROOT, 'test/shots');
+/** Recent console errors per page — populated in openPhone for timeout diagnostics. */
+const PAGE_CONSOLE_ERRORS = new WeakMap();
 
 const executablePath = process.env.CHROMIUM_PATH || undefined;
 const APP_VERSION = JSON.parse(readFileSync(new URL('../../apps/party-tracker/package.json', import.meta.url))).version;
@@ -80,14 +87,72 @@ export async function hermeticize(context, appUrl = BASE) {
   });
 }
 
+/** Readiness for the heights module: gate gone, map drawn, Plan tab in the bar. */
+export function heightsGateReady({ gateCount, mapDrawn, ridesTabCount }) {
+  return gateCount === 0 && mapDrawn && ridesTabCount > 0;
+}
+
+/** Actionable timeout message — snapshot and screenshot path ride in diagnose. */
+export function formatWaitTimeoutError({ label, last, diagnose }) {
+  const parts = [`timed out waiting for ${label} (last: ${last})`];
+  if (diagnose != null) parts.push(`diag=${JSON.stringify(diagnose)}`);
+  return parts.join('; ');
+}
+
+async function captureWaitScreenshot(page, label) {
+  try {
+    mkdirSync(WAIT_FAIL_SHOTS, { recursive: true });
+    const safe = String(label).replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').slice(0, 48);
+    const path = join(WAIT_FAIL_SHOTS, `wait-fail-${safe || 'condition'}.png`);
+    await page.screenshot({ path, fullPage: false });
+    return path;
+  } catch {
+    return null;
+  }
+}
+
+/** DOM facts the heights wait needs — root cause for a stuck Plan tab is usually gate or map. */
+export async function snapshotHeightsGate(page) {
+  const gateCount = await page.locator('.gate').count();
+  const mapDrawn = await mapIsDrawn(page);
+  const ridesTabCount = await page.locator('.tabItem[data-tab="rides"]').count();
+  const tabBarCount = await page.locator('.tabBar').count();
+  const activeTab = await page
+    .evaluate(() => document.querySelector('.tabItem.on')?.dataset?.tab ?? null)
+    .catch(() => null);
+  const sheetForm = await page
+    .evaluate(() => {
+      const sheet = document.querySelector('.sheet');
+      if (!sheet) return null;
+      return ['peek', 'half', 'full', 'shut'].find((s) => sheet.classList.contains(s)) || null;
+    })
+    .catch(() => null);
+  return { gateCount, mapDrawn, ridesTabCount, tabBarCount, activeTab, sheetForm };
+}
+
+async function buildWaitDiagnostics(page, label) {
+  const snap = await snapshotHeightsGate(page);
+  const screenshot = await captureWaitScreenshot(page, label);
+  const consoleErrors = (PAGE_CONSOLE_ERRORS.get(page) ?? []).slice(-10);
+  return { ...snap, screenshot, consoleErrors };
+}
+
 /** Poll `fn` until it returns something truthy. Returns that value. */
-export async function until(fn, { timeout = 30000, step = 500, label = 'condition' } = {}) {
+export async function until(
+  fn,
+  { timeout = 30000, step = 500, label = 'condition', diagnose, page } = {},
+) {
   const deadline = Date.now() + timeout;
   let last;
   for (;;) {
     last = await fn();
     if (last) return last;
-    if (Date.now() > deadline) throw new Error(`timed out waiting for ${label} (last: ${last})`);
+    if (Date.now() > deadline) {
+      let diag = null;
+      if (diagnose) diag = await diagnose().catch(() => null);
+      else if (page) diag = await buildWaitDiagnostics(page, label).catch(() => null);
+      throw new Error(formatWaitTimeoutError({ label, last, diagnose: diag }));
+    }
     await new Promise((resolve) => setTimeout(resolve, step));
   }
 }
@@ -149,6 +214,8 @@ export async function openPhone(
   const page = await context.newPage();
 
   const errors = [];
+  const consoleErrors = [];
+  PAGE_CONSOLE_ERRORS.set(page, consoleErrors);
   const requests = [];
   page.on('pageerror', (e) => errors.push(`${label} pageerror: ${e.message}`));
   page.on('console', (m) => {
@@ -156,7 +223,9 @@ export async function openPhone(
     // text — the URL is on the message location, so test both.
     const where = `${m.text()} ${m.location()?.url ?? ''}`;
     if (m.type() === 'error' && !IGNORABLE_CONSOLE.test(where)) {
-      errors.push(`${label} console: ${where.slice(0, 200)}`);
+      const line = `${label} console: ${where.slice(0, 200)}`;
+      errors.push(line);
+      consoleErrors.push(line);
     }
   });
   page.on('request', (r) => requests.push(r.url()));
@@ -479,15 +548,14 @@ export async function ensurePeek(page) {
   }
 }
 
-/** POI heights gate the Plan/Rides tab — wait before Rider height navigation. */
+/** Wait for gate + map + Plan tab before rider-height navigation (#315). */
 export async function waitForHeightsReady(page, { timeout = 45000 } = {}) {
+  // Smoke can leave a gate up or the bar unpainted; dismiss before polling so
+  // we are not waiting 45s on a condition closeGate clears in seconds.
+  await closeGate(page);
   await until(
-    async () => {
-      if ((await page.locator('.gate').count()) > 0) return false;
-      if (!(await mapIsDrawn(page))) return false;
-      return (await page.locator('.tabItem[data-tab="rides"]').count()) > 0;
-    },
-    { timeout, label: 'rides tab after POI load' },
+    async () => heightsGateReady(await snapshotHeightsGate(page)),
+    { timeout, label: 'rides tab after POI load', page },
   );
 }
 
@@ -500,6 +568,7 @@ export async function go(page, dest) {
   await until(async () => (await page.locator(tabSel).count()) > 0, {
     timeout: tab === 'rides' ? 45000 : 30000,
     label: `${dest} tab`,
+    page: tab === 'rides' ? page : undefined,
   });
   await page.locator(tabSel).click({ force: true });
   await page.waitForTimeout(300);
