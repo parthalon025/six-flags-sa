@@ -107,7 +107,7 @@ await check('run() gaps when GraphHopper is unreachable', async () => {
 
 await check('run() returns shaped report when fetch succeeds', async () => {
   const mockFetch = async (url) => {
-    if (String(url).includes('/info')) return { json: async () => ({ version: '9.0' }) };
+    if (String(url).includes('/info')) return { ok: true, json: async () => ({ version: '9.0' }) };
     return {
       ok: true,
       json: async () => ({

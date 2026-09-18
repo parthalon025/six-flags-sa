@@ -11,7 +11,7 @@ import path from 'node:path';
 import { readJson, VENUE_DIR } from './lib/venue-io.mjs';
 import { renderBakeoffMarkdown } from './lib/routing-engine-bakeoff.mjs';
 import { collectBakeoffSamples } from './lib/routing-engine-bakeoff-samples.mjs';
-import { loadGraphHopperBakeoff, graphhopperCacheFile } from './lib/adapters/graphhopper.mjs';
+import { loadGraphHopperBakeoff, graphhopperCacheFile, graphhopperSummaryFile } from './lib/adapters/graphhopper.mjs';
 
 const USAGE = `
 Routing engine bake-off — compare GraphHopper against the shipped client A* baseline.
@@ -67,7 +67,7 @@ async function main() {
     const body = await bakeoffVenue(id, { fetch: args.fetch, offline: args.offline, json: args.json });
     console.log(body);
     if (!args.json) {
-      console.log(`\nArtifact: ${graphhopperCacheFile(id)}\n`);
+      console.log(`\nArtifacts: ${graphhopperCacheFile(id)} · ${graphhopperSummaryFile(id)}\n`);
     }
   }
 }

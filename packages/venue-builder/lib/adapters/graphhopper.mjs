@@ -6,14 +6,36 @@
  * Gaps gracefully when GraphHopper is not reachable — never a phone dependency.
  */
 
-import path from 'node:path';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { cachePath, readCache, writeCache } from './_cache.mjs';
-import { shapeBakeoffReport } from '../routing-engine-bakeoff.mjs';
+import { shapeBakeoffReport, renderBakeoffMarkdown } from '../routing-engine-bakeoff.mjs';
 import { collectBakeoffSamples } from '../routing-engine-bakeoff-samples.mjs';
 
 export const GRAPHHOPPER_DEFAULT_URL = 'http://localhost:8989';
 
 export const graphhopperCacheFile = (id) => cachePath(id, 'graphhopper');
+
+export const graphhopperSummaryFile = (id) => graphhopperCacheFile(id).replace('graphhopper-cache.json', 'graphhopper-bakeoff.md');
+
+function engineRoutesFromReport(report) {
+  return (report?.pairs || []).map((p) => ({
+    label: p.label,
+    ok: p.engine?.ok,
+    metres: p.engine?.metres ?? null,
+    seconds: p.engine?.seconds ?? null,
+    ms: p.engine?.ms ?? null,
+    error: p.engine?.error,
+  }));
+}
+
+function writeBakeoffArtifacts(venueId, report) {
+  writeCache(venueId, 'graphhopper', report);
+  const mdPath = graphhopperSummaryFile(venueId);
+  mkdirSync(dirname(mdPath), { recursive: true });
+  writeFileSync(mdPath, `${renderBakeoffMarkdown(report)}\n`);
+  return mdPath;
+}
 
 export function resolveGraphHopperUrl({ url, env = process.env } = {}) {
   if (url) return String(url);
@@ -24,7 +46,7 @@ export function resolveGraphHopperUrl({ url, env = process.env } = {}) {
 export async function graphhopperAvailable({ baseUrl = GRAPHHOPPER_DEFAULT_URL, fetchImpl = fetch } = {}) {
   try {
     const res = await fetchImpl(`${baseUrl}/info`);
-    return Boolean(res?.ok ?? res);
+    return res?.ok === true;
   } catch {
     return false;
   }
@@ -85,7 +107,6 @@ export async function loadGraphHopperBakeoff(
   const httpFetch = fetchImpl ?? globalThis.fetch;
   const cached = readCache(venueId, 'graphhopper');
   if (offline) return cached || { gap: true, error: 'No cache on disk.' };
-  if (!doFetch && cached?.schema) return cached;
 
   const sample = pairs?.length
     ? { pairs, baselineRoutes: baselineRoutes || [] }
@@ -94,13 +115,30 @@ export async function loadGraphHopperBakeoff(
   const resolvedBaseline = baselineRoutes || sample.baselineRoutes || [];
 
   if (!resolvedPairs.length) {
-    const stub = {
+    const stub = shapeBakeoffReport({
+      venue: venueId,
+      engine: 'graphhopper',
+      pairs: [],
+      baselineRoutes: [],
+      engineRoutes: [],
       gap: true,
       error: 'No origin/destination pairs for bake-off.',
-      pairs: [],
-    };
-    writeCache(venueId, 'graphhopper', stub);
+    });
+    writeBakeoffArtifacts(venueId, stub);
     return stub;
+  }
+
+  if (!doFetch && cached?.schema && !cached.gap) {
+    const report = shapeBakeoffReport({
+      venue: venueId,
+      engine: 'graphhopper',
+      pairs: resolvedPairs,
+      baselineRoutes: resolvedBaseline,
+      engineRoutes: engineRoutesFromReport(cached),
+      fetched: cached.fetched,
+    });
+    writeBakeoffArtifacts(venueId, report);
+    return report;
   }
 
   const ghUrl = resolveGraphHopperUrl({ url: baseUrl });
@@ -115,7 +153,7 @@ export async function loadGraphHopperBakeoff(
       gap: true,
       error: `GraphHopper not reachable at ${ghUrl} (start Docker image or set GRAPHHOPPER_URL).`,
     });
-    writeCache(venueId, 'graphhopper', stub);
+    writeBakeoffArtifacts(venueId, stub);
     return stub;
   }
 
@@ -127,7 +165,7 @@ export async function loadGraphHopperBakeoff(
     baselineRoutes: resolvedBaseline,
     engineRoutes,
   });
-  writeCache(venueId, 'graphhopper', report);
+  writeBakeoffArtifacts(venueId, report);
   return report;
 }
 
