@@ -19,6 +19,7 @@ import { pairSuggestions } from './venue-judge.mjs';
 import { readJson } from './venue-io.mjs';
 import { parksApiCacheFile } from './adapters/parks-api.mjs';
 import { mapillaryCacheFile, mapillaryClaims } from './adapters/mapillary-api.mjs';
+import { videoClaims } from './adapters/mapillary-video.mjs';
 import { accessibilityCloudCacheFile, accessibilityClaims } from './adapters/accessibility-cloud.mjs';
 import { sidewalkClaims, projectSidewalkCacheFile } from './adapters/project-sidewalk.mjs';
 import { rcdbCacheFile, compareRcdbToBundle, rcdbClaims } from './adapters/rcdb.mjs';
@@ -116,6 +117,18 @@ export function parksApiEntranceClaims(parksApi, pois) {
 }
 
 /**
+ * Pure: mapillary-video cache + ride POIs → snapped entrance claims (#408).
+ *
+ * @returns {{ frameCount: number, claims: object[] }}
+ */
+export function mapillaryVideoClaimBatch(cache, pois) {
+  const frames = cache?.frames || [];
+  const raw = videoClaims(frames);
+  const claims = snapClaimsToRides(raw, pois);
+  return { frameCount: frames.length, claims };
+}
+
+/**
  * Imagery / a11y points snapped to nearest ride — corroboration, not sole publish.
  */
 export function snapClaimsToRides(rawClaims, pois, { maxM = SNAP_RADIUS_M } = {}) {
@@ -137,8 +150,8 @@ export function snapClaimsToRides(rawClaims, pois, { maxM = SNAP_RADIUS_M } = {}
       }));
       continue;
     }
-    /* Imagery near a ride corroborates a queue area only as mapillary/aerial. */
-    if (claim.source === 'mapillary' || claim.source === 'aerial') {
+    /* Imagery near a ride corroborates a queue area as mapillary/aerial/video. */
+    if (claim.source === 'mapillary' || claim.source === 'aerial' || claim.source === 'video') {
       out.push(toEvidenceClaim({
         ride: hit.ride.n,
         place: hit.ride.i || null,
