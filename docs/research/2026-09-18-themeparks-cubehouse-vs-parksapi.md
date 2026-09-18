@@ -45,6 +45,16 @@ Mean bundle inventory coverage: **75.9%**. Mean coordinate coverage: **100%**.
 
 Re-run `npm run venues:venue-data-bakeoff -- --json` after cache refresh. Coverage is research QA signal, not publish authority — official site + OSM evidence still govern coordinates.
 
+### Freshness (committed sidecars)
+
+| Venue | ParksAPI cache `fetched` | Legacy sidecar |
+| --- | --- | --- |
+| kings-island | 2026-08-11 | none — legacy npm package not wrapped |
+| cedar-point | 2026-08-18 | none |
+| six-flags-fiesta-texas | 2026-08-11 | none |
+
+Freshness comparison is asymmetric by design: the legacy library was never adopted, so there is no `themeparks-cache.json` to diff. ParksAPI sidecars refresh on `venues:research --fetch`; legacy 5.x would have required per-park scraper instances with SQLite — higher operational cost for the same hosted data path upstream now serves via ThemeParks.wiki.
+
 ## Decision
 
 **Reject** `themeparks-cubehouse`. **Keep** `parks-api` as `adopt: wrap`.

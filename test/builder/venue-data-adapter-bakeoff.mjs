@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 /** venue-data adapter bake-off — report shaping and registry decision (#413). */
 import assert from 'node:assert/strict';
+import { execSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 import {
   VENUE_DATA_BAKEOFF_SCHEMA,
   LEGACY_ADAPTER_ID,
@@ -109,6 +114,14 @@ await check('committed caches cover named bake-off venues', () => {
     assert.ok(sample.parksApi.attractionCount > 0, `${id} attractions`);
     assert.ok(sample.inventory.bundleRideCount > 0, `${id} bundle rides`);
   }
+});
+
+await check('builder has no themeparks npm import after reject decision', () => {
+  const hits = execSync(
+    "rg -l \"require\\(['\\\"]themeparks|from ['\\\"]themeparks\" packages/venue-builder apps scripts test --glob '!**/venue-data-adapter-bakeoff*' || true",
+    { cwd: REPO_ROOT, encoding: 'utf8' },
+  ).trim();
+  assert.equal(hits, '', `unexpected themeparks imports: ${hits}`);
 });
 
 await check('registry rejects themeparks-cubehouse after bake-off', () => {
