@@ -186,6 +186,7 @@ rebuild → attractions → agent → certify):
   --no-browser              skip Playwright for JS-rendered park sites
   --no-attractions          skip attractions inventory
   --no-agent                skip build-agent (QA, GIS, vision, validation)
+  --agent-fetch             refresh external evidence in the agent stage (fetch/browser/parksApi)
   --no-certify              skip certification gate
   --no-aliases              skip auto-alias resolution
   --pr                      open a draft PR per built park (requires gh; with --catalog)
