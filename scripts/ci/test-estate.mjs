@@ -119,6 +119,7 @@ export const TEST_ESTATE = {
   'test/app/map-view.test.mjs': ['test:unit'],
   'test/app/map-decisions.test.mjs': ['test:unit'],
   'test/app/map-visual.test.mjs': ['test:unit'],
+  'test/app/browser-close.test.mjs': ['test:unit'],
   'test/app/module-select.test.mjs': ['test:module-select'],
   'test/app/native.test.mjs': ['test:unit'],
   'test/app/overlay.test.mjs': ['test:unit'],

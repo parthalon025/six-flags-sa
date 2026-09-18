@@ -80,6 +80,72 @@ export async function hermeticize(context, appUrl = BASE) {
   });
 }
 
+/**
+ * Fail fast when Playwright or a wedged party poll would otherwise hang forever
+ * (#316 / #194). The timer is unref'd so a resolved promise does not keep the
+ * process alive in short unit tests.
+ */
+export function withTimeout(promise, timeoutMs, label) {
+  if (!timeoutMs || timeoutMs <= 0) return promise;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      const timer = setTimeout(
+        () => reject(new Error(`${label} timed out after ${timeoutMs}ms`)),
+        timeoutMs,
+      );
+      timer.unref?.();
+    }),
+  ]);
+}
+
+/**
+ * Host phone lost with no goodbye — unmount the app instead of closing a live
+ * party context, which can wedge Playwright mid-suite (#316).
+ */
+export async function simulateHostPhoneLost(page, { timeoutMs = 10000, label = 'host phone lost' } = {}) {
+  if (!page || page.isClosed?.()) return;
+  await withTimeout(
+    page.goto('about:blank', { waitUntil: 'commit', timeout: timeoutMs }),
+    timeoutMs,
+    label,
+  );
+}
+
+/**
+ * Tear down one phone from openPhone. Blank first so mailbox polling stops
+ * before the context closes (#316).
+ */
+export async function closePhoneContext(phone, { timeoutMs = 15000, label = 'phone context' } = {}) {
+  if (!phone?.context) return;
+  const page = phone.page;
+  const blankMs = Math.min(timeoutMs, 8000);
+  if (page && !page.isClosed?.()) {
+    await withTimeout(
+      page.goto('about:blank', { waitUntil: 'commit', timeout: blankMs }),
+      blankMs,
+      `${label} blank`,
+    );
+  }
+  await withTimeout(phone.context.close(), timeoutMs, label);
+}
+
+/** Close every phone still open — failures propagate with a labeled timeout. */
+export async function closeAllPhoneContexts(phones, { timeoutMs = 15000, label = 'phone context' } = {}) {
+  for (const phone of phones.filter(Boolean)) {
+    await closePhoneContext(phone, {
+      timeoutMs,
+      label: `${label} ${phone.label ?? ''}`.trim(),
+    });
+  }
+}
+
+/** Close every phone, then the shared browser — functional must exit (#316). */
+export async function closeBrowser(browser, phones = [], { timeoutMs = 30000 } = {}) {
+  await closeAllPhoneContexts(phones, { timeoutMs: Math.min(timeoutMs, 15000) });
+  if (browser) await withTimeout(browser.close(), timeoutMs, 'browser.close');
+}
+
 /** Poll `fn` until it returns something truthy. Returns that value. */
 export async function until(fn, { timeout = 30000, step = 500, label = 'condition' } = {}) {
   const deadline = Date.now() + timeout;
