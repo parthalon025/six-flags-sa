@@ -21,6 +21,7 @@ import { run as runEsaWorldcover } from './esa-worldcover.mjs';
 import { run as runOvertureBuildings } from './overture-buildings.mjs';
 import { run as runNaipPlanetary } from './naip-planetary.mjs';
 import { run as runGooglePlaces } from './google-places.mjs';
+import { run as runOsmium } from './osmium.mjs';
 
 /** @type {Record<string, (ctx: object) => Promise<import('./types.mjs').AdapterResult>>} */
 export const ADAPTER_IMPLEMENTATIONS = {
@@ -43,6 +44,7 @@ export const ADAPTER_IMPLEMENTATIONS = {
   'overture-buildings': runOvertureBuildings,
   'naip-planetary': runNaipPlanetary,
   'google-places': runGooglePlaces,
+  osmium: runOsmium,
 };
 
 export const EXTERNAL_ADAPTER_IDS = Object.keys(ADAPTER_IMPLEMENTATIONS).filter(

@@ -31,6 +31,7 @@ export const ADAPTER_CACHE_SUFFIX = {
   openrouteservice: 'openrouteservice',
   playwright: 'official',
   'google-places': 'google-places',
+  osmium: 'osmium',
 };
 
 export const cachePath = (venueId, suffix) => venueSidecar(venueId, `${suffix}-cache.json`);
