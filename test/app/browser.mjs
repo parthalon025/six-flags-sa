@@ -113,8 +113,11 @@ export async function simulateHostPhoneLost(
     timeoutMs,
     label,
   );
-  // about:blank denies localStorage — benign when simulating a lost device (#316).
-  if (errors) errors.length = 0;
+  // about:blank denies localStorage — drop only that benign artifact (#316).
+  if (errors) {
+    const kept = errors.filter((e) => !/localStorage.*denied/i.test(e));
+    errors.splice(0, errors.length, ...kept);
+  }
 }
 
 /**
