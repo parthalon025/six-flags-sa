@@ -218,6 +218,8 @@ export async function runVenuePipeline(park, opts = {}) {
           parksApiMatched: research.packet?.parksApi?.matched ?? null,
           openResearchMode: research.openResearch?.research?.mode ?? null,
           openResearchGaps: research.openResearch?.research?.inventoryGaps?.length ?? null,
+          parkMapCandidates: research.openResearch?.research?.parkMaps?.length ?? null,
+          parkMapDownloaded: research.openResearch?.downloaded?.rel ?? null,
         });
       } catch (err) {
         return { id: park.id, rank: park.rank, status: 'failed', error: `research failed: ${err.message}`, stages };

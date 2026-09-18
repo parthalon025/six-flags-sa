@@ -11,7 +11,40 @@ import { officialUrls } from '../venue-official-site.mjs';
 import { agentReview } from '../venue-llm.mjs';
 import { venueResearchContext, resolveExternalAdapterIds } from '../external-research.mjs';
 import { runOpenResearch } from '../open-research.mjs';
+import { parkMapSearchRequired } from '../park-map-research.mjs';
+import { readSources } from '../venue-sources.mjs';
 import { readJson, VENUE_DIR } from '../venue-io.mjs';
+
+/** Whether the venue catalogue asks for park-map acquisition (#399). */
+export function venueWantsParkMapResearch(venueId) {
+  const { data: catalog } = readSources(venueId);
+  if (!catalog) return false;
+  return parkMapSearchRequired(catalog)
+    && (catalog.sources || []).some((s) => s.kind === 'official_map');
+}
+
+/**
+ * Map research-agent opts onto open-research opts. When the unified pipeline
+ * fetches with network, park-map HTML scrape and optional download run too.
+ */
+export function resolveOpenResearchOpts(opts = {}) {
+  const fetch = Boolean(opts.fetch);
+  const wantsParkMap = opts.wantsParkMap ?? true;
+  const fetchMaps = opts.fetchMaps ?? (fetch && wantsParkMap);
+  const applyMaps = opts.applyMaps ?? fetchMaps;
+  const offline = opts.offline ?? !(fetch || fetchMaps || opts.ai);
+  return {
+    fetch,
+    offline,
+    fetchMaps,
+    applyMaps,
+    browser: opts.browser ?? false,
+    ai: opts.ai ?? false,
+    applyAliases: opts.applyAliases ?? false,
+    forceMapImage: opts.forceMapImage,
+    cacheFile: opts.researchCacheFile,
+  };
+}
 
 export async function runResearchAgent(venueId, opts = {}) {
   const packet = await loadVenuePacket(venueId, {
@@ -39,24 +72,12 @@ export async function runResearchAgent(venueId, opts = {}) {
   let openResearch = null;
   if (opts.openResearch !== false) {
     const pois = readJson(path.join(VENUE_DIR, `${venueId}.pois.json`), []) || [];
+    const wantsParkMap = venueWantsParkMapResearch(venueId);
     try {
-      openResearch = await runOpenResearch(venueId, pois, {
-        /* Pinned offline until #23: every other step above takes the caller's
-           `fetch`, and this one refused it, so the park-map lane could not run
-           by any route — not through `--ai`, not through the deterministic HTML
-           extract that needs no model at all. `park_map_research` then read
-           `searchQueries: []` on three venues and was read as "never run", which
-           was true and could not have been otherwise. Default stays offline, so
-           a build is still reproducible unless a caller asks for the network. */
-        fetch: opts.fetch ?? false,
-        offline: opts.offline ?? !(opts.fetch || opts.fetchMaps || opts.ai),
-        fetchMaps: opts.fetchMaps,
-        browser: false,
-        ai: opts.ai ?? false,
-        applyAliases: opts.applyAliases ?? false,
-        // Test-only redirect for the sidecar write; unset in every real build run.
-        cacheFile: opts.researchCacheFile,
-      });
+      openResearch = await runOpenResearch(venueId, pois, resolveOpenResearchOpts({
+        ...opts,
+        wantsParkMap,
+      }));
     } catch (err) {
       openResearch = { error: err.message };
     }
