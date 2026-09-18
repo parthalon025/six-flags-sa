@@ -1,6 +1,6 @@
 /**
  * Gap Side Quest / Contribution drafts when submit fires before Profile sign-in.
- * ADR-0010: stash survives dismissed OAuth; flush after Clerk session mints.
+ * ADR-0030: stash survives dismissed OAuth; flush after Clerk session mints.
  */
 
 import { newMemberId } from '../core/ids.js';

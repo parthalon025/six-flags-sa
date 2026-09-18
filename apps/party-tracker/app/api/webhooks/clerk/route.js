@@ -3,7 +3,7 @@ import { json, serverError } from '@/app/api/_lib/http';
 
 export const dynamic = 'force-dynamic';
 
-/** Clerk user lifecycle backup sync (ADR-0010). Primary mint is POST /api/profile/sync. */
+/** Clerk user lifecycle backup sync (ADR-0030). Primary mint is POST /api/profile/sync. */
 export async function POST(request) {
   try {
     const evt = await verifyWebhook(request);

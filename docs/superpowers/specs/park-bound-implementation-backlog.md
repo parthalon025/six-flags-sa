@@ -71,7 +71,7 @@ This backlog **strangles** toward the vision. It does not greenfield-rewrite the
 
 | ID | Item | Ships | Done when | Status |
 |----|------|-------|-----------|--------|
-| EP.1 | Auth provider choice + ADR | Clerk; Google + Apple only; soft gate | ADR: [`../../adr/0010-clerk-profile-signup.md`](../../adr/0010-clerk-profile-signup.md) (supersedes Auth.js) | done |
+| EP.1 | Auth provider choice + ADR | Clerk; Google + Apple only; soft gate | ADR: [`../../adr/0030-clerk-profile-signup.md`](../../adr/0030-clerk-profile-signup.md) (supersedes Auth.js) | done |
 | EP.2 | Profile schema | `users`, `profiles` (display name, avatar key, created_at) | Migrations + shared types | open |
 | EP.3 | Sign-in / sign-up UX | Soft gate: browse map and join/host a **Party** by name; contribute / **Side Quest** submit need a **Profile** | Functional tests; no anonymous contribution path | **done** |
 | EP.4 | Offline profile cache | Profile + rank/passport snapshot in IndexedDB after login | Map still draws offline; identity available for local queues | **partial** (code shipped — profileCache + resolveSession fallback; named offline-identity check pending) |
@@ -318,7 +318,7 @@ Parallel after #72: **M0 remainder** map zoom perf (cull / HUD / LOD).
 
 1. ~~**Identity:** When do accounts become required?~~ **Resolved 2026-08-10: user profiles are required** (see epic **EP**).  
 2. ~~**PostGIS Day-1?**~~ **Resolved 2026-08-10: no — use daily/weekly consolidate into builder; PostGIS optional later.**  
-3. ~~**Auth provider:**~~ **Resolved 2026-08-14: Clerk (Google + Apple only)** — ADR [`0010-clerk-profile-signup.md`](../../adr/0010-clerk-profile-signup.md). Supersedes 2026-08-11 Auth.js plan.  
+3. ~~**Auth provider:**~~ **Resolved 2026-08-14: Clerk (Google + Apple only)** — ADR [`0030-clerk-profile-signup.md`](../../adr/0030-clerk-profile-signup.md). Supersedes 2026-08-11 Auth.js plan.  
 4. ~~**Sign-in gate hardness:**~~ **Resolved 2026-08-11 plan: soft gate** — browse map anonymously; party / contribute / adventure sync require sign-in.  
 5. ~~**Consolidate apply mode:**~~ **Resolved 2026-08-11 plan: steward-approved** override PRs (no auto-merge).  
 6. **Height rules → OSM?** Prefer Park Bound overrides forever unless OSM has a clear tag.  

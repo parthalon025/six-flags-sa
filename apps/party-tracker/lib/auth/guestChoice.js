@@ -1,4 +1,4 @@
-/** Session-only — guest bypass for the startup auth gate (ADR-0010). */
+/** Session-only — guest bypass for the startup auth gate (ADR-0030). */
 
 export const AUTH_GUEST_KEY = 'parkbound.authGuest';
 

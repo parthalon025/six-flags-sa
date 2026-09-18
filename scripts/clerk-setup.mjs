@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Park Bound Clerk instance bootstrap (ADR-0010).
+ * Park Bound Clerk instance bootstrap (ADR-0030).
  *
  *   npm run clerk:setup
  *   npm run clerk:setup -- --instance prod

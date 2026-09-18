@@ -1,7 +1,7 @@
 # Profile billing and entitlements (Clerk identity, store payment)
 
 **Status:** Accepted — 2026-08-15  
-**Depends on:** [`0010-clerk-profile-signup.md`](./0010-clerk-profile-signup.md), [`0005-store-capacitor-shell.md`](./0005-store-capacitor-shell.md)  
+**Depends on:** [`0030-clerk-profile-signup.md`](./0030-clerk-profile-signup.md), [`0005-store-capacitor-shell.md`](./0005-store-capacitor-shell.md)  
 **Canonical SKU:** `parkbound_profile_annual` ($10/year) in `fastlane/store-identifiers.json`
 
 Park Bound separates **identity** from **payment**. Clerk signs users in with Google or Apple. **Profile** subscription revenue flows through **App Store**, **Google Play**, or **web checkout (Stripe)** — never Clerk Billing and never two rails for the same user.

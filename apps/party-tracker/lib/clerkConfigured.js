@@ -1,5 +1,5 @@
 /**
- * Clerk is mandatory for Park Bound (ADR-0010). Deployed and local dev must
+ * Clerk is mandatory for Park Bound (ADR-0030). Deployed and local dev must
  * supply both keys in apps/party-tracker/.env.local. Keyless boot is only for
  * unit tests that stub env vars — the app shows ClerkSetupRequired instead of
  * skipping the Profile gate.

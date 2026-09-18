@@ -1,6 +1,6 @@
 /**
  * Operator allowlist on a Profile — Clerk private_metadata.admin.
- * Postgres still owns XP / Title (ADR-0010). Clerk owns only this bit.
+ * Postgres still owns XP / Title (ADR-0030). Clerk owns only this bit.
  */
 
 import { RANK_LADDER, rankReward } from './questScore.js';

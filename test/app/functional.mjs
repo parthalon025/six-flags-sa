@@ -2073,7 +2073,7 @@ await check('Side Quest submit queues locally', async () => {
     label: 'side quest rows',
   });
   if (!profileReady) {
-    // ADR-0010: gap Side Quests need a Profile; CI has no Clerk — assert the soft gate.
+    // ADR-0030: gap Side Quests need a Profile; CI has no Clerk — assert the soft gate.
     const reportBtn = a.locator('.questCard').first().locator('button.questAction');
     if ((await reportBtn.count()) > 0) {
       await reportBtn.click();

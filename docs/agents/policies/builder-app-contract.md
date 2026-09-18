@@ -2,6 +2,8 @@
 
 The venue builder (`packages/venue-builder/`, invoked as `npm run venues:*`) is the only thing allowed to write `apps/party-tracker/public/venues/*.map.json`, `apps/party-tracker/public/venues/*.pois.json`, `apps/party-tracker/public/venues/*.gaps.json`, `apps/party-tracker/public/venues/manifest.json` and the generated `apps/party-tracker/lib/venueIndex.js`. Everything the app reads at runtime comes out of that pipeline.
 
+Since [ADR-0024](../../adr/0024-postdb-factory-bus.md), PostDB — not git HEAD — is the truth/display bus: `venues:build`/`rebuild` write truth into PostDB, and `npm run venues:export` (steward-run, per the delivery-closeout decision in `.scratch/factories-to-app/issues/19-delivery-closeout.md`) is what actually populates the on-disk bundle files above from the promoted PostDB head. Regenerating the builder output for a fix means re-running that PostDB → export path, not assuming a local `venues:build` alone lands in `public/venues/`.
+
 Package seams: [packages/README.md](../../packages/README.md).
 
 ## Builder output is wrong → fix the builder, not the output

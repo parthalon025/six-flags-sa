@@ -1,8 +1,8 @@
 # ADR: Auth provider and session model (EP.1)
 
 **Status:** Superseded — 2026-08-14  
-**Canonical:** [`../../adr/0010-clerk-profile-signup.md`](../../adr/0010-clerk-profile-signup.md)  
-**Historical note:** This document records the 2026-08-11 Auth.js decision. Implementation follows Clerk per ADR-0010.
+**Canonical:** [`../../adr/0030-clerk-profile-signup.md`](../../adr/0030-clerk-profile-signup.md)  
+**Historical note:** This document records the 2026-08-11 Auth.js decision. Implementation follows Clerk per ADR-0030.
 
 **Backlog:** EP.1 → EP.2–EP.5  
 **North star:** Explore more, stress less — profiles exist so family prefs, party trust, and **Side Quest** progress survive the park day without forcing a hard wall before the map.

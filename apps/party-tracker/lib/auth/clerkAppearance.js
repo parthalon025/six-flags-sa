@@ -1,4 +1,4 @@
-/** OAuth-only Clerk chrome — no email, password, or magic-link fields (ADR-0010). */
+/** OAuth-only Clerk chrome — no email, password, or magic-link fields (ADR-0030). */
 export const clerkAppearance = {
   layout: {
     socialButtonsVariant: 'blockButton',

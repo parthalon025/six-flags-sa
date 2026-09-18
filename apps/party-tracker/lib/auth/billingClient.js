@@ -1,5 +1,5 @@
 /**
- * Client billing guards — native shell must not open web checkout (ADR-0011).
+ * Client billing guards — native shell must not open web checkout (ADR-0028).
  */
 import {
   allowedPaymentChannel,

@@ -1,25 +1,43 @@
-# Spec — Kings Island watercolor-quest world rebuild
+# Spec — Factories → app end-state (PostDB delivery bus)
 
 ## Goal
 
-Rebuild the Kings Island `watercolor-quest` baked world skin through the visual factory and publish it to the live app bundle.
+Stop treating "committed to git" as "live in the app." Factories publish versioned
+truth and display packs through PostDB; the app consumes exported delivery
+artifacts, never git HEAD directly. See [map.md](map.md) for the destination,
+ADR-0024 and ADR-0025 for the accepted decisions.
 
 ## Scope
 
-1. Bake `kings-island` with the `watercolor-quest` kit (`venues:bake`).
-2. Fold the bake into the display pack (`venues:display --bake`).
-3. Publish `watercolor-quest` world files to `apps/party-tracker/public/venues/`.
-4. Refresh `kings-island.bundle.json` hashes and byte totals.
+1. PostDB schema + IO — append-only `truth_revisions`, promotable `venue_heads`.
+2. Delivery export (`npm run venues:export`) from a promoted PostDB head to
+   revision-pinned, same-origin bundle files under `apps/party-tracker/public/venues/`.
+3. Delta sync — the phone fetches per-file deltas via `?since=<revision_id>`.
+4. Display-schema CI gate on the exported bundle shape.
+5. Delivery authority/trigger/bundle-shape (ticket 19): same-origin static,
+   steward-run publish (no auto-export-on-certify), delta over full bundle.
+6. Module seams — `map-factory/`, `visual-factory/`, `delivery/` behind
+   `buildTruth`/`compileDisplay`/`publishBundle`, with CI-enforced
+   dependency-cruiser import boundaries (ADR-0025).
 
 ## Out of scope
 
-- New kit authoring or palette-only changes.
-- Enabling MapLibre as the default renderer (band preview flag remains separate).
-- PostDB truth head publication (file-based factory path only).
+- Object storage (Cloudflare R2) — parked behind the `addVendorWhen` trigger
+  ("Vercel transfer would bill"), not a v1 gap.
+- Automatic export on every PostDB certify — steward publish only for v1.
+- A second npm package for map/visual factories — deferred until the module
+  boundaries prove stable.
 
 ## Acceptance
 
-- `display-certification.json` reports `certified: true` for watercolor-quest.
-- `watercolor-quest.world.png` serves from `public/venues/kings-island/display/`.
-- Bundle manifest sha256 matches the published PNG bytes.
-- `/dev/banded-world` renders watercolor-quest when `NEXT_PUBLIC_BANDED_WORLD_PREVIEW=1`.
+- ADR-0024 and ADR-0025 are Accepted and match shipped code (verified: PostDB
+  schema/IO/sync/export exist and are exercised by tests; the app consumes
+  venue-builder only through package entry points, not git HEAD).
+- `apps/party-tracker/public/venues/*` bundles are populated by `venues:export`
+  from a promoted PostDB head — not assumed to follow from `venues:build` alone.
+- `npm run lint:boundaries` (dependency-cruiser) enforces the map-factory /
+  visual-factory / delivery import boundaries in CI.
+- Ticket 23 (truth certification) stays blocked on an owner decision (an LLM
+  API key or licensed map images for `park_map_research`; an imagery-licensing
+  call for `imagery_ledger` under ADR-0020) — tracked separately, not required
+  for this spec.

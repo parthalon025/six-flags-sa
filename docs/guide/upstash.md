@@ -160,5 +160,5 @@ store answers.
   [venue builder guide](./venue-builder.md#guest-walk-traces-394).
 
 See also [API guide](./api.md), [Security](./security.md),
-[ADR-0026 Upstash relay store](../adr/0026-upstash-relay-store.md), and
+[ADR-0029 Upstash relay store](../adr/0029-upstash-relay-store.md), and
 [Databricks ops](../adr/0010-databricks-ops-free-tier.md).

@@ -1,5 +1,5 @@
 /**
- * Postgres Profile rows keyed by Clerk user id (ADR-0010).
+ * Postgres Profile rows keyed by Clerk user id (ADR-0030).
  * Without DATABASE_URL, returns an in-memory-shaped profile for dev.
  */
 
