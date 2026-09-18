@@ -8,6 +8,7 @@
 import assert from 'node:assert/strict';
 import {
   parseCatalogArgs,
+  pipelineOptsForPark,
   pipelineOptsFromCatalogArgs,
   resolvePipelineResearchAi,
   venueRequestsAiResearch,
@@ -58,6 +59,12 @@ await check('resolvePipelineResearchAi honours explicit --ai', () => {
 
 await check('resolvePipelineResearchAi keeps AI off when catalog and flag are absent', () => {
   assert.equal(resolvePipelineResearchAi('magic-kingdom', {}), false);
+});
+
+await check('pipelineOptsForPark plumbs --ai through to research resolution', () => {
+  const park = { id: 'magic-kingdom', name: 'Magic Kingdom', place: 'Magic Kingdom', locality: '' };
+  const opts = pipelineOptsForPark(park, parseCatalogArgs(['--pipeline', '--ai']));
+  assert.equal(resolvePipelineResearchAi(park.id, opts), true);
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

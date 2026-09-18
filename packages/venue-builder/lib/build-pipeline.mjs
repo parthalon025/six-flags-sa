@@ -222,7 +222,7 @@ export async function runVenuePipeline(park, opts = {}) {
       const researchAi = resolvePipelineResearchAi(park.id, opts);
       const llmReady = llmConfig().ready;
       if (researchAi && !llmReady) {
-        console.error('  · research: AI requested but VENUE_LLM_API_KEY unset — LLM lanes skipped');
+        console.error('  · research: AI requested but no LLM provider ready (VENUE_LLM_API_KEY / OPENAI_API_KEY) — LLM lanes skipped');
       } else {
         console.error('  · research: official site + ParksAPI');
       }
