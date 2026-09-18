@@ -119,6 +119,21 @@ await check('produces non-null, non-empty features for every layer of a real shi
   return true;
 });
 
+await check('tippecanoe adapter ok follows gap vs failure (#414)', async () => {
+  const { runAdapter } = await import('../../packages/venue-builder/lib/adapters/runner.mjs');
+  const r = await runAdapter('tippecanoe', { venueId: 'kings-island' });
+  assert.equal(r.adapterId, 'tippecanoe');
+  assert.ok(r.artifacts?.length, 'should write geojson artifacts');
+  if (r.meta.tiles.gap) {
+    assert.equal(r.ok, true, 'missing tippecanoe is a gap, not an adapter failure');
+    assert.equal(r.meta.tiles.ok, false);
+  } else {
+    assert.equal(r.ok, r.meta.tiles.ok, 'adapter ok must match tippecanoe result when not a gap');
+    assert.equal(r.meta.tiles.ok, true, r.error || r.meta.tiles.reason);
+  }
+  return true;
+});
+
 await check('tippecanoe run or gap is recorded honestly (#414)', () => {
   const map = {
     path: [{ r: [[-84.265, 39.344], [-84.264, 39.345], [-84.263, 39.346]], n: 'Test Path' }],
