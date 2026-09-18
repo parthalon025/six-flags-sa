@@ -526,7 +526,7 @@
     "sheet :: build-agent orchestrator runs offline",
     "sheet :: AGPL yolo adapter is rejected by runner",
     "sheet :: certify emits a birth certificate with nine gates",
-    "sheet :: kings-island passes certification except outstanding park-map image",
+    "sheet :: kings-island certifies with local park-map image (#434)",
     "sheet :: route QA enforces the Kings Island island standard",
     "sheet :: the route gate measures where a guest can stand, not a ride centroid",
     "sheet :: a ride with no structure and no entrance still snaps by its point",

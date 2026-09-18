@@ -23,8 +23,42 @@ import {
 } from './venue-io.mjs';
 import { readSources } from './venue-sources.mjs';
 
+/** Decode a handful of HTML entities without a parser dependency. */
+function decodeHtml(s) {
+  return String(s || '')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ');
+}
+
 const MAP_ASSET_RE = /\.(?:png|jpe?g|webp|gif|pdf|svg)(?:\?|#|$)/i;
 const MAPISH_RE = /park[-_ ]?map|map[-_ ]?of|guest[-_ ]?map|guide[-_ ]?map|schematic|handout|cartograph|venue[-_ ]?map/i;
+const SANITY_DIM_RE = /-(\d+)x(\d+)\.(?:png|jpe?g|webp|gif)$/i;
+const NEXT_IMAGE_RE = /\/_next\/image\?url=([^"'&\s]+)/gi;
+/** Wide schematic guest maps (Cedar Fair / Six Flags Sanity assets) are mapish by aspect. */
+const SCHEMATIC_MIN_ASPECT = 2.5;
+
+function sanityDimensions(url) {
+  const base = String(url || '').split('?')[0];
+  const m = base.match(SANITY_DIM_RE);
+  if (!m) return null;
+  const w = Number(m[1]);
+  const h = Number(m[2]);
+  if (!w || !h) return null;
+  return { w, h, aspect: w / h };
+}
+
+/** Wide schematic guest maps (Cedar Fair / Six Flags Sanity assets) are mapish by aspect. */
+function mapishFromUrl(url) {
+  const dim = sanityDimensions(url);
+  if (dim && dim.aspect >= SCHEMATIC_MIN_ASPECT) return true;
+  return MAP_ASSET_RE.test(url) && MAPISH_RE.test(url);
+}
 
 const PARK_MAP_LLM_SYSTEM = `You help acquire official theme-park guest maps for an open-source map builder.
 Rules:
@@ -62,16 +96,16 @@ function absolutize(href, baseUrl) {
 
 /** Pull map-like image/PDF URLs from an HTML page. */
 export function extractParkMapAssetUrls(html, pageUrl) {
-  const text = String(html || '');
+  const text = decodeHtml(html || '');
   const found = new Map();
 
   const consider = (raw, via) => {
     const url = absolutize(String(raw || '').trim().replace(/^<|>$/g, ''), pageUrl);
     if (!url || !/^https?:/i.test(url)) return;
-    if (!MAP_ASSET_RE.test(url) && !MAPISH_RE.test(url)) return;
+    if (!MAP_ASSET_RE.test(url)) return;
     const key = url.split('#')[0];
     if (found.has(key)) return;
-    const mapish = MAPISH_RE.test(url) || MAPISH_RE.test(via || '');
+    const mapish = mapishFromUrl(url) || MAPISH_RE.test(via || '');
     found.set(key, {
       imageUrl: key,
       pageUrl: pageUrl || null,
@@ -92,6 +126,22 @@ export function extractParkMapAssetUrls(html, pageUrl) {
       const u = part.trim().split(/\s+/)[0];
       consider(u, 'srcset');
     }
+  }
+
+  // Next.js image optimizer encodes Sanity CDN guest maps — decode the inner URL.
+  for (const m of text.matchAll(NEXT_IMAGE_RE)) {
+    let encoded = m[1];
+    try {
+      encoded = decodeURIComponent(encoded);
+    } catch {
+      /* keep raw */
+    }
+    consider(encoded, 'next_image');
+  }
+
+  // Direct Sanity CDN references (inline JSON, preload links, etc.)
+  for (const m of text.matchAll(/https:\/\/cdn\.sanity\.io\/images\/[^"'\s\\]+/gi)) {
+    consider(m[0].replace(/\\+$/, ''), 'sanity_cdn');
   }
 
   return [...found.values()].sort((a, b) => Number(b.mapish) - Number(a.mapish));
