@@ -1,8 +1,8 @@
 /**
  * Export venue layers as GeoJSON for Tippecanoe (wrap adapter).
  *
- * Does not invoke tippecanoe — writes files and a shell recipe the maintainer
- * or CI can run when the binary is available. The display pipeline's own
+ * Writes per-layer GeoJSON plus a shell recipe, then runs tippecanoe when the
+ * binary is on PATH (same flags as the recipe). The display pipeline's own
  * exporter (`display-tiles.mjs`) supersedes this for pack building; this one
  * survives because `adapters/runner.mjs` and `bin/attractions.mjs` still use
  * it for ad-hoc inspection.
@@ -14,7 +14,9 @@
  */
 
 import path from 'node:path';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { tippecanoeAvailable } from './display-tiles.mjs';
 
 const LAYER_KEYS = ['path', 'building', 'water', 'coaster', 'slide', 'parking', 'pool'];
 
@@ -52,13 +54,52 @@ function poiToPoint(poi) {
 }
 
 /**
+ * Run tippecanoe over each GeoJSON layer file, matching tippecanoe.sh flags.
+ * Returns { ok, gap?, reason?, mbtiles } — never throws for a missing binary.
+ */
+export function runTippecanoePerLayer(outDir, geojsonFiles = []) {
+  if (!geojsonFiles.length) {
+    return { ok: true, mbtiles: [] };
+  }
+  if (!tippecanoeAvailable()) {
+    return {
+      ok: false,
+      gap: true,
+      reason: 'tippecanoe not installed — GeoJSON + tippecanoe.sh recipe written; run it to build .mbtiles',
+      mbtiles: [],
+    };
+  }
+  const mbtiles = [];
+  for (const geojson of geojsonFiles) {
+    const base = path.basename(geojson, '.geojson');
+    const outFile = path.join(outDir, `${base}.mbtiles`);
+    const res = spawnSync(
+      'tippecanoe',
+      ['-o', outFile, '-zg', '--drop-densest-as-needed', geojson],
+      { stdio: ['ignore', 'ignore', 'pipe'] },
+    );
+    if (res.status !== 0) {
+      return {
+        ok: false,
+        reason: `tippecanoe exited ${res.status} on ${base}: ${String(res.stderr || '').slice(0, 300)}`,
+        mbtiles,
+      };
+    }
+    if (existsSync(outFile)) mbtiles.push(outFile);
+  }
+  return { ok: true, mbtiles };
+}
+
+/**
  * @param {string} outDir absolute or relative directory
  * @param {object} map map.json body
  * @param {object[]} pois pois.json
+ * @returns {{ files: string[], tiles: ReturnType<typeof runTippecanoePerLayer> }}
  */
 export function exportTileGeoJson(outDir, map = {}, pois = []) {
   mkdirSync(outDir, { recursive: true });
   const written = [];
+  const geojsonFiles = [];
   for (const key of LAYER_KEYS) {
     const ways = map[key] || [];
     const features = ways.map((w) => wayToFeature(w, key)).filter(Boolean);
@@ -66,12 +107,14 @@ export function exportTileGeoJson(outDir, map = {}, pois = []) {
     const file = path.join(outDir, `${key}.geojson`);
     writeFileSync(file, `${JSON.stringify({ type: 'FeatureCollection', features }, null, 2)}\n`);
     written.push(file);
+    geojsonFiles.push(file);
   }
   const places = pois.map(poiToPoint).filter(Boolean);
   if (places.length) {
     const file = path.join(outDir, 'places.geojson');
     writeFileSync(file, `${JSON.stringify({ type: 'FeatureCollection', features: places }, null, 2)}\n`);
     written.push(file);
+    geojsonFiles.push(file);
   }
   const recipe = [
     '# Tippecanoe recipe (run when tippecanoe is installed)',
@@ -82,5 +125,7 @@ export function exportTileGeoJson(outDir, map = {}, pois = []) {
   const recipePath = path.join(outDir, 'tippecanoe.sh');
   writeFileSync(recipePath, `${recipe}\n`);
   written.push(recipePath);
-  return written;
+  const tiles = runTippecanoePerLayer(outDir, geojsonFiles);
+  if (tiles.mbtiles?.length) written.push(...tiles.mbtiles);
+  return { files: written, tiles };
 }

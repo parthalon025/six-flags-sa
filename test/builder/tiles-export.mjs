@@ -10,7 +10,7 @@
  *   node test/builder/tiles-export.mjs
  */
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -32,6 +32,7 @@ async function check(name, fn) {
 console.log('\ntiles-export\n');
 
 const { exportTileGeoJson } = await import('../../packages/venue-builder/lib/tiles-export.mjs');
+const { tippecanoeAvailable } = await import('../../packages/venue-builder/lib/display-tiles.mjs');
 
 const LAYER_KEYS = ['path', 'building', 'water', 'coaster', 'slide', 'parking', 'pool'];
 const AREA_KEYS = new Set(['building', 'water', 'parking', 'pool']);
@@ -41,8 +42,8 @@ await check('exports a LineString from a way.r-shaped fixture', () => {
     path: [{ r: [[-84.265, 39.344], [-84.264, 39.345], [-84.263, 39.346]], n: 'Test Path' }],
   };
   const dir = mkdtempSync(path.join(tmpdir(), 'tiles-export-'));
-  const written = exportTileGeoJson(dir, map, []);
-  const file = written.find((f) => f.endsWith('path.geojson'));
+  const { files } = exportTileGeoJson(dir, map, []);
+  const file = files.find((f) => f.endsWith('path.geojson'));
   assert.ok(file, 'path.geojson should be written');
   const geojson = JSON.parse(readFileSync(file, 'utf8'));
   assert.equal(geojson.features.length, 1);
@@ -57,8 +58,8 @@ await check('exports a LineString from a way.r-shaped fixture', () => {
 
 await check('returns null for a way with no r and no p', () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'tiles-export-'));
-  const written = exportTileGeoJson(dir, { path: [{ n: 'Ghost way' }] }, []);
-  assert.equal(written.find((f) => f.endsWith('path.geojson')), undefined);
+  const { files } = exportTileGeoJson(dir, { path: [{ n: 'Ghost way' }] }, []);
+  assert.equal(files.find((f) => f.endsWith('path.geojson')), undefined);
   return true;
 });
 
@@ -67,8 +68,8 @@ await check('falls back to the legacy way.p {lng,lat} shape', () => {
     path: [{ p: [{ lng: -84.265, lat: 39.344 }, { lng: -84.264, lat: 39.345 }], n: 'Legacy way' }],
   };
   const dir = mkdtempSync(path.join(tmpdir(), 'tiles-export-'));
-  const written = exportTileGeoJson(dir, map, []);
-  const file = written.find((f) => f.endsWith('path.geojson'));
+  const { files } = exportTileGeoJson(dir, map, []);
+  const file = files.find((f) => f.endsWith('path.geojson'));
   const geojson = JSON.parse(readFileSync(file, 'utf8'));
   assert.deepEqual(geojson.features[0].geometry.coordinates, [
     [-84.265, 39.344],
@@ -86,8 +87,8 @@ await check('produces non-null, non-empty features for every layer of a real shi
   );
 
   const dir = mkdtempSync(path.join(tmpdir(), 'tiles-export-kings-island-'));
-  const written = exportTileGeoJson(dir, map, pois);
-  assert.ok(written.length > 0, 'exportTileGeoJson should write at least one file');
+  const { files } = exportTileGeoJson(dir, map, pois);
+  assert.ok(files.length > 0, 'exportTileGeoJson should write at least one file');
 
   const filesOnDisk = readdirSync(dir);
   let nonEmptyLayers = 0;
@@ -115,6 +116,27 @@ await check('produces non-null, non-empty features for every layer of a real shi
   const places = JSON.parse(readFileSync(path.join(dir, 'places.geojson'), 'utf8'));
   assert.ok(places.features.length > 0, 'places.geojson should have a non-zero feature count');
 
+  return true;
+});
+
+await check('tippecanoe run or gap is recorded honestly (#414)', () => {
+  const map = {
+    path: [{ r: [[-84.265, 39.344], [-84.264, 39.345], [-84.263, 39.346]], n: 'Test Path' }],
+  };
+  const dir = mkdtempSync(path.join(tmpdir(), 'tiles-export-tippecanoe-'));
+  const { files, tiles } = exportTileGeoJson(dir, map, []);
+  assert.ok(files.some((f) => f.endsWith('tippecanoe.sh')), 'recipe should always be written');
+  if (tippecanoeAvailable()) {
+    assert.equal(tiles.ok, true, tiles.reason);
+    assert.ok(tiles.mbtiles.length >= 1, 'path.mbtiles should be produced');
+    assert.ok(existsSync(tiles.mbtiles[0]), 'mbtiles file should exist on disk');
+    assert.ok(files.some((f) => f.endsWith('.mbtiles')), 'mbtiles paths included in files');
+  } else {
+    assert.equal(tiles.ok, false);
+    assert.equal(tiles.gap, true);
+    assert.match(tiles.reason, /tippecanoe/);
+    assert.equal(readdirSync(dir).some((f) => f.endsWith('.mbtiles')), false);
+  }
   return true;
 });
 
