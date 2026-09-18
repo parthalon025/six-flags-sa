@@ -137,6 +137,7 @@ export const TEST_ESTATE = {
   'test/app/transport-contract.test.mjs': ['test:unit'],
   'test/app/transport-registry.test.mjs': ['test:unit'],
   'test/app/validate-ui-queue.test.mjs': ['test:unit'],
+  'test/app/browser-wait.test.mjs': ['test:unit'],
   'test/app/validate-ui.mjs': ['app-vertical'],
   'test/app/venue-download.test.mjs': ['test:unit'],
   'test/app/venue-store.test.mjs': ['test:unit'],
