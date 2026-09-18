@@ -550,14 +550,11 @@ export async function ensurePeek(page) {
 
 /** Wait for gate + map + Plan tab before rider-height navigation (#315). */
 export async function waitForHeightsReady(page, { timeout = 45000 } = {}) {
+  // Smoke can leave a gate up or the bar unpainted; dismiss before polling so
+  // we are not waiting 45s on a condition closeGate clears in seconds.
+  await closeGate(page);
   await until(
-    async () => {
-      const gateCount = await page.locator('.gate').count();
-      if (gateCount > 0) return false;
-      if (!(await mapIsDrawn(page))) return false;
-      const ridesTabCount = await page.locator('.tabItem[data-tab="rides"]').count();
-      return heightsGateReady({ gateCount, mapDrawn: true, ridesTabCount });
-    },
+    async () => heightsGateReady(await snapshotHeightsGate(page)),
     { timeout, label: 'rides tab after POI load', page },
   );
 }

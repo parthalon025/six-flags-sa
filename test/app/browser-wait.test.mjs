@@ -31,6 +31,14 @@ assert.equal(
   'not ready before the tab bar mounts the Plan tab',
 );
 
+// #315 root cause: Plan tab id is always "rides" once TabBar mounts — zero count
+// means the shell has not painted the bar yet, not missing POI height data.
+assert.equal(
+  heightsGateReady({ gateCount: 1, mapDrawn: true, ridesTabCount: 0 }),
+  false,
+  'stuck gate is the usual CI failure mode, not a missing rides tab',
+);
+
 const formatted = formatWaitTimeoutError({
   label: 'rides tab after POI load',
   last: false,
