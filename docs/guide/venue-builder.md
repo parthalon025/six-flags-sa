@@ -804,6 +804,12 @@ Two flags worth knowing: `--dump <file>` saves the raw Overpass response and `--
 try three Overpass endpoints in turn, because the busy ones answer 429 and 504 more often
 than they answer.
 
+`--place` and `venues:geocode-catalog` resolve places through Nominatim. By default they hit
+the public OSMF instance. For reproducible or rate-limit-free builds, run a self-hosted
+[Nominatim](https://github.com/osm-search/Nominatim) (see the adapter registry row) and set
+`VENUE_NOMINATIM_URL` to its base URL (for example `http://localhost:8080`). The legacy
+`NOMINATIM_URL` name is also accepted. Unset, behavior is identical to today's public endpoint.
+
 One caveat on Kings Island specifically: its bundle is the hand-pulled one this app was
 built around, and it is what ships. A rebuild from today's OpenStreetMap reproduces it
 closely — the same 121 coaster track segments, the same 1 park outline, the same 10
