@@ -25,7 +25,7 @@ Layout: [docs/repo-structure.md](../docs/repo-structure.md). Visual tour: [docs/
 
 **Tests through the entry points.** Files under `<pkg>/tests/` may import any package's entry points and their own `tests/` fixtures, but never any package's subfolder internals — not even their own. The interface is the test surface.
 
-Exception: `test/builder/unit.mjs` and `test/builder/gaps-quests.mjs` are a sanctioned, repo-level white-box integration suite — they import internals of both `packages/venue-builder` and `apps/party-tracker/lib/core` because they test the builder-output/app-consumption contract directly, not the entry points on either side. This is a permanent, documented exemption in `.dependency-cruiser.cjs` (#476), not a gap pending a move.
+Exception: `test/builder/unit.mjs`, `test/builder/gaps-quests.mjs`, `test/builder/attractions-sidecar.mjs`, and `test/builder/operator-parsers.mjs` are a sanctioned, repo-level white-box integration suite — they import internals of both `packages/venue-builder` and `apps/party-tracker/lib/core` because they test the builder-output/app-consumption contract directly, not the entry points on either side. This is a permanent, documented exemption in `.dependency-cruiser.cjs` (#476), not a gap pending a move.
 
 **No cycles.** No dependency cycles.
 

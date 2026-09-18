@@ -7,6 +7,9 @@ import { parseSixFlagsListing } from './six-flags.mjs';
 import { parseCedarFairListing } from './cedar-fair.mjs';
 import { parseDisneyListing } from './disney.mjs';
 import { parseUniversalListing } from './universal.mjs';
+import { parseSeaWorldListing } from './seaworld.mjs';
+import { parseLegolandListing } from './legoland.mjs';
+import { parseHerschendListing } from './herschend.mjs';
 
 export function operatorForUrl(url = '') {
   const u = String(url).toLowerCase();
@@ -23,6 +26,19 @@ export function operatorForUrl(url = '') {
   ) return 'cedar-fair';
   if (u.includes('disney.go.com') || u.includes('disneyland.com')) return 'disney';
   if (u.includes('universalorlando.com') || u.includes('universalstudioshollywood.com')) return 'universal';
+  if (
+    u.includes('seaworld.com')
+    || u.includes('buschgardens.com')
+    || u.includes('sesameplace.com')
+    || u.includes('adventureisland.com')
+  ) return 'seaworld';
+  if (u.includes('legoland.com')) return 'legoland';
+  if (
+    u.includes('dollywood.com')
+    || u.includes('silverdollarcity.com')
+    || u.includes('idlewild.com')
+    || u.includes('dutchwonderland.com')
+  ) return 'herschend';
   return 'generic';
 }
 
@@ -31,6 +47,9 @@ const PARSERS = {
   'cedar-fair': parseCedarFairListing,
   disney: parseDisneyListing,
   universal: parseUniversalListing,
+  seaworld: parseSeaWorldListing,
+  legoland: parseLegolandListing,
+  herschend: parseHerschendListing,
   generic: parseAttractionListing,
 };
 

@@ -8755,6 +8755,9 @@ await check('operator dispatch recognises Six Flags URLs', () => {
   assert.equal(operatorForUrl('https://www.cedarpoint.com/rides-experiences'), 'cedar-fair');
   assert.equal(operatorForUrl('https://disneyworld.disney.go.com/attractions/magic-kingdom/'), 'disney');
   assert.equal(operatorForUrl('https://www.universalorlando.com/web/en/us/things-to-do'), 'universal');
+  assert.equal(operatorForUrl('https://seaworld.com/orlando/rides'), 'seaworld');
+  assert.equal(operatorForUrl('https://www.legoland.com/florida/things-to-do/rides/'), 'legoland');
+  assert.equal(operatorForUrl('https://www.dollywood.com/thepark/rides-attractions'), 'herschend');
   return true;
 });
 
