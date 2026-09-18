@@ -201,6 +201,7 @@ export const TEST_ESTATE = {
   'test/builder/venue-bundle.mjs': ['test:builder'],
   'test/builder/venue-drift.test.mjs': ['test:builder'],
   'test/builder/vision-trace-claims.mjs': ['test:builder'],
+  'test/builder/vision-mapillary-claims.mjs': ['test:builder'],
   'test/builder/world.mjs': ['test:unit', 'test:builder'],
 
   // --- test/scripts: the decisions the workflows call ----------------------
