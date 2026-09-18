@@ -645,7 +645,7 @@ const ENTRIES = [
     overlap:
       'lib/adapters/google-places.mjs stores place IDs only. Google content never becomes truth or grounding (ADR-0020 clause 7). Token-gated, opt-in, no guest path.',
     notes:
-      'Owner-held GOOGLE_MAPS_API key. workflow_dispatch / write-access triggers only — no pull_request_target. Missing key is a recorded gap.',
+      'Owner-held GOOGLE_MAPS_API key. workflow_dispatch / write-access triggers only — no pull_request_target. Missing key is a recorded gap. Daily Places Details cap via GOOGLE_PLACES_DAILY_CAP (default 100); refuses past the cap rather than spend.',
   },
   {
     id: 'overture-buildings',
