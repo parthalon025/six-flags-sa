@@ -9,7 +9,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
   issues: write
 
 jobs:
@@ -30,11 +31,46 @@ jobs:
         id: drift
         run: |
           set +e
-          npm run venues:drift-watch -- --json > drift-report.json
+          npm run venues:drift-watch -- --json --revoke > drift-report.json
           code=$?
           echo "exit=$code" >> "$GITHUB_OUTPUT"
           cat drift-report.json
+          if git diff --quiet -- packages/venue-builder/data/venues/*/certification.json; then
+            echo "revoke_changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "revoke_changed=true" >> "$GITHUB_OUTPUT"
+          fi
           exit 0
+
+      - name: Open PR for drift revocations
+        if: steps.drift.outputs.exit != '0' && steps.drift.outputs.revoke_changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          branch="drift-revoke/$(date -u +%Y%m%dT%H%M%SZ)-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add packages/venue-builder/data/venues/*/certification.json
+          git commit -m "chore(builder): revoke certification for OSM drift (#400)
+
+          Weekly drift watch found venues that would change on rebuild.
+          Stamp certification.json as revoked until rebuilt and re-certified."
+          git push -u origin "$branch"
+          {
+            echo "## Summary"
+            echo
+            echo "Weekly drift watch detected venues whose shipped bundles no longer match a rebuild dry-run."
+            echo "This PR stamps their \`certification.json\` as **revoked** until a human rebuilds and re-runs \`venues:certify\`."
+            echo
+            echo "Closes #400 (revocation path)."
+            echo
+            echo "Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          } > pr-body.md
+          gh pr create --base main --head "$branch" \
+            --title "chore(builder): revoke certification for OSM drift (#400)" \
+            --body-file pr-body.md
 
       - name: Check for existing drift issue
         id: existing
