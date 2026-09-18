@@ -59,6 +59,26 @@ await check('simulateHostPhoneLost drops only benign about:blank localStorage er
   assert.deepEqual(errors, ['A pageerror: real app bug']);
 });
 
+await check('closePhoneContext strips benign about:blank localStorage errors after blanking', async () => {
+  const errors = [
+    'D pageerror: Failed to read the localStorage property from Window: Access is denied for this document.',
+    'D pageerror: real app bug',
+  ];
+  const phone = {
+    label: 'D',
+    errors,
+    page: {
+      isClosed: () => false,
+      goto: async () => {},
+    },
+    context: {
+      close: async () => {},
+    },
+  };
+  await closePhoneContext(phone, { timeoutMs: 500, label: 'phone D' });
+  assert.deepEqual(errors, ['D pageerror: real app bug']);
+});
+
 await check('closePhoneContext blanks the page before closing the context', async () => {
   const calls = [];
   const phone = {

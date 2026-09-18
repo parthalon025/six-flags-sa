@@ -47,6 +47,17 @@ export const ignoreHTTPSErrors = BASE.startsWith('https://') || process.env.CLER
 export const IGNORABLE_CONSOLE =
   /ERR_CERT|fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED)_BY_CLIENT|\/_vercel\/(insights|speed-insights)\/|favicon\.ico|Failed to load resource.*\b404\b|Refused to execute script.*(text\/plain|application\/json)|Blocked call to navigator\.vibrate/;
 
+/** about:blank denies localStorage — not an app bug during phone teardown (#316). */
+export const BENIGN_ABOUT_BLANK_PAGEERROR = /localStorage.*denied/i;
+
+/** Drop shutdown artifacts from a phone's collected pageerrors. Mutates `errors`. */
+export function stripBenignAboutBlankErrors(errors) {
+  if (!errors?.length) return errors;
+  const kept = errors.filter((e) => !BENIGN_ABOUT_BLANK_PAGEERROR.test(e));
+  errors.splice(0, errors.length, ...kept);
+  return errors;
+}
+
 /** Cross-origin egress is aborted in-test unless HERMETIC=0 says otherwise. */
 export const HERMETIC = process.env.HERMETIC !== '0';
 
@@ -113,11 +124,9 @@ export async function simulateHostPhoneLost(
     timeoutMs,
     label,
   );
-  // about:blank denies localStorage — drop only that benign artifact (#316).
-  if (errors) {
-    const kept = errors.filter((e) => !/localStorage.*denied/i.test(e));
-    errors.splice(0, errors.length, ...kept);
-  }
+  // pageerror for denied localStorage can land after goto returns (#316).
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  if (errors) stripBenignAboutBlankErrors(errors);
 }
 
 /**
@@ -134,6 +143,8 @@ export async function closePhoneContext(phone, { timeoutMs = 15000, label = 'pho
       blankMs,
       `${label} blank`,
     );
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    if (phone?.errors) stripBenignAboutBlankErrors(phone.errors);
   }
   await withTimeout(phone.context.close(), timeoutMs, label);
 }
@@ -224,7 +235,10 @@ export async function openPhone(
 
   const errors = [];
   const requests = [];
-  page.on('pageerror', (e) => errors.push(`${label} pageerror: ${e.message}`));
+  page.on('pageerror', (e) => {
+    if (BENIGN_ABOUT_BLANK_PAGEERROR.test(e.message) && page.url() === 'about:blank') return;
+    errors.push(`${label} pageerror: ${e.message}`);
+  });
   page.on('console', (m) => {
     // A blocked resource logs "Failed to load resource: …" with no URL in the
     // text — the URL is on the message location, so test both.

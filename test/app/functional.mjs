@@ -38,6 +38,7 @@ import {
   partyRosterNames,
   searchPlaces,
   simulateHostPhoneLost,
+  stripBenignAboutBlankErrors,
   until,
   tapBareGround,
   tapMapPoi,
@@ -4144,6 +4145,7 @@ await check('App Store routing coverage includes every shipped venue', async () 
 console.log('\n--- console errors ---');
 for (const phone of [A, B, C, D].filter(Boolean)) {
   await check(`no page errors on phone ${phone.label}`, () => {
+    stripBenignAboutBlankErrors(phone.errors);
     if (phone.errors.length) throw new Error(phone.errors.slice(0, 3).join(' | '));
     return true;
   });
