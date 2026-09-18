@@ -197,6 +197,7 @@ export const TEST_ESTATE = {
   'test/builder/steward-review.mjs': ['test:builder'],
   'test/builder/terrain.mjs': ['test:builder'],
   'test/builder/tiles-export.mjs': ['test:builder'],
+  'test/builder/venue-data-adapter-bakeoff.mjs': ['test:builder'],
   'test/builder/unit.mjs': ['test:unit', 'test:builder'],
   'test/builder/venue-bundle.mjs': ['test:builder'],
   'test/builder/venue-drift.test.mjs': ['test:builder'],

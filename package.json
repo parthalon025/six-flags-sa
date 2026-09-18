@@ -39,6 +39,7 @@
     "venues:compare": "node --env-file-if-exists=.env packages/venue-builder/bin/compare-venues.mjs",
     "venues:inspect": "node --env-file-if-exists=.env packages/venue-builder/bin/inspect-server.mjs",
     "venues:adapters": "node --env-file-if-exists=.env packages/venue-builder/venue-adapters.mjs",
+    "venues:venue-data-bakeoff": "node --env-file-if-exists=.env packages/venue-builder/venue-data-adapter-bakeoff.mjs",
     "venues:route-qa": "node --env-file-if-exists=.env packages/venue-builder/venue-route-qa.mjs",
     "venues:build-agent": "node --env-file-if-exists=.env packages/venue-builder/venue-build-agent.mjs",
     "venues:certify": "node --env-file-if-exists=.env packages/venue-builder/bin/venue-certify.mjs",
