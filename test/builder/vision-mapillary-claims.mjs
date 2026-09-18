@@ -74,11 +74,11 @@ assert.equal(record.features.queue_entrance.evidence[0].pending, true);
 assert.equal(record.features.queue_entrance.evidence[0].frameCount, 2);
 
 // --- deferred vs available-unused ---
-assert.deepEqual(resolveMapillaryToolsStatus({ frameCount: 2 }), {
+assert.deepEqual(resolveMapillaryToolsStatus({ applied: 2 }), {
   deferred: ['sam2', 'opensfm'],
   availableUnused: [],
 });
-assert.deepEqual(resolveMapillaryToolsStatus({ frameCount: 0 }), {
+assert.deepEqual(resolveMapillaryToolsStatus({ applied: 0 }), {
   deferred: ['sam2', 'opensfm'],
   availableUnused: ['mapillary-tools'],
 });
@@ -121,11 +121,29 @@ assert.equal(withoutCache.mapillaryGround?.frameCount, 0);
 assert.deepEqual(withoutCache.deferred, ['sam2', 'opensfm']);
 assert.deepEqual(withoutCache.availableUnused, ['mapillary-tools']);
 
+// cache with frames but no nearby POIs — still available-unused, not consumed
+writeCache(`${TEST_VENUE}-orphan`, 'mapillary-video', {
+  frames: [{ filename: 'lonely.jpg', lat: 0, lng: 0 }],
+});
+const orphan = enqueueVisionMapillaryClaims(`${TEST_VENUE}-orphan`, {
+  dryRun: true,
+  map: {},
+  pois,
+});
+assert.equal(orphan.frameCount, 1);
+assert.equal(orphan.applied, 0);
+assert.match(orphan.skipped, /no frames near ride POIs/);
+assert.deepEqual(resolveMapillaryToolsStatus({ applied: orphan.applied }).availableUnused, [
+  'mapillary-tools',
+]);
+
 try {
-  rmSync(new URL(`../../packages/venue-builder/data/venues/${TEST_VENUE}`, import.meta.url), {
-    recursive: true,
-    force: true,
-  });
+  for (const id of [TEST_VENUE, `${TEST_VENUE}-orphan`]) {
+    rmSync(new URL(`../../packages/venue-builder/data/venues/${id}`, import.meta.url), {
+      recursive: true,
+      force: true,
+    });
+  }
   rmSync(path.join(VENUE_DIR, `${TEST_VENUE}.pois.json`), { force: true });
   rmSync(path.join(VENUE_DIR, `${TEST_VENUE}.map.json`), { force: true });
 } catch {

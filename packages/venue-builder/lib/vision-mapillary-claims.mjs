@@ -107,9 +107,9 @@ export function applyVisionMapillaryClaims(records, claims, { asOf } = {}) {
 }
 
 /** Deferred vs available-unused semantics for mapillary-tools (#408). */
-export function resolveMapillaryToolsStatus({ frameCount } = {}) {
+export function resolveMapillaryToolsStatus({ applied } = {}) {
   const deferred = ['sam2', 'opensfm'];
-  if (frameCount > 0) {
+  if (applied > 0) {
     return { deferred, availableUnused: [] };
   }
   return { deferred, availableUnused: ['mapillary-tools'] };

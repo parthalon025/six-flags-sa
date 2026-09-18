@@ -31,7 +31,7 @@ export async function runVisionAgent(venueId, opts = {}) {
   });
   const mapillaryProposals = mapillaryPersisted.mapillaryProposals || [];
   const { deferred, availableUnused } = resolveMapillaryToolsStatus({
-    frameCount: mapillaryPersisted.frameCount,
+    applied: mapillaryPersisted.applied,
   });
 
   let llm = null;
