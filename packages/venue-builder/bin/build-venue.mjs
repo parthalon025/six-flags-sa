@@ -188,6 +188,7 @@ rebuild → attractions → agent → certify):
   --no-agent                skip build-agent (QA, GIS, vision, validation)
   --no-certify              skip certification gate
   --no-aliases              skip auto-alias resolution
+  --ai                      enable LLM-assisted research (VENUE_LLM_API_KEY)
   --pr                      open a draft PR per built park (requires gh; with --catalog)
 `;
 
