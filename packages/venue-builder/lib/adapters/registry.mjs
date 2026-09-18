@@ -342,8 +342,8 @@ const ENTRIES = [
     commercial_ok: true,
     evidence_sources: [],
     integration: 'medium',
-    overlap: 'Live Overpass queries today; no local PBF pipeline',
-    notes: 'Regional extracts for offline routing graph prep.',
+    overlap: 'Live Overpass in build-venue.mjs; opt-in PBF via lib/adapters/osmium.mjs',
+    notes: 'Regional extracts for offline geometry builds (--from-pbf / VENUE_OSM_PBF).',
   },
   {
     id: 'nominatim',

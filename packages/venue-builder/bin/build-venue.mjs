@@ -74,6 +74,12 @@ import {
   pipelineOptsForPark,
 } from '../lib/build-pipeline.mjs';
 import { loadCatalog, selectParks, withIds } from '../lib/top-parks-catalog.mjs';
+import {
+  cliAvailable as osmiumCliAvailable,
+  overpassQuery,
+  queryPbf,
+  resolvePbfPath,
+} from '../lib/adapters/osmium.mjs';
 
 const OVERPASS = [
   'https://overpass-api.de/api/interpreter',
@@ -135,6 +141,8 @@ Build a venue bundle from OpenStreetMap.
   --dry-run                 print what would be written, write nothing
   --dump <file>             save the raw Overpass response for inspection
   --from-dump <file>        build from a saved response instead of querying
+  --from-pbf <file>         build from a regional OSM PBF via osmium (or VENUE_OSM_PBF);
+                            falls back to Overpass when the CLI or file is missing
   --keep-offsite            keep places standing in named areas outside the venue
   --reindex                 only rebuild the manifest, index, and App Store
                             routing coverage GeoJSON from files already on disk
@@ -234,48 +242,6 @@ const bboxArea = (b) =>
 
 /* -------------------------------------------------------------- overpass - */
 
-function overpassQuery(b) {
-  const box = `${b.south},${b.west},${b.north},${b.east}`;
-  // One union, asking only for the tags the layer and POI rules can use. A
-  // blanket nwr(bbox) is simpler and roughly ten times the download, which
-  // matters on a laptop tethered to a phone in a car park.
-  const wanted = [
-    'building',
-    'building:part',
-    'highway',
-    'railway',
-    'natural',
-    'landuse',
-    'leisure',
-    'waterway',
-    'water',
-    'amenity',
-    'attraction',
-    // Coaster track carries `roller_coaster=track` and nothing else — asking
-    // only for `attraction` gets the station buildings and none of the ride.
-    'roller_coaster',
-    'sport',
-    'tourism',
-    'shop',
-    'man_made',
-    'historic',
-    'barrier',
-    'entrance',
-    'healthcare',
-    'emergency',
-    'place',
-    'aeroway',
-  ];
-  const lines = [`[out:json][timeout:180];`, '('];
-  for (const key of wanted) {
-    lines.push(`  way["${key}"](${box});`);
-    lines.push(`  relation["${key}"](${box});`);
-  }
-  for (const key of wanted) lines.push(`  node["${key}"](${box});`);
-  lines.push(');', 'out geom;');
-  return lines.join('\n');
-}
-
 async function overpass(query, endpoints) {
   let lastError = null;
   for (const url of endpoints) {
@@ -302,6 +268,30 @@ async function overpass(query, endpoints) {
     }
   }
   throw new Error(`Every Overpass endpoint refused. Last: ${lastError?.message || 'unknown'}`);
+}
+
+async function fetchOsm(bounds, args, endpoints) {
+  if (args['from-dump']) {
+    return JSON.parse(await readFile(String(args['from-dump']), 'utf8'));
+  }
+
+  const pbfPath = resolvePbfPath({ pbf: args['from-pbf'], env: process.env });
+  if (pbfPath) {
+    if (!(await osmiumCliAvailable())) {
+      process.stderr.write('  · osmium CLI not found — falling back to Overpass\n');
+    } else {
+      try {
+        process.stderr.write(`  · extracting OSM from ${pbfPath} … `);
+        const json = await queryPbf(pbfPath, bounds);
+        process.stderr.write(`${json.elements?.length ?? 0} elements\n`);
+        return json;
+      } catch (err) {
+        process.stderr.write(`failed (${err.message}) — falling back to Overpass\n`);
+      }
+    }
+  }
+
+  return overpass(overpassQuery(bounds), endpoints);
 }
 
 /* ------------------------------------------------------------ conversion - */
@@ -1611,9 +1601,7 @@ async function buildOne(args, { previous = null } = {}) {
   const endpoints = args.endpoint ? [String(args.endpoint)] : OVERPASS;
   // Re-running a build against a saved response costs a public mirror nothing
   // and makes tag-rule changes testable in a second rather than a minute.
-  const osm = args['from-dump']
-    ? JSON.parse(await readFile(String(args['from-dump']), 'utf8'))
-    : await overpass(overpassQuery(bounds), endpoints);
+  const osm = await fetchOsm(bounds, args, endpoints);
   if (args.dump) await writeFile(String(args.dump), JSON.stringify(osm));
   const elements = osm.elements || [];
 
