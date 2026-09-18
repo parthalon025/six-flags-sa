@@ -71,5 +71,18 @@ await check('runResearchAgent skips open research when disabled', async () => {
   assert.equal(result.openResearch, null);
 });
 
+await check('pipeline-shaped agent opts enable park-map fetch for official-map venues', () => {
+  const wantsParkMap = venueWantsParkMapResearch('kings-island');
+  const pipelineOpts = resolveOpenResearchOpts({
+    fetch: true,
+    offline: false,
+    ai: false,
+    wantsParkMap,
+  });
+  assert.equal(pipelineOpts.fetchMaps, true);
+  assert.equal(pipelineOpts.applyMaps, true);
+  assert.equal(pipelineOpts.offline, false);
+});
+
 console.log(`\n${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);
