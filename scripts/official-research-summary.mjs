@@ -5,7 +5,7 @@
  *   node scripts/official-research-summary.mjs research-report.json
  */
 import { readFileSync, writeFileSync } from 'node:fs';
-import { summarizeOfficialResearchResults } from '../packages/venue-builder/lib/official-research-summary.mjs';
+import { summarizeOfficialResearchResults } from './lib/official-research-summary.mjs';
 
 const reportPath = process.argv[2];
 if (!reportPath) {

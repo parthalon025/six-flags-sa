@@ -195,7 +195,7 @@ export const TEST_ESTATE = {
   'test/builder/stale-builder-paths.mjs': ['test:builder'],
   'test/builder/stamp-coverage.mjs': ['test:builder'],
   'test/builder/steward-review.mjs': ['test:builder'],
-  'test/builder/official-research-summary.mjs': ['test:builder'],
+  'test/scripts/official-research-summary.test.mjs': ['ci-gate'],
   'test/builder/terrain.mjs': ['test:builder'],
   'test/builder/tiles-export.mjs': ['test:builder'],
   'test/builder/unit.mjs': ['test:unit', 'test:builder'],

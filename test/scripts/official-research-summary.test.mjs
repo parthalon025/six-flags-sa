@@ -2,10 +2,10 @@
 /**
  * Official site research summary — fleet JSON from venues:research --json.
  *
- *   node test/builder/official-research-summary.mjs
+ *   node test/scripts/official-research-summary.test.mjs
  */
 import assert from 'node:assert/strict';
-import { summarizeOfficialResearchResults } from '../../packages/venue-builder/lib/official-research-summary.mjs';
+import { summarizeOfficialResearchResults } from '../../scripts/lib/official-research-summary.mjs';
 
 const cedarOk = [
   {

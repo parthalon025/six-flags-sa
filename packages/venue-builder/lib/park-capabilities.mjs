@@ -110,7 +110,7 @@ export const CAPABILITIES = [
   {
     id: 'playwright-research',
     weakness: 'no-official-cache',
-    tool: 'adapter: playwright (wrap) — future venues:research --browser',
+    tool: 'adapter: playwright (wrap) — venues:research --browser; sync-official-research workflow',
     file: 'packages/venue-builder/lib/adapters/registry.mjs',
     note: 'Browser agent for park maps and accessibility pages beyond regex fetch.',
   },
