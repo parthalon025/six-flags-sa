@@ -65,12 +65,34 @@ await check('VENUE_NOMINATIM_URL wins over NOMINATIM_URL', () => {
   return true;
 });
 
+await check('env override may already include /search', () => {
+  assert.equal(
+    resolveNominatimSearchUrl({ VENUE_NOMINATIM_URL: 'http://localhost:8080/search' }),
+    'http://localhost:8080/search',
+  );
+  return true;
+});
+
 await check('default request URL keeps today query parameters', () => {
   const url = buildNominatimSearchRequestUrl('Kings Island', { extratags: true });
   assert.equal(
     url,
     'https://nominatim.openstreetmap.org/search?q=Kings%20Island&format=json&limit=1&polygon_geojson=0&extratags=1',
   );
+  return true;
+});
+
+await check('fetchNominatimHits reads VENUE_NOMINATIM_URL from env', async () => {
+  const seen = [];
+  await fetchNominatimHits('Kings Island', {
+    env: { VENUE_NOMINATIM_URL: 'http://self-hosted:8080' },
+    fetch: async (url) => {
+      seen.push(url);
+      return { ok: true, json: async () => [] };
+    },
+    userAgent: 'test-agent',
+  });
+  assert.ok(seen[0].startsWith('http://self-hosted:8080/search?'));
   return true;
 });
 

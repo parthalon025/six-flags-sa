@@ -74,7 +74,7 @@ import {
   pipelineOptsForPark,
 } from '../lib/build-pipeline.mjs';
 import { loadCatalog, selectParks, withIds } from '../lib/top-parks-catalog.mjs';
-import { buildNominatimSearchRequestUrl } from '../lib/nominatim-config.mjs';
+import { fetchNominatimHits } from '../lib/nominatim-config.mjs';
 
 const OVERPASS = [
   'https://overpass-api.de/api/interpreter',
@@ -194,10 +194,14 @@ rebuild → attractions → agent → certify):
 /* ------------------------------------------------------------- resolving - */
 
 async function resolvePlace(query) {
-  const url = buildNominatimSearchRequestUrl(query, { extratags: true });
-  const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': 'en' } });
-  if (!res.ok) throw new Error(`Nominatim said ${res.status}. Try --bbox instead.`);
-  const hits = await res.json();
+  let hits;
+  try {
+    hits = await fetchNominatimHits(query, { extratags: true, userAgent: UA, fetch });
+  } catch (err) {
+    const status = /Nominatim (\d+)/.exec(err.message)?.[1];
+    if (status) throw new Error(`Nominatim said ${status}. Try --bbox instead.`);
+    throw err;
+  }
   if (!hits.length) throw new Error(`Nothing called "${query}" in OpenStreetMap. Try --bbox.`);
   const hit = hits[0];
   const [south, north, west, east] = hit.boundingbox.map(Number);

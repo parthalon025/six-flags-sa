@@ -11,15 +11,16 @@ import { existsSync } from 'node:fs';
 import { loadCatalog } from '../lib/top-parks-catalog.mjs';
 import { recipeFile } from '../lib/venue-recipe.mjs';
 import { OVERRIDE_DIR, writeJson } from '../lib/venue-io.mjs';
-import { buildNominatimSearchRequestUrl } from '../lib/nominatim-config.mjs';
+import { fetchNominatimHits } from '../lib/nominatim-config.mjs';
 
 const UA = 'six-flags-sa-venue-research/1.0 (+https://github.com/parthalon025/six-flags-sa)';
 
 async function resolvePlace(query) {
-  const url = buildNominatimSearchRequestUrl(query);
-  const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': 'en' }, signal: AbortSignal.timeout(20000) });
-  if (!res.ok) throw new Error(`Nominatim ${res.status}`);
-  const hits = await res.json();
+  const hits = await fetchNominatimHits(query, {
+    userAgent: UA,
+    fetch,
+    signal: AbortSignal.timeout(20000),
+  });
   if (!hits.length) return { ok: false, error: 'no hit' };
   const hit = hits[0];
   const [south, north, west, east] = hit.boundingbox.map(Number);
