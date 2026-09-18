@@ -440,7 +440,7 @@ export function certifyVenue(id, opts = {}) {
     askBrief.inventory = inventoryAsks;
   }
 
-  let doc = {
+  const doc = attachDriftRevocation(prior, {
     version: CERT_VERSION,
     venue: { id: venue.id, name: venue.name, locality: venue.locality },
     certified,
@@ -450,8 +450,7 @@ export function certifyVenue(id, opts = {}) {
     bundleFingerprint: bundleFingerprint(id),
     checks,
     ask: askBrief,
-  };
-  doc = attachDriftRevocation(prior, doc);
+  });
 
   if (opts.write !== false) {
     const file = venueSidecar(id, 'certification.json');
