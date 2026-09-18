@@ -18,7 +18,9 @@ import {
   BASE,
   ignoreHTTPSErrors,
   clearSearch,
+  closeBrowser,
   closeGate,
+  closePhoneContext,
   dismissIntroSplash,
   dismissNavigation,
   ensurePeek,
@@ -35,6 +37,8 @@ import {
   rosterNames,
   partyRosterNames,
   searchPlaces,
+  simulateHostPhoneLost,
+  stripBenignAboutBlankErrors,
   until,
   tapBareGround,
   tapMapPoi,
@@ -140,7 +144,7 @@ if (want('contribution-pipeline')) {
     );
   }
   if (!want('smoke') && !want('heights') && !want('walk') && !want('party') && !want('intake') && !want('venues') && !want('offline') && !want('auth')) {
-    await browser.close();
+    await closeBrowser(browser, []);
     console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);
     process.exit(FAIL.length ? 1 : 0);
   }
@@ -2713,7 +2717,7 @@ await check('the reporting buttons are absent without a party', async () => {
   });
   await openRide(solo.page, 'Diamondback');
   const buttons = await solo.page.locator('.reportRow button').count();
-  await solo.context.close();
+  await closePhoneContext(solo, { timeoutMs: JOIN_TIMEOUT, label: 'solo phone teardown' });
   if (buttons !== 0) throw new Error(`${buttons} report buttons with no party`);
   return true;
 });
@@ -2743,7 +2747,9 @@ const watching = (async () => {
   }
 })();
 
-await A.context.close();
+// The host's phone goes in a locker. No goodbye, no handover — unmount the app
+// instead of context.close on a live party host, which wedges Playwright (#316).
+await simulateHostPhoneLost(a, { timeoutMs: 15000, label: 'host phone A lost', errors: A.errors });
 
 await check('a new host is elected without anybody being asked', async () => {
   const hosting = await until(
@@ -3454,7 +3460,7 @@ await until(async () => (await d.locator('button:has-text("Start a party")').cou
   timeout: JOIN_TIMEOUT,
   label: 'phone D to leave the party',
 }).catch(() => {});
-await D.context.close();
+await closePhoneContext(D, { timeoutMs: JOIN_TIMEOUT, label: 'phone D teardown' });
 
 console.log('\n--- leaving ---');
 
@@ -4139,14 +4145,16 @@ await check('App Store routing coverage includes every shipped venue', async () 
 console.log('\n--- console errors ---');
 for (const phone of [A, B, C, D].filter(Boolean)) {
   await check(`no page errors on phone ${phone.label}`, () => {
+    stripBenignAboutBlankErrors(phone.errors);
     if (phone.errors.length) throw new Error(phone.errors.slice(0, 3).join(' | '));
     return true;
   });
 }
 
-await browser.close();
+await closeBrowser(browser, [A, B, C, D].filter(Boolean), { timeoutMs: 45000 });
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);
 if (FAIL.length) {
   FAIL.forEach((f) => console.log(' !', f));
-  process.exitCode = 1;
+  process.exit(1);
 }
+process.exit(0);

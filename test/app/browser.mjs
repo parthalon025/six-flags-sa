@@ -47,6 +47,17 @@ export const ignoreHTTPSErrors = BASE.startsWith('https://') || process.env.CLER
 export const IGNORABLE_CONSOLE =
   /ERR_CERT|fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED)_BY_CLIENT|\/_vercel\/(insights|speed-insights)\/|favicon\.ico|Failed to load resource.*\b404\b|Refused to execute script.*(text\/plain|application\/json)|Blocked call to navigator\.vibrate/;
 
+/** about:blank denies localStorage — not an app bug during phone teardown (#316). */
+export const BENIGN_ABOUT_BLANK_PAGEERROR = /localStorage.*denied/i;
+
+/** Drop shutdown artifacts from a phone's collected pageerrors. Mutates `errors`. */
+export function stripBenignAboutBlankErrors(errors) {
+  if (!errors?.length) return errors;
+  const kept = errors.filter((e) => !BENIGN_ABOUT_BLANK_PAGEERROR.test(e));
+  errors.splice(0, errors.length, ...kept);
+  return errors;
+}
+
 /** Cross-origin egress is aborted in-test unless HERMETIC=0 says otherwise. */
 export const HERMETIC = process.env.HERMETIC !== '0';
 
@@ -78,6 +89,80 @@ export async function hermeticize(context, appUrl = BASE) {
     if (!/^https?:$/.test(target.protocol) || target.origin === origin) return route.fallback();
     return route.abort('blockedbyclient');
   });
+}
+
+/**
+ * Fail fast when Playwright or a wedged party poll would otherwise hang forever
+ * (#316 / #194). The timer is unref'd so a resolved promise does not keep the
+ * process alive in short unit tests.
+ */
+export function withTimeout(promise, timeoutMs, label) {
+  if (!timeoutMs || timeoutMs <= 0) return promise;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      const timer = setTimeout(
+        () => reject(new Error(`${label} timed out after ${timeoutMs}ms`)),
+        timeoutMs,
+      );
+      timer.unref?.();
+    }),
+  ]);
+}
+
+/**
+ * Host phone lost with no goodbye — unmount the app instead of closing a live
+ * party context, which can wedge Playwright mid-suite (#316).
+ */
+export async function simulateHostPhoneLost(
+  page,
+  { timeoutMs = 10000, label = 'host phone lost', errors = null } = {},
+) {
+  if (!page || page.isClosed?.()) return;
+  await withTimeout(
+    page.goto('about:blank', { waitUntil: 'commit', timeout: timeoutMs }),
+    timeoutMs,
+    label,
+  );
+  // pageerror for denied localStorage can land after goto returns (#316).
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  if (errors) stripBenignAboutBlankErrors(errors);
+}
+
+/**
+ * Tear down one phone from openPhone. Blank first so mailbox polling stops
+ * before the context closes (#316).
+ */
+export async function closePhoneContext(phone, { timeoutMs = 15000, label = 'phone context' } = {}) {
+  if (!phone?.context) return;
+  const page = phone.page;
+  const blankMs = Math.min(timeoutMs, 8000);
+  if (page && !page.isClosed?.()) {
+    await withTimeout(
+      page.goto('about:blank', { waitUntil: 'commit', timeout: blankMs }),
+      blankMs,
+      `${label} blank`,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    if (phone?.errors) stripBenignAboutBlankErrors(phone.errors);
+  }
+  await withTimeout(phone.context.close(), timeoutMs, label);
+}
+
+/** Close every phone still open — failures propagate with a labeled timeout. */
+export async function closeAllPhoneContexts(phones, { timeoutMs = 15000, label = 'phone context' } = {}) {
+  for (const phone of phones.filter(Boolean)) {
+    await closePhoneContext(phone, {
+      timeoutMs,
+      label: `${label} ${phone.label ?? ''}`.trim(),
+    });
+  }
+}
+
+/** Close every phone, then the shared browser — functional must exit (#316). */
+export async function closeBrowser(browser, phones = [], { timeoutMs = 30000 } = {}) {
+  await closeAllPhoneContexts(phones, { timeoutMs: Math.min(timeoutMs, 15000) });
+  if (browser) await withTimeout(browser.close(), timeoutMs, 'browser.close');
 }
 
 /** Poll `fn` until it returns something truthy. Returns that value. */
@@ -150,7 +235,10 @@ export async function openPhone(
 
   const errors = [];
   const requests = [];
-  page.on('pageerror', (e) => errors.push(`${label} pageerror: ${e.message}`));
+  page.on('pageerror', (e) => {
+    if (BENIGN_ABOUT_BLANK_PAGEERROR.test(e.message) && page.url() === 'about:blank') return;
+    errors.push(`${label} pageerror: ${e.message}`);
+  });
   page.on('console', (m) => {
     // A blocked resource logs "Failed to load resource: …" with no URL in the
     // text — the URL is on the message location, so test both.
