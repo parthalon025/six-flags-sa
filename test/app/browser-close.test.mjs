@@ -47,6 +47,15 @@ await check('simulateHostPhoneLost navigates to about:blank', async () => {
   assert.equal(calls[0].url, 'about:blank');
 });
 
+await check('simulateHostPhoneLost clears benign about:blank page errors', async () => {
+  const errors = ['A pageerror: localStorage denied'];
+  const page = {
+    goto: async () => {},
+  };
+  await simulateHostPhoneLost(page, { timeoutMs: 1000, label: 'host', errors });
+  assert.equal(errors.length, 0);
+});
+
 await check('closePhoneContext blanks the page before closing the context', async () => {
   const calls = [];
   const phone = {

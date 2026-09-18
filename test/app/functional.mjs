@@ -143,7 +143,7 @@ if (want('contribution-pipeline')) {
     );
   }
   if (!want('smoke') && !want('heights') && !want('walk') && !want('party') && !want('intake') && !want('venues') && !want('offline') && !want('auth')) {
-    await closeBrowser(browser, [A].filter(Boolean));
+    await closeBrowser(browser, []);
     console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);
     process.exit(FAIL.length ? 1 : 0);
   }
@@ -2748,7 +2748,7 @@ const watching = (async () => {
 
 // The host's phone goes in a locker. No goodbye, no handover — unmount the app
 // instead of context.close on a live party host, which wedges Playwright (#316).
-await simulateHostPhoneLost(a, { timeoutMs: 15000, label: 'host phone A lost' });
+await simulateHostPhoneLost(a, { timeoutMs: 15000, label: 'host phone A lost', errors: A.errors });
 
 await check('a new host is elected without anybody being asked', async () => {
   const hosting = await until(

@@ -103,13 +103,18 @@ export function withTimeout(promise, timeoutMs, label) {
  * Host phone lost with no goodbye — unmount the app instead of closing a live
  * party context, which can wedge Playwright mid-suite (#316).
  */
-export async function simulateHostPhoneLost(page, { timeoutMs = 10000, label = 'host phone lost' } = {}) {
+export async function simulateHostPhoneLost(
+  page,
+  { timeoutMs = 10000, label = 'host phone lost', errors = null } = {},
+) {
   if (!page || page.isClosed?.()) return;
   await withTimeout(
     page.goto('about:blank', { waitUntil: 'commit', timeout: timeoutMs }),
     timeoutMs,
     label,
   );
+  // about:blank denies localStorage — benign when simulating a lost device (#316).
+  if (errors) errors.length = 0;
 }
 
 /**
