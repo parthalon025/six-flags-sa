@@ -364,8 +364,8 @@ const ENTRIES = [
     commercial_ok: true,
     evidence_sources: [],
     integration: 'low',
-    overlap: 'Public Nominatim in build-venue.mjs',
-    notes: 'Self-hosted option for reproducible place resolution.',
+    overlap: 'Public Nominatim in build-venue.mjs; override with VENUE_NOMINATIM_URL',
+    notes: 'Self-hosted option for reproducible place resolution. Point the builder at your instance with VENUE_NOMINATIM_URL (or NOMINATIM_URL).',
   },
 
   // —— Routing engines ——

@@ -11,12 +11,12 @@ import { existsSync } from 'node:fs';
 import { loadCatalog } from '../lib/top-parks-catalog.mjs';
 import { recipeFile } from '../lib/venue-recipe.mjs';
 import { OVERRIDE_DIR, writeJson } from '../lib/venue-io.mjs';
+import { buildNominatimSearchRequestUrl } from '../lib/nominatim-config.mjs';
 
-const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 const UA = 'six-flags-sa-venue-research/1.0 (+https://github.com/parthalon025/six-flags-sa)';
 
 async function resolvePlace(query) {
-  const url = `${NOMINATIM}?q=${encodeURIComponent(query)}&format=json&limit=1&polygon_geojson=0`;
+  const url = buildNominatimSearchRequestUrl(query);
   const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': 'en' }, signal: AbortSignal.timeout(20000) });
   if (!res.ok) throw new Error(`Nominatim ${res.status}`);
   const hits = await res.json();

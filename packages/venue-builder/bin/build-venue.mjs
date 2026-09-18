@@ -74,13 +74,13 @@ import {
   pipelineOptsForPark,
 } from '../lib/build-pipeline.mjs';
 import { loadCatalog, selectParks, withIds } from '../lib/top-parks-catalog.mjs';
+import { buildNominatimSearchRequestUrl } from '../lib/nominatim-config.mjs';
 
 const OVERPASS = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
 ];
-const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 const UA = 'parkbound-venue-builder/1.0 (+https://github.com/parthalon025/six-flags-sa)';
 
 /* ------------------------------------------------------------------ args - */
@@ -194,7 +194,7 @@ rebuild → attractions → agent → certify):
 /* ------------------------------------------------------------- resolving - */
 
 async function resolvePlace(query) {
-  const url = `${NOMINATIM}?q=${encodeURIComponent(query)}&format=json&limit=1&polygon_geojson=0&extratags=1`;
+  const url = buildNominatimSearchRequestUrl(query, { extratags: true });
   const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': 'en' } });
   if (!res.ok) throw new Error(`Nominatim said ${res.status}. Try --bbox instead.`);
   const hits = await res.json();
