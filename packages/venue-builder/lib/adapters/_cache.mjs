@@ -29,6 +29,7 @@ export const ADAPTER_CACHE_SUFFIX = {
   'esa-worldcover': 'esa-worldcover',
   'overture-buildings': 'overture-buildings',
   openrouteservice: 'openrouteservice',
+  graphhopper: 'graphhopper',
   playwright: 'official',
   'google-places': 'google-places',
 };
