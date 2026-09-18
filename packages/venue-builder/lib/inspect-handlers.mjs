@@ -15,6 +15,10 @@ import {
   certificationDashboard,
   certificationDetail,
 } from './inspect-certification.mjs';
+import {
+  georefDashboard,
+  georefDetail,
+} from './georef-trace-loop.mjs';
 import { MANIFEST_FILE } from '../src/paths.mjs';
 
 const MIME = {
@@ -47,6 +51,21 @@ export function createInspectHandler(opts) {
     if (url.pathname === '/api/certifications') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(certificationDashboard({ overrideDir, manifestPath })));
+      return;
+    }
+
+    if (url.pathname === '/api/georefs') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(georefDashboard({ overrideDir, manifestPath })));
+      return;
+    }
+
+    const georefApi = url.pathname.match(/^\/api\/georef\/([^/]+)$/);
+    if (georefApi) {
+      const venueId = decodeURIComponent(georefApi[1]);
+      const detail = georefDetail(venueId, { overrideDir });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(detail));
       return;
     }
 

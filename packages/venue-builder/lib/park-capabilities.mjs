@@ -48,7 +48,7 @@ export const CAPABILITIES = [
   {
     id: 'trace',
     weakness: 'missing-poi',
-    tool: 'npm run venues:trace -- --scaffold <id>  →  fill controls  →  npm run venues:trace -- data/venues/<id>/trace.json --wire',
+    tool: 'npm run venues:trace -- --scaffold <id>  →  fill controls  →  npm run venues:trace-fit -- <id> --wire',
     file: 'data/venues/<id>/trace.json → <id>/traced.geojson',
     note:
       'Georeference official park maps (including not-to-scale / schematic) with TPS; '

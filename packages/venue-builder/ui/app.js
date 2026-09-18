@@ -14,13 +14,16 @@ function esc(s) {
 }
 
 async function load() {
-  const [compareRes, certRes] = await Promise.all([
+  const [compareRes, certRes, georefRes] = await Promise.all([
     fetch('/api/compare'),
     fetch('/api/certifications'),
+    fetch('/api/georefs'),
   ]);
   const data = await compareRes.json();
   const certifications = certRes.ok ? await certRes.json() : null;
+  const georefs = georefRes.ok ? await georefRes.json() : null;
   const certByVenue = new Map((certifications?.venues || []).map((v) => [v.venueId, v]));
+  const georefByVenue = new Map((georefs?.venues || []).map((v) => [v.venueId, v]));
 
   root.innerHTML = '';
 
@@ -39,11 +42,22 @@ async function load() {
     root.appendChild(certSum);
   }
 
+  if (georefs?.withTrace) {
+    const georefSum = document.createElement('p');
+    georefSum.className = 'summary cert-summary';
+    const parts = [`${georefs.withReport} of ${georefs.withTrace} traced venues have georef reports`];
+    if (georefs.accepted) parts.push(`${georefs.accepted} accepted`);
+    if (georefs.rejected) parts.push(`${georefs.rejected} over budget`);
+    georefSum.textContent = parts.join(' · ');
+    root.appendChild(georefSum);
+  }
+
   const grid = document.createElement('div');
   grid.className = 'grid';
 
   for (const { stats, issues } of data.reports) {
     const cert = certByVenue.get(stats.id);
+    const georef = georefByVenue.get(stats.id);
     const card = document.createElement('article');
     const driftClass = stats.ok ? 'ok' : 'fail';
     const certClass = cert?.available ? (cert.certified ? 'cert-ok' : 'cert-fail') : 'cert-missing';
@@ -82,6 +96,15 @@ async function load() {
     if (stats.actual.campsites) rows.push(['Campsites', stats.actual.campsites]);
     if (cert?.available) {
       rows.push(['Cert checks', `${cert.checksPassed} / ${cert.checksTotal} pass`]);
+    }
+    if (georef?.hasTrace) {
+      if (georef.available) {
+        const rms = georef.rmsM == null ? '?' : `${georef.rmsM.toFixed(1)} m`;
+        const budget = georef.budgetM == null ? '?' : `${georef.budgetM} m`;
+        rows.push(['Georef fit', georef.accepted ? `${rms} RMS (≤ ${budget})` : `rejected — ${rms} > ${budget}`]);
+      } else {
+        rows.push(['Georef fit', 'trace present — not fitted yet']);
+      }
     }
     for (const [k, v] of rows) {
       dl.innerHTML += `<dt>${k}:</dt><dd>${v}</dd>`;
@@ -153,6 +176,15 @@ async function load() {
       actions.appendChild(certBtn);
     }
 
+    if (georef?.hasTrace) {
+      const georefBtn = document.createElement('button');
+      georefBtn.type = 'button';
+      georefBtn.className = 'cert-detail-btn';
+      georefBtn.textContent = 'Georef fit report';
+      georefBtn.addEventListener('click', () => toggleGeorefDetail(card, stats.id));
+      actions.appendChild(georefBtn);
+    }
+
     const approve = document.createElement('button');
     approve.type = 'button';
     approve.className = `approve ${approvals[stats.id] ? 'on' : ''}`;
@@ -171,6 +203,26 @@ async function load() {
 
   root.appendChild(grid);
   await markEvidenceLinks(grid);
+}
+
+async function toggleGeorefDetail(card, venueId) {
+  const existing = card.querySelector('.georef-detail');
+  if (existing) {
+    existing.remove();
+    return;
+  }
+  const panel = document.createElement('div');
+  panel.className = 'cert-detail georef-detail';
+  panel.innerHTML = '<p class="loading">Loading georef fit report…</p>';
+  card.appendChild(panel);
+  try {
+    const res = await fetch(`/api/georef/${encodeURIComponent(venueId)}`);
+    if (!res.ok) throw new Error(`georef ${res.status}`);
+    const data = await res.json();
+    panel.innerHTML = `<pre class="cert-markdown">${esc(data.markdown || 'No georef report yet.')}</pre>`;
+  } catch (e) {
+    panel.innerHTML = `<p class="issues">Failed to load georef report: ${esc(e.message)}</p>`;
+  }
 }
 
 async function toggleCertDetail(card, venueId) {

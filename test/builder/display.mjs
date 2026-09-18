@@ -1560,7 +1560,7 @@ await check('the style cert carries the label row when a spec rides along', () =
 
 await check('display is a pipeline stage after certify, opt-in via --display', () => {
   assert.deepEqual(STAGES, [
-    'sources', 'geometry', 'research', 'aliases', 'heights', 'rebuild',
+    'sources', 'geometry', 'research', 'aliases', 'heights', 'trace', 'rebuild',
     'attractions', 'agent', 'certify', 'display',
   ]);
   const args = parseCatalogArgs(['--pipeline', '--display']);
