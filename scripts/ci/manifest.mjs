@@ -82,6 +82,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/builder-certify-ci.test.mjs',
   'test/scripts/build-venue-workflow.test.mjs',
   'test/scripts/build-top100-workflow.test.mjs',
+  'test/scripts/official-research-workflow.test.mjs',
   'test/scripts/builder-app-contract.test.mjs',
   'test/scripts/compare-cert-freshness.test.mjs',
   'test/scripts/neon-runbook.test.mjs',
