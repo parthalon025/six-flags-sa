@@ -5,6 +5,7 @@
 
 import { cachePath, readCache, writeCache, fetchJson } from './_cache.mjs';
 import { pairSuggestions } from '../venue-judge.mjs';
+import { QUEUE_TIMES_PARK_IDS } from '../park-slug-map.mjs';
 // Pure name work, moved to a leaf so callers that only want the comparison do
 // not inherit this module's venue reads (#29). Re-exported for existing callers.
 import { compareQueueTimesToBundle } from '../inventory-compare.mjs';
@@ -30,7 +31,12 @@ async function loadParksIndex() {
   return flat;
 }
 
-function resolveParkId(venueName, parks) {
+function resolveParkId(venueName, parks, venueId) {
+  const overrideId = venueId && QUEUE_TIMES_PARK_IDS[venueId];
+  if (overrideId != null) {
+    const park = parks.find((p) => p.id === overrideId);
+    if (park) return { id: park.id, name: park.name, group: park.group };
+  }
   const names = parks.map((p) => p.name);
   const hit = pairSuggestions([venueName], names, { floor: 0.82, limit: 1 })[0];
   if (!hit) return null;
@@ -44,7 +50,7 @@ export async function loadQueueTimesData(venueId, { venueName, fetch = false, of
   if (!fetch && cached?.rides?.length) return cached;
 
   const parks = await loadParksIndex();
-  const match = resolveParkId(venueName || venueId, parks);
+  const match = resolveParkId(venueName || venueId, parks, venueId);
   if (!match) {
     return cached || {
       fetched: null,

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "venue": "universal-studios-florida",
+  "fetched": "2026-08-28",
+  "pages": [
+    {
+      "id": "universal-studios-florida-site",
+      "url": "https://www.universalorlando.com/web/en/us/things-to-do/rides-attractions/universal-studios-florida",
+      "kind": "official_site",
+      "via": "fetch"
+    }
+  ],
+  "attractions": [],
+  "errors": []
+}

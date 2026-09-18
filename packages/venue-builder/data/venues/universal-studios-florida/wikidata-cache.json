@@ -1,0 +1,18 @@
+{
+  "fetched": "2026-08-28",
+  "source": "wikidata.org",
+  "license": "CC0",
+  "search": "Universal Studios Florida",
+  "entity": {
+    "qid": "Q1880820",
+    "label": "Universal Studios Florida",
+    "website": "http://www.universalorlando.com/Theme_Parks/Universal_Studios_Orlando/universal_studios_florida.aspx",
+    "coordinates": {
+      "lat": 28.475,
+      "lng": -81.47
+    },
+    "inception": "1990-00-00",
+    "operator": {},
+    "wikipedia": null
+  }
+}

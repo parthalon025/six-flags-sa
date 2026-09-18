@@ -1,0 +1,1258 @@
+{
+  "fetched": "2026-08-28",
+  "parkId": "eb3f4560-2383-4a36-9152-6b3e5ed6bc57",
+  "parkName": "Universal Studios Florida",
+  "source": "api.themeparks.wiki",
+  "attractions": [
+    {
+      "id": "2436bad1-f319-44d5-98ac-a283b81956c6",
+      "name": "The Bourne Stuntacular",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.shows.the_bourne_stuntacular",
+      "at": {
+        "lat": 28.475976,
+        "lng": -81.466979
+      }
+    },
+    {
+      "id": "9416a7f6-53a3-4214-9fd6-2e6b62bcdda2",
+      "name": "Knight Bus™",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.shows.knight_bus",
+      "at": {
+        "lat": 28.479407,
+        "lng": -81.469107
+      }
+    },
+    {
+      "id": "079c0df0-7305-4f61-ab0e-c7725f4fe1b6",
+      "name": "Animal Actors on Location!™",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.shows.animal_actors_on_location",
+      "at": {
+        "lat": 28.478321,
+        "lng": -81.46791
+      }
+    },
+    {
+      "id": "ec4c8603-5ccd-4af2-a7b1-0684664c0bc1",
+      "name": "The Tales of Beedle the Bard",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.shows.thetalesofbeedlethebard",
+      "at": {
+        "lat": 28.479921,
+        "lng": -81.469499
+      }
+    },
+    {
+      "id": "96e71193-49f0-40b2-9bba-644e530d8115",
+      "name": "Kang & Kodos' Twirl 'n' Hurl",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.kang_and_kodos_twirl_n_hurl",
+      "at": {
+        "lat": 28.479352,
+        "lng": -81.467877
+      }
+    },
+    {
+      "id": "1e16afdd-15e3-4e4a-b3af-8aeebd7534f8",
+      "name": "E.T. Adventure",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.e.t._adventure",
+      "at": {
+        "lat": 28.4779505,
+        "lng": -81.4670917
+      }
+    },
+    {
+      "id": "7e70bc9e-7dce-4dd2-8823-57b8d6ec7570",
+      "name": "The Simpsons Ride™",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.the_simpsons_ride",
+      "at": {
+        "lat": 28.479604,
+        "lng": -81.467788
+      }
+    },
+    {
+      "id": "625a3cc3-7d7e-468b-96fe-1ec00df7b739",
+      "name": "Race Through New York Starring Jimmy Fallon™",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.race_through_new_york_starring_jimmy_fallon",
+      "at": {
+        "lat": 28.475881,
+        "lng": -81.469363
+      }
+    },
+    {
+      "id": "ad77757d-0660-48ee-972a-031d555b71ee",
+      "name": "Finnegan's Bar and Grill™",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.finnegans_bar_and_grill",
+      "at": {
+        "lat": 28.47666,
+        "lng": -81.46916
+      }
+    },
+    {
+      "id": "f0750e5e-7629-4c53-99d2-e0924a8afeed",
+      "name": "Hogwarts Express™ - King's Cross Station",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.hogwarts_express_-_kings_cross_station",
+      "at": {
+        "lat": 28.479079,
+        "lng": -81.46944
+      }
+    },
+    {
+      "id": "ec25d9a7-b4d4-4ebf-a6c4-c18389351764",
+      "name": "Revenge of the Mummy™",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.revenge_of_the_mummy",
+      "at": {
+        "lat": 28.4766,
+        "lng": -81.46954
+      }
+    },
+    {
+      "id": "70ac72a3-9675-4c41-a1b1-e4801072927a",
+      "name": "Harry Potter and the Escape from Gringotts™",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.harry_potter_and_the_escape_from_gringotts",
+      "at": {
+        "lat": 28.479719,
+        "lng": -81.469922
+      }
+    },
+    {
+      "id": "1cf7e8a5-6611-44a9-acf1-fbff7a835056",
+      "name": "Universal Orlando's Horror Make-Up Show™",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.shows.horrormakeupshow",
+      "at": {
+        "lat": 28.47684,
+        "lng": -81.46732
+      }
+    },
+    {
+      "id": "e99b72a6-37d0-46df-ab11-e9ff6603f259",
+      "name": "Ollivanders™ Experience in Diagon Alley™",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.shows.ollivanders",
+      "at": {
+        "lat": 28.47964,
+        "lng": -81.46973
+      }
+    },
+    {
+      "id": "a492aa01-6f29-43f0-9aec-8adcb8da4674",
+      "name": "Meet The TRANSFORMERS™",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.shows.meet_the_transformers",
+      "at": {
+        "lat": 28.476183,
+        "lng": -81.468079
+      }
+    },
+    {
+      "id": "55222885-493c-4280-b295-6fd7c609f12d",
+      "name": "Hollywood Character Zone",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.shows.hollywood_character_zone",
+      "at": {
+        "lat": 28.475461,
+        "lng": -81.467616
+      }
+    },
+    {
+      "id": "cfa3227c-259d-40ff-93b3-edc9efc3ebca",
+      "name": "Lombard's Seafood Grille™",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.lombards_seafood_grille",
+      "at": {
+        "lat": 28.478761,
+        "lng": -81.469118
+      }
+    },
+    {
+      "id": "2122adff-52a3-49ca-9d20-5a6faafc8c77",
+      "name": "Hogwarts™ Express - Last Train",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.hogwarts_express_last_train",
+      "at": {
+        "lat": 28.475957,
+        "lng": -81.47126
+      }
+    },
+    {
+      "id": "703771a5-04fc-4e37-8cde-1c0e8329238a",
+      "name": "King Harold’s Swamp Symphony",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.show.king_harolds_swamp_symphony",
+      "at": {
+        "lat": 28.47828,
+        "lng": -81.46692
+      }
+    },
+    {
+      "id": "95902d20-daf8-4ea3-bfc1-ed006d815cc3",
+      "name": "Mama Luna Feline Fiesta",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.show.mama.luna.feline.fiesta",
+      "at": {
+        "lat": 28.4785666,
+        "lng": -81.4668771
+      }
+    },
+    {
+      "id": "2cc09dfe-3c19-4cbe-8480-11ab00122c51",
+      "name": "Po’s Kung Fu Training Camp",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.show.pos_kung_fu_training_camp",
+      "at": {
+        "lat": 28.4786329,
+        "lng": -81.4662108
+      }
+    },
+    {
+      "id": "36f026c7-c9b4-4ccf-9a04-6afac3509d34",
+      "name": "Poppy’s Playground",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.show.poppys_playground",
+      "at": {
+        "lat": 28.4786612,
+        "lng": -81.466514
+      }
+    },
+    {
+      "id": "e0458a57-04cc-4de7-a79d-556bd8488dd6",
+      "name": "Summer Music Series",
+      "entityType": "SHOW",
+      "externalId": "uor.events.summer.summer.music.series",
+      "at": {
+        "lat": 28.473249,
+        "lng": -81.466176
+      }
+    },
+    {
+      "id": "98eff124-c645-4451-b723-7456d45faaeb",
+      "name": "Po Live!",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.show.po-live",
+      "at": {
+        "lat": 28.4788418,
+        "lng": -81.4657229
+      }
+    },
+    {
+      "id": "2f4690b4-72b0-4845-bcce-9e735397d60b",
+      "name": "The Blues Brothers® Show",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.shows.blues_brothers",
+      "at": {
+        "lat": 28.47684,
+        "lng": -81.46916
+      }
+    },
+    {
+      "id": "1524b67b-4984-4a80-9d9f-753b8482c6f0",
+      "name": "Celestina Warbeck and the Banshees",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.shows.celestina_warbeck_and_the_banshees",
+      "at": {
+        "lat": 28.479902,
+        "lng": -81.469456
+      }
+    },
+    {
+      "id": "bf89766b-1d19-428f-9e68-71e12f25287b",
+      "name": "Marilyn and the Diamond Bellas",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.shows.marilyn_and_the_diamond_bellas",
+      "at": {
+        "lat": 28.476759192506524,
+        "lng": -81.46773453566455
+      }
+    },
+    {
+      "id": "335480e2-3110-4e40-b7e0-5f078fedd7af",
+      "name": "Universal Mega Movie Parade",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.shows.universalmegamovieparade",
+      "at": {
+        "lat": 28.47713,
+        "lng": -81.46699
+      }
+    },
+    {
+      "id": "fa701040-b46a-4291-afb9-b8dc2c8e9a16",
+      "name": "¡Vamos! – Báilalo",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.shows.vamos_bailalo",
+      "at": {
+        "lat": 28.477172,
+        "lng": -81.469199
+      }
+    },
+    {
+      "id": "41d282f8-2015-4caa-9591-9faa948e263e",
+      "name": "Beat Builders",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.shows.beat_builders",
+      "at": {
+        "lat": 28.477544,
+        "lng": -81.46916
+      }
+    },
+    {
+      "id": "5c5dec98-962b-4808-ac6d-09feb283b771",
+      "name": "CineSational: A Symphonic Spectacular",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.shows.cinesationalasymphonicspectacular",
+      "at": {
+        "lat": 28.47713,
+        "lng": -81.46824
+      }
+    },
+    {
+      "id": "37c2afe6-c598-4077-9c20-30f5af685937",
+      "name": "Richter's Burger Co.™",
+      "entityType": "RESTAURANT",
+      "externalId": "uo.usf.dining.richters_burger_co.",
+      "at": {
+        "lat": 28.4780931,
+        "lng": -81.469118
+      }
+    },
+    {
+      "id": "f9e9ad37-3a5a-4619-b75c-2d01bf067795",
+      "name": "Auntie Anne's",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.auntie_annes",
+      "at": {
+        "lat": 28.476867,
+        "lng": -81.469244
+      }
+    },
+    {
+      "id": "8fa8c820-dba1-453e-8f8f-51e72b5dedbb",
+      "name": "Avenue Eats",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.avenue_eats",
+      "at": {
+        "lat": 28.47637,
+        "lng": -81.46934
+      }
+    },
+    {
+      "id": "caa64d85-21a3-4547-a1fb-77ae73dc3f67",
+      "name": "DreamWorks Imagination Café",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.dreamworks.imagination.cafe",
+      "at": {
+        "lat": 28.477785298395165,
+        "lng": -81.46738569578051
+      }
+    },
+    {
+      "id": "858aa5cd-0b09-4c9f-ba41-970450415ec6",
+      "name": "Flaming Moe's",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.flaming_moes",
+      "at": {
+        "lat": 28.4787754,
+        "lng": -81.4678894
+      }
+    },
+    {
+      "id": "0666c2aa-ac92-46f2-adda-2cbdf1381a8f",
+      "name": "Florean Fortescue’s Ice-Cream Parlour",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.florean_fortescues_ice_cream_parlour",
+      "at": {
+        "lat": 28.479613,
+        "lng": -81.469838
+      }
+    },
+    {
+      "id": "c5a26666-f933-4166-acf8-311a6eb5be17",
+      "name": "Duff Brewery",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.duff_brewery",
+      "at": {
+        "lat": 28.478957455803876,
+        "lng": -81.46819598498361
+      }
+    },
+    {
+      "id": "cebfe23a-e842-4795-b9b3-a920fe4073bd",
+      "name": "Fast Food Boulevard",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.fast_food_boulevard",
+      "at": {
+        "lat": 28.478805626866453,
+        "lng": -81.46777059706855
+      }
+    },
+    {
+      "id": "fcc78e23-f8b5-4007-aedf-17264d8ffd48",
+      "name": "Mel's Drive-In™",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.mels_drive-in",
+      "at": {
+        "lat": 28.47675,
+        "lng": -81.46777
+      }
+    },
+    {
+      "id": "66249592-1cfa-429d-a862-bbe4b83e1ba8",
+      "name": "Starbucks® Coffee",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.starbucks",
+      "at": {
+        "lat": 28.4772028,
+        "lng": -81.4690265
+      }
+    },
+    {
+      "id": "b21b12a9-204d-442c-80b7-5384de186262",
+      "name": "Swamp Snacks",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.swamp_snacks",
+      "at": {
+        "lat": 28.4781786,
+        "lng": -81.4670725
+      }
+    },
+    {
+      "id": "981be57c-d57c-476c-a1f4-2ce732623296",
+      "name": "Bumblebee Man's Taco Truck",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.bumblebee_mans_taco_truck",
+      "at": {
+        "lat": 28.47861,
+        "lng": -81.4681
+      }
+    },
+    {
+      "id": "44114116-77b4-4d66-960d-90a4d9c7d59e",
+      "name": "Cafe La Bamba™",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.cafe_la_bamba",
+      "at": {
+        "lat": 28.4772198,
+        "lng": -81.467467
+      }
+    },
+    {
+      "id": "92be5d61-f6b9-4786-9d1e-ab7d97a5147c",
+      "name": "Central Park Crêpes",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.central_park_crepes",
+      "at": {
+        "lat": 28.47731,
+        "lng": -81.46781
+      }
+    },
+    {
+      "id": "441e9951-559d-480c-9c82-ed417447f884",
+      "name": "Chez Alcatraz™",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.chez_alcatraz",
+      "at": {
+        "lat": 28.4784443,
+        "lng": -81.4690517
+      }
+    },
+    {
+      "id": "3b66e42a-c16a-45e1-b257-8eade74b4abb",
+      "name": "Cletus' Chicken Shack",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.cletus_chicken_shack",
+      "at": {
+        "lat": 28.478883,
+        "lng": -81.4678844
+      }
+    },
+    {
+      "id": "3e761cbc-c8bc-46a2-9b67-d76b6bc56842",
+      "name": "Coca-Cola Refresh Lounge",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.coke_refresh",
+      "at": {
+        "lat": 28.47999,
+        "lng": -81.46767
+      }
+    },
+    {
+      "id": "dda18515-d9da-4d4c-a7d2-ed38386bad6d",
+      "name": "Freeze Ray Pops",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.freeze_ray_pops_cart",
+      "at": {
+        "lat": 28.47578665848806,
+        "lng": -81.46855082101615
+      }
+    },
+    {
+      "id": "50d25d95-f9f8-4e80-914d-43f36f26e255",
+      "name": "Häagen-Dazs®",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.haagen_dazs",
+      "at": {
+        "lat": 28.4771,
+        "lng": -81.46912
+      }
+    },
+    {
+      "id": "36372cec-7971-4c91-bd1e-86317273ff7f",
+      "name": "Leaky Cauldron™",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.leaky_cauldron",
+      "at": {
+        "lat": 28.479469,
+        "lng": -81.469505
+      }
+    },
+    {
+      "id": "12180a82-e57e-42ec-9f0f-fdc3132a9132",
+      "name": "Lisa's Teahouse of Horror",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.lisas_teahouse_of_horror",
+      "at": {
+        "lat": 28.4787825,
+        "lng": -81.4679381
+      }
+    },
+    {
+      "id": "5538b31f-a6ca-4a9e-8d75-70cb0f9a6aed",
+      "name": "Illumination’s Minion Cafe Pickup",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.minion_cafe_pickup",
+      "at": {
+        "lat": 28.475842,
+        "lng": -81.468758
+      }
+    },
+    {
+      "id": "60d1bf89-a7a8-4e75-9188-ecd4291531b6",
+      "name": "Moe's Tavern",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.moes_tavern",
+      "at": {
+        "lat": 28.47884648062367,
+        "lng": -81.46797278905335
+      }
+    },
+    {
+      "id": "843e8552-2a6f-4e33-b290-222ac9def9b9",
+      "name": "Krusty Burger",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.krusty_burger",
+      "at": {
+        "lat": 28.4788238,
+        "lng": -81.4679088
+      }
+    },
+    {
+      "id": "2e823b46-0d5a-48a6-a824-a9b66932bd7e",
+      "name": "Lagoon Lemonade",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.lagoon_lemonade",
+      "at": {
+        "lat": 28.4799,
+        "lng": -81.46861
+      }
+    },
+    {
+      "id": "37764450-3c0f-41d9-9ec3-73043e1625ea",
+      "name": "Lard Lad Donuts",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.lard_lad_donuts",
+      "at": {
+        "lat": 28.47869,
+        "lng": -81.46814
+      }
+    },
+    {
+      "id": "175a559d-bd35-4840-babc-3c2a86b3d878",
+      "name": "Louie's Italian Restaurant™",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.louies_italian_restaurant",
+      "at": {
+        "lat": 28.477319,
+        "lng": -81.469143
+      }
+    },
+    {
+      "id": "0e2876a8-0fae-41b9-8df4-0309e7b36cfb",
+      "name": "Luigi's Pizza",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.luigis_pizza",
+      "at": {
+        "lat": 28.4787,
+        "lng": -81.4679
+      }
+    },
+    {
+      "id": "88d8b53f-14f4-4c89-bc6d-7139d37ffa40",
+      "name": "Illumination’s Minion Cafe",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.minion_cafe",
+      "at": {
+        "lat": 28.47593070087387,
+        "lng": -81.46848976288676
+      }
+    },
+    {
+      "id": "ce8cfe53-f5bf-4d2e-9ab2-37d2d0dd3602",
+      "name": "Production Central Food",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.production_central_food",
+      "at": {
+        "lat": 28.47577,
+        "lng": -81.46898
+      }
+    },
+    {
+      "id": "fb1f6bbe-de29-4c2c-b23e-7f63e2bdb7de",
+      "name": "San Francisco Pastry Company™",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.san_francisco_pastry_company",
+      "at": {
+        "lat": 28.478826,
+        "lng": -81.469325
+      }
+    },
+    {
+      "id": "15b8be23-a147-4e4b-8ca8-ccafa2a8c1f4",
+      "name": "Schwab's Pharmacy",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.schwabs_pharmacy",
+      "at": {
+        "lat": 28.4761729,
+        "lng": -81.4673764
+      }
+    },
+    {
+      "id": "f5b4ccba-82fe-422f-9377-2772103fff91",
+      "name": "MIB Icee",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.mib_icee",
+      "at": {
+        "lat": 28.48013,
+        "lng": -81.46785
+      }
+    },
+    {
+      "id": "d0a89ac7-9e54-4b02-a6b9-ee8c6ba8763c",
+      "name": "The Frying Dutchman",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.the_frying_dutchman",
+      "at": {
+        "lat": 28.4788132,
+        "lng": -81.4678858
+      }
+    },
+    {
+      "id": "6c983339-82c2-48b8-99fa-feff2051bc49",
+      "name": "Pop-A-Nana Popcorn and Drink Cart",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.pop_a_nana",
+      "at": {
+        "lat": 28.475897855699785,
+        "lng": -81.46890551774538
+      }
+    },
+    {
+      "id": "c6cc242d-cce0-45e1-86cf-d032625afe7e",
+      "name": "The Fountain of Fair Fortune",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.the_fountain_of_fair_fortune",
+      "at": {
+        "lat": 28.47955,
+        "lng": -81.46993
+      }
+    },
+    {
+      "id": "9b7ed2f3-2e63-4783-a2c8-a6192d5bdf08",
+      "name": "The Hopping Pot",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.the_hopping_pot",
+      "at": {
+        "lat": 28.47981,
+        "lng": -81.469318
+      }
+    },
+    {
+      "id": "98f6578b-1e62-4b3d-a1b0-a68cdce86483",
+      "name": "TODAY Cafe",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.today_cafe",
+      "at": {
+        "lat": 28.475402,
+        "lng": -81.467335
+      }
+    },
+    {
+      "id": "e25f291a-7551-47f3-829c-ad7e10ea1887",
+      "name": "Trolls Treats",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.trolls_treats",
+      "at": {
+        "lat": 28.4784653,
+        "lng": -81.4665719
+      }
+    },
+    {
+      "id": "f44a531c-09cf-40c4-b2d4-236e8a9285dc",
+      "name": "Hogwarts™ Express - First Train",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.hogwarts_express_first_train",
+      "at": {
+        "lat": 28.475957,
+        "lng": -81.47126
+      }
+    },
+    {
+      "id": "750939c5-a69e-408a-8d55-66c272fa265e",
+      "name": "TRANSFORMERS™ The Ride-3D",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.transformers_the_ride_3d",
+      "at": {
+        "lat": 28.47669,
+        "lng": -81.46856
+      }
+    },
+    {
+      "id": "7288f24a-396e-4eeb-bb3b-4a90e65269f2",
+      "name": "Despicable Me Minion Mayhem™",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.despicable_me_minion_mayhem",
+      "at": {
+        "lat": 28.475427896910254,
+        "lng": -81.467926026341
+      }
+    },
+    {
+      "id": "25d47d04-a917-405a-9904-9be2b499b2dd",
+      "name": "Illumination's Villain-Con Minion Blast",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.illuminations_villain_con_minion_blast",
+      "at": {
+        "lat": 28.475647291614678,
+        "lng": -81.46796680511655
+      }
+    },
+    {
+      "id": "37989fb7-5576-4247-bd6e-e981bc70cca2",
+      "name": "Trolls Trollercoaster",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.trolls_trollercoaster",
+      "at": {
+        "lat": 28.4785148,
+        "lng": -81.4663856
+      }
+    },
+    {
+      "id": "a54b961b-06d3-492c-88b5-201cb32399c2",
+      "name": "DreamWorks Character Zone",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.show.dreamworks_character_zone",
+      "at": {
+        "lat": 28.4781716,
+        "lng": -81.4672004
+      }
+    },
+    {
+      "id": "c85d936f-c5b7-490b-880b-6f0bf44ba557",
+      "name": "DreamWorks Imagination Celebration",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.show.dreamWorks_imagination_celebration",
+      "at": {
+        "lat": 28.4789917,
+        "lng": -81.4668949
+      }
+    },
+    {
+      "id": "333c6657-2a9f-4423-a7a2-bf0230bf669a",
+      "name": "Shrek’s Swamp Meet",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.show.shreks.swamp.meet",
+      "at": {
+        "lat": 28.4781559,
+        "lng": -81.4669
+      }
+    },
+    {
+      "id": "ad4b2cec-805f-4df5-9fd9-4cd14b15b9dd",
+      "name": "The Simpsons™ Character Zone",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.shows.simpsons_character_zone",
+      "at": {
+        "lat": 28.475677,
+        "lng": -81.467294
+      }
+    },
+    {
+      "id": "17dd3a01-3127-4e22-8d73-35680fa8b034",
+      "name": "Illumination Theater",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.shows.illumination_theater",
+      "at": {
+        "lat": 28.475880741323994,
+        "lng": -81.4683399259803
+      }
+    },
+    {
+      "id": "14af192d-dfce-4bdb-bf5c-1c1957499a6a",
+      "name": "Meet SpongeBob SquarePants and Friends",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.shows.meet_spongeBob_squarepants",
+      "at": {
+        "lat": 28.477885,
+        "lng": -81.467342
+      }
+    },
+    {
+      "id": "91cae293-64f8-48b6-88ec-02dcfcdd1f91",
+      "name": "MEN IN BLACK™ Alien Attack!",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.men_in_black_alien_attack",
+      "at": {
+        "lat": 28.480441,
+        "lng": -81.468043
+      }
+    },
+    {
+      "id": "12a4b7d4-3a27-48dd-b355-99fe9f8aab37",
+      "name": "Stranger Things 5",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.hhn_haunted_house_stranger_things_5",
+      "at": {
+        "lat": 28.4741,
+        "lng": -81.46926
+      }
+    },
+    {
+      "id": "24712410-a3a8-4ee0-b2f7-df889424ae76",
+      "name": "Sinners",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.hhn_haunted_house_sinners",
+      "at": {
+        "lat": 28.480557,
+        "lng": -81.46841
+      }
+    },
+    {
+      "id": "48f99577-cfc3-40b4-8161-844300c823d4",
+      "name": "Ozzy Osbourne: Prince of Darkness",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.hhn_haunted_house_ozzy_osbourne_prince_of_darkness",
+      "at": {
+        "lat": 28.47481,
+        "lng": -81.47005
+      }
+    },
+    {
+      "id": "41c4491c-f3d9-41e5-963c-21a10a255b39",
+      "name": "Cybergoria",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.hhn_haunted_house_cybergoria",
+      "at": {
+        "lat": 28.47779,
+        "lng": -81.469558
+      }
+    },
+    {
+      "id": "be4bc36e-e2d8-474b-9ea7-74c0e3e6c82d",
+      "name": "Evil Dead Burn",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.hhn_haunted_house_evil_dead_burn",
+      "at": {
+        "lat": 28.47436,
+        "lng": -81.46923
+      }
+    },
+    {
+      "id": "99accf82-ca8d-425d-abc8-33e69aee75e9",
+      "name": "H.R. Bloodengutz Presents: A Halloween Fright-Tacular!",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.hhn_haunted_house_halloween_fright-tacular",
+      "at": {
+        "lat": 28.480165,
+        "lng": -81.467529
+      }
+    },
+    {
+      "id": "98ac6a78-0320-4949-8824-934d0e73e4e2",
+      "name": "Hellraiser",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.hhn_haunted_house_hellraiser",
+      "at": {
+        "lat": 28.48037,
+        "lng": -81.46844
+      }
+    },
+    {
+      "id": "53ac1ddd-51b1-4b5b-a72b-3a7b3e25397a",
+      "name": "INVASION: Alien Abduction",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.hhn_haunted_house_invasion_alien_abduction",
+      "at": {
+        "lat": 28.479192,
+        "lng": -81.46778
+      }
+    },
+    {
+      "id": "709e0baf-dd74-4b4e-9d19-7092336c0846",
+      "name": "Jack & Oddfellow: Chaos & Control",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.hhn_haunted_house_jack_oddfellow_chaos_control",
+      "at": {
+        "lat": 28.475643,
+        "lng": -81.468688
+      }
+    },
+    {
+      "id": "6b57dae1-a6e9-42ba-b59d-8ef4ee8ae11e",
+      "name": "MADLANDS: Caged Cannibals",
+      "entityType": "ATTRACTION",
+      "externalId": "uor.usf.rides.hhn_haunted_house_madlands_caged_cannibals",
+      "at": {
+        "lat": 28.47488,
+        "lng": -81.46997
+      }
+    },
+    {
+      "id": "06ed53f9-3f1b-4ff2-94f2-0ce45015b62a",
+      "name": "Nightmare Fuel: Blood Noir",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.events.hhn_2026_show_nightmare_fuel_blood_noir",
+      "at": {
+        "lat": 28.480316,
+        "lng": -81.468868
+      }
+    },
+    {
+      "id": "c08df5ba-1141-4968-b748-5e7802885ec0",
+      "name": "Stranger Things: Return to Hawkins",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.events.hhn_2026_show_stranger_things_return_to_hawkins",
+      "at": {
+        "lat": 28.477227,
+        "lng": -81.467904
+      }
+    },
+    {
+      "id": "5bb5ab04-4771-46d0-bad5-22a3c5433794",
+      "name": "Downtown Clowntown",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.events.hhn_2026_scare_zone_downtown_clowntime",
+      "at": {
+        "lat": 28.476137,
+        "lng": -81.46965
+      }
+    },
+    {
+      "id": "e78625e3-1216-4781-8049-18c0c2f32ccb",
+      "name": "Death Eaters™ Encounter",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.entertainment.hhn_2026_death_eaters_encounter",
+      "at": {
+        "lat": 28.479579,
+        "lng": -81.469605
+      }
+    },
+    {
+      "id": "3499f8d1-4d85-4dee-a040-9680f575af83",
+      "name": "Club Horror",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.events.hhn_2026_entertainment_club_horror",
+      "at": {
+        "lat": 28.47853,
+        "lng": -81.469332
+      }
+    },
+    {
+      "id": "bfa1be3c-9969-4ca2-952a-57d72c2a733b",
+      "name": "HamiKuma Meet and Greet",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.events.hhn_2026_entertainment_hamikuma_meet_and_greet",
+      "at": {
+        "lat": 28.476481,
+        "lng": -81.467025
+      }
+    },
+    {
+      "id": "a4873845-b636-4a8e-b05d-56c8b679a95b",
+      "name": "Mel’s Die In Zombies",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.events.hhn_2026_entertainment_mels_die_in_zombies",
+      "at": {
+        "lat": 28.476778,
+        "lng": -81.467726
+      }
+    },
+    {
+      "id": "8a0391cd-58a4-4207-ba16-41317a0dc454",
+      "name": "Fortnitemares",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.events.hhn_2026_scare_zone_fortnitemares",
+      "at": {
+        "lat": 28.477379,
+        "lng": -81.46781
+      }
+    },
+    {
+      "id": "9c70ebb3-365c-4718-b842-41dda23266f4",
+      "name": "Infernal Carnival of Nightmares",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.events.hhn_2026_scare_zone_infernal_carnival_of_nightmares",
+      "at": {
+        "lat": 28.475393,
+        "lng": -81.467691
+      }
+    },
+    {
+      "id": "9bedf3c6-a063-4870-8dd5-6dfa9d9d7bf8",
+      "name": "Sideshow of Decay",
+      "entityType": "SHOW",
+      "externalId": "uor.usf.events.hhn_2026_scare_zone_sideshow_of_decay",
+      "at": {
+        "lat": 28.476199,
+        "lng": -81.467172
+      }
+    },
+    {
+      "id": "a7bf6b52-299a-4d9f-af5a-4d36d80dbdea",
+      "name": "Beer Trailer",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.beer_trailer",
+      "at": {
+        "lat": 28.480167,
+        "lng": -81.468611
+      }
+    },
+    {
+      "id": "14083168-ba51-4803-a05a-b62db46ef540",
+      "name": "Club Horror Bar",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.club_horror_bar",
+      "at": {
+        "lat": 28.478611,
+        "lng": -81.469417
+      }
+    },
+    {
+      "id": "75379303-5352-4ef3-b9f0-86dc08352d26",
+      "name": "Crosshairs Coop Food Booth",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.crosshairs_coop_food_booth",
+      "at": {
+        "lat": 28.477,
+        "lng": -81.468861
+      }
+    },
+    {
+      "id": "751f9e77-92e4-416f-877a-5a4f010af013",
+      "name": "Death Tank Food Booth",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.death_tank_food_booth",
+      "at": {
+        "lat": 28.476083,
+        "lng": -81.469028
+      }
+    },
+    {
+      "id": "da6eae29-af04-44a5-9a94-b8b57b5ea62a",
+      "name": "Devilish Delights Food Booth",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.devilish_delights_food_booth",
+      "at": {
+        "lat": 28.476194,
+        "lng": -81.468972
+      }
+    },
+    {
+      "id": "89d342f0-bf28-4bb4-a5f5-afc33573f828",
+      "name": "Dia de los Muertos Bar",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.dia_de_los_muertos_bar",
+      "at": {
+        "lat": 28.478265,
+        "lng": -81.467731
+      }
+    },
+    {
+      "id": "1ee2bf42-e17c-40cd-ad85-a28293fe9749",
+      "name": "Dia de los Muertos Food Booth",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.dia_de_los_muertos_food_booth",
+      "at": {
+        "lat": 28.478222,
+        "lng": -81.467611
+      }
+    },
+    {
+      "id": "3a6a460b-1204-4667-9484-8714158ce7d2",
+      "name": "Evil Dead Burn Food Booth",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.evil_dead_burn_food_booth",
+      "at": {
+        "lat": 28.47876,
+        "lng": -81.469411
+      }
+    },
+    {
+      "id": "97ae9df1-8fcf-43b8-aa23-674fd721ac1f",
+      "name": "HHN Bar",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.hhn_bar",
+      "at": {
+        "lat": 28.476083,
+        "lng": -81.468833
+      }
+    },
+    {
+      "id": "0721e8ed-5d14-4b2a-97d2-1ed2c4a7ab01",
+      "name": "Keyholder Bar",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.keyholder_bar",
+      "at": {
+        "lat": 28.475389,
+        "lng": -81.468528
+      }
+    },
+    {
+      "id": "d383313f-6e49-4b02-b7ce-7f5052aa8ae8",
+      "name": "Maloney's",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.maloneys",
+      "at": {
+        "lat": 28.476806,
+        "lng": -81.468111
+      }
+    },
+    {
+      "id": "122084c4-e40b-4ab5-b33e-14be64b458db",
+      "name": "Music Plaza Fanta Bar",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.music_plaza_fanta_bar",
+      "at": {
+        "lat": 28.475639,
+        "lng": -81.469083
+      }
+    },
+    {
+      "id": "3d91a8b0-bd15-4f99-8038-b886f3e122a3",
+      "name": "Hellraiser Food Booth",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.hellraiser_food_booth",
+      "at": {
+        "lat": 28.478333,
+        "lng": -81.468028
+      }
+    },
+    {
+      "id": "157d3dd8-7dd3-413b-bb29-4ecc4e0d9c8b",
+      "name": "Jack's Surplus Food Booth",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.jacks_surplus_food_booth",
+      "at": {
+        "lat": 28.476389,
+        "lng": -81.469083
+      }
+    },
+    {
+      "id": "0729abe1-7d0d-4ee8-b197-5eef33b3f3c2",
+      "name": "Nightmare Fuel Bar",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.nightmare_fuel_bar",
+      "at": {
+        "lat": 28.480111,
+        "lng": -81.46875
+      }
+    },
+    {
+      "id": "0a968e5f-e8c5-4cb0-9901-6f93b4f3cfb5",
+      "name": "Oddfellow's Menagerie",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.oddfellows_menagerie",
+      "at": {
+        "lat": 28.476444,
+        "lng": -81.46925
+      }
+    },
+    {
+      "id": "f7a0bf00-44c1-448e-a1c6-ac2a5ab87d89",
+      "name": "World Expo Fanta Bar",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.world_expo_fanta_bar",
+      "at": {
+        "lat": 28.480083,
+        "lng": -81.467778
+      }
+    },
+    {
+      "id": "e1149c8a-f1b2-4dec-94c6-4bfdc340246c",
+      "name": "Meetz Meats Food Booth",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.meetz_meats_food_booth",
+      "at": {
+        "lat": 28.47975,
+        "lng": -81.468611
+      }
+    },
+    {
+      "id": "ef08842c-30a7-464d-98f9-ce20010860e4",
+      "name": "San Francisco Fanta Bar",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.san_francisco_fanta_bar",
+      "at": {
+        "lat": 28.477528,
+        "lng": -81.469
+      }
+    },
+    {
+      "id": "73e85e03-efb4-40d9-8e91-b61e2d3633ab",
+      "name": "Ozzy Osbourne: Prince of Darkness Booth",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.ozzy_osbourne_prince_of_darkness_food_booth",
+      "at": {
+        "lat": 28.478889,
+        "lng": -81.468778
+      }
+    },
+    {
+      "id": "e3f07454-43a0-41da-b774-286c09160580",
+      "name": "Parkside Fare",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.parkside_fare",
+      "at": {
+        "lat": 28.478167,
+        "lng": -81.467944
+      }
+    },
+    {
+      "id": "327d4ef5-a382-444e-86cc-d03b5f84635c",
+      "name": "Sinners Food Booth",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.sinners_food_booth",
+      "at": {
+        "lat": 28.477361,
+        "lng": -81.467611
+      }
+    },
+    {
+      "id": "7975edba-d796-400c-bee5-cac13da32824",
+      "name": "Stranger Things Food Booth",
+      "entityType": "RESTAURANT",
+      "externalId": "uor.usf.dining.stranger_things_food_booth",
+      "at": {
+        "lat": 28.479861,
+        "lng": -81.468472
+      }
+    }
+  ]
+}

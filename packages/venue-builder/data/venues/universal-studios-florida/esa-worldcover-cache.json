@@ -1,0 +1,23 @@
+{
+  "fetched": "2026-08-28",
+  "source": "esa-worldcover.org",
+  "license": "CC BY 4.0",
+  "tile": "ESA_WorldCover_10m_2021_v200_N27W084_Map",
+  "center": {
+    "lat": 28.477248,
+    "lng": -81.469707
+  },
+  "histogram": {
+    "10": 3003,
+    "30": 209,
+    "50": 13578,
+    "60": 15,
+    "80": 881,
+    "90": 2
+  },
+  "dominant": {
+    "code": 50,
+    "name": "built_up",
+    "count": 13578
+  }
+}

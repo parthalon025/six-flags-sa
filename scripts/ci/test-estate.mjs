@@ -198,6 +198,7 @@ export const TEST_ESTATE = {
   'test/builder/terrain.mjs': ['test:builder'],
   'test/builder/tiles-export.mjs': ['test:builder'],
   'test/builder/unit.mjs': ['test:unit', 'test:builder'],
+  'test/builder/universal-ship.mjs': ['test:builder'],
   'test/builder/venue-bundle.mjs': ['test:builder'],
   'test/builder/venue-drift.test.mjs': ['test:builder'],
   'test/builder/vision-trace-claims.mjs': ['test:builder'],

@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "_comment": "How this venue was built, so it can be built again. Written by scripts/build-venue.mjs on every build; replayed with \"npm run venues:rebuild -- universal-studios-florida\". \"box\" is the bounding box before \"pad\" was applied to it, which is why a venue asked for by place name, by box or by a point and a radius all record the same field. Edit it by hand if you like — a rebuild reads whatever is here.",
+  "id": "universal-studios-florida",
+  "name": "Universal Studios Florida",
+  "place": {
+    "query": "Universal Studios Florida, Orlando, Florida",
+    "resolved": "Universal Studios Florida, 1000, Universal Studios Plaza, Florida Center, Orlando, Orange County, Florida, 32819, United States"
+  },
+  "box": {
+    "south": 28.472829,
+    "west": -81.47355,
+    "north": 28.481648,
+    "east": -81.464924
+  },
+  "options": {
+    "name": "Universal Studios Florida",
+    "locality": "Orlando, Florida",
+    "kind": "theme-park",
+    "sources": "data/venues/universal-studios-florida/sources.json",
+    "allow-no-heights": true
+  },
+  "built": {
+    "at": "2026-08-28",
+    "counts": {
+      "pois": 121,
+      "rides": 1,
+      "heights": 0,
+      "shapes": 1847
+    }
+  }
+}

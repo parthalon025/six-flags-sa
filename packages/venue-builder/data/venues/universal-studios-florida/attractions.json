@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it: the bundle is overwritten by every rebuild and this is the accumulated evidence, which is the expensive part. Only features that clear \"moderate\" confidence are copied into the bundle the app reads. Refresh with: npm run venues:attractions -- universal-studios-florida",
+  "venue": "universal-studios-florida",
+  "generated": "2026-08-28",
+  "publish_at": "moderate",
+  "attractions": [
+    {
+      "id": "palace-arcade",
+      "place": "palace-arcade",
+      "name": "Palace Arcade",
+      "venue": "universal-studios-florida",
+      "type": "attraction",
+      "at": {
+        "lat": 28.476956,
+        "lng": -81.469461
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 28.47701,
+            "lng": -81.46946
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 28.47701,
+                "lng": -81.46946
+              },
+              "date": "2026-08-28",
+              "note": "the walkable network at its closest, 6 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-28",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    }
+  ]
+}
