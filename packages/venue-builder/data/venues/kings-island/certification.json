@@ -1073,36 +1073,6 @@
           "sourceGap": "adapter_stale",
           "target": null,
           "blocking": false,
-          "adapterId": "parks-api",
-          "featureClass": "ride_inventory",
-          "freshnessDays": 30,
-          "fetched": "2026-08-11",
-          "need": "Verify parks-api ride inventory — cache from 2026-08-11"
-        },
-        {
-          "venueId": "kings-island",
-          "type": "verify_source",
-          "tier": 1,
-          "graduation": "overlay_ttl",
-          "whyOpenSourceFails": "Cached adapter data is older than its freshness window — on-the-ground verification refreshes what open data cannot keep current.",
-          "sourceGap": "adapter_stale",
-          "target": null,
-          "blocking": false,
-          "adapterId": "queue-times",
-          "featureClass": "ride_inventory",
-          "freshnessDays": 30,
-          "fetched": "2026-08-11T19:54:41",
-          "need": "Verify queue-times ride inventory — cache from 2026-08-11T19:54:41"
-        },
-        {
-          "venueId": "kings-island",
-          "type": "verify_source",
-          "tier": 1,
-          "graduation": "overlay_ttl",
-          "whyOpenSourceFails": "Cached adapter data is older than its freshness window — on-the-ground verification refreshes what open data cannot keep current.",
-          "sourceGap": "adapter_stale",
-          "target": null,
-          "blocking": false,
           "adapterId": "open-meteo",
           "featureClass": "weather",
           "freshnessDays": 1,
@@ -1168,7 +1138,7 @@
         }
       ],
       "counts": {
-        "durable": 75,
+        "durable": 73,
         "ambient": 5
       }
     }
