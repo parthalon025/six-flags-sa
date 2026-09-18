@@ -67,7 +67,11 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
-          git add 'data/venues/*-cache.json'
+          VENUE_DATA=$(node --input-type=module -e "
+            import { OVERRIDE_DIR } from '@party-tracker/venue-builder/paths.js';
+            console.log(OVERRIDE_DIR);
+          ")
+          git add "${VENUE_DATA}"/*/*-cache.json || true
           if git diff --cached --quiet; then
             echo "::notice::No external cache changes — fleet caches are current."
             exit 0
@@ -81,6 +85,6 @@ jobs:
             echo
             cat sync-summary.md
           } > pr-body.md
-          gh pr create --draft --base main --head "$branch" \
+          gh pr create --draft --base "${GITHUB_REF_NAME}" --head "$branch" \
             --title "$title" \
             --body-file pr-body.md

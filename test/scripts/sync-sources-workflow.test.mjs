@@ -28,6 +28,8 @@ const prStep = workflow.match(
 )?.[0];
 assert.ok(prStep, 'draft PR step exists');
 assert.match(prStep, /gh pr create --draft/, 'opens a draft PR');
+assert.match(prStep, /OVERRIDE_DIR/, 'git add uses venue-builder OVERRIDE_DIR path');
+assert.match(prStep, /\*-cache\.json/, 'git add targets cache sidecars');
 assert.match(prStep, /git diff --cached --quiet/, 'no PR when nothing changed');
 
 const summaryStep = workflow.match(
