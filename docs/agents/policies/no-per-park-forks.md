@@ -15,7 +15,7 @@ These are forks even when the change is "small" or "temporary." Park-specific be
 | Need | Put it here |
 |------|-------------|
 | One-off height, area, alias, recipe | `packages/venue-builder/data/venues/<id>/` (`overrides.json`, `sources.json`, `recipe.json`, …) |
-| How a Zone is painted | `data/venues/<id>/display/` (grounding, zone-character, display packs) |
+| How a Zone is painted | `packages/venue-builder/data/venues/<id>/display/` (grounding, zone-character, display packs) |
 | Reusable park-family behavior | Builder pipeline stages, OSM tag rules, operator parsers |
 | Shared template for a class of parks | Config templates and ingest checklists (#344) — not app forks |
 | Runtime appearance | Display packs and venue bundle fields the app already reads generically |
