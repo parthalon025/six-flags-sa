@@ -27,6 +27,7 @@ export default function RoutePreview({
   profileId = 'default',
   onProfile,
   profileNote = null,
+  shadeNote = null,
   entranceHint = null,
 }) {
   if (!target || !routes?.length) return null;
@@ -78,6 +79,7 @@ export default function RoutePreview({
         </div>
       )}
       {profileNote ? <p className="fine">{profileNote}</p> : null}
+      {shadeNote ? <p className="fine">{shadeNote}</p> : null}
 
       {routes.length > 1 && (
         <div className="previewAlts" role="radiogroup" aria-label="Route choices">
