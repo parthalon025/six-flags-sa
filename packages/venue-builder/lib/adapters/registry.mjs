@@ -242,7 +242,7 @@ const ENTRIES = [
     role: 'VENUE_DATA_ADAPTER_LEGACY',
     stage: 'venue_data',
     license: 'MIT',
-    adopt: 'evaluate',
+    adopt: 'reject',
     maturity: 'beta',
     maintenance: 2,
     languages: ['javascript'],
@@ -252,8 +252,9 @@ const ENTRIES = [
     commercial_ok: true,
     evidence_sources: ['parks_api'],
     integration: 'medium',
-    overlap: 'No external ride APIs wired',
-    notes: 'Study acquisition model; successor ParksAPI preferred for active maintenance.',
+    overlap: 'Superseded by parks-api wrap (api.themeparks.wiki)',
+    notes:
+      'Rejected after bake-off #413 — unmaintained 5.x per-park scrapers; use parks-api instead. See docs/research/2026-09-18-themeparks-cubehouse-vs-parksapi.md.',
   },
   {
     id: 'parks-api',

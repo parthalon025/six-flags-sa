@@ -1,0 +1,123 @@
+{
+  "schema": "venue-data-adapter-bakeoff/1",
+  "legacy": {
+    "id": "themeparks-cubehouse",
+    "repo": "cubehouse/themeparks",
+    "license": "MIT",
+    "maintenance": 2,
+    "acquisition": "per-park JavaScript class with direct operator scrapers",
+    "parkIdentification": "hard-coded park class (e.g. WaltDisneyWorldMagicKingdom)",
+    "inventory": "GetWaitTimes() per park instance; SQLite cache optional",
+    "hours": "GetOpeningTimes() per park instance",
+    "waitTimes": "live scrape per park class",
+    "integration": "npm dependency + persistent park object; high cold-start cost",
+    "status": "unmaintained — README directs consumers to ThemeParks.wiki API"
+  },
+  "successor": {
+    "id": "parks-api",
+    "repo": "cubehouse/ParksAPI",
+    "api": "api.themeparks.wiki/v1",
+    "license": "MIT",
+    "maintenance": 4,
+    "acquisition": "entity UUID + REST (/entity/{id}/children, /live, /schedule)",
+    "parkIdentification": "entity UUID via parks-api-entity-map.json",
+    "inventory": "children endpoint — attractions, restaurants, shows with coordinates",
+    "hours": "/entity/{id}/schedule/{year}/{month}",
+    "waitTimes": "/entity/{id}/live recursive",
+    "integration": "fetch-only adapter in lib/adapters/parks-api.mjs; cached sidecar",
+    "status": "active — powers ThemeParks.wiki hosted API"
+  },
+  "fetched": "2026-09-18T11:38:54",
+  "venues": [
+    "kings-island",
+    "cedar-point",
+    "six-flags-fiesta-texas"
+  ],
+  "summary": {
+    "venuesTested": 3,
+    "meanInventoryCoveragePct": 75.9,
+    "meanCoordinateCoveragePct": 100
+  },
+  "venueReports": [
+    {
+      "schema": "venue-data-adapter-bakeoff/1",
+      "venue": "kings-island",
+      "legacy": "themeparks-cubehouse",
+      "successor": "parks-api",
+      "fetched": "2026-08-11",
+      "gap": false,
+      "parksApi": {
+        "parkId": "a0df8d87-7f72-4545-a58d-eb8aa76f914b",
+        "parkName": "Kings Island",
+        "source": "api.themeparks.wiki",
+        "attractionCount": 178,
+        "coordinateCoveragePct": 100
+      },
+      "inventory": {
+        "apiCount": 178,
+        "bundleRideCount": 68,
+        "matched": 50,
+        "coveragePct": 73.5,
+        "onlyOnApi": 131,
+        "onlyInBundle": 18
+      }
+    },
+    {
+      "schema": "venue-data-adapter-bakeoff/1",
+      "venue": "cedar-point",
+      "legacy": "themeparks-cubehouse",
+      "successor": "parks-api",
+      "fetched": "2026-08-18",
+      "gap": false,
+      "parksApi": {
+        "parkId": "c8299e1a-0098-4677-8ead-dd0da204f8dc",
+        "parkName": "Cedar Point",
+        "source": "api.themeparks.wiki",
+        "attractionCount": 155,
+        "coordinateCoveragePct": 100
+      },
+      "inventory": {
+        "apiCount": 155,
+        "bundleRideCount": 74,
+        "matched": 55,
+        "coveragePct": 74.3,
+        "onlyOnApi": 100,
+        "onlyInBundle": 19
+      }
+    },
+    {
+      "schema": "venue-data-adapter-bakeoff/1",
+      "venue": "six-flags-fiesta-texas",
+      "legacy": "themeparks-cubehouse",
+      "successor": "parks-api",
+      "fetched": "2026-08-11",
+      "gap": false,
+      "parksApi": {
+        "parkId": "8be1e984-1e5f-40d0-a750-ce8e4dc2e87c",
+        "parkName": "Six Flags Fiesta Texas",
+        "source": "api.themeparks.wiki",
+        "attractionCount": 118,
+        "coordinateCoveragePct": 100
+      },
+      "inventory": {
+        "apiCount": 118,
+        "bundleRideCount": 70,
+        "matched": 56,
+        "coveragePct": 80,
+        "onlyOnApi": 66,
+        "onlyInBundle": 14
+      }
+    }
+  ],
+  "decision": {
+    "recommendation": "reject themeparks-cubehouse; keep parks-api wrap",
+    "legacyAdopt": "reject",
+    "rationale": [
+      "Upstream README states cubehouse/themeparks 5.x is unmaintained and replaced by ThemeParks.wiki — the same hosted API our parks-api adapter already wraps.",
+      "Per-park scraper classes add npm weight and cold-start cost without fields the builder lacks from REST /children.",
+      "Committed caches for kings-island, cedar-point, and six-flags-fiesta-texas show inventory + coordinate coverage adequate for research QA.",
+      "No builder code path should depend on the legacy npm package after this decision."
+    ]
+  },
+  "researchDoc": "docs/research/2026-09-18-themeparks-cubehouse-vs-parksapi.md"
+}

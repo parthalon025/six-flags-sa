@@ -95,7 +95,7 @@ Run `npm run venues:adapters -- matrix` for an up-to-date table. Snapshot:
 | Detection | ultralytics/ultralytics | VISION_DETECTOR | evaluate | AGPL-3.0 | **Commercial review** |
 | Segmentation | facebookresearch/sam2 | VISION_SEGMENTER | defer | Apache-2.0 | Polygon geometry |
 | Park ops data | cubehouse/ParksAPI | VENUE_DATA_ADAPTER | wrap | MIT | Metadata, not live phone feed |
-| Legacy parks API | cubehouse/themeparks | LEGACY_REFERENCE | evaluate | MIT | Study successor model |
+| Legacy parks API | cubehouse/themeparks | LEGACY_REFERENCE | reject | MIT | Superseded by ParksAPI wrap (#413) |
 | Evidence fusion | packages/venue-builder/lib/evidence.mjs | EVIDENCE_ENGINE | adopt | project | Ahead of proposals |
 | Phone routing | lib/routing.js | PHONE_ROUTING | adopt | project | 1.8 ms; no Valhalla on phone |
 
