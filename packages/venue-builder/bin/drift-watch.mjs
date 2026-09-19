@@ -9,9 +9,10 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readJson, writeJson, VENUE_DIR } from '../lib/venue-io.mjs';
+import { readJson, writeJson, VENUE_DIR, venueSidecar } from '../lib/venue-io.mjs';
 import { applyDriftRevocations } from '../lib/drift-revocation.mjs';
-import { certificationFile } from '../lib/venue-certify.mjs';
+
+const certificationFile = (id) => venueSidecar(id, 'certification.json');
 
 const BUILDER_BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), 'build-venue.mjs');
 
