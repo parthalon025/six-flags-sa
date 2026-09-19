@@ -5,6 +5,10 @@
  *   node test/scripts/official-research-summary.test.mjs
  */
 import assert from 'node:assert/strict';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { summarizeOfficialResearchResults } from '../../scripts/lib/official-research-summary.mjs';
 
 const cedarOk = [
@@ -82,6 +86,19 @@ const fetchOnlyFleet = [
   assert.match(markdown, /fetch only/i);
   assert.match(markdown, /browser.*not used|no venue used playwright/i);
   assert.doesNotMatch(markdown, /Playwright browser fetch was used/i);
+}
+
+{
+  const dir = mkdtempSync(join(tmpdir(), 'official-research-'));
+  const badReport = join(dir, 'bad.json');
+  writeFileSync(badReport, 'not-json');
+  const result = spawnSync(
+    process.execPath,
+    ['scripts/official-research-summary.mjs', badReport],
+    { cwd: join(import.meta.dirname, '../..'), encoding: 'utf8' },
+  );
+  assert.equal(result.status, 1, 'invalid report exits 1');
+  assert.match(result.stdout, /could not parse research report/i);
 }
 
 console.log('ok official-research-summary');
