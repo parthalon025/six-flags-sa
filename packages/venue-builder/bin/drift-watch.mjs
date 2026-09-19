@@ -9,8 +9,9 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readJson, writeJson, VENUE_DIR, venueSidecar } from '../lib/venue-io.mjs';
+import { readJson, writeJson, VENUE_DIR } from '../lib/venue-io.mjs';
 import { applyDriftRevocations } from '../lib/drift-revocation.mjs';
+import { certificationFile } from '../lib/venue-certify.mjs';
 
 const BUILDER_BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), 'build-venue.mjs');
 
@@ -70,8 +71,8 @@ function main() {
   if (args.revoke && drifted.length) {
     summary.revocation = applyDriftRevocations(summary, {
       detectedAt: summary.generated,
-      readCert: (id) => readJson(venueSidecar(id, 'certification.json'), null),
-      writeCert: (id, doc) => writeJson(venueSidecar(id, 'certification.json'), doc, true),
+      readCert: (id) => readJson(certificationFile(id), null),
+      writeCert: (id, doc) => writeJson(certificationFile(id), doc, true),
     });
   }
 

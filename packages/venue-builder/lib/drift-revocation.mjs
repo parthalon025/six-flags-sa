@@ -9,6 +9,11 @@
 export const DRIFT_REVOCATION_REASON = 'osm_drift';
 export const DRIFT_REVOCATION_SOURCE = 'venues:drift-watch';
 
+/** @param {object|null|undefined} doc */
+export function hasDriftRevocation(doc) {
+  return doc?.revocation?.reason === DRIFT_REVOCATION_REASON;
+}
+
 /**
  * @param {object|null} prior committed certification.json (may be null)
  * @param {{ id: string, detectedAt: string, detail?: string, log?: string }} drift
@@ -44,13 +49,14 @@ export function revokeCertificationFromDrift(prior, drift) {
  *
  * @param {{ rows?: Array<{ id: string, changed?: boolean, log?: string }>, generated?: string }} report
  * @param {{ detectedAt?: string, readCert: (id: string) => object|null, writeCert: (id: string, doc: object) => void }} io
- * @returns {{ revoked: string[], skipped: string[] }}
+ * @returns {{ revoked: string[], skipped: string[], alreadyRevoked: string[] }}
  */
 export function applyDriftRevocations(report, io) {
   const detectedAt = io.detectedAt || report.generated || new Date().toISOString();
   const rows = Array.isArray(report.rows) ? report.rows : [];
   const revoked = [];
   const skipped = [];
+  const alreadyRevoked = [];
   for (const row of rows) {
     if (!row?.id) continue;
     if (!row.changed) {
@@ -58,6 +64,10 @@ export function applyDriftRevocations(report, io) {
       continue;
     }
     const prior = io.readCert(row.id);
+    if (hasDriftRevocation(prior) && prior?.certified === false) {
+      alreadyRevoked.push(row.id);
+      continue;
+    }
     const next = revokeCertificationFromDrift(prior, {
       id: row.id,
       detectedAt,
@@ -66,7 +76,7 @@ export function applyDriftRevocations(report, io) {
     io.writeCert(row.id, next);
     revoked.push(row.id);
   }
-  return { revoked, skipped };
+  return { revoked, skipped, alreadyRevoked };
 }
 
 /**
@@ -76,6 +86,6 @@ export function applyDriftRevocations(report, io) {
  * @param {{ certified: boolean } & Record<string, unknown>} doc freshly computed certification
  */
 export function attachDriftRevocation(prior, doc) {
-  if (doc.certified || !prior?.revocation) return doc;
+  if (doc.certified || !hasDriftRevocation(prior)) return doc;
   return { ...doc, revocation: prior.revocation };
 }
