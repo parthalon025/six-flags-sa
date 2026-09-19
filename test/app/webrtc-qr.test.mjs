@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 
 const APP = '../../apps/party-tracker/';
 const { createWebRTC } = await import(`${APP}lib/transport/webrtc.js`);
+const { createQrExchange } = await import(`${APP}lib/transport/qrExchange.js`);
 const { encodeOffer, decodeOffer, encodeAnswer, decodeAnswer } = await import(
   `${APP}lib/transport/qrSignal.js`,
 );
@@ -57,27 +58,8 @@ function blockMailbox() {
 
 /** Wire offer/answer between host and client QR hooks. */
 function wireQrExchange() {
-  let offerPayload = null;
-  let answerPayload = null;
-  const hostQr = {
-    onOfferReady: async (encoded) => {
-      offerPayload = encoded;
-    },
-    waitForAnswer: async () => {
-      while (!answerPayload) await settle(2);
-      return answerPayload;
-    },
-  };
-  const clientQr = {
-    waitForOffer: async () => {
-      while (!offerPayload) await settle(2);
-      return offerPayload;
-    },
-    onAnswerReady: async (encoded) => {
-      answerPayload = encoded;
-    },
-  };
-  return { hostQr, clientQr };
+  const exchange = createQrExchange();
+  return { hostQr: exchange.host, clientQr: exchange.client };
 }
 
 console.log('webrtc over QR (#309)');

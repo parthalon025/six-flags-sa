@@ -153,7 +153,6 @@ export function classifyQrPayload(input) {
     const decoded = decodeURIComponent(fragment);
     if (decoded.startsWith(OFFER_PREFIX) || fragment.startsWith(OFFER_PREFIX)) return 'offer';
     if (decoded.startsWith(ANSWER_PREFIX) || fragment.startsWith(ANSWER_PREFIX)) return 'answer';
-    if (input.includes('/pair')) return 'offer';
     if (input.includes('/join') || hash !== -1) {
       const raw = hash === -1 ? input : fragment;
       try {

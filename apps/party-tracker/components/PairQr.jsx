@@ -69,7 +69,7 @@ export default function PairQr({
   onConnected,
   onCancel,
 }) {
-  const [phase, setPhase] = useState(role === 'joiner' && initialOfferUrl ? 'gathering' : 'gathering');
+  const [phase, setPhase] = useState('gathering');
   const [offerUrl, setOfferUrl] = useState(initialOfferUrl);
   const [answerPayload, setAnswerPayload] = useState(null);
   const [scanning, setScanning] = useState(false);

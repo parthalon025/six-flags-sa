@@ -334,7 +334,7 @@ export function createWebRTC({ base, role, iceServers, signal = 'mailbox', qr = 
         const answerSdp = await decodeAnswer(answerEnc);
         if (!answerSdp) throw new Error('webrtc: invalid QR answer');
         await entry.pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
-        self.setStatus(STATUS.READY);
+        if (entry.channel?.readyState === 'open') self.setStatus(STATUS.READY);
       }
 
       async function clientAnswerQr() {

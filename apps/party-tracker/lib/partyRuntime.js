@@ -1129,6 +1129,5 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     getSnapshot,
     stats,
     destroy,
-    createQrExchange,
   };
 }
