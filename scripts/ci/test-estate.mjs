@@ -136,6 +136,7 @@ export const TEST_ESTATE = {
   'test/app/store-links.test.mjs': ['test:unit'],
   'test/app/transport-contract.test.mjs': ['test:unit'],
   'test/app/transport-registry.test.mjs': ['test:unit'],
+  'test/app/webrtc-relay.test.mjs': ['test:unit'],
   'test/app/validate-ui-queue.test.mjs': ['test:unit'],
   'test/app/validate-ui.mjs': ['app-vertical'],
   'test/app/venue-download.test.mjs': ['test:unit'],
@@ -314,6 +315,10 @@ export const TEST_ESTATE_EXCLUDED = {
     'library, not a suite: in-memory transport double for party stack interface tests. Asserted through transport-contract, transport-registry, party-protocol, and party-runtime.',
   'test/app/lib/fakeUpstash.mjs':
     'library, not a suite: in-memory stand-in for the Upstash REST API (GET/SET/EXPIRE/INCR, sorted sets, hashes, lists, and EVAL dispatched by exact script text) for tests that need the Redis path with no real credentials. Asserted through server-store-redis, world-marks, and guest-traces.',
+  'test/app/lib/mockMailbox.mjs':
+    'library, not a suite: in-memory fetch shim for /api/mailbox and /api/health in Node WebRTC tests. Asserted through webrtc-relay.test.mjs.',
+  'test/app/lib/mockRtc.mjs':
+    'library, not a suite: minimal in-process RTCPeerConnection double for mailbox-signaled WebRTC tests. Asserted through webrtc-relay.test.mjs.',
   'test/app/lib/map-decisions.mjs':
     'library, not a suite: the map decision registry\'s checker, run over the style module by map-decisions.test.mjs and over a live MapLibre style by functional.mjs.',
   'test/app/lib/marker-fade.mjs':
