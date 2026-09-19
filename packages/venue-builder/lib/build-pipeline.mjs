@@ -36,6 +36,7 @@ import { loadParksApiData } from './adapters/parks-api.mjs';
 import { readSources } from './venue-sources.mjs';
 import { loadOfficialData } from './venue-official-site.mjs';
 import { catalogHeightsOptional, zeroHeightsGate } from './top-parks-catalog.mjs';
+import { llmConfig } from './venue-llm.mjs';
 
 const BUILDER_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const BUILDER_BIN = path.join(BUILDER_ROOT, '..', 'bin', 'build-venue.mjs');
@@ -62,6 +63,47 @@ export const STAGES = [
   'certify',
   'display',
 ];
+
+/** Whether sources.json declares LLM-assisted open or park-map research (#411). */
+export function venueRequestsAiResearch(venueId) {
+  const { data: catalog } = readSources(venueId);
+  if (!catalog) return false;
+  const research = catalog.research || {};
+  return research.llm_open_research === true || research.llm_park_map_search === true;
+}
+
+/**
+ * Resolve whether the pipeline should run research with `ai: true`.
+ * Explicit `--ai` wins; otherwise honour the venue catalogue.
+ */
+export function resolvePipelineResearchAi(venueId, opts = {}) {
+  if (opts.ai === true) return true;
+  if (opts.ai === false) return false;
+  return venueRequestsAiResearch(venueId);
+}
+
+/**
+ * Build the opts object passed to runResearchAgent from pipeline opts (#411 seam).
+ */
+export function buildPipelineResearchAgentOpts(venueId, pipelineOpts = {}, { browser = true } = {}) {
+  const researchAi = resolvePipelineResearchAi(venueId, pipelineOpts);
+  const llmReady = llmConfig().ready;
+  return {
+    researchAi,
+    llmReady,
+    agentOpts: {
+      fetch: true,
+      browser,
+      parksApi: true,
+      fetchDetails: true,
+      offline: false,
+      openResearch: true,
+      ai: researchAi,
+      applyAliases: false,
+    },
+    aiSkipped: researchAi && !llmReady ? 'no_llm_api_key' : null,
+  };
+}
 
 function sleep(seconds) {
   return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
@@ -200,19 +242,22 @@ export async function runVenuePipeline(park, opts = {}) {
 
   if (!allowNoHeights) {
     if (!skip.includes('research')) {
-      console.error('  · research: official site + ParksAPI');
+      const {
+        researchAi,
+        llmReady,
+        agentOpts,
+        aiSkipped,
+      } = buildPipelineResearchAgentOpts(park.id, opts, { browser });
+      if (researchAi && !llmReady) {
+        console.error('  · research: AI requested but no LLM provider ready (VENUE_LLM_API_KEY / OPENAI_API_KEY) — LLM lanes skipped');
+      } else {
+        console.error('  · research: official site + ParksAPI');
+      }
       try {
-        const research = await runResearchAgent(park.id, {
-          fetch: true,
-          browser,
-          parksApi: true,
-          fetchDetails: true,
-          offline: false,
-          openResearch: true,
-          ai: opts.ai ?? false,
-          applyAliases: false,
-        });
+        const research = await runResearchAgent(park.id, agentOpts);
         logStage('research', {
+          ai: researchAi,
+          aiSkipped,
           officialMatched: research.packet?.official?.matched ?? null,
           siteCount: research.packet?.official?.siteCount ?? null,
           parksApiMatched: research.packet?.parksApi?.matched ?? null,
@@ -476,6 +521,7 @@ export function parseCatalogArgs(argv) {
     constrain: true,
     mesh: null,
     applyAliases: true,
+    ai: undefined,
     openPr: false,
     json: false,
   };
@@ -505,6 +551,7 @@ export function parseCatalogArgs(argv) {
     else if (a === '--mesh') out.mesh = true;
     else if (a === '--no-mesh') out.mesh = false;
     else if (a === '--no-aliases') out.applyAliases = false;
+    else if (a === '--ai') out.ai = true;
     else if (a === '--pr') out.openPr = true;
     else if (a === '--json') out.json = true;
     else if (!a.startsWith('--')) out._.push(a);
@@ -540,6 +587,7 @@ export function pipelineOptsFromCatalogArgs(args, { batch = false } = {}) {
     constrain: args.constrain,
     mesh: args.mesh ?? !batch,
     rebuildOnly: args.skipExisting,
+    ai: args.ai,
     skip: args.allowNoHeights ? ['research', 'aliases', 'heights', 'rebuild', 'agent'] : [],
   };
 }
