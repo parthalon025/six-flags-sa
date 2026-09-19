@@ -15,6 +15,7 @@ import { run as runGuestTraces } from './guest-traces.mjs';
 import { run as runMapillary } from './mapillary-api.mjs';
 import { run as runMapillaryVideo } from './mapillary-video.mjs';
 import { run as runOrs } from './openrouteservice.mjs';
+import { run as runGraphhopper } from './graphhopper.mjs';
 import { run as runPlaywright } from './playwright-official.mjs';
 import { run as runPolyHaven } from './poly-haven.mjs';
 import { run as runEsaWorldcover } from './esa-worldcover.mjs';
@@ -37,6 +38,7 @@ export const ADAPTER_IMPLEMENTATIONS = {
   'mapillary-api': runMapillary,
   'mapillary-tools': runMapillaryVideo,
   openrouteservice: runOrs,
+  graphhopper: runGraphhopper,
   playwright: runPlaywright,
   'poly-haven': runPolyHaven,
   'esa-worldcover': runEsaWorldcover,
