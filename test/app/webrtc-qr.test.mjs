@@ -116,6 +116,36 @@ await check('QR mode probe succeeds without a signaling server', async () => {
   rtc.restore();
 });
 
+await check('QR mode uses empty ICE servers even when iceServers is omitted', async () => {
+  const id = partyId();
+  const browser = installBrowserGlobals();
+  const blocked = blockMailbox();
+  const rtc = installMockRtc();
+  const { hostQr, clientQr } = wireQrExchange();
+
+  setRtcContext({ partyId: id, peerId: 'm-host', role: 'host' });
+  const host = createWebRTC({ signal: 'qr', qr: hostQr, role: 'host' });
+
+  setRtcContext({ partyId: id, peerId: 'm-client', role: 'client' });
+  const client = createWebRTC({ signal: 'qr', qr: clientQr, role: 'client' });
+
+  await Promise.all([
+    host.open({ session: { partyId: id, selfId: 'm-host', hostId: 'm-host', role: 'host' } }),
+    client.open({
+      session: { partyId: id, selfId: 'm-client', hostId: 'm-host', role: 'client' },
+    }),
+  ]);
+
+  assert.deepEqual(rtc.lastIceServers, []);
+
+  await host.close();
+  await client.close();
+  blocked.restore();
+  rtc.restore();
+  browser.restore();
+  resetRtcHub(id);
+});
+
 console.log(`\nwebrtc-qr: ${PASS.length} passed, ${FAIL.length} failed`);
 if (FAIL.length) {
   for (const f of FAIL) console.log(' ', f);

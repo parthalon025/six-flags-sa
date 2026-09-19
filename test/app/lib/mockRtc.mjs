@@ -223,16 +223,22 @@ class MockPeerConnection {
  */
 export function installMockRtc() {
   const prior = globalThis.RTCPeerConnection;
+  const state = { lastIceServers: null };
   globalThis.RTCPeerConnection = class {
     constructor(config) {
       if (!context) throw new Error('mockRtc: call setRtcContext before new RTCPeerConnection');
+      state.lastIceServers = config?.iceServers ?? null;
       return new MockPeerConnection({ ...context, iceServers: config?.iceServers });
     }
   };
   return {
+    get lastIceServers() {
+      return state.lastIceServers;
+    },
     restore: () => {
       globalThis.RTCPeerConnection = prior;
       context = null;
+      state.lastIceServers = null;
     },
   };
 }

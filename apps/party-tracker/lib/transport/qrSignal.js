@@ -11,8 +11,6 @@ export const QR_BUDGET_BYTES = 800;
 const OFFER_PREFIX = 'o1.';
 const ANSWER_PREFIX = 'a1.';
 
-const SESSION_LINES = new Set(['v=', 'o=', 's=', 't=', 'a=group:', 'a=msid-semantic:']);
-
 /**
  * Keep the data-channel m-line and session headers; drop AV; host candidates only.
  *
@@ -21,39 +19,33 @@ const SESSION_LINES = new Set(['v=', 'o=', 's=', 't=', 'a=group:', 'a=msid-seman
  */
 export function stripSdpForQr(sdp) {
   const lines = String(sdp || '').split(/\r?\n/);
-  const blocks = [];
-  let current = [];
+  const kept = [];
   let inApp = false;
-
-  const flush = () => {
-    if (current.length) blocks.push({ app: inApp, lines: current });
-    current = [];
-  };
+  let inBlock = false;
 
   for (const line of lines) {
     if (line.startsWith('m=')) {
-      flush();
+      inBlock = true;
       inApp = line.startsWith('m=application');
-      current.push(line);
+      if (inApp) kept.push(line);
       continue;
     }
-    if (!current.length && SESSION_LINES.has(line.slice(0, 2)) || line.startsWith('a=group:') || line.startsWith('a=msid-semantic:')) {
-      blocks.push({ app: false, session: true, lines: [line] });
+    if (!inBlock) {
+      if (
+        line.startsWith('v=')
+        || line.startsWith('o=')
+        || line.startsWith('s=')
+        || line.startsWith('t=')
+        || line.startsWith('a=group:')
+        || line.startsWith('a=msid-semantic:')
+      ) {
+        kept.push(line);
+      }
       continue;
     }
-    if (!current.length && line.startsWith('a=') && !line.startsWith('a=group:') && !line.startsWith('a=msid-semantic:')) {
-      continue;
-    }
-    if (!inApp && current.length) continue;
+    if (!inApp) continue;
     if (line.startsWith('a=candidate:') && !/\styp host(\s|$)/.test(line)) continue;
-    if (current.length || inApp) current.push(line);
-  }
-  flush();
-
-  const kept = [];
-  for (const block of blocks) {
-    if (block.session) kept.push(...block.lines);
-    else if (block.app) kept.push(...block.lines);
+    kept.push(line);
   }
   return kept.join('\r\n');
 }
@@ -156,10 +148,7 @@ export function classifyQrPayload(input) {
     if (input.includes('/join') || hash !== -1) {
       const raw = hash === -1 ? input : fragment;
       try {
-        const padded = raw.replace(/-/g, '+').replace(/_/g, '/');
-        const bin = atob(padded + '='.repeat((4 - (padded.length % 4)) % 4));
-        const bytes = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
+        const bytes = unb64url(raw);
         const data = JSON.parse(new TextDecoder().decode(bytes));
         if (data?.v === 1 && data.p && data.c && data.k) return 'invite';
       } catch {

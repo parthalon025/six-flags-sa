@@ -61,8 +61,8 @@ const CHANNEL_LABEL = 'party';
 export function createWebRTC({ base, role, iceServers, signal = 'mailbox', qr = null } = {}) {
   const root = String(base || '').replace(/\/+$/, '');
   const qrMode = signal === 'qr';
-  // Array.isArray, not `||`: [] must survive as [].
-  const ice = Array.isArray(iceServers) ? iceServers : DEFAULT_ICE;
+  // QR mode is zero-infrastructure: never contact STUN even if a caller omits iceServers.
+  const ice = qrMode ? [] : (Array.isArray(iceServers) ? iceServers : DEFAULT_ICE);
 
   /** peerId -> { pc, channel, pending, everOpen } — populated on the host only. */
   const peers = new Map();

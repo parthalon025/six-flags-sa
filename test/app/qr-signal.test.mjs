@@ -75,6 +75,27 @@ await check('stripSdpForQr keeps only the data-channel m-line and host candidate
   assert.doesNotMatch(stripped, /typ relay/);
 });
 
+await check('stripSdpForQr keeps session headers once and ignores mid-block a= lines', () => {
+  const sdp = [
+    'v=0',
+    'o=- 1 2 IN IP4 127.0.0.1',
+    's=-',
+    't=0 0',
+    'a=group:BUNDLE 0',
+    'a=msid-semantic: WMS',
+    'm=audio 9 UDP/TLS/RTP/SAVPF 111',
+    'a=group:BUNDLE should-not-appear',
+    'a=msid-semantic: should-not-appear',
+    'm=application 9 UDP/DTLS/SCTP webrtc-datachannel',
+    'a=setup:actpass',
+    'a=candidate:1 1 udp 2122260223 192.168.1.10 54321 typ host',
+  ].join('\r\n');
+  const stripped = stripSdpForQr(sdp);
+  assert.equal((stripped.match(/a=group:/g) || []).length, 1);
+  assert.equal((stripped.match(/a=msid-semantic:/g) || []).length, 1);
+  assert.doesNotMatch(stripped, /should-not-appear/);
+});
+
 await check('offer round-trips through encode and decode', async () => {
   const encoded = await encodeOffer(SAMPLE_SDP);
   const back = await decodeOffer(encoded);
