@@ -163,9 +163,10 @@ export function shadeHintForRoute({ points, wood, proj, bufferM = SHADE_BUFFER_M
     const by = proj.y(b[0]);
     const segM = hypot(ax, ay, bx, by);
     totalM += segM;
-    const mx = (ax + bx) / 2;
-    const my = (ay + by) / 2;
-    if (minDistToWood(mx, my, cache, bufferM) <= bufferM) nearM += segM;
+    const near =
+      minDistToWood(ax, ay, cache, bufferM) <= bufferM ||
+      minDistToWood(bx, by, cache, bufferM) <= bufferM;
+    if (near) nearM += segM;
   }
 
   if (totalM <= 0) return null;
