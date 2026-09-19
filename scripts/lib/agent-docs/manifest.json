@@ -43,6 +43,14 @@
       "cursorDescription": "Keep the venue builder and the app's data contract in sync — fix generated data upstream, validate app changes against the builder."
     },
     {
+      "id": "no-per-park-forks",
+      "heading": "No per-park forks",
+      "title": "No per-park forks",
+      "pointer": "App features are **venue-agnostic** — park-specific behavior lives in builder data, overrides, or config templates, never forked app code.",
+      "cursorRule": "no-per-park-forks.mdc",
+      "cursorDescription": "Reject per-park app forks — venue JSON, overrides, and templates carry park-specific behavior."
+    },
+    {
       "id": "claude-design",
       "heading": "Claude Design — where the front end is designed",
       "title": "Claude Design",

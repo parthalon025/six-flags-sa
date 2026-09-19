@@ -43,6 +43,7 @@ const agents = outputs.get('AGENTS.md');
 assert.match(agents, /<!-- agent-docs:generated -->/);
 assert.match(agents, /<!-- gitnexus:start -->/);
 assert.match(agents, /worktree policy/);
+assert.match(agents, /no-per-park-forks policy/);
 assert.doesNotMatch(agents, /never hand-edit the generated JSON/);
 
 const claude = outputs.get('CLAUDE.md');

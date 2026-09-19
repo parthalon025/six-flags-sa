@@ -65,6 +65,10 @@ File **agent-handoff** issues for out-of-scope failures instead of fixing inline
 
 Venue **builder** output is generated only — fix upstream, prove in the app. See [builder-app-contract policy](./docs/agents/policies/builder-app-contract.md).
 
+## No per-park forks
+
+App features are **venue-agnostic** — park-specific behavior lives in builder data, overrides, or config templates, never forked app code. See [no-per-park-forks policy](./docs/agents/policies/no-per-park-forks.md).
+
 ## Claude Design — where the front end is designed
 
 **Claude Design** is canon for how the front end looks and reads — the code conforms to it; the repo is canon only for what a canvas cannot see. See [claude-design policy](./docs/agents/policies/claude-design.md).

@@ -1,0 +1,8 @@
+---
+description: Reject per-park app forks — venue JSON, overrides, and templates carry park-specific behavior.
+alwaysApply: true
+---
+
+# No per-park forks
+
+App features are **venue-agnostic** — park-specific behavior lives in builder data, overrides, or config templates, never forked app code. See [no-per-park-forks policy](../../docs/agents/policies/no-per-park-forks.md).
