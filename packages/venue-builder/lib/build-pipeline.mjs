@@ -82,6 +82,29 @@ export function resolvePipelineResearchAi(venueId, opts = {}) {
   return venueRequestsAiResearch(venueId);
 }
 
+/**
+ * Build the opts object passed to runResearchAgent from pipeline opts (#411 seam).
+ */
+export function buildPipelineResearchAgentOpts(venueId, pipelineOpts = {}, { browser = true } = {}) {
+  const researchAi = resolvePipelineResearchAi(venueId, pipelineOpts);
+  const llmReady = llmConfig().ready;
+  return {
+    researchAi,
+    llmReady,
+    agentOpts: {
+      fetch: true,
+      browser,
+      parksApi: true,
+      fetchDetails: true,
+      offline: false,
+      openResearch: true,
+      ai: researchAi,
+      applyAliases: false,
+    },
+    aiSkipped: researchAi && !llmReady ? 'no_llm_api_key' : null,
+  };
+}
+
 function sleep(seconds) {
   return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 }
@@ -219,27 +242,22 @@ export async function runVenuePipeline(park, opts = {}) {
 
   if (!allowNoHeights) {
     if (!skip.includes('research')) {
-      const researchAi = resolvePipelineResearchAi(park.id, opts);
-      const llmReady = llmConfig().ready;
+      const {
+        researchAi,
+        llmReady,
+        agentOpts,
+        aiSkipped,
+      } = buildPipelineResearchAgentOpts(park.id, opts, { browser });
       if (researchAi && !llmReady) {
         console.error('  · research: AI requested but no LLM provider ready (VENUE_LLM_API_KEY / OPENAI_API_KEY) — LLM lanes skipped');
       } else {
         console.error('  · research: official site + ParksAPI');
       }
       try {
-        const research = await runResearchAgent(park.id, {
-          fetch: true,
-          browser,
-          parksApi: true,
-          fetchDetails: true,
-          offline: false,
-          openResearch: true,
-          ai: researchAi,
-          applyAliases: false,
-        });
+        const research = await runResearchAgent(park.id, agentOpts);
         logStage('research', {
           ai: researchAi,
-          aiSkipped: researchAi && !llmReady ? 'no_llm_api_key' : null,
+          aiSkipped,
           officialMatched: research.packet?.official?.matched ?? null,
           siteCount: research.packet?.official?.siteCount ?? null,
           parksApiMatched: research.packet?.parksApi?.matched ?? null,

@@ -7,6 +7,7 @@
 
 import assert from 'node:assert/strict';
 import {
+  buildPipelineResearchAgentOpts,
   parseCatalogArgs,
   pipelineOptsForPark,
   pipelineOptsFromCatalogArgs,
@@ -65,6 +66,18 @@ await check('pipelineOptsForPark plumbs --ai through to research resolution', ()
   const park = { id: 'magic-kingdom', name: 'Magic Kingdom', place: 'Magic Kingdom', locality: '' };
   const opts = pipelineOptsForPark(park, parseCatalogArgs(['--pipeline', '--ai']));
   assert.equal(resolvePipelineResearchAi(park.id, opts), true);
+});
+
+await check('buildPipelineResearchAgentOpts forwards --ai into runResearchAgent opts', () => {
+  const pipelineOpts = pipelineOptsFromCatalogArgs(parseCatalogArgs(['--pipeline', '--ai']));
+  const { agentOpts, researchAi } = buildPipelineResearchAgentOpts('magic-kingdom', pipelineOpts);
+  assert.equal(researchAi, true);
+  assert.equal(agentOpts.ai, true);
+});
+
+await check('buildPipelineResearchAgentOpts enables ai from catalog without --ai', () => {
+  const { agentOpts } = buildPipelineResearchAgentOpts('cedar-point', {});
+  assert.equal(agentOpts.ai, true);
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);
