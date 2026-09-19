@@ -25,6 +25,7 @@ import { venueImageryCoverage } from './imagery-ledger.mjs';
 import { isRideable } from '@party-tracker/shared/ontology.js';
 import { looksLikeFalseRide } from './non-ride-names.mjs';
 import { renderCertificationMarkdown } from './certification-markdown.mjs';
+import { attachDriftRevocation } from './drift-revocation.mjs';
 
 export { renderCertificationMarkdown };
 
@@ -80,6 +81,7 @@ function loadVenue(id) {
  * @returns certification result (also written when write !== false)
  */
 export function certifyVenue(id, opts = {}) {
+  const prior = readJson(certificationFile(id), null);
   const { venue, map, pois, sizes, overrides, recipe } = loadVenue(id);
   const checks = [];
 
@@ -438,15 +440,17 @@ export function certifyVenue(id, opts = {}) {
     askBrief.inventory = inventoryAsks;
   }
 
-  const doc = {
+  const doc = attachDriftRevocation(prior, {
     version: CERT_VERSION,
     venue: { id: venue.id, name: venue.name, locality: venue.locality },
     certified,
-    certifiedAt: certified ? new Date().toISOString() : null,
+    certifiedAt: certified
+      ? new Date().toISOString()
+      : (prior?.certifiedAt ?? null),
     bundleFingerprint: bundleFingerprint(id),
     checks,
     ask: askBrief,
-  };
+  });
 
   if (opts.write !== false) {
     const file = venueSidecar(id, 'certification.json');

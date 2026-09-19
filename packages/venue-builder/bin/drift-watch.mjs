@@ -9,7 +9,10 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readJson, VENUE_DIR } from '../lib/venue-io.mjs';
+import { readJson, writeJson, VENUE_DIR, venueSidecar } from '../lib/venue-io.mjs';
+import { applyDriftRevocations } from '../lib/drift-revocation.mjs';
+
+const certificationFile = (id) => venueSidecar(id, 'certification.json');
 
 const BUILDER_BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), 'build-venue.mjs');
 
@@ -20,15 +23,17 @@ function printUsage() {
       '',
       '  npm run venues:drift-watch',
       '  npm run venues:drift-watch -- --json',
+      '  npm run venues:drift-watch -- --revoke',
     ].join('\n'),
   );
 }
 
 function parseArgs(argv) {
-  const out = { json: false, all: false, help: false, _: [] };
+  const out = { json: false, all: false, help: false, revoke: false, _: [] };
   for (const a of argv) {
     if (a === '--json') out.json = true;
     else if (a === '--all') out.all = true;
+    else if (a === '--revoke') out.revoke = true;
     else if (a === '--help' || a === '-h') out.help = true;
     else if (!a.startsWith('--')) out._.push(a);
   }
@@ -63,6 +68,14 @@ function main() {
     generated: new Date().toISOString(),
     rows,
   };
+
+  if (args.revoke && drifted.length) {
+    summary.revocation = applyDriftRevocations(summary, {
+      detectedAt: summary.generated,
+      readCert: (id) => readJson(certificationFile(id), null),
+      writeCert: (id, doc) => writeJson(certificationFile(id), doc, true),
+    });
+  }
 
   if (args.json) {
     console.log(JSON.stringify(summary, null, 2));
