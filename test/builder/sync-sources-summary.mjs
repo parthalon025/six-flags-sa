@@ -32,6 +32,22 @@ const everyAdapterFails = {
   },
 };
 
+const tokenGapOnly = {
+  'cedar-point': {
+    'mapillary-api': { ok: true, meta: { gap: true } },
+  },
+  'kings-island': {
+    'mapillary-api': { ok: true, meta: { gap: true } },
+  },
+};
+
+const tokenGapWithRealFetch = {
+  'cedar-point': {
+    'mapillary-api': { ok: true, meta: { gap: true } },
+    'parks-api': { ok: true },
+  },
+};
+
 {
   const { exitCode, markdown } = summarizeSyncResults(cedarOk);
   assert.equal(exitCode, 0, 'all ok exits 0');
@@ -54,6 +70,20 @@ const everyAdapterFails = {
 {
   const { exitCode } = summarizeSyncResults({});
   assert.equal(exitCode, 1, 'empty fleet is unusable');
+}
+
+{
+  const { exitCode, markdown } = summarizeSyncResults(tokenGapOnly);
+  assert.equal(exitCode, 0, 'token-gap skip is graceful, not unusable');
+  assert.match(markdown, /mapillary-api.*skipped \(no token\)/i);
+  assert.doesNotMatch(markdown, /mapillary-api.*\bok\b/i);
+}
+
+{
+  const { exitCode, markdown } = summarizeSyncResults(tokenGapWithRealFetch);
+  assert.equal(exitCode, 0, 'mixed skip and ok stays usable');
+  assert.match(markdown, /mapillary-api.*skipped \(no token\)/i);
+  assert.match(markdown, /parks-api.*\bok\b/i);
 }
 
 console.log('ok sync-sources-summary');
