@@ -53,15 +53,29 @@ function poiToPoint(poi) {
   };
 }
 
+function defaultTippecanoeRun(outFile, geojson) {
+  return spawnSync(
+    'tippecanoe',
+    ['-o', outFile, '-zg', '--drop-densest-as-needed', geojson],
+    { stdio: ['ignore', 'ignore', 'pipe'] },
+  );
+}
+
 /**
  * Run tippecanoe over each GeoJSON layer file, matching tippecanoe.sh flags.
  * Returns { ok, gap?, reason?, mbtiles } — never throws for a missing binary.
+ *
+ * @param {{ isAvailable?: () => boolean, runLayer?: (outFile: string, geojson: string) => { status: number | null, stderr?: Buffer | string } }} [hooks]
+ *   Test-only overrides for binary presence and per-layer invocation.
  */
-export function runTippecanoePerLayer(outDir, geojsonFiles = []) {
+export function runTippecanoePerLayer(outDir, geojsonFiles = [], hooks = {}) {
+  const isAvailable = hooks.isAvailable ?? tippecanoeAvailable;
+  const runLayer = hooks.runLayer ?? defaultTippecanoeRun;
+
   if (!geojsonFiles.length) {
     return { ok: true, mbtiles: [] };
   }
-  if (!tippecanoeAvailable()) {
+  if (!isAvailable()) {
     return {
       ok: false,
       gap: true,
@@ -73,11 +87,7 @@ export function runTippecanoePerLayer(outDir, geojsonFiles = []) {
   for (const geojson of geojsonFiles) {
     const base = path.basename(geojson, '.geojson');
     const outFile = path.join(outDir, `${base}.mbtiles`);
-    const res = spawnSync(
-      'tippecanoe',
-      ['-o', outFile, '-zg', '--drop-densest-as-needed', geojson],
-      { stdio: ['ignore', 'ignore', 'pipe'] },
-    );
+    const res = runLayer(outFile, geojson);
     if (res.status !== 0) {
       return {
         ok: false,

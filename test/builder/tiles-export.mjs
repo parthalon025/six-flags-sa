@@ -10,7 +10,7 @@
  *   node test/builder/tiles-export.mjs
  */
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -31,7 +31,7 @@ async function check(name, fn) {
 
 console.log('\ntiles-export\n');
 
-const { exportTileGeoJson } = await import('../../packages/venue-builder/lib/tiles-export.mjs');
+const { exportTileGeoJson, runTippecanoePerLayer } = await import('../../packages/venue-builder/lib/tiles-export.mjs');
 const { tippecanoeAvailable } = await import('../../packages/venue-builder/lib/display-tiles.mjs');
 
 const LAYER_KEYS = ['path', 'building', 'water', 'coaster', 'slide', 'parking', 'pool'];
@@ -134,7 +134,36 @@ await check('tippecanoe adapter ok follows gap vs failure (#414)', async () => {
   return true;
 });
 
-await check('tippecanoe run or gap is recorded honestly (#414)', () => {
+await check('runTippecanoePerLayer records gap when binary is absent (#414)', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'tiles-export-gap-'));
+  const geojson = path.join(dir, 'path.geojson');
+  writeFileSync(geojson, '{"type":"FeatureCollection","features":[]}\n');
+  const tiles = runTippecanoePerLayer(dir, [geojson], { isAvailable: () => false });
+  assert.equal(tiles.ok, false);
+  assert.equal(tiles.gap, true);
+  assert.match(tiles.reason, /tippecanoe/);
+  assert.equal(readdirSync(dir).some((f) => f.endsWith('.mbtiles')), false);
+  return true;
+});
+
+await check('runTippecanoePerLayer runs each layer when binary is present (#414)', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'tiles-export-run-'));
+  const geojson = path.join(dir, 'path.geojson');
+  writeFileSync(geojson, '{"type":"FeatureCollection","features":[]}\n');
+  const tiles = runTippecanoePerLayer(dir, [geojson], {
+    isAvailable: () => true,
+    runLayer: (outFile) => {
+      writeFileSync(outFile, 'mbtiles-stub');
+      return { status: 0 };
+    },
+  });
+  assert.equal(tiles.ok, true, tiles.reason);
+  assert.deepEqual(tiles.mbtiles, [path.join(dir, 'path.mbtiles')]);
+  assert.ok(existsSync(tiles.mbtiles[0]));
+  return true;
+});
+
+await check('tippecanoe run or gap is recorded honestly in exportTileGeoJson (#414)', () => {
   const map = {
     path: [{ r: [[-84.265, 39.344], [-84.264, 39.345], [-84.263, 39.346]], n: 'Test Path' }],
   };
