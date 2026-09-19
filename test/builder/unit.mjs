@@ -131,6 +131,12 @@ const {
   snapToGraph,
   splitRouteAt,
 } = await import('../../apps/party-tracker/lib/routing.js');
+const {
+  annotateRouteShade,
+  shadeHintForRoute,
+  shadeNote,
+  SHADE_BUFFER_M,
+} = await import('../../apps/party-tracker/lib/routeShade.js');
 const { bearing, distance } = await import('../../apps/party-tracker/lib/geo.js');
 const {
   CONDITIONS,
@@ -2933,6 +2939,82 @@ await check('two turns in a row do not name the same building', () => {
       assert.notEqual(s.landmark, r.steps[i - 1].landmark, `${a} -> ${b} says ${s.landmark} twice running`);
     });
   });
+  return true;
+});
+
+section('routing/shade');
+
+const SHADE_MAP = {
+  path: [{ r: [[-84.2680, 39.3400], [-84.2650, 39.3400]], n: 'Midway' }],
+  wood: [
+    {
+      r: [
+        [-84.2685, 39.3390],
+        [-84.2645, 39.3390],
+        [-84.2645, 39.3410],
+        [-84.2685, 39.3410],
+        [-84.2685, 39.3390],
+      ],
+      n: 'Grove',
+    },
+  ],
+};
+
+await check('a route through mapped wood earns a mostly_near_trees hint (#356)', () => {
+  const g = buildRouteGraph(SHADE_MAP);
+  const points = [
+    [39.34, -84.2678],
+    [39.34, -84.2665],
+    [39.34, -84.2652],
+  ];
+  const hint = shadeHintForRoute({ points, wood: SHADE_MAP.wood, proj: g.proj });
+  assert.ok(hint, 'expected a shade hint');
+  assert.equal(hint.source, 'tree_cover_heuristic');
+  assert.equal(hint.buffer_m, SHADE_BUFFER_M);
+  assert.ok(hint.fraction >= 0.5, `fraction ${hint.fraction}`);
+  assert.equal(hint.label, 'mostly_near_trees');
+  assert.match(shadeNote(hint), /not a shade guarantee/);
+  return true;
+});
+
+await check('a route far from wood earns no shade hint (#356)', () => {
+  const g = buildRouteGraph(SHADE_MAP);
+  const route = findRoute(
+    g,
+    { lat: 39.3385, lng: -84.2678 },
+    { lat: 39.3385, lng: -84.2652 },
+    {},
+  );
+  const hint = shadeHintForRoute({ points: route.points, wood: SHADE_MAP.wood, proj: g.proj });
+  assert.equal(hint, null);
+  return true;
+});
+
+await check('shade annotation does not change route geometry or cost (#356)', () => {
+  const g = buildRouteGraph(SHADE_MAP);
+  const from = { lat: 39.34, lng: -84.2678 };
+  const to = { lat: 39.34, lng: -84.2652 };
+  const base = findRoute(g, from, to, {});
+  const annotated = annotateRouteShade(base, SHADE_MAP, g.proj);
+  assert.equal(annotated.metres, base.metres);
+  assert.deepEqual(annotated.points, base.points);
+  assert.ok(annotated.shade);
+  return true;
+});
+
+await check('kings-island routes can surface tree-cover shade without rerouting (#356)', () => {
+  const route = findRoute(graph, poi('The Beast'), poi('Mystic Timbers'), {
+    landmarks: RIDES,
+    destination: 'Mystic Timbers',
+  });
+  const annotated = annotateRouteShade(route, PARK, graph.proj);
+  if (PARK.wood?.length) {
+    assert.ok(
+      annotated.shade == null || annotated.shade.fraction > 0,
+      'shade hint must be honest when present',
+    );
+  }
+  assert.equal(annotated.metres, route.metres);
   return true;
 });
 

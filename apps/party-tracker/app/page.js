@@ -44,6 +44,7 @@ import { fromFacts, peopleFor } from '@/lib/eligibility';
 import { clearDraft, loadDraft, promote, saveDraft, star, view as planView } from '@/lib/plan';
 import { statusSummary } from '@/lib/rideStatus';
 import { profilesForCoverage, profileOpts } from '@/lib/routingProfiles';
+import { annotateRouteShade, shadeNote } from '@/lib/routeShade';
 import {
   bootVenue,
   confirmVenue,
@@ -1462,6 +1463,14 @@ function ParkApp({ isSignedIn }) {
     return null;
   }, [mapData?.meta?.coverage, routeProfile]);
 
+  const annotateRoutes = useCallback(
+    (list) => {
+      if (!list?.length || !mapData?.wood?.length || !graph?.proj) return list;
+      return list.map((route) => annotateRouteShade(route, mapData, graph.proj));
+    },
+    [graph, mapData],
+  );
+
   const others = useMemo(
     () => roster.filter((m) => m.id !== party?.selfId && m.visible),
     [roster, party?.selfId],
@@ -2386,19 +2395,21 @@ function ParkApp({ isSignedIn }) {
         ...(graph ? profileOpts(routeProfile, graph) : {}),
       };
       if (navPhase === 'preview') {
-        setRoutes(routing.findRoutes(graph, position, navTarget, opts));
+        setRoutes(annotateRoutes(routing.findRoutes(graph, position, navTarget, opts)));
         setPick(0);
       } else {
         const chosen = routesRef.current[pickRef.current];
         const penalty = chosen?.avoid ?? null;
-        setRoutes([routing.findRoute(graph, position, navTarget, { ...opts, penalty })]);
+        setRoutes(
+          annotateRoutes([routing.findRoute(graph, position, navTarget, { ...opts, penalty })]),
+        );
         setPick(0);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [navTarget, position, graph, navPhase, mapData, POIS, routeProfile, pick, getRouting]);
+  }, [annotateRoutes, navTarget, position, graph, navPhase, mapData, POIS, routeProfile, pick, getRouting]);
 
   const routes = routesList;
   const route = routesList[pick] ?? routesList[0] ?? null;
@@ -3214,6 +3225,7 @@ function ParkApp({ isSignedIn }) {
           profileId={routeProfile}
           onProfile={setRouteProfile}
           profileNote={profileNote}
+          shadeNote={route?.shade ? shadeNote(route.shade) : null}
           entranceHint={navTarget?.kind === 'poi' ? entranceLine(findPlace(POIS, navTarget)) : null}
         />
       )}
