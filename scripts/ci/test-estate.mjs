@@ -139,6 +139,7 @@ export const TEST_ESTATE = {
   'test/app/webrtc-relay.test.mjs': ['test:unit'],
   'test/app/webrtc-qr.test.mjs': ['test:unit'],
   'test/app/qr-signal.test.mjs': ['test:unit'],
+  'test/app/qr-exchange.test.mjs': ['test:unit'],
   'test/app/validate-ui-queue.test.mjs': ['test:unit'],
   'test/app/validate-ui.mjs': ['app-vertical'],
   'test/app/venue-download.test.mjs': ['test:unit'],

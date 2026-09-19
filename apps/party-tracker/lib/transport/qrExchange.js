@@ -11,28 +11,50 @@
 export function createQrExchange() {
   let offerPayload = null;
   let answerPayload = null;
+  const offerWaiters = [];
+  const answerWaiters = [];
+
+  const waitFor = (get, waiters) =>
+    new Promise((resolve) => {
+      const cur = get();
+      if (cur) {
+        resolve(cur);
+        return;
+      }
+      waiters.push(() => resolve(get()));
+    });
+
+  const resolveOffer = () => {
+    while (offerWaiters.length) offerWaiters.shift()(offerPayload);
+  };
+
+  const resolveAnswer = () => {
+    while (answerWaiters.length) answerWaiters.shift()(answerPayload);
+  };
 
   const host = {
     onOfferReady: async (encoded) => {
       offerPayload = encoded;
+      resolveOffer();
     },
-    waitForAnswer: async () => {
-      while (!answerPayload) {
-        await new Promise((r) => setTimeout(r, 0));
-      }
-      return answerPayload;
+    waitForOfferEncoded: () => waitFor(() => offerPayload, offerWaiters),
+    waitForAnswer: () => waitFor(() => answerPayload, answerWaiters),
+    submitAnswer: async (encoded) => {
+      answerPayload = encoded;
+      resolveAnswer();
     },
   };
 
   const client = {
-    waitForOffer: async () => {
-      while (!offerPayload) {
-        await new Promise((r) => setTimeout(r, 0));
-      }
-      return offerPayload;
+    submitOffer: async (encoded) => {
+      offerPayload = encoded;
+      resolveOffer();
     },
+    waitForOffer: () => waitFor(() => offerPayload, offerWaiters),
+    waitForAnswerEncoded: () => waitFor(() => answerPayload, answerWaiters),
     onAnswerReady: async (encoded) => {
       answerPayload = encoded;
+      resolveAnswer();
     },
   };
 
@@ -42,6 +64,8 @@ export function createQrExchange() {
     reset: () => {
       offerPayload = null;
       answerPayload = null;
+      offerWaiters.length = 0;
+      answerWaiters.length = 0;
     },
   };
 }

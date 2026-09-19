@@ -29,6 +29,7 @@ import { createTransportManager } from '@/lib/transport/registry';
 import { createLocalHttp } from '@/lib/transport/localHttp';
 import { createWebRTC } from '@/lib/transport/webrtc';
 import { createQrExchange } from '@/lib/transport/qrExchange';
+import { decodeAnswer, decodeOffer } from '@/lib/transport/qrSignal';
 import { createBluetooth } from '@/lib/transport/bluetooth';
 import { createCloudRelay } from '@/lib/transport/cloudRelay';
 import { createOfflineQueue } from '@/lib/transport/offlineQueue';
@@ -169,6 +170,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
       hostId: state?.leader ?? session?.hostId ?? null,
       name: session?.memberName ?? 'Guest',
       invite: inviteUrl(),
+      selfContained: Boolean(session?.qrExchange),
       // The party key, for the parts of the app that have to seal something
       // themselves — the notification path, which has to hand the service
       // worker a key it can use while no page is running. No new exposure: the
@@ -1095,6 +1097,54 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     return Boolean(saved?.partyId && saved?.keyString);
   }
 
+  /**
+   * PairQr callbacks for self-contained WebRTC when session.qrExchange is set.
+   * Returns null when the party is not in hotspot / QR signaling mode.
+   */
+  function getQrPairing() {
+    const ex = session?.qrExchange;
+    if (!ex) return null;
+    const base = origin();
+
+    if (host) {
+      return {
+        role: 'host',
+        origin: base,
+        onGatherOffer: async () => {
+          const encoded = await ex.host.waitForOfferEncoded();
+          const sdp = await decodeOffer(encoded);
+          if (!sdp) throw new Error('Could not read the pairing offer.');
+          return sdp;
+        },
+        onGatherAnswer: async () => {
+          throw new Error('The host does not gather answers.');
+        },
+        onAnswerScanned: async (encoded) => {
+          await ex.host.submitAnswer(encoded);
+        },
+      };
+    }
+
+    if (client) {
+      return {
+        role: 'joiner',
+        origin: base,
+        onGatherOffer: async () => {
+          throw new Error('The joiner does not gather offers.');
+        },
+        onGatherAnswer: async (encodedOffer) => {
+          await ex.client.submitOffer(encodedOffer);
+          const encoded = await ex.client.waitForAnswerEncoded();
+          const sdp = await decodeAnswer(encoded);
+          if (!sdp) throw new Error('Could not read the pairing answer.');
+          return sdp;
+        },
+      };
+    }
+
+    return null;
+  }
+
   return {
     createParty,
     joinParty,
@@ -1127,6 +1177,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     pushLocation,
     pushBattery,
     getSnapshot,
+    getQrPairing,
     stats,
     destroy,
   };

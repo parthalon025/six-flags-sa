@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import QrScanner from '@/components/QrScanner';
+import PairQr from '@/components/PairQr';
 import { classifyQrPayload } from '@/lib/transport/qrSignal';
 import Icon from '@/components/Icon';
 import { GLYPHS, WORDS } from '@/lib/brand';
@@ -111,7 +112,11 @@ export default function PartyPanel({
   onStatus,
   onShareMode = null,
   onCreate,
+  onCreateHotspot = null,
   onJoin,
+  onJoinHotspot = null,
+  qrPairing = null,
+  initialPairOfferUrl = null,
   onLeave,
   onClearMeet,
   onNavigateMeet,
@@ -147,6 +152,10 @@ export default function PartyPanel({
   const [arming, setArming] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [showQr, setShowQr] = useState(true);
+  const [pairingDone, setPairingDone] = useState(false);
+  useEffect(() => {
+    setPairingDone(false);
+  }, [qrPairing?.role, code]);
   const [guestName, setGuestName] = useState('');
   const [guestHeight, setGuestHeight] = useState('');
   const [staleGuest, setStaleGuest] = useState(null);
@@ -202,6 +211,27 @@ export default function PartyPanel({
         >
           {busy ? 'Starting…' : 'Start a party'}
         </button>
+        {onCreateHotspot ? (
+          <>
+            <div className="label eyebrow">Same hotspot</div>
+            <p className="fine" style={{ marginTop: 0 }}>
+              Works when every phone shares one personal hotspot — no server in the loop. You
+              still share the invite link or QR for the party key; the pairing QR below only
+              opens the direct channel.
+            </p>
+            <button
+              type="button"
+              className="btn rect"
+              onClick={() => {
+                onName?.(name);
+                onCreateHotspot();
+              }}
+              disabled={busy}
+            >
+              {busy ? 'Starting…' : 'Start on same hotspot'}
+            </button>
+          </>
+        ) : null}
         <div className="label eyebrow">Join an Existing One</div>
         <div className="joinRow">
           <input
@@ -249,6 +279,25 @@ export default function PartyPanel({
             onCancel={() => setScanning(false)}
           />
         )}
+        {onJoinHotspot ? (
+          <>
+            <p className="fine" style={{ marginTop: 12 }}>
+              On the same hotspot, paste or scan the <b>invite</b> link first — a typed code needs
+              the server. Then finish with the host&apos;s pairing QR.
+            </p>
+            <button
+              type="button"
+              className="btn rect"
+              onClick={() => {
+                onName?.(name);
+                onJoinHotspot(entry, name);
+              }}
+              disabled={!entry.trim() || busy}
+            >
+              {busy ? 'Joining…' : 'Join on same hotspot'}
+            </button>
+          </>
+        ) : null}
       </div>
     );
   }
@@ -762,6 +811,30 @@ export default function PartyPanel({
             about 10 minutes while Party is open on this phone; the invite link and QR
             always carry the key and keep working.
           </p>
+        </>
+      ) : null}
+
+      {qrPairing && !pairingDone ? (
+        <>
+          <div className="label eyebrow">Direct channel</div>
+          <p className="fine" style={{ marginTop: 0 }}>
+            {qrPairing.role === 'host'
+              ? 'Have the other phone scan this offer, then scan their answer QR in the app.'
+              : 'Scan the host\'s offer QR, or open their pairing link from the camera app.'}
+          </p>
+          <PairQr
+            role={qrPairing.role === 'host' ? 'host' : 'joiner'}
+            origin={qrPairing.origin}
+            onGatherOffer={qrPairing.onGatherOffer}
+            onGatherAnswer={qrPairing.onGatherAnswer}
+            onAnswerScanned={qrPairing.onAnswerScanned}
+            initialOfferUrl={initialPairOfferUrl}
+            onConnected={() => {
+              setPairingDone(true);
+              onCopied?.('Direct channel open — traffic stays on the hotspot.');
+            }}
+            onCancel={() => setPairingDone(true)}
+          />
         </>
       ) : null}
     </div>

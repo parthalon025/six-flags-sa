@@ -10,17 +10,9 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { classifyQrPayload } from '@/lib/transport/qrSignal';
-const PAIR_OFFER_KEY = 'ki-pending-pair-offer';
+import { stashPendingPairOffer } from '@/lib/party/pairOfferStash';
 
-export function stashPendingPairOffer(payload) {
-  if (typeof window === 'undefined' || !payload) return false;
-  try {
-    window.sessionStorage.setItem(PAIR_OFFER_KEY, String(payload));
-    return true;
-  } catch {
-    return false;
-  }
-}
+export { stashPendingPairOffer };
 
 function PairFlow() {
   const router = useRouter();
