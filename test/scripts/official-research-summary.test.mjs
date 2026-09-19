@@ -38,6 +38,19 @@ const everyVenueFails = [
   },
 ];
 
+const fetchOnlyFleet = [
+  {
+    venue: { id: 'cedar-point', name: 'Cedar Point' },
+    official: {
+      siteCount: 12,
+      matched: 8,
+      errors: [],
+      pages: [{ via: 'fetch' }],
+      fetched: '2026-09-18',
+    },
+  },
+];
+
 {
   const { exitCode, markdown } = summarizeOfficialResearchResults(cedarOk);
   assert.equal(exitCode, 0, 'venue with listings exits 0');
@@ -61,6 +74,14 @@ const everyVenueFails = [
 {
   const { exitCode } = summarizeOfficialResearchResults([]);
   assert.equal(exitCode, 1, 'empty fleet is unusable');
+}
+
+{
+  const { exitCode, markdown } = summarizeOfficialResearchResults(fetchOnlyFleet);
+  assert.equal(exitCode, 0, 'fetch-only fleet is still usable');
+  assert.match(markdown, /fetch only/i);
+  assert.match(markdown, /browser.*not used|no venue used playwright/i);
+  assert.doesNotMatch(markdown, /Playwright browser fetch was used/i);
 }
 
 console.log('ok official-research-summary');

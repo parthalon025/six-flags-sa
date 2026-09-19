@@ -36,6 +36,8 @@ export function summarizeOfficialResearchResults(packets) {
   const browserUsed = Object.values(perVenue).some((v) => v.browser);
   if (browserUsed) {
     lines.push('', '_Playwright browser fetch was used for at least one venue._');
+  } else if (anySuccess) {
+    lines.push('', '_No venue used Playwright browser fetch — all listings were fetch-only._');
   }
 
   if (!anySuccess) {
