@@ -28,6 +28,7 @@ import { createClient } from '@/lib/party/client';
 import { createTransportManager } from '@/lib/transport/registry';
 import { createLocalHttp } from '@/lib/transport/localHttp';
 import { createWebRTC } from '@/lib/transport/webrtc';
+import { createQrExchange } from '@/lib/transport/qrExchange';
 import { createBluetooth } from '@/lib/transport/bluetooth';
 import { createCloudRelay } from '@/lib/transport/cloudRelay';
 import { createOfflineQueue } from '@/lib/transport/offlineQueue';
@@ -523,9 +524,15 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
   function buildTransports(role) {
     const lan = session.endpoints?.find(Boolean) || LAN_BASE;
     outbox = createOfflineQueue({ storageKey: `ki-outbox-${session.partyId}` });
+    const webrtcOpts = { base: origin(), role };
+    if (session?.qrExchange) {
+      webrtcOpts.signal = 'qr';
+      webrtcOpts.qr = role === 'host' ? session.qrExchange.host : session.qrExchange.client;
+      webrtcOpts.iceServers = [];
+    }
     return [
       createLocalHttp({ base: lan }),
-      createWebRTC({ base: origin(), role }),
+      createWebRTC(webrtcOpts),
       createBluetooth(),
       createCloudRelay({ base: origin() }),
       outbox,
@@ -831,7 +838,12 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     return getSnapshot();
   }
 
-  async function createParty({ name = 'Party', memberName = 'Guest', userId = null } = {}) {
+  async function createParty({
+    name = 'Party',
+    memberName = 'Guest',
+    userId = null,
+    selfContained = false,
+  } = {}) {
     await teardown();
     phase = 'connecting';
     emit();
@@ -851,6 +863,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
         role: 'host',
         hostId: selfId,
       });
+      if (selfContained) built.qrExchange = createQrExchange();
       const snapshot = await begin(built, 'host', memberName, name, { userId });
       if (!allocated.registered) {
         say('No server reachable — share the link or QR, the code will not resolve');
@@ -866,7 +879,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
   }
 
   /** Accepts a whole invite URL, a bare fragment, or a six-character code. */
-  async function joinParty(input, { memberName = 'Guest', userId = null } = {}) {
+  async function joinParty(input, { memberName = 'Guest', userId = null, selfContained = false } = {}) {
     await teardown();
     phase = 'connecting';
     emit();
@@ -896,6 +909,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
         role: 'client',
         hostId: null,
       });
+      if (selfContained) built.qrExchange = createQrExchange();
       const snapshot = await begin(built, 'client', memberName, 'Party', { handshakeCode, userId });
       AnalyticsEvents.partyJoined(bundle.partyId);
       return snapshot;
@@ -1115,5 +1129,6 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     getSnapshot,
     stats,
     destroy,
+    createQrExchange,
   };
 }

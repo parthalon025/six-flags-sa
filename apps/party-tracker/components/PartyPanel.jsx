@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import QrScanner from '@/components/QrScanner';
+import { classifyQrPayload } from '@/lib/transport/qrSignal';
 import Icon from '@/components/Icon';
 import { GLYPHS, WORDS } from '@/lib/brand';
 import { shareInvite } from '@/lib/native';
@@ -238,6 +239,11 @@ export default function PartyPanel({
             onResult={(text) => {
               setScanning(false);
               onName?.(name);
+              const kind = classifyQrPayload(text);
+              if (kind === 'offer') {
+                onCopied?.('That QR is a same-hotspot pairing offer — open the /pair link on this phone instead.');
+                return;
+              }
               onJoin(text, name);
             }}
             onCancel={() => setScanning(false)}

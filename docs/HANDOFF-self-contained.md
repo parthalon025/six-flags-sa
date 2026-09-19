@@ -212,9 +212,9 @@ that this adds a better path, not that it removes the old one.
 
 | File | Change |
 |---|---|
-| `lib/transport/qrSignal.js` *(new)* | `encodeOffer(sdp)` / `decodeOffer(s)` / `encodeAnswer` / `decodeAnswer`. Strip → deflate → base64url, and the inverse. Pure and unit-testable — no DOM. |
-| `lib/transport/webrtc.js` | Add a `signal: 'qr'` mode alongside the mailbox one. Force non-trickle: resolve only on `icegatheringstate === 'complete'`. Accept `iceServers: []` so no STUN is contacted. |
-| `components/PairQr.jsx` *(new)* | The two-sided pairing UI: render our QR, scan theirs, show gathering/scanning/connected states. |
+| `lib/transport/qrSignal.js` | `encodeOffer` / `decodeOffer` / `encodeAnswer` / `decodeAnswer` / `classifyQrPayload`. Asserted in `test/app/qr-signal.test.mjs`. |
+| `lib/transport/webrtc.js` | `signal: 'qr'` mode with non-trickle ICE and `iceServers: []`. Asserted in `test/app/webrtc-qr.test.mjs`. |
+| `components/PairQr.jsx` | Two-sided pairing UI: gathering → QR → in-page answer scan on the host. |
 | `components/QrScanner.jsx` | Needs a real decoder for iOS — Safari has no `BarcodeDetector`. `jsQR` (~40 KB) or `zxing-wasm`. The only new dependency this work needs, and only the hosting phone loads it: import it lazily when pairing mode opens, so a joiner using its stock camera never downloads it. |
 | `lib/partyRuntime.js` | Offer "pair without a server" as a join path next to QR/link/code. |
 | `test/unit.mjs` | Round-trip the codec; assert the encoded payload stays under the QR budget for a realistic multi-interface SDP. |

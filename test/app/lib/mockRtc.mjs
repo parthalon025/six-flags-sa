@@ -89,7 +89,9 @@ class MockPeerConnection {
     this.signalingState = 'stable';
     this.connectionState = 'new';
     this.iceConnectionState = 'new';
+    this.iceGatheringState = 'new';
     this.onicecandidate = null;
+    this.onicegatheringstatechange = null;
     this.ondatachannel = null;
     this.onconnectionstatechange = null;
     this.oniceconnectionstatechange = null;
@@ -107,15 +109,30 @@ class MockPeerConnection {
     return channel;
   }
 
+  _mockSdp(kind) {
+    return [
+      'v=0',
+      'o=- 1 2 IN IP4 127.0.0.1',
+      's=-',
+      't=0 0',
+      'm=application 9 UDP/DTLS/SCTP webrtc-datachannel',
+      'c=IN IP4 0.0.0.0',
+      `a=mock-${kind}:${this.peerId}`,
+      'a=candidate:1 1 udp 2122260223 192.168.1.10 54321 typ host',
+      'a=end-of-candidates',
+    ].join('\r\n');
+  }
+
   async createOffer() {
-    return { type: 'offer', sdp: `mock-offer:${this.peerId}` };
+    return { type: 'offer', sdp: this._mockSdp('offer') };
   }
 
   async createAnswer() {
-    return { type: 'answer', sdp: `mock-answer:${this.peerId}` };
+    return { type: 'answer', sdp: this._mockSdp('answer') };
   }
 
   _emitIce() {
+    this.iceGatheringState = 'gathering';
     const candidate = {
       candidate: 'mock',
       sdpMid: '0',
@@ -126,6 +143,8 @@ class MockPeerConnection {
     };
     this.onicecandidate?.({ candidate });
     this.onicecandidate?.({ candidate: null });
+    this.iceGatheringState = 'complete';
+    this.onicegatheringstatechange?.();
   }
 
   async setLocalDescription(desc) {
@@ -138,14 +157,21 @@ class MockPeerConnection {
   async setRemoteDescription(desc) {
     this.remoteDescription = desc;
     if (desc.type === 'offer') {
-      // The joiner overwrites setRtcContext before the host's mailbox poll runs.
-      this.role = 'host';
       this.signalingState = 'have-remote-offer';
-      const offerer = desc.sdp?.match(/mock-offer:(.+)$/)?.[1];
+      const offerer = desc.sdp?.match(/mock-offer:([^\r\n]+)/)?.[1];
+      const h = hub(this.partyId);
+      const offererChannel = offerer ? h.byPeer.get(offerer)?.channel : null;
+      if (offererChannel && this.role === 'client') {
+        this._linkAsAnswerer(offererChannel);
+        return;
+      }
+      // Mailbox path: the joiner offered and this peer is the host answering.
+      this.role = 'host';
       this._linkAsHost(offerer);
     }
     if (desc.type === 'answer') {
       this.signalingState = 'stable';
+      this._openPairedChannels();
     }
   }
 
@@ -165,9 +191,28 @@ class MockPeerConnection {
     const hostChannel = new MockDataChannel('party');
     pairChannels(clientChannel, hostChannel);
     this.ondatachannel?.({ channel: hostChannel });
+    this._openPairedChannels();
+  }
+
+  /** QR path: host offered with a data channel; answerer receives it. */
+  _linkAsAnswerer(offererChannel) {
+    if (!offererChannel || offererChannel._peer) return;
+    const answererChannel = new MockDataChannel('party');
+    pairChannels(offererChannel, answererChannel);
+    this._channel = answererChannel;
+    this.ondatachannel?.({ channel: answererChannel });
+    this._openPairedChannels();
+  }
+
+  _openPairedChannels() {
+    const h = hub(this.partyId);
     const delay = h.openDelayMs;
-    clientChannel._scheduleOpen(delay);
-    hostChannel._scheduleOpen(delay);
+    const channel = this._channel;
+    if (channel && !channel._peer) return;
+    if (channel) {
+      channel._scheduleOpen(delay);
+      channel._peer?._scheduleOpen(delay);
+    }
     this.connectionState = 'connected';
     this.iceConnectionState = 'connected';
   }
