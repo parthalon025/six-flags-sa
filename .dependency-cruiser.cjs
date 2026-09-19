@@ -178,6 +178,9 @@ module.exports = {
           // ship-gaps.mjs, which deliberately does not import venue-io.mjs
           // (see ship-gaps.mjs's header) to keep that handoff one-directional.
           "^packages/venue-builder/lib/venue-io\\.mjs$",
+          // bake-off #413: reads committed parks-api-cache.json paths via
+          // adapters/parks-api.mjs — same sidecar read venue-io does for gaps.
+          "^packages/venue-builder/lib/venue-data-adapter-bakeoff-samples\\.mjs$",
         ],
       },
       to: { path: "^packages/venue-builder/lib/(agents|operators|adapters)/" },
