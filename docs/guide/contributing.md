@@ -8,6 +8,13 @@ Before opening a pull request, read the [architecture map](../architecture-map.m
 through the [venue builder](../../packages/venue-builder/) — see `AGENTS.md` for the builder ↔ app
 contract.
 
+## PR review checklist
+
+- **No per-park forks** — app code stays venue-agnostic. Park-specific behavior belongs in builder
+  data (`packages/venue-builder/data/venues/<id>/`), display packs, or config templates — not
+  `venueId` conditionals, per-park components, or copied app variants. Full policy:
+  [no-per-park-forks](../agents/policies/no-per-park-forks.md).
+
 Screenshots and the walkthrough video live under `docs/images/readme/` and are listed in
 `docs/images/readme/shots.json`. Recapture them when you change a screen they show
 (map, heights, walking, party):
