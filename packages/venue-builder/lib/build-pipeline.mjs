@@ -63,6 +63,22 @@ export const STAGES = [
   'display',
 ];
 
+/**
+ * Resolve fetch/browser/parksApi/offline for the agent orchestrator stage (#398).
+ * Default stays offline so catalog batches stay rate-limit-safe.
+ */
+export function resolvePipelineAgentOrchestratorOpts(opts = {}) {
+  if (opts.agentFetch !== true) {
+    return { fetch: false, browser: false, parksApi: false, offline: true };
+  }
+  return {
+    fetch: true,
+    browser: opts.browser !== false,
+    parksApi: true,
+    offline: false,
+  };
+}
+
 function sleep(seconds) {
   return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 }
@@ -130,6 +146,7 @@ export async function runVenuePipeline(park, opts = {}) {
     terrain: wantTerrain = true,
     constrain = true,
     mesh = false,
+    agentFetch = false,
     skip = [],
   } = opts;
 
@@ -156,7 +173,10 @@ export async function runVenuePipeline(park, opts = {}) {
       console.log(`#   attractions → inventory + evidence`);
     }
     if (!skip.includes('agent') && agent) {
-      console.log(`#   agent → QA, GIS, vision, validation --apply`);
+      const agentEvidence = resolvePipelineAgentOrchestratorOpts({ agentFetch, browser });
+      const evidenceNote = agentEvidence.fetch ? ' (external evidence on)' : '';
+      console.log(`#   agent → QA, GIS, vision, validation --apply${evidenceNote}`);
+      logStage('agent', { externalEvidence: agentEvidence.fetch });
     }
     if (!skip.includes('certify') && certify) {
       console.log(`#   certify → report + compare + route-qa + ask`);
@@ -313,17 +333,20 @@ export async function runVenuePipeline(park, opts = {}) {
     }
 
   if (!skip.includes('agent') && agent) {
-    console.error('  · agent: QA, GIS, vision, validation');
+    const agentEvidence = resolvePipelineAgentOrchestratorOpts({ agentFetch, browser });
+    const evidenceNote = agentEvidence.fetch ? ' (external evidence on)' : '';
+    console.error(`  · agent: QA, GIS, vision, validation${evidenceNote}`);
     try {
       const trace = await runBuildOrchestrator(park.id, {
         apply: true,
-        fetch: false,
-        browser: false,
-        parksApi: false,
-        offline: true,
+        ...agentEvidence,
       });
       const errors = trace.errors?.length || 0;
-      logStage('agent', { agents: trace.agents?.length || 0, errors });
+      logStage('agent', {
+        agents: trace.agents?.length || 0,
+        errors,
+        externalEvidence: agentEvidence.fetch,
+      });
       if (errors) {
         console.error(`    agent reported ${errors} error(s) — venue still on disk`);
       }
@@ -476,6 +499,7 @@ export function parseCatalogArgs(argv) {
     constrain: true,
     mesh: null,
     applyAliases: true,
+    agentFetch: false,
     openPr: false,
     json: false,
   };
@@ -505,6 +529,7 @@ export function parseCatalogArgs(argv) {
     else if (a === '--mesh') out.mesh = true;
     else if (a === '--no-mesh') out.mesh = false;
     else if (a === '--no-aliases') out.applyAliases = false;
+    else if (a === '--agent-fetch') out.agentFetch = true;
     else if (a === '--pr') out.openPr = true;
     else if (a === '--json') out.json = true;
     else if (!a.startsWith('--')) out._.push(a);
@@ -540,6 +565,7 @@ export function pipelineOptsFromCatalogArgs(args, { batch = false } = {}) {
     constrain: args.constrain,
     mesh: args.mesh ?? !batch,
     rebuildOnly: args.skipExisting,
+    agentFetch: args.agentFetch,
     skip: args.allowNoHeights ? ['research', 'aliases', 'heights', 'rebuild', 'agent'] : [],
   };
 }

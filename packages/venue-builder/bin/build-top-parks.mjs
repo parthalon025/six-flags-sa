@@ -35,6 +35,7 @@ Build the top 100 US theme parks through the unified venue pipeline.
   --no-browser          skip Playwright for JS-rendered park sites
   --no-attractions      skip attractions inventory
   --no-agent            skip build-agent (QA, GIS, vision, validation)
+  --agent-fetch         refresh external evidence in the agent stage (fetch/browser/parksApi)
   --json                structured summary on stdout
 `;
 
@@ -52,6 +53,7 @@ function parseArgs(argv) {
     browser: true,
     attractions: true,
     agent: true,
+    agentFetch: false,
     json: false,
   };
   for (let i = 0; i < argv.length; i += 1) {
@@ -68,6 +70,7 @@ function parseArgs(argv) {
     else if (a === '--no-browser') out.browser = false;
     else if (a === '--no-attractions') out.attractions = false;
     else if (a === '--no-agent') out.agent = false;
+    else if (a === '--agent-fetch') out.agentFetch = true;
     else if (a === '--json') out.json = true;
     else if (!a.startsWith('--')) out._.push(a);
     else throw new Error(`Unknown flag: ${a}`);
