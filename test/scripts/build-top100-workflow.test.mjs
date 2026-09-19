@@ -38,4 +38,11 @@ const certifyIdx = workflow.indexOf('- name: Certify gate');
 const appBuildIdx = workflow.indexOf('- name: Make sure the app still builds with it');
 assert.ok(certifyIdx >= 0 && appBuildIdx > certifyIdx, 'app build follows certify gate');
 
+const playwrightIdx = workflow.indexOf('playwright install chromium');
+const catalogBuildIdx = workflow.indexOf('- name: Build catalog parks');
+assert.ok(
+  playwrightIdx >= 0 && catalogBuildIdx > playwrightIdx,
+  'Playwright installs before catalog build (research stage uses browser by default, #410)',
+);
+
 console.log('ok build-top100-workflow app build gate');

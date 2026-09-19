@@ -72,9 +72,8 @@ concurrency:
 #               in official URLs before research can use it; this workflow
 #               targets "one park, on demand", not the catalog onboarding flow
 #   geometry    runs — "Build the venue" below
-#   research    skipped — official-site + ParksAPI research needs Playwright
-#               for JS-rendered listings, which this job does not install for
-#               that purpose (only for the display bake, later); see #410
+#   research    skipped — one-time onboarding; fleet refresh runs on the
+#               sync-official-research schedule (#410) with Playwright installed
 #   aliases     skipped — proposeAliases reads research output, which did
 #               not run
 #   heights     skipped — same reason; height rules stay a human's "Ask" list
