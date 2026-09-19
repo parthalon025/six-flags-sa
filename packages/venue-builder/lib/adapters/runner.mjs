@@ -58,8 +58,15 @@ export async function runAdapter(adapterId, ctx = {}) {
       const map = readJson(path.join(VENUE_DIR, `${venueId}.map.json`), {});
       const pois = readJson(path.join(VENUE_DIR, `${venueId}.pois.json`), []);
       const outDir = ctx.outDir || venueSidecar(venueId, 'tiles');
-      const written = exportTileGeoJson(outDir, map, pois);
-      return { adapterId, ok: true, artifacts: written, meta: { outDir } };
+      const { files, tiles } = exportTileGeoJson(outDir, map, pois);
+      const ok = Boolean(tiles.ok || tiles.gap);
+      return {
+        adapterId,
+        ok,
+        ...(ok ? {} : { error: tiles.reason || 'tippecanoe_failed' }),
+        artifacts: files,
+        meta: { outDir, tiles },
+      };
 
     case 'evidence-html':
       if (!venueId) return { adapterId, ok: false, error: 'venueId_required' };

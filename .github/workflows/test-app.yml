@@ -286,11 +286,29 @@ jobs:
 
       - run: npm ci
 
+      - name: Install tippecanoe
+        run: bash scripts/ci/install-tippecanoe.sh
+
       - name: PostDB migrate
         run: node scripts/postdb-migrate.mjs
 
       - name: Builder unit + compare
         run: npm run test:builder
+
+      - name: Build per-layer mbtiles smoke (kings-island)
+        run: |
+          set -euo pipefail
+          out=artifacts/tiles-export/kings-island
+          mkdir -p "$out"
+          node packages/venue-builder/bin/attractions.mjs kings-island --tiles "$out"
+          ls -la "$out"/*.mbtiles
+
+      - name: Upload tile mbtiles artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: venue-tile-mbtiles
+          path: artifacts/tiles-export/
+          if-no-files-found: error
 
       - name: Fleet certification (offline)
         run: npm run venues:certify -- --all --regression-only --no-write

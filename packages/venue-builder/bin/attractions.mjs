@@ -501,7 +501,7 @@ function main() {
 
   for (const id of ids) {
     const state = inventory(id, args);
-    const { records, pois, applied, orphans, asOf, externalStats } = state;
+    const { map, records, pois, applied, orphans, asOf, externalStats } = state;
 
     console.error(`\n${id}: ${records.length} ride(s), ${applied} claim(s) of evidence`);
     if (externalStats?.entranceClaims) {
@@ -582,8 +582,10 @@ function main() {
 
     if (args.tiles) {
       const outDir = path.resolve(String(args.tiles));
-      const written = exportTileGeoJson(outDir, map, pois);
-      console.error(`  Exported ${written.length} tile layer file(s) to ${outDir}`);
+      const { files, tiles } = exportTileGeoJson(outDir, map, pois);
+      const mbtiles = tiles.mbtiles?.length || 0;
+      console.error(`  Exported ${files.length} tile file(s) to ${outDir}${mbtiles ? ` (${mbtiles} .mbtiles via tippecanoe)` : ''}`);
+      if (tiles.gap) console.error(`  ${tiles.reason}`);
     }
   }
 }

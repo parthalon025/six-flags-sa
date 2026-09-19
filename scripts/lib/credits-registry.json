@@ -112,7 +112,7 @@
       "license": "BSD-2-Clause",
       "url": "https://github.com/felt/tippecanoe",
       "attribution": "credits-screen",
-      "note": "GeoJSON → vector tiles. Not invoked automatically by the builder — packages/venue-builder/lib/tiles-export.mjs writes a shell recipe (tippecanoe.sh) for a maintainer to run by hand; still credited because the shipped tile pipeline depends on its output."
+      "note": "GeoJSON → vector tiles. packages/venue-builder/lib/tiles-export.mjs and display-tiles.mjs invoke tippecanoe when the binary is on PATH; otherwise they write GeoJSON plus a tippecanoe.sh recipe."
     },
     {
       "id": "nextjs",
