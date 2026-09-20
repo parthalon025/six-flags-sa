@@ -7,7 +7,7 @@
   },
   "certified": false,
   "certifiedAt": null,
-  "bundleFingerprint": "0f74a75483ea43834ccc8c4ccc189dc068595a89d048b6e1e8de84e659e034c5",
+  "bundleFingerprint": "dc637d3bf659c2e1aaf3c6a1fb026d717ef75d48bfadffd16e549c111f885e45",
   "checks": [
     {
       "key": "checklist",
@@ -1073,6 +1073,36 @@
           "sourceGap": "adapter_stale",
           "target": null,
           "blocking": false,
+          "adapterId": "parks-api",
+          "featureClass": "ride_inventory",
+          "freshnessDays": 30,
+          "fetched": "2026-08-11",
+          "need": "Verify parks-api ride inventory — cache from 2026-08-11"
+        },
+        {
+          "venueId": "kings-island",
+          "type": "verify_source",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "whyOpenSourceFails": "Cached adapter data is older than its freshness window — on-the-ground verification refreshes what open data cannot keep current.",
+          "sourceGap": "adapter_stale",
+          "target": null,
+          "blocking": false,
+          "adapterId": "queue-times",
+          "featureClass": "ride_inventory",
+          "freshnessDays": 30,
+          "fetched": "2026-08-11T19:54:41",
+          "need": "Verify queue-times ride inventory — cache from 2026-08-11T19:54:41"
+        },
+        {
+          "venueId": "kings-island",
+          "type": "verify_source",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "whyOpenSourceFails": "Cached adapter data is older than its freshness window — on-the-ground verification refreshes what open data cannot keep current.",
+          "sourceGap": "adapter_stale",
+          "target": null,
+          "blocking": false,
           "adapterId": "open-meteo",
           "featureClass": "weather",
           "freshnessDays": 1,
@@ -1138,7 +1168,7 @@
         }
       ],
       "counts": {
-        "durable": 73,
+        "durable": 75,
         "ambient": 5
       }
     }
