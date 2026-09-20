@@ -5,12 +5,12 @@
     "map": "2026-08-09",
     "revisionId": "07f1f9ba-de84-4a85-890b-52a80a96996a"
   },
-  "bytes": 623772,
+  "bytes": 632928,
   "files": [
     {
       "path": "/venues/cedar-point.gaps.json",
-      "bytes": 4413,
-      "sha256": "31fe9066c882a73ac6b0086453b87f58c510d8afeff885c4087cc50dffde8ed7"
+      "bytes": 4545,
+      "sha256": "e15f7c8f07b1212a8f45481ac918bec5e78123797c6685f43e8c6702dad03d48"
     },
     {
       "path": "/venues/cedar-point.map.json",
@@ -19,8 +19,8 @@
     },
     {
       "path": "/venues/cedar-point.pois.json",
-      "bytes": 72143,
-      "sha256": "cfb7fd820dce8efacfc5906a46ad832c2669785c88e94d966e7436646616d75d"
+      "bytes": 81167,
+      "sha256": "5e66856b70a8792a635df609a54680646d998f574043056e51ff0aecd42ebfaf"
     },
     {
       "path": "/venues/cedar-point/display/blueprint-survey.visual.json",
