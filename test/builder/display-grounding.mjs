@@ -22,7 +22,7 @@
  *   node test/builder/display-grounding.mjs
  */
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, readdirSync, renameSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 
 const PASS = [];
 const FAIL = [];
@@ -854,6 +854,24 @@ await check('grounding harvest preflight refuses when zone-character is missing'
     assert.ok(problems.some((p) => /missing/.test(p)), problems.join('; '));
   } finally {
     renameSync(backupPath, zoneCharacterPath);
+  }
+  return true;
+});
+
+await check('grounding harvest preflight refuses when zone-character zones are deleted (#791)', () => {
+  const zoneCharacterPath = new URL(
+    '../../packages/venue-builder/data/venues/kings-island/display/zone-character.json',
+    import.meta.url,
+  );
+  const original = readFileSync(zoneCharacterPath, 'utf8');
+  const emptied = { ...JSON.parse(original), zones: {} };
+  writeFileSync(zoneCharacterPath, `${JSON.stringify(emptied, null, 2)}\n`);
+  try {
+    const record = readVenueGrounding('kings-island');
+    const problems = preflightGroundingHarvest('kings-island', record, validateGrounding);
+    assert.ok(problems.some((p) => /no character map/.test(p)), problems.join('; '));
+  } finally {
+    writeFileSync(zoneCharacterPath, original);
   }
   return true;
 });
