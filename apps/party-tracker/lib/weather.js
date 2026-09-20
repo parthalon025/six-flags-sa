@@ -244,14 +244,73 @@ export const OUTLOOK = {
 };
 
 /**
+ * How much to trust the sky reading behind an outlook.
+ *
+ * `low` — a partial or single-field reading. `medium` — forecast-only signals or
+ * a verdict that leans on exposure heuristics (tall-from-name, rain-not-yet).
+ * `high` — a direct observation of something severe (lightning, rain falling, gusts).
+ */
+export const CONFIDENCE = {
+  low: { key: 'low', rank: 0, label: 'Low confidence' },
+  medium: { key: 'medium', rank: 1, label: 'Medium confidence' },
+  high: { key: 'high', rank: 2, label: 'High confidence' },
+};
+
+const minConfidence = (a, b) => (a.rank <= b.rank ? a : b);
+
+/**
+ * Trust in the observation itself, before exposure heuristics adjust it.
+ *
+ * @param weather classifyWeather result
+ */
+export function confidenceFor(weather) {
+  if (!weather?.obs) return CONFIDENCE.low;
+
+  const o = weather.obs;
+  const fields = [o.code, o.gust, o.temp, o.precip, o.chance].filter((v) => v != null);
+  if (fields.length === 0) return CONFIDENCE.low;
+  if (fields.length === 1) return CONFIDENCE.low;
+
+  if (o.storming) return CONFIDENCE.high;
+  if (o.wetNow || (o.windy && o.gust != null)) return CONFIDENCE.high;
+
+  if ((o.chance != null && o.chance >= 60 && !o.wetNow) || o.cold || o.hot) {
+    return CONFIDENCE.medium;
+  }
+
+  return fields.length >= 3 ? CONFIDENCE.high : CONFIDENCE.medium;
+}
+
+/** Exposure heuristics cap how sure an outlook can be. */
+function outlookConfidence(exposure, weather, outlook) {
+  const base = confidenceFor(weather);
+  const w = weather?.obs;
+  if (!w) return base;
+
+  if (w.windy && exposure.tall && outlook.rank >= OUTLOOK.hold.rank) {
+    return minConfidence(base, CONFIDENCE.medium);
+  }
+
+  if (w.chance != null && w.chance >= 60 && !w.wetNow && outlook.key === OUTLOOK.watch.key) {
+    return minConfidence(base, CONFIDENCE.medium);
+  }
+
+  if (w.storming && exposure.shelter === 'indoor' && outlook.key === OUTLOOK.watch.key) {
+    return minConfidence(base, CONFIDENCE.medium);
+  }
+
+  return base;
+}
+
+/**
  * @param poi     a POI record
  * @param weather the result of classifyWeather
- * @returns {{ key, rank, label, why: string|null }}
+ * @returns {{ key, rank, label, why: string|null, confidence }}
  */
 export function outlookFor(poi, weather) {
   const e = exposureFor(poi);
   const w = weather?.obs;
-  const verdict = (o, why = null) => ({ ...o, why });
+  const verdict = (o, why = null) => ({ ...o, why, confidence: outlookConfidence(e, weather, o) });
 
   // Geography has no opening hours, and neither does the forecast for it.
   if (e.kind === 'inert' || !w) return verdict(OUTLOOK.running);
@@ -304,6 +363,24 @@ export function outlookFor(poi, weather) {
   }
 
   return verdict(OUTLOOK.running);
+}
+
+/**
+ * Outlook at a future hour from an hourly forecast slice.
+ *
+ * Same verdict shape as `outlookFor`; confidence is capped at medium because the
+ * reading is forward-looking rather than observed.
+ *
+ * @param poi        a POI record
+ * @param hourlyObs  one hour of forecast fields classifyWeather understands
+ */
+export function outlookPredicted(poi, hourlyObs) {
+  const weather = classifyWeather(hourlyObs);
+  const outlook = outlookFor(poi, weather);
+  return {
+    ...outlook,
+    confidence: minConfidence(outlook.confidence, CONFIDENCE.medium),
+  };
 }
 
 /**

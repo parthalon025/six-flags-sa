@@ -78,7 +78,13 @@ const FIELDS = {
     'wind_gusts_10m',
     'is_day',
   ].join(','),
-  hourly: ['precipitation_probability', 'cape'].join(','),
+  hourly: [
+    'precipitation_probability',
+    'cape',
+    'weather_code',
+    'wind_gusts_10m',
+    'temperature_2m',
+  ].join(','),
 };
 
 export async function GET(request) {
@@ -179,6 +185,21 @@ function shape(raw, at) {
     return vals.length ? Math.max(...vals) : null;
   };
 
+  const hourly = [];
+  const times = Array.isArray(h.time) ? h.time : [];
+  for (let i = 0; i < Math.min(times.length, 3); i += 1) {
+    const slice = {
+      code: num(h.weather_code?.[i]),
+      tempF: num(h.temperature_2m?.[i]),
+      gustMph: num(h.wind_gusts_10m?.[i]),
+      precipChance: num(h.precipitation_probability?.[i]),
+      cape: num(h.cape?.[i]),
+    };
+    if (Object.values(slice).some((v) => v != null)) {
+      hourly.push({ at: Date.parse(times[i]) || null, ...slice });
+    }
+  }
+
   return {
     observed: {
       code: num(c.weather_code),
@@ -193,6 +214,7 @@ function shape(raw, at) {
       // being one. classifyWeather only trusts it alongside a rain chance.
       cape: peak(h.cape),
     },
+    hourly,
     at,
     source: 'open-meteo',
   };

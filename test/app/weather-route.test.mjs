@@ -128,7 +128,14 @@ await check('warm cache survives an outage as the existing stale 200 fallback', 
         wind_gusts_10m: 8,
         is_day: 1,
       },
-      hourly: { precipitation_probability: [10], cape: [0] },
+      hourly: {
+        time: ['2026-09-20T13:00', '2026-09-20T14:00'],
+        precipitation_probability: [10, 70],
+        cape: [0, 1200],
+        weather_code: [0, 61],
+        wind_gusts_10m: [8, 12],
+        temperature_2m: [78, 76],
+      },
     }),
   });
   try {
@@ -136,6 +143,9 @@ await check('warm cache survives an outage as the existing stale 200 fallback', 
     assert.equal(warm.status, 200);
     const warmBody = await warm.json();
     assert.ok(warmBody.observed);
+    assert.ok(Array.isArray(warmBody.hourly));
+    assert.equal(warmBody.hourly.length, 2);
+    assert.equal(warmBody.hourly[1].precipChance, 70);
 
     globalThis.fetch = async () => {
       throw new Error('network down');
