@@ -118,6 +118,12 @@ jobs:
       # install is for the lint, unit and build steps that check what it made.
       - run: npm ci
 
+      # Playwright before any step that can invoke the browser adapter or the
+      # display bake (#410). One install serves research (when enabled), the
+      # game-map bake, and any future browser steps in this job.
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
       - name: Build the venue
         id: build
         env:
@@ -268,9 +274,6 @@ jobs:
       # runner. Terrain and the constraint solver stay on — this job is meant to
       # commit the pack sidecars, so turning them off would ship display specs
       # with no terrain block and a flat hillshade.
-      - name: Install Playwright Chromium
-        run: npx playwright install chromium --with-deps
-
       - name: Bake the game map against its reference contract
         env:
           VENUE_IDS: ${{ steps.build.outputs.ids }}
