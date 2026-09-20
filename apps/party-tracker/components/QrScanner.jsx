@@ -53,10 +53,18 @@ export default function QrScanner({ onResult, onCancel, pairingMode = false }) {
     async function begin() {
       if (typeof window === 'undefined') return;
 
-      const selection = await createQrDetector({
-        pairingMode,
-        BarcodeDetector: window.BarcodeDetector,
-      });
+      let selection;
+      try {
+        selection = await createQrDetector({
+          pairingMode,
+          BarcodeDetector: window.BarcodeDetector,
+        });
+      } catch {
+        if (cancelled) return;
+        setState('error');
+        setDetail('Could not load the QR decoder for this browser.');
+        return;
+      }
       if (selection.kind === 'unsupported') {
         setState('unsupported');
         return;

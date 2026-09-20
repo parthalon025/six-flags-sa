@@ -53,6 +53,19 @@ await check('join path without BarcodeDetector is unsupported', async () => {
   assert.equal(result.kind, 'unsupported');
 });
 
+await check('pairing mode propagates jsQR load failures', async () => {
+  await assert.rejects(
+    () => createQrDetector({
+      pairingMode: true,
+      BarcodeDetector: undefined,
+      loadJsQr: async () => {
+        throw new Error('network');
+      },
+    }),
+    /network/,
+  );
+});
+
 await check('pairing mode without BarcodeDetector selects jsQR', async () => {
   let loaded = false;
   const result = await createQrDetector({

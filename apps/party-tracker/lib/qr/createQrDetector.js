@@ -10,6 +10,13 @@ const defaultLoadJsQr = async () => {
   return mod.default || mod;
 };
 
+function decodeWithJsQr(jsQR, imageData) {
+  const hit = jsQR(imageData.data, imageData.width, imageData.height, {
+    inversionAttempts: 'dontInvert',
+  });
+  return hit?.data ?? null;
+}
+
 /**
  * @param {{
  *   pairingMode?: boolean,
@@ -61,10 +68,7 @@ export async function createQrDetector({
     kind: 'jsqr',
     detector: {
       decodeImageData(imageData) {
-        const hit = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: 'dontInvert',
-        });
-        return hit?.data ?? null;
+        return decodeWithJsQr(jsQR, imageData);
       },
       async detect(video) {
         if (!video || (video.readyState ?? 0) < 2) return null;
@@ -78,10 +82,7 @@ export async function createQrDetector({
         if (!ctx) return null;
         ctx.drawImage(video, 0, 0, width, height);
         const imageData = ctx.getImageData(0, 0, width, height);
-        const hit = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: 'dontInvert',
-        });
-        return hit?.data ?? null;
+        return decodeWithJsQr(jsQR, imageData);
       },
     },
   };
