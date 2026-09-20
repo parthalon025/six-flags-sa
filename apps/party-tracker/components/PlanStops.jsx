@@ -45,7 +45,16 @@ export default function PlanStops({
              sub-line carries the reason it is struck through and the two can
              never disagree. The reporter's own note wins over the generic
              phrase when there is one. */
-          const weatherHint = !s.down && where?.weather?.label ? where.weather.label : null;
+          const weatherHint =
+            !s.down && where?.weather?.label
+              ? [
+                  `Forecast: ${where.weather.label}`,
+                  where.weather.why,
+                  where.weather.confidence?.key === 'low' ? where.weather.confidence.label : null,
+                ]
+                  .filter(Boolean)
+                  .join(' — ')
+              : null;
           const sub = s.down
             ? [s.reason, where?.zone].filter(Boolean).join(' · ')
             : [weatherHint, where?.zone, where?.walk].filter(Boolean).join(' · ');
