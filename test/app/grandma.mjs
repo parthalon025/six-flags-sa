@@ -558,7 +558,7 @@ await score('A', 'A2', 'can still join by code an hour into the day', async () =
   }
   await a.locator('.field[aria-label="Your name"]').fill('Grandma');
   await a.locator('.field.code').fill(code);
-  await a.locator('button:has-text("Join")').first().click();
+  await a.getByRole('button', { name: 'Join', exact: true }).click();
   // Whatever it takes: the host is expected to notice and reopen.
   await h.locator('.tabItem[data-tab="party"]').click().catch(() => {});
   try {

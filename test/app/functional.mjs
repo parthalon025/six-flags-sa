@@ -2493,7 +2493,7 @@ b = B.page;
 await signIn(b, 'ava@parkbound.example');
 await go(b, 'Party');
 await b.locator('.field.code').fill(code);
-await b.locator('button:has-text("Join")').click();
+await b.getByRole('button', { name: 'Join', exact: true }).click();
 
 await check('a typed code joins the party', async () => {
   await until(async () => (await b.locator('.codeText').count()) > 0, {
@@ -3406,7 +3406,7 @@ await check('a phone opens on the venue its own fix is inside', async () => {
 await check('joining a party moves the map to where the host is', async () => {
   await go(d, 'Party');
   await d.locator('.field.code').fill(code);
-  await d.locator('button:has-text("Join")').click();
+  await d.getByRole('button', { name: 'Join', exact: true }).click();
   await until(async () => (await d.locator('.codeText').count()) > 0, {
     timeout: JOIN_TIMEOUT,
     label: 'phone D to be in the party',
