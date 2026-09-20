@@ -33,4 +33,19 @@ assert.match(
   'iso bake runs after flat kits and before display-pack',
 );
 
+const playwrightMatches = [...workflow.matchAll(/playwright install chromium --with-deps/g)];
+assert.equal(
+  playwrightMatches.length,
+  1,
+  'Playwright installs exactly once in build-venue.yml (#410)',
+);
+
+const playwrightIdx = workflow.indexOf('playwright install chromium');
+const buildVenueIdx = workflow.indexOf('- name: Build the venue');
+const bakeStepIdx = workflow.indexOf('- name: Bake the game map against its reference contract');
+assert.ok(
+  playwrightIdx >= 0 && buildVenueIdx > playwrightIdx && bakeStepIdx > playwrightIdx,
+  'Playwright installs before venue build and bake (#410)',
+);
+
 console.log('ok build-venue-workflow iso bake gate');

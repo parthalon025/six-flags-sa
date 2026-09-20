@@ -72,9 +72,8 @@ concurrency:
 #               in official URLs before research can use it; this workflow
 #               targets "one park, on demand", not the catalog onboarding flow
 #   geometry    runs — "Build the venue" below
-#   research    skipped — official-site + ParksAPI research needs Playwright
-#               for JS-rendered listings, which this job does not install for
-#               that purpose (only for the display bake, later); see #410
+#   research    skipped — one-time onboarding; fleet refresh runs on the
+#               sync-official-research schedule (#410) with Playwright installed
 #   aliases     skipped — proposeAliases reads research output, which did
 #               not run
 #   heights     skipped — same reason; height rules stay a human's "Ask" list
@@ -118,6 +117,12 @@ jobs:
       # The builder itself has no dependencies — it is node and fetch. The
       # install is for the lint, unit and build steps that check what it made.
       - run: npm ci
+
+      # Playwright before the display bake (#410). Research is skipped in this
+      # workflow (see stage list above); one install serves the game-map bake
+      # and any future browser steps in this job.
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
 
       - name: Build the venue
         id: build
@@ -269,9 +274,6 @@ jobs:
       # runner. Terrain and the constraint solver stay on — this job is meant to
       # commit the pack sidecars, so turning them off would ship display specs
       # with no terrain block and a flat hillshade.
-      - name: Install Playwright Chromium
-        run: npx playwright install chromium --with-deps
-
       - name: Bake the game map against its reference contract
         env:
           VENUE_IDS: ${{ steps.build.outputs.ids }}
