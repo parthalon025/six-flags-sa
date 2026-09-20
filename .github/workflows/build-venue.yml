@@ -118,9 +118,9 @@ jobs:
       # install is for the lint, unit and build steps that check what it made.
       - run: npm ci
 
-      # Playwright before any step that can invoke the browser adapter or the
-      # display bake (#410). One install serves research (when enabled), the
-      # game-map bake, and any future browser steps in this job.
+      # Playwright before the display bake (#410). Research is skipped in this
+      # workflow (see stage list above); one install serves the game-map bake
+      # and any future browser steps in this job.
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
 

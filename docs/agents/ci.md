@@ -21,6 +21,7 @@ Matt-standard layout: **workflows orchestrate; scripts own policy.** Do not dupl
 | `../lib/stamp-trailer.mjs` | `publishStamps()`, `findStamp()` | Stamps as commit trailers — the transport a merge cannot conflict on |
 | `matt-review.mjs` | `runCheck()`, `runWrite()`, `runPrompt()`, `runTwoAxis()` | Two-axis review prompts + Sonnet standards-review stamp (`scripts/lib/matt-review.mjs`) — code PRs fail without a fresh stamp |
 | `../lib/matt-standards.mjs` | `runMattStandardsChecks()` | Gate — scripts/lib test presence, functional↔modules sync, venue-builder path-literal lint |
+| `../official-research-summary.mjs` | CLI → `summarizeOfficialResearchResults()` (`scripts/lib/official-research-summary.mjs`) | `sync-official-research.yml` — fleet research markdown summary |
 | `pre-push.mjs` | `main()` (`scripts/lib/pre-push.mjs`: `prePushDecision()`) | `.husky/pre-push` entry point — decides whether a `git push` owes a local CI run |
 | — | `scrubGitEnv()` (`scripts/lib/git-env.mjs`) | Strips git's inherited repository out of anything a hook spawns |
 
@@ -169,6 +170,7 @@ Previews skip unless user-directed; production app merges on `main` use the auto
 | `drift-watch.yml` | Weekly `npm run venues:drift-watch` → agent-handoff issue |
 | `validate-ui-weekly.yml` | Sunday full `npm run test:validate-ui -- --all` safety net |
 | `build-venue.yml` | Manual venue PR builder |
+| `sync-official-research.yml` | Weekly `venues:research --all --fetch --browser` → draft PR on cache drift (#410) |
 | `databricks-bundle.yml` | Bundle deploy (paused schedules pre-launch) |
 | `store.yml` / `ios-app-store-metadata.yml` | Store metadata lanes |
 
