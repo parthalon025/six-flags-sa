@@ -1,11 +1,32 @@
+const PARSE_ERROR_MESSAGE =
+  'Could not parse research report — venues:research may have crashed before writing JSON.';
+
+function normalizeResearchPackets(packets) {
+  if (Array.isArray(packets)) return packets;
+  if (packets && typeof packets === 'object') return [packets];
+  return [];
+}
+
+/**
+ * Markdown when venues:research JSON could not be read or parsed.
+ *
+ * @returns {{ exitCode: number, markdown: string }}
+ */
+export function summarizeOfficialResearchParseError() {
+  return {
+    exitCode: 1,
+    markdown: ['## Official site research', '', PARSE_ERROR_MESSAGE].join('\n'),
+  };
+}
+
 /**
  * Summarize fleet-wide official site research JSON for CI and operators.
  *
- * @param {Array<{ venue?: { id?: string }, official?: { siteCount?: number, errors?: string[], pages?: Array<{ via?: string }> } }>} packets
+ * @param {Array<{ venue?: { id?: string }, official?: { siteCount?: number, errors?: string[], pages?: Array<{ via?: string }> } }> | object} packets
  * @returns {{ exitCode: number, markdown: string, perVenue: Record<string, { ok: boolean, browser: boolean }> }}
  */
 export function summarizeOfficialResearchResults(packets) {
-  const rows = Array.isArray(packets) ? packets : [];
+  const rows = normalizeResearchPackets(packets);
   const perVenue = {};
   const lines = ['## Official site research', ''];
 

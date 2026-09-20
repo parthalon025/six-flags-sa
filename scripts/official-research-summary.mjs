@@ -5,7 +5,10 @@
  *   node scripts/official-research-summary.mjs research-report.json
  */
 import { readFileSync, writeFileSync } from 'node:fs';
-import { summarizeOfficialResearchResults } from './lib/official-research-summary.mjs';
+import {
+  summarizeOfficialResearchParseError,
+  summarizeOfficialResearchResults,
+} from './lib/official-research-summary.mjs';
 
 const reportPath = process.argv[2];
 if (!reportPath) {
@@ -17,17 +20,12 @@ let packets;
 try {
   packets = JSON.parse(readFileSync(reportPath, 'utf8'));
 } catch {
-  const markdown = [
-    '## Official site research',
-    '',
-    'Could not parse research report — venues:research may have crashed before writing JSON.',
-  ].join('\n');
+  const { exitCode, markdown } = summarizeOfficialResearchParseError();
   writeFileSync('research-summary.md', markdown);
   console.log(markdown);
-  process.exit(1);
+  process.exit(exitCode);
 }
-const rows = Array.isArray(packets) ? packets : [packets];
-const { exitCode, markdown } = summarizeOfficialResearchResults(rows);
+const { exitCode, markdown } = summarizeOfficialResearchResults(packets);
 writeFileSync('research-summary.md', markdown);
 console.log(markdown);
 process.exit(exitCode);

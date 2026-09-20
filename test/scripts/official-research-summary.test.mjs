@@ -9,7 +9,10 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { summarizeOfficialResearchResults } from '../../scripts/lib/official-research-summary.mjs';
+import {
+  summarizeOfficialResearchParseError,
+  summarizeOfficialResearchResults,
+} from '../../scripts/lib/official-research-summary.mjs';
 
 const cedarOk = [
   {
@@ -86,6 +89,19 @@ const fetchOnlyFleet = [
   assert.match(markdown, /fetch only/i);
   assert.match(markdown, /browser.*not used|no venue used playwright/i);
   assert.doesNotMatch(markdown, /Playwright browser fetch was used/i);
+}
+
+{
+  const single = cedarOk[0];
+  const { exitCode, markdown } = summarizeOfficialResearchResults(single);
+  assert.equal(exitCode, 0, 'single venue packet is accepted');
+  assert.match(markdown, /cedar-point.*ok/i);
+}
+
+{
+  const { exitCode, markdown } = summarizeOfficialResearchParseError();
+  assert.equal(exitCode, 1, 'parse error is unusable');
+  assert.match(markdown, /could not parse research report/i);
 }
 
 {
