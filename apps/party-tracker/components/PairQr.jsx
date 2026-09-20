@@ -151,6 +151,7 @@ export default function PairQr({
         </button>
         {scanning && (
           <QrScanner
+            pairingMode
             onResult={(text) => {
               setScanning(false);
               if (classifyQrPayload(text) !== 'answer') {
@@ -176,6 +177,7 @@ export default function PairQr({
       <div>
         <p className="fine">Scan the host&apos;s offer QR, or open their pairing link.</p>
         <QrScanner
+          pairingMode
           onResult={async (text) => {
             const kind = classifyQrPayload(text);
             if (kind !== 'offer') {
