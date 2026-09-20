@@ -16,12 +16,9 @@ assert.match(workflow, /schedule:[\s\S]*cron:/, 'weekly cron schedule exists');
 assert.match(workflow, /workflow_dispatch:/, 'manual dispatch exists');
 assert.match(
   workflow,
-  /venues:sync-sources[\s\S]*--all[\s\S]*--fetch/,
-  'fleet fetch sync command',
+  /venues:sync-sources[\s\S]*--all[\s\S]*--fetch[\s\S]*--sources[\s\S]*parks-api,queue-times,wikidata/,
+  'fleet fetch sync limited to #405 caches (ParksAPI, Queue-Times, Wikidata)',
 );
-assert.match(workflow, /ACCESSIBILITY_CLOUD_TOKEN/, 'accessibility token from secrets');
-assert.match(workflow, /MAPILLARY_TOKEN/, 'mapillary token from secrets');
-assert.match(workflow, /ORS_API_KEY/, 'ORS token from secrets');
 
 const prStep = workflow.match(
   /- name: Open a draft pull request[\s\S]*?(?=\n      - name:|\n$)/,

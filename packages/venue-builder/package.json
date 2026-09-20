@@ -11,6 +11,7 @@
     "./bake-drift.js": "./src/bake-drift.mjs",
     "./compare.js": "./src/compare.mjs",
     "./freshness.js": "./lib/delivery/freshness.mjs",
+    "./sync-sources-summary.js": "./lib/sync-sources-summary.mjs",
     "./venue-report-gate.js": "./lib/venue-report-gate.mjs",
     "./build-pipeline.js": "./lib/build-pipeline.mjs",
     "./builder-app-contract.js": "./lib/delivery/builder-app-contract.mjs",

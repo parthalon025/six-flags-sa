@@ -5,7 +5,7 @@
  *   node scripts/sync-sources-summary.mjs sync-report.json
  */
 import { readFileSync, writeFileSync } from 'node:fs';
-import { summarizeSyncResults } from '../packages/venue-builder/lib/sync-sources-summary.mjs';
+import { summarizeSyncResults } from '@party-tracker/venue-builder/sync-sources-summary.js';
 
 const reportPath = process.argv[2];
 if (!reportPath) {

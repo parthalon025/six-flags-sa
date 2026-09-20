@@ -5,7 +5,7 @@
  *   node test/builder/sync-sources-summary.mjs
  */
 import assert from 'node:assert/strict';
-import { summarizeSyncResults } from '../../packages/venue-builder/lib/sync-sources-summary.mjs';
+import { summarizeSyncResults } from '@party-tracker/venue-builder/sync-sources-summary.js';
 
 const cedarOk = {
   'cedar-point': {

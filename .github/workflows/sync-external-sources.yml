@@ -33,15 +33,9 @@ jobs:
 
       - name: Sync external source caches
         id: sync
-        env:
-          ACCESSIBILITY_CLOUD_TOKEN: ${{ secrets.ACCESSIBILITY_CLOUD_TOKEN }}
-          MAPILLARY_TOKEN: ${{ secrets.MAPILLARY_TOKEN }}
-          ORS_API_KEY: ${{ secrets.ORS_API_KEY }}
-          GUEST_TRACES_TOKEN: ${{ secrets.GUEST_TRACES_TOKEN }}
-          GUEST_TRACES_API: ${{ secrets.GUEST_TRACES_API }}
         run: |
           set +e
-          npm run venues:sync-sources -- --all --fetch --json > sync-report.json
+          npm run venues:sync-sources -- --all --fetch --sources parks-api,queue-times,wikidata --json > sync-report.json
           sync_exit=$?
           cat sync-report.json
           echo "sync_exit=$sync_exit" >> "$GITHUB_OUTPUT"
