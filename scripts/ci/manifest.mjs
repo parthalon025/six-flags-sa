@@ -83,8 +83,8 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/build-venue-workflow.test.mjs',
   'test/scripts/build-top100-workflow.test.mjs',
   'test/scripts/official-research-summary.test.mjs',
+  'test/scripts/official-research-pr.test.mjs',
   'test/scripts/official-research-workflow.test.mjs',
-  'test/scripts/official-page-via.test.mjs',
   'test/scripts/builder-app-contract.test.mjs',
   'test/scripts/compare-cert-freshness.test.mjs',
   'test/scripts/neon-runbook.test.mjs',
@@ -105,4 +105,6 @@ export const GATE_EXCLUDED_TESTS = {
     'spawns npm run venues:report, which loads external-claims and @party-tracker/shared — unresolvable before workspace install. Checklist + expect locks run in venue-report-gate.test.mjs at the gate; CLI exit code runs via npm run test:unit (#366).',
   'test/scripts/venue-builder-guide.test.mjs':
     'imports packages/venue-builder/lib/build-pipeline.mjs for STAGES — unresolvable before workspace install. Runs via npm run test:builder (#431).',
+  'test/scripts/official-page-via.test.mjs':
+    'imports packages/venue-builder/lib/venue-official-site.mjs — pulls in @party-tracker/shared, unresolvable before workspace install. Runs via npm run test:builder (#410).',
 };

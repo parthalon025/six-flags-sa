@@ -29,10 +29,7 @@ const prStep = workflow.match(
   /- name: Open a draft pull request[\s\S]*?(?=\n      - name:|\n$)/,
 )?.[0];
 assert.ok(prStep, 'draft PR step exists');
-assert.match(prStep, /gh pr create --draft/, 'opens a draft PR');
-assert.match(prStep, /OVERRIDE_DIR/, 'git add uses venue-builder OVERRIDE_DIR path');
-assert.match(prStep, /official-cache\.json/, 'git add targets official-cache sidecars');
-assert.match(prStep, /git diff --cached --quiet/, 'no PR when nothing changed');
+assert.match(prStep, /official-research-pr\.mjs/, 'delegates PR open to scripts/official-research-pr.mjs');
 
 const summaryStep = workflow.match(
   /- name: Summarize research results[\s\S]*?(?=\n      - name:)/,
