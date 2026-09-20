@@ -25,6 +25,9 @@ import { materialTexturesRow, verifyCompiledMaterials } from './display-material
 import { crossRotationCoverageRow } from './display-style-contract.mjs';
 import { writeBundleManifest } from './venue-bundle.mjs';
 import { check } from './evidence.mjs';
+import {
+  groundingWithZoneCharacter, readZoneCharacter, zoneCharacterProblemsForWorld,
+} from './display-zone-character.mjs';
 
 export const DISPLAY_VERSION = 1;
 
@@ -370,21 +373,24 @@ export function readLandCover(id) {
 }
 
 /**
- * One World's grounding harvest — the Visual factory's per-World relationship
- * input (ADR-0020 clauses 1 and 4), living beside the WorldCover cache in the
- * World's own display pack rather than in `map.json`.
+ * One World's grounding harvest merged with its zone-character sidecar — the
+ * Visual factory's per-World relationship input (ADR-0020 clauses 1 and 4).
  *
- * It states what each Zone IS, never what colour it should be: this is where
- * a park's hand-tuned character goes once treatment leaves truth. An unknown
- * character throws here rather than resolving to nothing, so a typo in a
- * committed harvest is a build failure and not a Zone that quietly stops
- * looking like itself.
+ * `grounding.json` holds measured land-cover classes (harvest output).
+ * `zone-character.json` holds hand-authored Zone→character maps or an explicit
+ * `policy: "uncharacterised"` declaration; the harvest cannot overwrite it.
+ * `readGrounding` merges both and throws when curation is missing for a
+ * grounded World or when a Zone declares an unknown character.
  */
 export function readGrounding(id) {
-  const file = path.join(venueSidecar(id, 'display'), 'grounding.json');
-  const grounding = readJson(file, null);
+  const grounding = readJson(path.join(venueSidecar(id, 'display'), 'grounding.json'), null);
   if (!grounding) return null;
-  for (const [zone, row] of Object.entries(grounding.zones || {})) {
+  const problems = zoneCharacterProblemsForWorld(id);
+  if (problems.length) {
+    throw new Error(problems.join('; '));
+  }
+  const merged = groundingWithZoneCharacter(grounding, readZoneCharacter(id));
+  for (const [zone, row] of Object.entries(merged.zones || {})) {
     if (row?.character && !LAND_CHARACTERS[row.character]) {
       throw new Error(
         `${id}: Zone "${zone}" declares unknown character "${row.character}" — `
@@ -392,7 +398,7 @@ export function readGrounding(id) {
       );
     }
   }
-  return grounding;
+  return merged;
 }
 
 /**

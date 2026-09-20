@@ -28,6 +28,7 @@ import {
 } from '../lib/adapters/naip-planetary.mjs';
 import { harvestGrounding, regionsFromMap } from '../lib/display-grounding.mjs';
 import { groundingFile, readVenueGrounding, validateGrounding } from '../lib/display-references.mjs';
+import { preflightGroundingHarvest, zoneCharacterProblemsForWorld } from '../lib/display-zone-character.mjs';
 import { VENUE_DIR, readJson, writeJson } from '../lib/venue-io.mjs';
 
 const argv = process.argv.slice(2);
@@ -47,12 +48,14 @@ function describe(id) {
   const record = readVenueGrounding(id);
   if (!record) return console.log(`  ${id}: no grounding harvested yet`);
   const problems = validateGrounding(record);
+  const zoneProblems = zoneCharacterProblemsForWorld(id);
   const groups = Object.entries(record.groups || {})
     .map(([cls, block]) => `${cls}×${block.groups.length}`)
     .join(' ');
   console.log(`  ${id}: ${record.source.tile} (${record.source.captured}) — ${groups}`);
   for (const p of problems) console.log(`    ! ${p}`);
-  return problems.length;
+  for (const p of zoneProblems) console.log(`    ! ${p}`);
+  return problems.length + zoneProblems.length;
 }
 
 /**
@@ -104,9 +107,9 @@ async function harvestOne(id) {
     return 1;
   }
 
-  const problems = validateGrounding(record);
+  const problems = preflightGroundingHarvest(id, record, validateGrounding);
   if (problems.length) {
-    console.error(`  ${id}: harvest did not validate`);
+    console.error(`  ${id}: harvest refused — grounding or zone-character invalid`);
     for (const p of problems) console.error(`    ! ${p}`);
     return 1;
   }
@@ -125,9 +128,13 @@ async function harvestOne(id) {
 
 if (report) {
   console.log(`\ngrounding (${NAIP})\n`);
-  for (const id of ids.length ? ids : []) describe(id);
-  if (!ids.length) console.error('  name at least one World to report on');
-  process.exit(0);
+  if (!ids.length) {
+    console.error('  name at least one World to report on');
+    process.exit(2);
+  }
+  let problems = 0;
+  for (const id of ids) problems += describe(id);
+  process.exit(problems ? 1 : 0);
 }
 
 if (!ids.length) {

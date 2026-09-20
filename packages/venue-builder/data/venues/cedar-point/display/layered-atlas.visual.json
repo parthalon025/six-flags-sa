@@ -98,85 +98,85 @@
   "landTones": {
     "Camp Snoopy": {
       "day": {
-        "fill": "#BCC0A9",
-        "stroke": "#A1AD97",
+        "fill": "#BACAA6",
+        "stroke": "#9FB395",
         "label": "#243B45"
       }
     },
     "Cedar Point Shores": {
       "day": {
-        "fill": "#BCC0A9",
-        "stroke": "#A1AD97",
+        "fill": "#97BCB8",
+        "stroke": "#89AAA1",
         "label": "#243B45"
       }
     },
     "Frontier Town": {
       "day": {
-        "fill": "#B9BDA5",
-        "stroke": "#9FAB94",
+        "fill": "#C2B998",
+        "stroke": "#A5A88C",
         "label": "#243B45"
       }
     },
     "Frontier Trail": {
       "day": {
-        "fill": "#B9BDA5",
-        "stroke": "#9FAB94",
+        "fill": "#97A683",
+        "stroke": "#899C7E",
         "label": "#243B45"
       }
     },
     "Gemini Midway": {
       "day": {
-        "fill": "#9FA38E",
-        "stroke": "#8E9A85",
+        "fill": "#657975",
+        "stroke": "#687F75",
         "label": "#243B45"
       }
     },
     "Kiddy Kingdom": {
       "day": {
-        "fill": "#C0C3AD",
-        "stroke": "#A3AF99",
+        "fill": "#839893",
+        "stroke": "#7C9389",
         "label": "#243B45"
       }
     },
     "Lakeside Midway": {
       "day": {
-        "fill": "#B0B49D",
-        "stroke": "#99A58F",
+        "fill": "#708682",
+        "stroke": "#6F877D",
         "label": "#243B45"
       }
     },
     "Lighthouse Point": {
       "day": {
-        "fill": "#A8AB96",
-        "stroke": "#949F8A",
+        "fill": "#739895",
+        "stroke": "#71938A",
         "label": "#243B45"
       }
     },
     "Main Midway": {
       "day": {
-        "fill": "#A8AB96",
-        "stroke": "#949F8A",
+        "fill": "#6B807B",
+        "stroke": "#6C8379",
         "label": "#243B45"
       }
     },
     "Millennium Midway": {
       "day": {
-        "fill": "#B0B49D",
-        "stroke": "#99A58F",
+        "fill": "#7C928E",
+        "stroke": "#778F85",
         "label": "#243B45"
       }
     },
     "Planet Snoopy": {
       "day": {
-        "fill": "#C0C3AD",
-        "stroke": "#A3AF99",
+        "fill": "#899D99",
+        "stroke": "#80968C",
         "label": "#243B45"
       }
     },
     "Professor Delbert's Frontier Fling": {
       "day": {
-        "fill": "#C3C6B2",
-        "stroke": "#A5B19D",
+        "fill": "#C2CBB4",
+        "stroke": "#A5B49E",
         "label": "#243B45"
       }
     }
