@@ -46,6 +46,7 @@ Entry points are the root files listed in `package.json` `exports`:
 - `isoTrack.js` — coaster segment vocabulary: lift-profile grades + heading turns, classified for the iso painter (ADR-0012)
 - `zoomBands.js` — the **Zoom band** table both factories and the phone read: resolutions, bake dimensions, camera-zoom selection, parent fallback (ADR-0019, ADR-0021)
 - `mapCamera.js` — pitch-eases-with-zoom camera curve, staged clear of every **Zoom band** handoff (ADR-0019 clause 2, ADR-0021 clause 4)
+- `weather-exposure.js` — per-attraction weather traits (`wx`); baked in the venue twin, preferred at runtime over text heuristics (E6.1)
 
 Import them as `@party-tracker/shared/ontology.js` (and the other export paths). The phone may re-export the same modules from `apps/party-tracker/lib/` so existing relative imports keep working — do not copy the implementation.
 

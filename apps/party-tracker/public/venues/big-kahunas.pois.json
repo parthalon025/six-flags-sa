@@ -30,7 +30,13 @@
           "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
         }
       }
-    ]
+    ],
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "bombay-blasters",
@@ -44,7 +50,13 @@
       "max": null
     },
     "note": "Twin speed slides beside Maui Pipeline. 300 lb maximum.",
-    "a": "Big Kahuna's"
+    "a": "Big Kahuna's",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "bombs-away-bay",
@@ -57,7 +69,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Big Kahuna's"
+    "a": "Big Kahuna's",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "buccaneer-cove",
@@ -82,7 +100,13 @@
           "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
         }
       }
-    ]
+    ],
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "cobra-twister",
@@ -107,7 +131,13 @@
           "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
         }
       }
-    ]
+    ],
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "crocodile-flats",
@@ -121,7 +151,13 @@
       "max": null
     },
     "note": "Shallow children's pool with three small slides.",
-    "a": "Big Kahuna's"
+    "a": "Big Kahuna's",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "fun-fountains",
@@ -134,7 +170,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Big Kahuna's"
+    "a": "Big Kahuna's",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "golf-hut",
@@ -168,7 +210,13 @@
           "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
         }
       }
-    ]
+    ],
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "honolulu-half-pipe",
@@ -193,7 +241,13 @@
           "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
         }
       }
-    ]
+    ],
+    "wx": {
+      "shelter": "indoor",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "humunga-river",
@@ -206,7 +260,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Big Kahuna's"
+    "a": "Big Kahuna's",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "island-time-cafe",
@@ -239,7 +299,13 @@
           "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
         }
       }
-    ]
+    ],
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "kowabunga-racer",
@@ -264,7 +330,13 @@
           "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
         }
       }
-    ]
+    ],
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "lazy-river",
@@ -288,7 +360,13 @@
           "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
         }
       }
-    ]
+    ],
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "main-entrance",
@@ -322,7 +400,13 @@
           "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
         }
       }
-    ]
+    ],
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "monkey-river",
@@ -347,7 +431,13 @@
           "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
         }
       }
-    ]
+    ],
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "paradise-eats",
@@ -370,7 +460,13 @@
       "max": null
     },
     "note": "300 lb maximum.",
-    "a": "Big Kahuna's"
+    "a": "Big Kahuna's",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "pleasure-island",
@@ -395,7 +491,13 @@
           "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
         }
       }
-    ]
+    ],
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
+    }
   },
   {
     "i": "raging-rhino-river",
@@ -409,7 +511,13 @@
       "max": null
     },
     "note": "250 lb maximum.",
-    "a": "Big Kahuna's"
+    "a": "Big Kahuna's",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "restrooms-by-entrance",
@@ -458,7 +566,13 @@
           "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
         }
       }
-    ]
+    ],
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "tadpole-pond",
@@ -472,7 +586,13 @@
       "max": null
     },
     "note": "Toddler area. The park asks that a parent is in the water with them.",
-    "a": "Big Kahuna's"
+    "a": "Big Kahuna's",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "the-cove-snack-stand",
@@ -506,7 +626,13 @@
           "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
         }
       }
-    ]
+    ],
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "tiki-river-run-right-slide-5",
@@ -531,7 +657,13 @@
           "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
         }
       }
-    ]
+    ],
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "wave-pool",
@@ -556,6 +688,12 @@
           "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
         }
       }
-    ]
+    ],
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
+    }
   }
 ]

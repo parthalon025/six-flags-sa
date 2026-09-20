@@ -5046,7 +5046,26 @@ await check('the shared POI schema accepts opening hours on a place row', () => 
   return true;
 });
 
-const { buildPois } = await import('../../packages/venue-builder/bin/build-venue.mjs');
+await check('the shared POI schema accepts optional baked weather traits', () => {
+  assert.deepEqual(
+    validatePoi({
+      n: 'WindSeeker',
+      lat: 39.34,
+      lng: -84.27,
+      c: 'ride',
+      wx: { shelter: 'open', tall: true, wet: false, waterpark: false },
+    }),
+    { ok: true },
+  );
+  assert.equal(
+    validatePoi({ n: 'X', lat: 1, lng: 2, c: 'ride', wx: { shelter: 'roof', tall: true, wet: false, waterpark: false } })
+      .ok,
+    false,
+  );
+  return true;
+});
+
+const { buildPois, bakeWeatherTraits } = await import('../../packages/venue-builder/bin/build-venue.mjs');
 
 await check('a tagged POI round-trips opening_hours through buildPois', () => {
   const elements = [
@@ -5062,6 +5081,25 @@ await check('a tagged POI round-trips opening_hours through buildPois', () => {
   assert.equal(pois.length, 1);
   assert.equal(pois[0].oh, 'Jun-Aug Sa-Su 14:00-16:00');
   assert.equal(pois[0].c, 'show');
+  assert.deepEqual(validatePoi(pois[0]), { ok: true });
+  return true;
+});
+
+await check('bakeWeatherTraits writes wx on rideable POIs', () => {
+  const elements = [
+    {
+      type: 'node',
+      id: 3,
+      lat: 39.344,
+      lon: -84.268,
+      tags: { name: 'WindSeeker', attraction: 'swing_carousel' },
+    },
+  ];
+  const pois = buildPois(elements, [], { dedupeMetres: 35 });
+  bakeWeatherTraits(pois);
+  assert.equal(pois.length, 1);
+  assert.ok(pois[0].wx, 'expected baked wx on a ride');
+  assert.equal(pois[0].wx.tall, true);
   assert.deepEqual(validatePoi(pois[0]), { ok: true });
   return true;
 });
@@ -6821,6 +6859,25 @@ await check('exposure reads a park it has never seen', () => {
   // classifies on the same rules.
   assert.equal(exposureFor(wxPoi('Typhoon Tower', 'ride', 'Hurricane Harbor')).waterpark, true);
   assert.equal(exposureFor(wxPoi('Superman: Tower of Power', 'ride', 'Goliath Plaza')).tall, true);
+  return true;
+});
+
+await check('baked wx overrides text heuristics when present', () => {
+  const poi = {
+    ...wxPoi('Dodgem', 'ride', 'Coney Mall'),
+    wx: { shelter: 'indoor', tall: true, wet: false, waterpark: false },
+  };
+  const e = exposureFor(poi);
+  assert.equal(e.tall, true);
+  assert.equal(e.shelter, 'indoor');
+  assert.equal(exposureFor(wxPoi('Dodgem', 'ride', 'Coney Mall')).tall, false);
+  return true;
+});
+
+await check('outlookFor is unchanged for POIs with no baked wx (regression)', () => {
+  const storm = classifyWeather({ code: 95, tempF: 78 });
+  assert.equal(outlookFor(wxPoi('The Beast', 'coaster', 'Rivertown'), storm).key, OUTLOOK.closed.key);
+  assert.equal(outlookFor(wxPoi('WindSeeker', 'ride', 'Coney Mall'), storm).key, OUTLOOK.closed.key);
   return true;
 });
 

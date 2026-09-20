@@ -41,6 +41,7 @@ import {
   campDetailsFromTags, classify, isCampground, isCampPitch, isLand, isVenueOutline, openingHoursFromTags,
   wayAttributes,
 } from '../lib/osm-tags.mjs';
+import { inferWeatherTraits } from '@party-tracker/shared/weather-exposure.js';
 import { OVERRIDE_DIR, gapsDocumentFor, readJson, readOverrides, reindex, serializeVenue, slugify, VENUE_DIR, writeVenue, venueSidecar } from '../lib/venue-io.mjs';
 import { mirrorTruthToPostdb } from '../lib/map-factory/postdb-sync.mjs';
 import {
@@ -842,6 +843,15 @@ function assignLands(pois, lands, venueName, drawnNames) {
     if (hit && drawnNames && !drawnNames.has(hit.n)) offsite.push(poi);
   }
   return offsite;
+}
+
+/** Bake per-attraction weather traits after area and overrides are final. */
+export function bakeWeatherTraits(pois) {
+  for (const poi of pois) {
+    const wx = inferWeatherTraits(poi);
+    if (wx) poi.wx = wx;
+    else delete poi.wx;
+  }
 }
 
 /**
@@ -1811,6 +1821,8 @@ async function buildOne(args, { previous = null } = {}) {
       for (const skip of got.skipped.slice(0, 8)) console.error(`    − skipped ${skip}`);
     }
   }
+
+  bakeWeatherTraits(pois);
 
   pois.sort((a, b) => a.n.localeCompare(b.n));
 

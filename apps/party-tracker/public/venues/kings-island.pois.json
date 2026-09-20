@@ -5,7 +5,13 @@
     "lat": 39.341395,
     "lng": -84.265345,
     "c": "ride",
-    "a": "Coney Mall"
+    "a": "Coney Mall",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "action-theater",
@@ -13,7 +19,13 @@
     "lat": 39.339875,
     "lng": -84.262888,
     "c": "show",
-    "a": "Coney Mall"
+    "a": "Coney Mall",
+    "wx": {
+      "shelter": "indoor",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "adventure-express",
@@ -26,6 +38,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -55,6 +73,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
     }
   },
   {
@@ -85,7 +109,13 @@
       "alone": null,
       "max": null
     },
-    "note": "Formerly Backlot Stunt Coaster"
+    "note": "Formerly Backlot Stunt Coaster",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "bank-ball",
@@ -93,7 +123,13 @@
     "lat": 39.3437,
     "lng": -84.26524,
     "c": "ride",
-    "a": "Coney Mall"
+    "a": "Coney Mall",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "banshee",
@@ -106,6 +142,12 @@
       "min": 52,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -114,7 +156,13 @@
     "lat": 39.341784,
     "lng": -84.2699,
     "c": "ride",
-    "a": "Camp Snoopy"
+    "a": "Camp Snoopy",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "boo-blasters-on-boo-hill",
@@ -127,6 +175,12 @@
       "min": 46,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -141,7 +195,13 @@
       "alone": 48,
       "max": null
     },
-    "note": "Wave pool - under 48in needs a life jacket and companion"
+    "note": "Wave pool - under 48in needs a life jacket and companion",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
+    }
   },
   {
     "i": "cargo-loco",
@@ -154,6 +214,12 @@
       "min": 42,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -168,7 +234,13 @@
       "alone": null,
       "max": null
     },
-    "note": "Kids area"
+    "note": "Kids area",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
+    }
   },
   {
     "i": "character-carousel",
@@ -182,7 +254,13 @@
       "alone": null,
       "max": null
     },
-    "note": "Under 46in with a supervising companion"
+    "note": "Under 46in with a supervising companion",
+    "wx": {
+      "shelter": "covered",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "charlie-brown-s-rushing-river-log-ride",
@@ -196,7 +274,13 @@
       "alone": 46,
       "max": null
     },
-    "note": "No minimum with a supervising companion"
+    "note": "No minimum with a supervising companion",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "charlie-brown-s-wind-up",
@@ -209,6 +293,12 @@
       "min": 36,
       "alone": 46,
       "max": 54
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -263,7 +353,13 @@
       "alone": null,
       "max": null
     },
-    "note": "Kids area"
+    "note": "Kids area",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
+    }
   },
   {
     "i": "coconut-cove-cafe",
@@ -300,6 +396,12 @@
       "min": 46,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
     }
   },
   {
@@ -313,6 +415,12 @@
       "min": 52,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -326,6 +434,12 @@
       "min": 54,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -339,6 +453,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "covered",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -352,6 +472,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -376,7 +502,13 @@
     "lat": 39.344794,
     "lng": -84.267376,
     "c": "show",
-    "a": "Oktoberfest"
+    "a": "Oktoberfest",
+    "wx": {
+      "shelter": "indoor",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "firehawk",
@@ -414,7 +546,13 @@
       "alone": null,
       "max": null
     },
-    "note": "Indoor launch coaster"
+    "note": "Indoor launch coaster",
+    "wx": {
+      "shelter": "indoor",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "fort-washington-fort-coney",
@@ -435,6 +573,12 @@
       "min": 36,
       "alone": 44,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -459,7 +603,13 @@
     "lat": 39.341727,
     "lng": -84.264693,
     "c": "ride",
-    "a": "Coney Mall"
+    "a": "Coney Mall",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "graeter-s",
@@ -491,7 +641,13 @@
     "lat": 39.344051,
     "lng": -84.265356,
     "c": "ride",
-    "a": "Coney Mall"
+    "a": "Coney Mall",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "high-striker",
@@ -499,7 +655,13 @@
     "lat": 39.342234,
     "lng": -84.264963,
     "c": "ride",
-    "a": "Coney Mall"
+    "a": "Coney Mall",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "ice-cream",
@@ -523,7 +685,13 @@
     "lat": 39.342756,
     "lng": -84.267422,
     "c": "show",
-    "a": "International Street"
+    "a": "International Street",
+    "wx": {
+      "shelter": "indoor",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "international-street-bandstand",
@@ -531,7 +699,13 @@
     "lat": 39.343772,
     "lng": -84.267468,
     "c": "show",
-    "a": "International Street"
+    "a": "International Street",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "international-street-treats",
@@ -552,6 +726,12 @@
       "min": 54,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -582,7 +762,13 @@
       "alone": null,
       "max": 54
     },
-    "note": "Joe Cool's Dodgem School - no minimum"
+    "note": "Joe Cool's Dodgem School - no minimum",
+    "wx": {
+      "shelter": "covered",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "juke-box-diner",
@@ -686,7 +872,13 @@
     "lat": 39.345472,
     "lng": -84.267967,
     "c": "show",
-    "a": "International Street"
+    "a": "International Street",
+    "wx": {
+      "shelter": "indoor",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "kings-island-trading-company",
@@ -707,6 +899,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -720,6 +918,12 @@
       "min": 36,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -757,6 +961,12 @@
       "min": 36,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -770,6 +980,12 @@
       "min": 42,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -792,7 +1008,13 @@
       "alone": null,
       "max": null
     },
-    "note": "Kids area"
+    "note": "Kids area",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
+    }
   },
   {
     "i": "main-entrance",
@@ -850,6 +1072,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -863,6 +1091,12 @@
       "min": 54,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -915,7 +1149,13 @@
       "alone": null,
       "max": 54
     },
-    "note": "No minimum"
+    "note": "No minimum",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "peanuts-off-road-rally",
@@ -929,7 +1169,13 @@
       "alone": null,
       "max": 54
     },
-    "note": "No minimum"
+    "note": "No minimum",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "picnic-grove",
@@ -972,6 +1218,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
     }
   },
   {
@@ -996,7 +1248,13 @@
     "lat": 39.3401,
     "lng": -84.26239,
     "c": "coaster",
-    "a": "Kings Island"
+    "a": "Kings Island",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
+    }
   },
   {
     "i": "racer-red",
@@ -1004,7 +1262,13 @@
     "lat": 39.34341,
     "lng": -84.26456,
     "c": "coaster",
-    "a": "Kings Island"
+    "a": "Kings Island",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
+    }
   },
   {
     "i": "ralph-s-ice-cream",
@@ -1130,7 +1394,13 @@
     "lat": 39.342429,
     "lng": -84.264992,
     "c": "ride",
-    "a": "Coney Mall"
+    "a": "Coney Mall",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "rope-ladder",
@@ -1138,7 +1408,13 @@
     "lat": 39.344269,
     "lng": -84.265321,
     "c": "ride",
-    "a": "Adventure Port"
+    "a": "Adventure Port",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "rv-parking",
@@ -1159,6 +1435,12 @@
       "min": 42,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1172,6 +1454,12 @@
       "min": 36,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1180,7 +1468,13 @@
     "lat": 39.342135,
     "lng": -84.265136,
     "c": "ride",
-    "a": "Coney Mall"
+    "a": "Coney Mall",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "skyline-chili",
@@ -1210,7 +1504,13 @@
       "alone": null,
       "max": null
     },
-    "note": "No minimum"
+    "note": "No minimum",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "snoopy-s-red-baron",
@@ -1223,6 +1523,12 @@
       "min": 36,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1236,6 +1542,12 @@
       "min": 36,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1258,7 +1570,13 @@
       "alone": null,
       "max": 80
     },
-    "note": "Snoopy's Soap Box Racers"
+    "note": "Snoopy's Soap Box Racers",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "sol-spin",
@@ -1271,6 +1589,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1299,7 +1623,13 @@
       "alone": 42,
       "max": null
     },
-    "note": "Under 42in needs a supervising companion"
+    "note": "Under 42in needs a supervising companion",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
+    }
   },
   {
     "i": "staff-parking",
@@ -1337,6 +1667,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1359,7 +1695,13 @@
       "alone": null,
       "max": null
     },
-    "note": "Sources differ (42-54) - confirm at the gate"
+    "note": "Sources differ (42-54) - confirm at the gate",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "the-beast",
@@ -1372,6 +1714,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1386,7 +1734,13 @@
       "alone": null,
       "max": null
     },
-    "note": "Under 46in with a supervising companion"
+    "note": "Under 46in with a supervising companion",
+    "wx": {
+      "shelter": "covered",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "the-great-pumpkin-coaster",
@@ -1399,6 +1753,12 @@
       "min": 36,
       "alone": 46,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1420,6 +1780,12 @@
       "min": 46,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1433,6 +1799,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1446,6 +1818,12 @@
       "min": 36,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1459,6 +1837,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1480,7 +1864,13 @@
     "lat": 39.346759,
     "lng": -84.266629,
     "c": "show",
-    "a": "Kings Island"
+    "a": "Kings Island",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "tom-chee",
@@ -1502,7 +1892,13 @@
       "alone": 48,
       "max": null
     },
-    "note": "Wave pool - under 48in needs a life jacket and companion"
+    "note": "Wave pool - under 48in needs a life jacket and companion",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
+    }
   },
   {
     "i": "tropical-plunge",
@@ -1541,6 +1937,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1570,6 +1972,12 @@
       "min": 46,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
     }
   },
   {
@@ -1583,6 +1991,12 @@
       "min": 52,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1604,6 +2018,12 @@
       "min": 40,
       "alone": 46,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1617,6 +2037,12 @@
       "min": 42,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1630,6 +2056,12 @@
       "min": 42,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1643,6 +2075,12 @@
       "min": 44,
       "alone": null,
       "max": 76
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1652,7 +2090,13 @@
     "lng": -84.265853,
     "c": "ride",
     "a": "Action Zone",
-    "note": "Upcharge attraction - height and weight checked at the ride"
+    "note": "Upcharge attraction - height and weight checked at the ride",
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "zoom-flume",

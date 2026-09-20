@@ -26,6 +26,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -40,7 +46,13 @@
       "alone": null,
       "max": 48
     },
-    "note": "Children's slide — the park posts a maximum, not a minimum."
+    "note": "Children's slide — the park posts a maximum, not a minimum.",
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "bat-girl-coaster-chase",
@@ -53,6 +65,12 @@
       "min": 36,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -66,6 +84,12 @@
       "min": 48,
       "alone": null,
       "max": 77
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -104,7 +128,13 @@
       "alone": null,
       "max": null
     },
-    "note": "OpenStreetMap spells it \"Triagle\"; the park spells it Triangle."
+    "note": "OpenStreetMap spells it \"Triagle\"; the park spells it Triangle.",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "bermuda-triangle-riptide-runner-slide-pool",
@@ -117,6 +147,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
     }
   },
   {
@@ -139,7 +175,13 @@
       "alone": null,
       "max": 54
     },
-    "note": "Children's racer."
+    "note": "Children's racer.",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "boomerang-coast-to-coast",
@@ -152,6 +194,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -166,7 +214,13 @@
       "alone": null,
       "max": 54
     },
-    "note": "Formerly Buckarooz"
+    "note": "Formerly Buckarooz",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "bugs-white-water-rapids",
@@ -179,6 +233,12 @@
       "min": 36,
       "alone": 42,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
     }
   },
   {
@@ -224,6 +284,12 @@
       "min": 54,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -256,7 +322,13 @@
     "lat": 29.599031,
     "lng": -98.610301,
     "c": "ride",
-    "a": "Los Festivales"
+    "a": "Los Festivales",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "cocktail-s-on-the-corner",
@@ -272,7 +344,13 @@
     "lat": 29.60035,
     "lng": -98.611448,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "cowabunga",
@@ -280,7 +358,13 @@
     "lat": 29.60042,
     "lng": -98.61157,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "crackaxle-dippin-dots",
@@ -302,7 +386,13 @@
       "alone": 42,
       "max": null
     },
-    "note": "Walking age and up with a grown-up. No single riders."
+    "note": "Walking age and up with a grown-up. No single riders.",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
+    }
   },
   {
     "i": "cyborg-cyber-revolution",
@@ -315,6 +405,12 @@
       "min": 42,
       "alone": 48,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -329,7 +425,13 @@
       "alone": 42,
       "max": null
     },
-    "note": "Anyone over 54\" has to be riding with a child under 54\"."
+    "note": "Anyone over 54\" has to be riding with a child under 54\".",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "daily-planet-newsstand-gifts",
@@ -350,6 +452,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -363,6 +471,12 @@
       "min": 36,
       "alone": 48,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -424,6 +538,12 @@
       "min": 52,
       "alone": null,
       "max": 78
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -453,6 +573,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
     }
   },
   {
@@ -491,7 +617,13 @@
       "alone": 36,
       "max": null
     },
-    "note": "Anyone over 54\" has to be riding with a child under 54\"."
+    "note": "Anyone over 54\" has to be riding with a child under 54\".",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "fuel-charging-rod-station",
@@ -521,7 +653,13 @@
       "alone": null,
       "max": null
     },
-    "note": "Runs as Chupacabra since the 2024 rename — the map still carries both names."
+    "note": "Runs as Chupacabra since the 2024 rename — the map still carries both names.",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "green-lantern-emerald-flight",
@@ -534,6 +672,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -563,6 +707,12 @@
       "min": 36,
       "alone": 42,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -576,6 +726,12 @@
       "min": 36,
       "alone": 42,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -605,6 +761,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
     }
   },
   {
@@ -618,6 +780,12 @@
       "min": 36,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -631,6 +799,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -660,6 +834,12 @@
       "min": 36,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -673,6 +853,12 @@
       "min": 36,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -687,7 +873,13 @@
       "alone": 36,
       "max": null
     },
-    "note": "Anyone over 54\" has to be riding with a child under 54\"."
+    "note": "Anyone over 54\" has to be riding with a child under 54\".",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "la-cantina",
@@ -725,6 +917,12 @@
       "min": null,
       "alone": 42,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -733,7 +931,13 @@
     "lat": 29.597779,
     "lng": -98.611609,
     "c": "show",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "lost-and-found",
@@ -762,6 +966,12 @@
       "min": null,
       "alone": 42,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -807,6 +1017,12 @@
       "min": 42,
       "alone": 47,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
     }
   },
   {
@@ -815,7 +1031,13 @@
     "lat": 29.600718,
     "lng": -98.610443,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "park-row-refresh-station",
@@ -916,6 +1138,12 @@
       "min": null,
       "alone": 42,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
     }
   },
   {
@@ -945,6 +1173,12 @@
       "min": null,
       "alone": 42,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -958,6 +1192,12 @@
       "min": 54,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -971,6 +1211,12 @@
       "min": 54,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1084,7 +1330,13 @@
     "lat": 29.60017,
     "lng": -98.6115,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "riptide-runner",
@@ -1097,6 +1349,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1110,6 +1368,12 @@
       "min": 42,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1118,7 +1382,13 @@
     "lat": 29.595758,
     "lng": -98.608372,
     "c": "show",
-    "a": "Rockville"
+    "a": "Rockville",
+    "wx": {
+      "shelter": "covered",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "s-ngerfest-halle",
@@ -1134,7 +1404,13 @@
     "lat": 29.597665,
     "lng": -98.609401,
     "c": "show",
-    "a": "Spassburg"
+    "a": "Spassburg",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "scream",
@@ -1147,6 +1423,12 @@
       "min": 52,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1160,6 +1442,12 @@
       "min": 42,
       "alone": 48,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1181,6 +1469,12 @@
       "min": 36,
       "alone": 46,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
     }
   },
   {
@@ -1189,7 +1483,13 @@
     "lat": 29.600314,
     "lng": -98.611847,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
+    }
   },
   {
     "i": "stingray-racer",
@@ -1197,7 +1497,13 @@
     "lat": 29.60032,
     "lng": -98.61151,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "stroller-wheelchair-rental",
@@ -1227,7 +1533,13 @@
       "alone": 48,
       "max": null
     },
-    "note": "Formerly SkyScreamer"
+    "note": "Formerly SkyScreamer",
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "superman-krypton-coaster",
@@ -1240,6 +1552,12 @@
       "min": 54,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1253,6 +1571,12 @@
       "min": null,
       "alone": 42,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1261,7 +1585,13 @@
     "lat": 29.598796,
     "lng": -98.610777,
     "c": "show",
-    "a": "Texas State Square"
+    "a": "Texas State Square",
+    "wx": {
+      "shelter": "covered",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "texas-state-square",
@@ -1269,7 +1599,13 @@
     "lat": 29.598583,
     "lng": -98.610354,
     "c": "show",
-    "a": "Texas State Square"
+    "a": "Texas State Square",
+    "wx": {
+      "shelter": "covered",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "texas-treehouse",
@@ -1282,6 +1618,12 @@
       "min": 42,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1296,7 +1638,13 @@
       "alone": null,
       "max": null
     },
-    "note": "Rule is the Texas Treehouse's, which the slides and the splash pool share."
+    "note": "Rule is the Texas Treehouse's, which the slides and the splash pool share.",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
+    }
   },
   {
     "i": "texas-tumble-tube-shoot",
@@ -1310,7 +1658,13 @@
       "alone": null,
       "max": null
     },
-    "note": "The park lists it as Texas Tumble."
+    "note": "The park lists it as Texas Tumble.",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "the-caped-crusader",
@@ -1332,7 +1686,13 @@
       "alone": 42,
       "max": null
     },
-    "note": "Lap children and infants on the chariots only."
+    "note": "Lap children and infants on the chariots only.",
+    "wx": {
+      "shelter": "covered",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "the-joker-carnival-of-chaos",
@@ -1345,6 +1705,12 @@
       "min": 52,
       "alone": null,
       "max": 84
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1367,7 +1733,13 @@
       "alone": null,
       "max": null
     },
-    "note": "The park lists it as Thunder Rapids."
+    "note": "The park lists it as Thunder Rapids.",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "tidal-wave-cafe",
@@ -1388,6 +1760,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1401,6 +1779,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
     }
   },
   {
@@ -1434,7 +1818,13 @@
     "lat": 29.60026,
     "lng": -98.61072,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "tutti-nail-bar",
@@ -1457,7 +1847,13 @@
       "alone": null,
       "max": null
     },
-    "note": "One of the Texas Treehouse slides; the rule is the treehouse's."
+    "note": "One of the Texas Treehouse slides; the rule is the treehouse's.",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "tx-treehouse-red-slide",
@@ -1471,7 +1867,13 @@
       "alone": null,
       "max": null
     },
-    "note": "One of the Texas Treehouse slides; the rule is the treehouse's."
+    "note": "One of the Texas Treehouse slides; the rule is the treehouse's.",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "tx-treehouse-teal-slide",
@@ -1485,7 +1887,13 @@
       "alone": null,
       "max": null
     },
-    "note": "One of the Texas Treehouse slides; the rule is the treehouse's."
+    "note": "One of the Texas Treehouse slides; the rule is the treehouse's.",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "tx-treehouse-yellow-slide",
@@ -1499,7 +1907,13 @@
       "alone": null,
       "max": null
     },
-    "note": "One of the Texas Treehouse slides; the rule is the treehouse's."
+    "note": "One of the Texas Treehouse slides; the rule is the treehouse's.",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "vortex",
@@ -1507,7 +1921,13 @@
     "lat": 29.60022,
     "lng": -98.6116,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "watering-hole-refresh-station",
@@ -1528,6 +1948,12 @@
       "min": 36,
       "alone": 48,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": true
     }
   },
   {
@@ -1550,6 +1976,12 @@
       "min": null,
       "alone": 42,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
     }
   },
   {
@@ -1558,7 +1990,13 @@
     "lat": 29.60044,
     "lng": -98.61157,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "wonder-woman-gifts",
@@ -1579,6 +2017,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1593,7 +2037,13 @@
       "alone": 36,
       "max": null
     },
-    "note": "Anyone over 54\" has to be riding with a child under 54\"."
+    "note": "Anyone over 54\" has to be riding with a child under 54\".",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "zaragoza-theater",
@@ -1601,6 +2051,12 @@
     "lat": 29.598599,
     "lng": -98.609317,
     "c": "show",
-    "a": "Los Festivales"
+    "a": "Los Festivales",
+    "wx": {
+      "shelter": "indoor",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   }
 ]

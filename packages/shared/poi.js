@@ -2,6 +2,8 @@
  * Venue POI record shape — the fields the builder may publish and the app may read.
  */
 
+import { validateWeatherTraits } from './weather-exposure.js';
+
 const REQUIRED = ['n', 'lat', 'lng', 'c'];
 
 /** Optional keys on a published place row. Unknown keys are rejected. */
@@ -16,6 +18,7 @@ export const POI_OPTIONAL_KEYS = [
   'e',
   'out',
   'osm',
+  'wx',
 ];
 
 const OPTIONAL = new Set(POI_OPTIONAL_KEYS);
@@ -37,6 +40,7 @@ export function validatePoi(poi) {
 
   if (poi.oh != null && typeof poi.oh !== 'string') errors.push('oh must be a string');
   if (poi.tel != null && typeof poi.tel !== 'string') errors.push('tel must be a string');
+  if (poi.wx != null) errors.push(...validateWeatherTraits(poi.wx).map((e) => `wx: ${e}`));
 
   for (const key of Object.keys(poi)) {
     if (!REQUIRED.includes(key) && !OPTIONAL.has(key)) errors.push(`unknown field "${key}"`);

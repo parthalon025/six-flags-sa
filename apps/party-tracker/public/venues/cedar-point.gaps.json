@@ -257,6 +257,14 @@
     {
       "type": "verify",
       "target": "open-meteo"
+    },
+    {
+      "type": "verify",
+      "target": "parks-api"
+    },
+    {
+      "type": "verify",
+      "target": "queue-times"
     }
   ]
 }

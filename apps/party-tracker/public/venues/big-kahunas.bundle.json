@@ -5,7 +5,7 @@
     "map": "2026-08-10",
     "revisionId": "dd4c0cfa-91f7-4a7a-9f40-2df9e7b5db10"
   },
-  "bytes": 67278,
+  "bytes": 69796,
   "files": [
     {
       "path": "/venues/big-kahunas.gaps.json",
@@ -19,8 +19,8 @@
     },
     {
       "path": "/venues/big-kahunas.pois.json",
-      "bytes": 12171,
-      "sha256": "93930e5483181c4afb2041f9e8f52df8dfc4e790332719f11c0d1731ac108ee7"
+      "bytes": 14689,
+      "sha256": "e3abaced651407fbde350456c5412eb28b29fd18f21a7f4aac80a60811fa1ffd"
     },
     {
       "path": "/venues/big-kahunas/display/blueprint-survey.visual.json",

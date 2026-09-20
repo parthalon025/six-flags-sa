@@ -7,7 +7,7 @@
   },
   "certified": false,
   "certifiedAt": null,
-  "bundleFingerprint": "3e842c131cfad42188e1d30e6cbba6d8d1a12965348194ff2cf8132ad1f5da70",
+  "bundleFingerprint": "0c7138b6f2c9c54a599d10cf829e4a2c698169f44f497160c9358d6e88cb0965",
   "checks": [
     {
       "key": "checklist",
@@ -1050,6 +1050,36 @@
           "sourceGap": "adapter_stale",
           "target": null,
           "blocking": false,
+          "adapterId": "parks-api",
+          "featureClass": "ride_inventory",
+          "freshnessDays": 30,
+          "fetched": "2026-08-11",
+          "need": "Verify parks-api ride inventory — cache from 2026-08-11"
+        },
+        {
+          "venueId": "six-flags-fiesta-texas",
+          "type": "verify_source",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "whyOpenSourceFails": "Cached adapter data is older than its freshness window — on-the-ground verification refreshes what open data cannot keep current.",
+          "sourceGap": "adapter_stale",
+          "target": null,
+          "blocking": false,
+          "adapterId": "queue-times",
+          "featureClass": "ride_inventory",
+          "freshnessDays": 30,
+          "fetched": "2026-08-11T19:54:42",
+          "need": "Verify queue-times ride inventory — cache from 2026-08-11T19:54:42"
+        },
+        {
+          "venueId": "six-flags-fiesta-texas",
+          "type": "verify_source",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "whyOpenSourceFails": "Cached adapter data is older than its freshness window — on-the-ground verification refreshes what open data cannot keep current.",
+          "sourceGap": "adapter_stale",
+          "target": null,
+          "blocking": false,
           "adapterId": "open-meteo",
           "featureClass": "weather",
           "freshnessDays": 1,
@@ -1115,7 +1145,7 @@
         }
       ],
       "counts": {
-        "durable": 71,
+        "durable": 73,
         "ambient": 5
       }
     }

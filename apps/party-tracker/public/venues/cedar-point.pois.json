@@ -18,6 +18,12 @@
       "min": null,
       "alone": null,
       "max": 54
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -71,7 +77,13 @@
       "alone": 48,
       "max": null
     },
-    "a": "Lakeside Midway"
+    "a": "Lakeside Midway",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "auntie-anne-s-and-cinnabon",
@@ -103,7 +115,13 @@
     "lat": 41.485597,
     "lng": -82.687257,
     "c": "show",
-    "a": "Gemini Midway"
+    "a": "Gemini Midway",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "balloon-race",
@@ -116,7 +134,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Camp Snoopy"
+    "a": "Camp Snoopy",
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "bay-harbor",
@@ -170,6 +194,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -191,6 +221,12 @@
       "min": 42,
       "alone": 52,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -220,6 +256,12 @@
       "min": null,
       "alone": 48,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -228,7 +270,13 @@
     "lat": 41.485456,
     "lng": -82.688667,
     "c": "show",
-    "a": "Camp Snoopy"
+    "a": "Camp Snoopy",
+    "wx": {
+      "shelter": "indoor",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "camper-village",
@@ -257,7 +305,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Frontier Town"
+    "a": "Frontier Town",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "cedar-creek-trading-company",
@@ -278,7 +332,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Main Midway"
+    "a": "Main Midway",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "cedar-point-grand-pavillion",
@@ -294,7 +354,13 @@
     "lat": 41.478132,
     "lng": -82.681931,
     "c": "ride",
-    "a": "Cedar Point"
+    "a": "Cedar Point",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "cedar-point-shores-parking-lot",
@@ -315,7 +381,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Camp Snoopy"
+    "a": "Camp Snoopy",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "chick-fil-a",
@@ -432,7 +504,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Gemini Midway"
+    "a": "Gemini Midway",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "corral",
@@ -573,7 +651,13 @@
       "alone": 48,
       "max": null
     },
-    "a": "Lakeside Midway"
+    "a": "Lakeside Midway",
+    "wx": {
+      "shelter": "covered",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "drop-off-lot-reserved-parking",
@@ -594,6 +678,12 @@
       "min": null,
       "alone": null,
       "max": 54
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -735,7 +825,13 @@
       "alone": null,
       "max": 78
     },
-    "a": "Lakeside Midway"
+    "a": "Lakeside Midway",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "gatekeeper-gift-shop",
@@ -790,7 +886,13 @@
           "osm": "w857292933"
         }
       }
-    ]
+    ],
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "giant-wheel",
@@ -803,6 +905,12 @@
       "min": null,
       "alone": 48,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -811,7 +919,13 @@
     "lat": 41.485545,
     "lng": -82.69189,
     "c": "show",
-    "a": "Frontier Town"
+    "a": "Frontier Town",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "grandstand-refreshments",
@@ -832,7 +946,13 @@
       "alone": 52,
       "max": null
     },
-    "a": "Cedar Point Shores"
+    "a": "Cedar Point Shores",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "guest-services",
@@ -885,6 +1005,12 @@
       "min": null,
       "alone": null,
       "max": 54
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -909,7 +1035,13 @@
     "lat": 41.482017,
     "lng": -82.68722,
     "c": "show",
-    "a": "Millennium Midway"
+    "a": "Millennium Midway",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "hugo-s-italian-kitchen",
@@ -938,6 +1070,12 @@
       "min": 42,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -946,7 +1084,13 @@
     "lat": 41.478811,
     "lng": -82.68019,
     "c": "show",
-    "a": "Main Midway"
+    "a": "Main Midway",
+    "wx": {
+      "shelter": "indoor",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "jewlry-cart",
@@ -983,6 +1127,12 @@
       "min": null,
       "alone": 46,
       "max": null
+    },
+    "wx": {
+      "shelter": "covered",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -996,6 +1146,12 @@
       "min": 36,
       "alone": null,
       "max": 54
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1009,7 +1165,13 @@
       "alone": 44,
       "max": null
     },
-    "a": "Gemini Midway"
+    "a": "Gemini Midway",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "lake-eerie-nor-easter-2",
@@ -1023,7 +1185,13 @@
       "max": null
     },
     "a": "Cedar Point Shores",
-    "note": "OpenStreetMap spells it “Lake Eerie”; the sign does not."
+    "note": "OpenStreetMap spells it “Lake Eerie”; the sign does not.",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "lakeside-express",
@@ -1044,7 +1212,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Cedar Point Shores"
+    "a": "Cedar Point Shores",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "last-chance-saloon",
@@ -1065,7 +1239,13 @@
       "alone": null,
       "max": 54
     },
-    "a": "Cedar Point Shores"
+    "a": "Cedar Point Shores",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "lighthouse-point",
@@ -1095,7 +1275,13 @@
       "alone": 52,
       "max": null
     },
-    "a": "Cedar Point Shores"
+    "a": "Cedar Point Shores",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "mac-shack",
@@ -1116,7 +1302,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Gemini Midway"
+    "a": "Gemini Midway",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "magnum-xl-200-gate",
@@ -1161,7 +1353,13 @@
       "alone": 46,
       "max": null
     },
-    "a": "Lakeside Midway"
+    "a": "Lakeside Midway",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "maverick",
@@ -1174,6 +1372,12 @@
       "min": 52,
       "alone": null,
       "max": 78
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1187,7 +1391,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Lakeside Midway"
+    "a": "Lakeside Midway",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "midway-carousel",
@@ -1200,6 +1410,12 @@
       "min": null,
       "alone": 46,
       "max": null
+    },
+    "wx": {
+      "shelter": "covered",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1239,6 +1455,12 @@
       "min": 48,
       "alone": null,
       "max": 78
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1276,7 +1498,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Gemini Midway"
+    "a": "Gemini Midway",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "motorcycles",
@@ -1289,6 +1517,12 @@
       "min": 39,
       "alone": null,
       "max": 54
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1310,6 +1544,12 @@
       "min": null,
       "alone": null,
       "max": 54
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1323,7 +1563,13 @@
       "alone": 48,
       "max": null
     },
-    "a": "Main Midway"
+    "a": "Main Midway",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "pagoda-gift-shop",
@@ -1339,7 +1585,13 @@
     "lat": 41.486058,
     "lng": -82.692294,
     "c": "show",
-    "a": "Frontier Town"
+    "a": "Frontier Town",
+    "wx": {
+      "shelter": "indoor",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "panda-express",
@@ -1448,7 +1700,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Camp Snoopy"
+    "a": "Camp Snoopy",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "perch-plunge",
@@ -1461,7 +1719,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Cedar Point Shores"
+    "a": "Cedar Point Shores",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "perkins-restaurant-and-bakery",
@@ -1490,7 +1754,13 @@
       "alone": 48,
       "max": null
     },
-    "a": "Gemini Midway"
+    "a": "Gemini Midway",
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "point-plaza",
@@ -1511,7 +1781,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Cedar Point Shores"
+    "a": "Cedar Point Shores",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "police-cars",
@@ -1524,6 +1800,12 @@
       "min": null,
       "alone": null,
       "max": 54
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1545,7 +1827,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Cedar Point Shores"
+    "a": "Cedar Point Shores",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": true,
+      "waterpark": false
+    }
   },
   {
     "i": "power-tower",
@@ -1558,7 +1846,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Gemini Midway"
+    "a": "Gemini Midway",
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "preferred-parking",
@@ -1595,7 +1889,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Main Midway"
+    "a": "Main Midway",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "raptor-hot-shots",
@@ -1616,6 +1916,12 @@
       "min": 36,
       "alone": null,
       "max": 54
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1624,7 +1930,13 @@
     "lat": 41.482166,
     "lng": -82.687658,
     "c": "show",
-    "a": "Millennium Midway"
+    "a": "Millennium Midway",
+    "wx": {
+      "shelter": "covered",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "registration-desk-and-store",
@@ -1861,7 +2173,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Cedar Point Shores"
+    "a": "Cedar Point Shores",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "rock-spin-turn",
@@ -1874,6 +2192,12 @@
       "min": null,
       "alone": null,
       "max": 54
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1887,6 +2211,12 @@
       "min": null,
       "alone": null,
       "max": 54
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1920,6 +2250,12 @@
       "min": 54,
       "alone": null,
       "max": 78
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1949,6 +2285,12 @@
       "min": 42,
       "alone": 48,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -1965,7 +2307,13 @@
     "lat": 41.485107,
     "lng": -82.682756,
     "c": "show",
-    "a": "Cedar Point"
+    "a": "Cedar Point",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "sandals-souvenirs-sundries",
@@ -2098,6 +2446,12 @@
       "min": 48,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -3271,6 +3625,12 @@
       "min": null,
       "alone": null,
       "max": 54
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -3292,7 +3652,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Frontier Town"
+    "a": "Frontier Town",
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "skyhawk-lockers",
@@ -3313,6 +3679,12 @@
       "min": 44,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -3326,7 +3698,13 @@
       "alone": null,
       "max": 54
     },
-    "a": "Camp Snoopy"
+    "a": "Camp Snoopy",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "snoopy-boutique",
@@ -3347,7 +3725,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Planet Snoopy"
+    "a": "Planet Snoopy",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "snoopy-s-express-railroad",
@@ -3360,6 +3744,12 @@
       "min": 36,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -3373,6 +3763,12 @@
       "min": 36,
       "alone": null,
       "max": 54
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -3386,6 +3782,12 @@
       "min": null,
       "alone": null,
       "max": 54
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -3415,7 +3817,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Cedar Point Shores"
+    "a": "Cedar Point Shores",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "starbucks",
@@ -3457,6 +3865,12 @@
       "min": 52,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -3494,7 +3908,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Cedar Point Shores"
+    "a": "Cedar Point Shores",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "subway",
@@ -3595,7 +4015,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Frontier Trail"
+    "a": "Frontier Trail",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "thunder-canyon-dry-goods",
@@ -3674,6 +4100,12 @@
       "min": 52,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -3735,6 +4167,12 @@
       "min": 52,
       "alone": null,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -3773,7 +4211,13 @@
       "max": 52
     },
     "a": "Cedar Point Shores",
-    "note": "OpenStreetMap doubles the t; the sign does not."
+    "note": "OpenStreetMap doubles the t; the sign does not.",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "wave-swinger",
@@ -3786,7 +4230,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Frontier Town"
+    "a": "Frontier Town",
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": true,
+      "waterpark": true
+    }
   },
   {
     "i": "wild-mouse",
@@ -3799,6 +4249,12 @@
       "min": 42,
       "alone": 48,
       "max": null
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -3812,7 +4268,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Cedar Point Shores"
+    "a": "Cedar Point Shores",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "wilderness-run",
@@ -3825,7 +4287,13 @@
       "alone": 45,
       "max": null
     },
-    "a": "Camp Snoopy"
+    "a": "Camp Snoopy",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "windseeker",
@@ -3838,7 +4306,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Lakeside Midway"
+    "a": "Lakeside Midway",
+    "wx": {
+      "shelter": "open",
+      "tall": true,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "windseeker-gate",
@@ -3859,7 +4333,13 @@
       "alone": 48,
       "max": null
     },
-    "a": "Camp Snoopy"
+    "a": "Camp Snoopy",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "woodstock-s-airmail",
@@ -3872,6 +4352,12 @@
       "min": 36,
       "alone": null,
       "max": 54
+    },
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
     }
   },
   {
@@ -3885,7 +4371,13 @@
       "alone": null,
       "max": null
     },
-    "a": "Planet Snoopy"
+    "a": "Planet Snoopy",
+    "wx": {
+      "shelter": "open",
+      "tall": false,
+      "wet": false,
+      "waterpark": false
+    }
   },
   {
     "i": "yogurt-plus",

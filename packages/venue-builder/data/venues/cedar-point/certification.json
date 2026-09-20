@@ -7,7 +7,7 @@
   },
   "certified": false,
   "certifiedAt": null,
-  "bundleFingerprint": "61995b9ede787c9cdd90678e08af4fea8d44009a979112ebb92927f972978b42",
+  "bundleFingerprint": "7e3596c24d15fd86aab708c70e49ada297206b8007c491eac788148a3f6c45c0",
   "checks": [
     {
       "key": "checklist",
@@ -945,6 +945,36 @@
           "sourceGap": "adapter_stale",
           "target": null,
           "blocking": false,
+          "adapterId": "parks-api",
+          "featureClass": "ride_inventory",
+          "freshnessDays": 30,
+          "fetched": "2026-08-18",
+          "need": "Verify parks-api ride inventory — cache from 2026-08-18"
+        },
+        {
+          "venueId": "cedar-point",
+          "type": "verify_source",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "whyOpenSourceFails": "Cached adapter data is older than its freshness window — on-the-ground verification refreshes what open data cannot keep current.",
+          "sourceGap": "adapter_stale",
+          "target": null,
+          "blocking": false,
+          "adapterId": "queue-times",
+          "featureClass": "ride_inventory",
+          "freshnessDays": 30,
+          "fetched": "2026-08-11T19:54:39",
+          "need": "Verify queue-times ride inventory — cache from 2026-08-11T19:54:39"
+        },
+        {
+          "venueId": "cedar-point",
+          "type": "verify_source",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "whyOpenSourceFails": "Cached adapter data is older than its freshness window — on-the-ground verification refreshes what open data cannot keep current.",
+          "sourceGap": "adapter_stale",
+          "target": null,
+          "blocking": false,
           "adapterId": "open-meteo",
           "featureClass": "weather",
           "freshnessDays": 1,
@@ -1010,7 +1040,7 @@
         }
       ],
       "counts": {
-        "durable": 62,
+        "durable": 64,
         "ambient": 5
       }
     }
