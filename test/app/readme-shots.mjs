@@ -324,7 +324,7 @@ async function main() {
       await go(guest.page, 'Party');
       await setSheet(guest.page, 'full');
       await guest.page.locator('input.code').fill(code);
-      await guest.page.getByRole('button', { name: 'Join' }).click();
+      await guest.page.getByRole('button', { name: 'Join', exact: true }).click();
       await until(() => page.locator('.memberRow').count().then((n) => n >= 2), {
         timeout: 40000,
         label: 'guest joined host roster',

@@ -67,6 +67,7 @@ import {
 } from '@/lib/location';
 import { newMemberId } from '@/lib/core/ids';
 import { clearPendingInvite } from '@/lib/party/inviteStash';
+import { clearPendingPairOffer, takePendingPairOffer } from '@/lib/party/pairOfferStash';
 import { mapDisplayPosition } from '@/lib/gps/display';
 import { FOLLOW_RESUME_MS, followShouldResume } from '@/lib/parkMapView';
 import { resolveSession, readLocalSession } from '@/lib/auth/session';
@@ -1958,7 +1959,34 @@ function ParkApp({ isSignedIn }) {
     setBusy(false);
   };
 
-  const joinParty = async (raw, asName = null) => {
+  const createPartyHotspot = async () => {
+    if (!locationReadyToJoin(geo.status)) {
+      showToast('Turn on Location to join a party.');
+      setGateOpen(true);
+      return;
+    }
+    setBusy(true);
+    try {
+      const snap = await runtime.current.createParty({
+        memberName: identity?.name || 'Guest',
+        name: 'Party',
+        userId: identity?.userId || null,
+        selfContained: true,
+      });
+      selectTab('party');
+      showToast(
+        `Party ${snap.code} on same hotspot — share the invite link, then finish with the pairing QR`,
+      );
+      adoptDraft();
+      adoptHeight();
+      shareOverlay();
+    } catch (err) {
+      showToast(err?.message || 'Could not start a hotspot party.');
+    }
+    setBusy(false);
+  };
+
+  const joinParty = async (raw, asName = null, { selfContained = false } = {}) => {
     if (!locationReadyToJoin(geo.status)) {
       showToast('Turn on Location to join a party.');
       setGateOpen(true);
@@ -1976,9 +2004,13 @@ function ParkApp({ isSignedIn }) {
       const snap = await runtime.current.joinParty(raw, {
         memberName,
         userId: identityRef.current?.userId || null,
+        selfContained,
       });
       selectTab('party');
-      showToast(`Joined ${snap.code}`);
+      showToast(
+        selfContained ? `Joined ${snap.code} on same hotspot — finish with the pairing QR` : `Joined ${snap.code}`,
+      );
+      if (selfContained) clearPendingPairOffer();
       adoptDraft();
       adoptHeight();
       shareOverlay();
@@ -1992,6 +2024,28 @@ function ParkApp({ isSignedIn }) {
     }
     setBusy(false);
   };
+
+  const joinPartyHotspot = async (raw, asName = null) => {
+    const input = String(raw || '').trim();
+    if (!input) {
+      showToast('Paste or scan the invite link — a typed code needs the server.');
+      return;
+    }
+    if (input.length === 6 && !input.includes('/') && !input.includes('#')) {
+      showToast('On the same hotspot, use the invite link or QR — not the six-character code.');
+      return;
+    }
+    await joinParty(input, asName, { selfContained: true });
+  };
+
+  const qrPairing = party?.selfContained ? runtime.current?.getQrPairing?.() ?? null : null;
+  const initialPairOfferUrl = useMemo(() => {
+    if (!party?.selfContained || party?.hosting) return null;
+    const pending = takePendingPairOffer();
+    if (!pending) return null;
+    const origin = typeof window === 'undefined' ? '' : window.location.origin;
+    return pending.startsWith('http') ? pending : `${origin}/pair#${pending}`;
+  }, [party?.selfContained, party?.hosting, party?.code]);
 
   /* A host answers key-requests for ten minutes and then stops, which is what
      keeps a guessed six-character code worthless. The window used to open once
@@ -3539,7 +3593,11 @@ function ParkApp({ isSignedIn }) {
                   )
                 }
                 onCreate={createParty}
+                onCreateHotspot={createPartyHotspot}
                 onJoin={joinParty}
+                onJoinHotspot={joinPartyHotspot}
+                qrPairing={qrPairing}
+                initialPairOfferUrl={initialPairOfferUrl}
                 onLeave={leaveParty}
                 onClearMeet={clearMeet}
                 onNavigateMeet={() => startNav({ kind: 'meet', label: meet?.label || 'Rally Point' })}

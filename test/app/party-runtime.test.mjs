@@ -570,6 +570,18 @@ await check('a local-only party warns that the code will not resolve', async () 
   );
 });
 
+await check('selfContained createParty exposes pairing hooks on the snapshot', async () => {
+  const rt = runtime();
+  const snap = await rt.createParty({ name: 'Hotspot', memberName: 'Ana', selfContained: true });
+  await settle();
+  assert.equal(snap.selfContained, true);
+  assert.equal(rt.getSnapshot().selfContained, true);
+  const pairing = rt.getQrPairing();
+  assert.equal(pairing?.role, 'host');
+  assert.equal(typeof pairing?.onGatherOffer, 'function');
+  assert.equal(typeof pairing?.onAnswerScanned, 'function');
+});
+
 if (FAIL.length) {
   console.error(`party runtime tests: ${FAIL.length} failed`);
   for (const f of FAIL) console.error(' !', f);

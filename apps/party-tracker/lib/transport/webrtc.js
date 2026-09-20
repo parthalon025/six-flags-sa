@@ -29,6 +29,7 @@
 
 import { defineTransport, RANK, STATUS } from './types.js';
 import { createSignaling } from './signaling.js';
+import { decodeAnswer, decodeOffer, encodeAnswer, encodeOffer } from './qrSignal.js';
 import { newMemberId } from '../core/ids.js';
 
 /**
@@ -57,10 +58,11 @@ const LINKED_POLL_MS = 10000;
 
 const CHANNEL_LABEL = 'party';
 
-export function createWebRTC({ base, role, iceServers } = {}) {
+export function createWebRTC({ base, role, iceServers, signal = 'mailbox', qr = null } = {}) {
   const root = String(base || '').replace(/\/+$/, '');
-  // Array.isArray, not `||`: [] must survive as [].
-  const ice = Array.isArray(iceServers) ? iceServers : DEFAULT_ICE;
+  const qrMode = signal === 'qr';
+  // QR mode is zero-infrastructure: never contact STUN even if a caller omits iceServers.
+  const ice = qrMode ? [] : (Array.isArray(iceServers) ? iceServers : DEFAULT_ICE);
 
   /** peerId -> { pc, channel, pending, everOpen } — populated on the host only. */
   const peers = new Map();
@@ -100,6 +102,7 @@ export function createWebRTC({ base, role, iceServers } = {}) {
       if (typeof RTCPeerConnection === 'undefined') {
         return { available: false, reason: 'unsupported' };
       }
+      if (qrMode) return { available: true };
       if (!root) return { available: false, reason: 'no-signaling' };
       const abort = new AbortController();
       const timer = setTimeout(() => abort.abort(), HEALTH_TIMEOUT_MS);
@@ -261,8 +264,9 @@ export function createWebRTC({ base, role, iceServers } = {}) {
           settle();
         };
 
-        // Only a give-up deadline. Everything before it is the manager's to
-        // schedule around, because negotiation is not blocking anything by then.
+        // Give-up deadline starts after the open timeout: until then `open` is
+        // the only thing blocked, and negotiation must stay alive so a channel
+        // that lands a moment later can still stamp READY for the manager.
         negotiateTimer = setTimeout(() => {
           negotiateTimer = null;
           if (solo?.channel?.readyState === 'open') return;
@@ -274,7 +278,7 @@ export function createWebRTC({ base, role, iceServers } = {}) {
           // a timeout with nobody listening for offers.
           self.setStatus(STATUS.DEGRADED, String(err.message));
           settle(err);
-        }, NEGOTIATE_TIMEOUT_MS);
+        }, OPEN_TIMEOUT_MS + NEGOTIATE_TIMEOUT_MS);
 
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
@@ -301,7 +305,76 @@ export function createWebRTC({ base, role, iceServers } = {}) {
         });
       }
 
+      /* ----------------------------------------------------------- qr mode -- */
+
+      async function hostOfferQr() {
+        const peerId = 'qr-joiner';
+        const entry = {
+          pc: new RTCPeerConnection({ iceServers: ice }),
+          channel: null,
+          pending: [],
+          everOpen: false,
+        };
+        entry.channel = entry.pc.createDataChannel(CHANNEL_LABEL, { ordered: true });
+        peers.set(peerId, entry);
+        wire(entry, peerId);
+        watch(entry, peerId);
+        entry.channel.onopen = () => {
+          opened(entry, peerId);
+          settle();
+        };
+
+        const offer = await entry.pc.createOffer();
+        await entry.pc.setLocalDescription(offer);
+        await waitIceGathering(entry.pc);
+        const encoded = await encodeOffer(entry.pc.localDescription.sdp);
+        await qr?.onOfferReady?.(encoded);
+
+        const answerEnc = await qr?.waitForAnswer?.();
+        const answerSdp = await decodeAnswer(answerEnc);
+        if (!answerSdp) throw new Error('webrtc: invalid QR answer');
+        await entry.pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+        if (entry.channel?.readyState === 'open') self.setStatus(STATUS.READY);
+      }
+
+      async function clientAnswerQr() {
+        const offerEnc = await qr?.waitForOffer?.();
+        const offerSdp = await decodeOffer(offerEnc);
+        if (!offerSdp) throw new Error('webrtc: invalid QR offer');
+
+        const pc = new RTCPeerConnection({ iceServers: ice });
+        solo = { pc, channel: null, pending: [], everOpen: false };
+        pc.ondatachannel = (ev) => {
+          solo.channel = ev.channel;
+          wire(solo, hostId);
+          const onLinked = () => {
+            opened(solo, hostId);
+            settle();
+          };
+          if (ev.channel.readyState === 'open') onLinked();
+          else ev.channel.onopen = onLinked;
+        };
+        watch(solo, 'host');
+
+        await pc.setRemoteDescription({ type: 'offer', sdp: offerSdp });
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await waitIceGathering(pc);
+        const encoded = await encodeAnswer(pc.localDescription.sdp);
+        await qr?.onAnswerReady?.(encoded);
+        await waitForChannel(OPEN_TIMEOUT_MS);
+      }
+
       /* -------------------------------------------------------------------- */
+
+      if (qrMode) {
+        if (isHost) {
+          await hostOfferQr();
+          return;
+        }
+        await clientAnswerQr();
+        return;
+      }
 
       // A second `open` on a client that is still negotiating must not throw a
       // fresh offer at the host: the one in flight is the one that will land.
@@ -421,4 +494,21 @@ function teardown(entry) {
   } catch {
     /* already closed */
   }
+}
+
+/** Non-trickle ICE: every candidate must be inside the SDP before the QR is drawn. */
+function waitIceGathering(pc) {
+  if (pc.iceGatheringState === 'complete') return Promise.resolve();
+  return new Promise((resolve) => {
+    const done = () => {
+      if (pc.iceGatheringState === 'complete') resolve();
+    };
+    pc.onicegatheringstatechange = done;
+    const prior = pc.onicecandidate;
+    pc.onicecandidate = (ev) => {
+      prior?.(ev);
+      if (!ev.candidate) done();
+    };
+    done();
+  });
 }

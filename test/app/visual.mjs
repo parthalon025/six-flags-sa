@@ -151,7 +151,7 @@ async function main() {
     await go(page2, 'Party');
     await openSheet(page2, 'full');
     await page2.locator('input.code').fill(code);
-    await page2.getByRole('button', { name: 'Join' }).click();
+    await page2.getByRole('button', { name: 'Join', exact: true }).click();
     // Poll for the roster rather than sleeping on a number picked here. A
     // status set before the transport is actually up is applied locally and
     // never sent, and nothing re-sends it — so a fixed wait that lands short
