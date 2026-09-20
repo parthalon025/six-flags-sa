@@ -617,7 +617,6 @@ export function buildPois(elements, areaCandidates, opts) {
     else {
       if (poi.h && !dupe.h) dupe.h = poi.h;
       if (poi.oh && !dupe.oh) dupe.oh = poi.oh;
-      if (poi.wx && !dupe.wx) dupe.wx = poi.wx;
     }
   }
   return kept;
