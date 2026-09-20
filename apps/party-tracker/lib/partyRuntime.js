@@ -845,6 +845,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     memberName = 'Guest',
     userId = null,
     selfContained = false,
+    qrExchange: injectedExchange = null,
   } = {}) {
     await teardown();
     phase = 'connecting';
@@ -865,7 +866,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
         role: 'host',
         hostId: selfId,
       });
-      if (selfContained) built.qrExchange = createQrExchange();
+      if (selfContained) built.qrExchange = injectedExchange || createQrExchange();
       const snapshot = await begin(built, 'host', memberName, name, { userId });
       if (!allocated.registered) {
         say('No server reachable — share the link or QR, the code will not resolve');
@@ -881,7 +882,10 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
   }
 
   /** Accepts a whole invite URL, a bare fragment, or a six-character code. */
-  async function joinParty(input, { memberName = 'Guest', userId = null, selfContained = false } = {}) {
+  async function joinParty(
+    input,
+    { memberName = 'Guest', userId = null, selfContained = false, qrExchange: injectedExchange = null } = {},
+  ) {
     await teardown();
     phase = 'connecting';
     emit();
@@ -911,7 +915,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
         role: 'client',
         hostId: null,
       });
-      if (selfContained) built.qrExchange = createQrExchange();
+      if (selfContained) built.qrExchange = injectedExchange || createQrExchange();
       const snapshot = await begin(built, 'client', memberName, 'Party', { handshakeCode, userId });
       AnalyticsEvents.partyJoined(bundle.partyId);
       return snapshot;
