@@ -144,6 +144,7 @@ const {
   exposureFor,
   outlookFor,
   outlookPredicted,
+  planPredictedOutlooks,
   parkOutlook,
 } = await import('../../apps/party-tracker/lib/weather.js');
 const { STATUS, statusFor, statusSummary } = await import('../../apps/party-tracker/lib/rideStatus.js');
@@ -7048,6 +7049,31 @@ await check('outlookPredicted matches outlookFor on a full current observation',
   const later = outlookPredicted(wxPoi('The Beast', 'coaster', 'Rivertown'), obs);
   assert.equal(later.key, now.key);
   assert.equal(later.why, now.why);
+  return true;
+});
+
+await check('planPredictedOutlooks maps hourly slices onto Plan stops', () => {
+  const poi = wxPoi('The Racer', 'coaster', 'Coney Mall');
+  poi.i = 'the-racer';
+  const plan = [{ id: 's1', placeId: 'the-racer', label: 'Racer' }];
+  const pois = [poi];
+  const hourly = [
+    { precipChance: 10, tempF: 75 },
+    { precipChance: 85, tempF: 72, gustMph: 8 },
+  ];
+  const out = planPredictedOutlooks(plan, pois, hourly, 1);
+  assert.equal(out['the-racer'].key, OUTLOOK.watch.key);
+  assert.equal(out['the-racer'].confidence.key, CONFIDENCE.medium.key);
+  return true;
+});
+
+await check('existing outlook shape is unchanged aside from confidence', () => {
+  const before = outlookFor(wxPoi('The Beast', 'coaster', 'Rivertown'), GALE);
+  assert.equal(before.key, OUTLOOK.running.key);
+  assert.equal(before.rank, OUTLOOK.running.rank);
+  assert.equal(before.label, OUTLOOK.running.label);
+  assert.equal(before.why, null);
+  assert.ok(before.confidence);
   return true;
 });
 

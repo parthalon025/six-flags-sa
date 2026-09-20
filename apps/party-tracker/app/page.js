@@ -116,6 +116,7 @@ import {
 } from '@/lib/mapVisual';
 import { spotAt } from '@/lib/spot';
 import { liveFor, membersAt } from '@/lib/live';
+import { planPredictedOutlooks } from '@/lib/weather';
 import { paletteFor } from '@/lib/theme';
 import { defaultQuestQueue } from '@/lib/adventure/questQueue';
 import { flushQuestQueue } from '@/lib/adventure/questSync';
@@ -1375,6 +1376,10 @@ function ParkApp({ isSignedIn }) {
   const planPosition = useDeferredValue(position);
   const planContext = useMemo(() => {
     if (!planItems.length) return null;
+    const predicted =
+      weatherFeed.hourly?.length > 1
+        ? planPredictedOutlooks(planItems, POIS, weatherFeed.hourly, 1)
+        : null;
     const out = {};
     for (const step of planItems) {
       const poi = POIS.find((p) => p.i === step.placeId || p.id === step.placeId);
@@ -1384,10 +1389,11 @@ function ParkApp({ isSignedIn }) {
         planPosition && Number.isFinite(poi.lat) && Number.isFinite(poi.lng)
           ? formatWalk(distance(planPosition.lat, planPosition.lng, poi.lat, poi.lng))
           : null;
-      out[step.placeId] = { zone, walk };
+      const weather = predicted?.[step.placeId] ?? null;
+      out[step.placeId] = { zone, walk, weather };
     }
     return out;
-  }, [planItems, POIS, venue, mapData, planPosition]);
+  }, [planItems, POIS, venue, mapData, planPosition, weatherFeed.hourly]);
 
   const commitPlan = useCallback(
     (next) => {

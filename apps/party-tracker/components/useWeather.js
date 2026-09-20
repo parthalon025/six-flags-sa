@@ -34,6 +34,7 @@ function readCache() {
     if (!raw) return null;
     const saved = JSON.parse(raw);
     if (!saved?.observed || !Number.isFinite(saved.at)) return null;
+    if (!Array.isArray(saved.hourly)) saved.hourly = [];
     if (Date.now() - saved.at > EXPIRY_MS) return null;
     return saved;
   } catch {
@@ -54,9 +55,10 @@ function writeCache(value) {
  * @param center {{lat, lng}|null} the park's middle. Null disables the hook.
  * @param enabled pass false to keep the radio quiet entirely.
  *
- * @returns {{ weather, observed, at, stale, offline, error, refresh }}
+ * @returns {{ weather, observed, hourly, at, stale, offline, error, refresh }}
  *   `weather` is the classifyWeather verdict, ready for outlookFor/statusFor,
  *   or null when nothing is known — which every caller renders as no banner.
+ *   `hourly` is the next few forecast slices for Plan predicted outlooks.
  */
 export default function useWeather(center, enabled = true) {
   const [reading, setReading] = useState(null); // { observed, at }
@@ -77,7 +79,11 @@ export default function useWeather(center, enabled = true) {
       if (!res.ok) throw new Error(res.status === 503 ? 'Weather unavailable' : `HTTP ${res.status}`);
       const body = await res.json();
       if (!body?.observed) throw new Error('Weather unavailable');
-      const next = { observed: body.observed, at: Number(body.at) || Date.now() };
+      const next = {
+        observed: body.observed,
+        hourly: Array.isArray(body.hourly) ? body.hourly : [],
+        at: Number(body.at) || Date.now(),
+      };
       setReading(next);
       setError(null);
       setOffline(false);
@@ -97,7 +103,13 @@ export default function useWeather(center, enabled = true) {
   // The cached reading, before the network is asked anything.
   useEffect(() => {
     const saved = readCache();
-    if (saved) setReading({ observed: saved.observed, at: saved.at });
+    if (saved) {
+      setReading({
+        observed: saved.observed,
+        hourly: Array.isArray(saved.hourly) ? saved.hourly : [],
+        at: saved.at,
+      });
+    }
   }, []);
 
   useEffect(() => {
@@ -135,6 +147,7 @@ export default function useWeather(center, enabled = true) {
   return {
     weather: reading ? classifyWeather(reading.observed) : null,
     observed: reading?.observed ?? null,
+    hourly: reading?.hourly ?? [],
     at: reading?.at ?? null,
     // "Old enough to say so", not "old enough to ignore" — the hook keeps
     // serving it either way and lets the banner do the hedging.
