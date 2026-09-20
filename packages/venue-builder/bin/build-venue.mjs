@@ -832,15 +832,6 @@ export function entrancesFromQueues(pois, elements) {
  *
  * Returns the ones that did, so the caller can decide what to do with them.
  */
-/** Bake per-attraction weather traits after area and overrides are final. */
-export function bakeWeatherTraits(pois) {
-  for (const poi of pois) {
-    const wx = inferWeatherTraits(poi);
-    if (wx) poi.wx = wx;
-    else delete poi.wx;
-  }
-}
-
 function assignLands(pois, lands, venueName, drawnNames) {
   const ordered = lands
     .map((l) => ({ n: l.n, r: l.r, size: areaOf(l.r) }))
@@ -852,6 +843,15 @@ function assignLands(pois, lands, venueName, drawnNames) {
     if (hit && drawnNames && !drawnNames.has(hit.n)) offsite.push(poi);
   }
   return offsite;
+}
+
+/** Bake per-attraction weather traits after area and overrides are final. */
+export function bakeWeatherTraits(pois) {
+  for (const poi of pois) {
+    const wx = inferWeatherTraits(poi);
+    if (wx) poi.wx = wx;
+    else delete poi.wx;
+  }
 }
 
 /**
