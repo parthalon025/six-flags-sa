@@ -1,11 +1,9 @@
 /**
  * What the sky is doing, and which attractions care about it.
  *
- * Pure and park-agnostic on purpose. Nothing in this file knows the name of a
- * single ride: a park is just a list of POIs with a category, an area and maybe
- * a note, and every judgement below is derived from those three fields. Drop a
- * different park's rides.json in and the same rules apply, which is the whole
- * reason it reads traits out of text instead of carrying a table.
+ * Exposure traits (`exposureFor`) live in `@party-tracker/shared/weather-exposure`
+ * so the venue twin can bake them and the app can prefer the table over the
+ * same text heuristics when a bundle ships without `wx`.
  *
  * The output is deliberately hedged. This module never claims a ride *is*
  * closed — only that a park operating normally would probably have stopped it.
@@ -14,106 +12,9 @@
  * a forecast is a head start on the walk you were about to waste.
  */
 
-/* ------------------------------------------------------------- traits ---- */
+import { exposureFor } from '@party-tracker/shared/weather-exposure.js';
 
-/*
- * Vocabulary, not names. Every parks-industry marketing department reaches for
- * the same nouns, so matching on them generalises far better than a per-park
- * list would — and when it misses, it misses toward "outdoor", which is the
- * safe default because it produces a warning rather than a false all-clear.
- */
-
-/** Areas and attractions that are the water park, and shut as one unit. */
-const WATERPARK = /\b(soak|splash|water\s?park|wave|lagoon|cove|reef|tide|typhoon|hurricane|harbou?r|aqua|oasis|beach|bay|island|paradise|tropic|breaker)\b/i;
-
-/**
- * Anything that reliably gets you wet, water park or not.
- *
- * Whole-word, unlike TALL, and that is load-bearing: a POI's area is part of
- * the text being searched, and a substring `river` would mark every coaster in
- * a land called Rivertown as a water ride — which then reads rain as "already
- * a wet ride, carry on" for a wooden coaster that has just stopped loading.
- */
-const WET = /\b(water|splash|flume|rapid|river|log|plunge|falls|soak|wave|pool|slide|tube|dunk|shoot)\b/i;
-
-/**
- * Rides that stand up in the wind and stop when it blows.
- *
- * The only pattern here matched as a substring rather than on word boundaries,
- * because this is the trait the industry writes as one word: WindSeeker,
- * Skyflyer, SkyScreamer, Dropzone. `\bseeker\b` sees none of them, and missing
- * the tall rides is the one miss that matters — they are what a gale takes
- * first. Safe because a POI reaches this line only if it is a ride, so the
- * "Skyline Chili" and "Drop Off Lot" collisions have already returned above.
- *
- * Short ambiguous stems are deliberately absent: `para` would claim Paradise
- * Plunge (a water slide) and `star` would claim anything Starlight.
- */
-const TALL = /(tower|drop|seeker|sky|flyer|flight|wheel|swing|balloon|zip|chute|gyro|orbit|scream|free\s?fall|slingshot|bungee|observation)/i;
-
-/** Genuinely enclosed — a roof over the whole experience, not just the queue. */
-const INDOOR = /\b(indoor|dark\s?ride|simulator|4-?d|3-?d|cinema|theat(er|re)|showplace|arcade|haunted\s?house|mansion|museum|aquarium)\b/i;
-
-/** Roofed but open-sided: fine in rain, not in lightning. */
-const COVERED = /\b(pavilion|carousel|carrousel|merry|festhaus|hall|barn|depot|station|dodgem|bumper)\b/i;
-
-/** Seating under the sky. An amphitheatre empties the moment it thunders. */
-const OPEN_AIR = /\b(amphitheat(er|re)|bandstand|stage|plaza|lawn|field|green|grove|garden)\b/i;
-
-/** Categories that are a building by definition and never carry ride status. */
-import { isRideable, isSheltered, isInert } from './ontology.js';
-
-/** Everything a POI record can say about itself, as one searchable string. */
-const textOf = (poi) =>
-  [poi?.n, poi?.a, poi?.alias, poi?.note].filter(Boolean).join(' ');
-
-/**
- * Classify one POI's exposure to weather.
- *
- * @returns {{
- *   kind: 'ride'|'show'|'sheltered'|'inert',
- *   shelter: 'indoor'|'covered'|'open',
- *   tall: boolean,     // wind stops it
- *   wet: boolean,      // you get soaked, so cold stops it
- *   waterpark: boolean // part of the water park, which closes as one
- * }}
- */
-export function exposureFor(poi) {
-  const c = poi?.c;
-  const text = textOf(poi);
-
-  if (isInert(poi)) {
-    return { kind: 'inert', shelter: 'open', tall: false, wet: false, waterpark: false };
-  }
-
-  if (isSheltered(poi)) {
-    // A food stand with a serving window is not a building, but from the
-    // visitor's point of view it is still there in the rain, which is the only
-    // question this answers.
-    return { kind: 'sheltered', shelter: 'indoor', tall: false, wet: false, waterpark: false };
-  }
-
-  if (c === 'show') {
-    const shelter = OPEN_AIR.test(text) ? 'open' : INDOOR.test(text) ? 'indoor' : 'covered';
-    return { kind: 'show', shelter, tall: false, wet: false, waterpark: false };
-  }
-
-  if (!isRideable(poi)) {
-    return { kind: 'inert', shelter: 'open', tall: false, wet: false, waterpark: false };
-  }
-
-  const waterpark = WATERPARK.test(poi?.a || '') || (WATERPARK.test(text) && WET.test(text));
-  const shelter = INDOOR.test(text) ? 'indoor' : COVERED.test(text) ? 'covered' : 'open';
-
-  return {
-    kind: 'ride',
-    shelter,
-    // An enclosed ride cannot be wind-exposed however its name reads.
-    tall: shelter === 'open' && TALL.test(text),
-    wet: waterpark || WET.test(text),
-    waterpark,
-  };
-}
+export { exposureFor };
 
 /* ------------------------------------------------------------ weather ---- */
 

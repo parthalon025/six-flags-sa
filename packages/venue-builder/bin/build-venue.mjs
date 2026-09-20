@@ -41,6 +41,7 @@ import {
   campDetailsFromTags, classify, isCampground, isCampPitch, isLand, isVenueOutline, openingHoursFromTags,
   wayAttributes,
 } from '../lib/osm-tags.mjs';
+import { inferWeatherTraits } from '@party-tracker/shared/weather-exposure.js';
 import { OVERRIDE_DIR, gapsDocumentFor, readJson, readOverrides, reindex, serializeVenue, slugify, VENUE_DIR, writeVenue, venueSidecar } from '../lib/venue-io.mjs';
 import { mirrorTruthToPostdb } from '../lib/map-factory/postdb-sync.mjs';
 import {
@@ -616,6 +617,7 @@ export function buildPois(elements, areaCandidates, opts) {
     else {
       if (poi.h && !dupe.h) dupe.h = poi.h;
       if (poi.oh && !dupe.oh) dupe.oh = poi.oh;
+      if (poi.wx && !dupe.wx) dupe.wx = poi.wx;
     }
   }
   return kept;
@@ -831,6 +833,15 @@ export function entrancesFromQueues(pois, elements) {
  *
  * Returns the ones that did, so the caller can decide what to do with them.
  */
+/** Bake per-attraction weather traits after area and overrides are final. */
+export function bakeWeatherTraits(pois) {
+  for (const poi of pois) {
+    const wx = inferWeatherTraits(poi);
+    if (wx) poi.wx = wx;
+    else delete poi.wx;
+  }
+}
+
 function assignLands(pois, lands, venueName, drawnNames) {
   const ordered = lands
     .map((l) => ({ n: l.n, r: l.r, size: areaOf(l.r) }))
@@ -1811,6 +1822,8 @@ async function buildOne(args, { previous = null } = {}) {
       for (const skip of got.skipped.slice(0, 8)) console.error(`    − skipped ${skip}`);
     }
   }
+
+  bakeWeatherTraits(pois);
 
   pois.sort((a, b) => a.n.localeCompare(b.n));
 

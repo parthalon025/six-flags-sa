@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./poi.js": "./poi.js",
+    "./weather-exposure.js": "./weather-exposure.js",
     "./ontology.js": "./ontology.js",
     "./wayFlags.js": "./wayFlags.js",
     "./mapSymbols.js": "./mapSymbols.js",
