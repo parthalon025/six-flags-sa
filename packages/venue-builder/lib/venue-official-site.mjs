@@ -92,12 +92,14 @@ export async function loadOfficialData(id, catalog, opts = {}) {
     try {
       let html = await fetchUrl(src.url);
       let parsed = parseListingForUrl(html, src.url);
+      let via = 'fetch';
       if (opts.browser && !parsed.length) {
         const { fetchWithBrowser } = await import('./adapters/playwright-official.mjs');
         html = await fetchWithBrowser(src.url);
         parsed = parseListingForUrl(html, src.url);
+        via = 'browser';
       }
-      pages.push({ id: src.id, url: src.url, kind: 'official_site', via: parsed.length && opts.browser ? 'browser' : 'fetch' });
+      pages.push({ id: src.id, url: src.url, kind: 'official_site', via });
       for (const row of parsed) {
         attractions.push({ ...row, source: src.id, listing: src.url });
       }

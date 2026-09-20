@@ -196,6 +196,7 @@ export const TEST_ESTATE = {
   'test/builder/stamp-coverage.mjs': ['test:builder'],
   'test/builder/steward-review.mjs': ['test:builder'],
   'test/scripts/official-research-summary.test.mjs': ['ci-gate'],
+  'test/scripts/official-page-via.test.mjs': ['ci-gate'],
   'test/builder/terrain.mjs': ['test:builder'],
   'test/builder/tiles-export.mjs': ['test:builder'],
   'test/builder/unit.mjs': ['test:unit', 'test:builder'],

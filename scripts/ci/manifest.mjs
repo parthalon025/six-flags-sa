@@ -84,6 +84,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/build-top100-workflow.test.mjs',
   'test/scripts/official-research-summary.test.mjs',
   'test/scripts/official-research-workflow.test.mjs',
+  'test/scripts/official-page-via.test.mjs',
   'test/scripts/builder-app-contract.test.mjs',
   'test/scripts/compare-cert-freshness.test.mjs',
   'test/scripts/neon-runbook.test.mjs',
