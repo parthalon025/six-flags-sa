@@ -136,7 +136,7 @@ async function connectDirectPair() {
   await settle(6);
   if (!hostFrames.some((f) => f.kind === PING)) {
     const err = new Error('channel opened but direct ping did not cross to the host');
-    err.code = 'ROSTER_DID_NOT_CONVERGE';
+    err.code = 'CHANNEL_NO_TRAFFIC';
     await host.close();
     await client.close();
     blocked.restore();
