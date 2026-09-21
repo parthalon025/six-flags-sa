@@ -61,7 +61,7 @@ export function statusFor(poi, report, weather, now = Date.now()) {
 
   const usable = report && (report.status === RIDE_DOWN || report.status === RIDE_OPEN);
   const freshness = usable ? freshnessFor(observationShapeFromReport(report), now) : null;
-  const stale = usable ? now - report.ts > RIDE_STALE_AFTER_MS : false;
+  const stale = usable ? now - report.ts >= RIDE_STALE_AFTER_MS : false;
 
   if (usable && !stale) {
     const who = report.byName || 'Someone';

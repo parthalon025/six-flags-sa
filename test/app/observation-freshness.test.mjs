@@ -107,6 +107,17 @@ await check('statusPillClasses carries fresh and aging tiers from ride status', 
   assert.match(statusPillClasses(aging), /\baging\b/);
 });
 
+await check('statusFor stale flag aligns with freshness at ride stale threshold', async () => {
+  const { RIDE_STALE_AFTER_MS, RIDE_OPEN } = await import('../../apps/party-tracker/lib/core/state.js');
+  const { statusFor } = await import('../../apps/party-tracker/lib/rideStatus.js');
+  const { statusPillClasses } = await import('../../apps/party-tracker/lib/live.js');
+  const ts = NOW - RIDE_STALE_AFTER_MS;
+  const st = statusFor({ c: 'coaster', id: 'orion' }, { status: RIDE_OPEN, ts }, null, NOW);
+  assert.equal(st.freshness.tier, 'stale');
+  assert.equal(st.stale, true);
+  assert.match(statusPillClasses(st), /\bstale\b/);
+});
+
 console.log(`\n${PASS.length} passed, ${FAIL.length} failed`);
 if (FAIL.length) {
   for (const f of FAIL) console.error('  ', f);
