@@ -85,14 +85,15 @@ check('unknown place id is rejected', () => {
   assert.equal(r.code, 'contribution_place_unknown');
 });
 
-check('contributions without a place skip proximity gate', () => {
+check('place-targeted kind without placeId is rejected', () => {
   const r = assessContributionProximity({
     venueId: 'kings-island',
     kind: 'height_rule',
-    lat: undefined,
-    lng: undefined,
+    lat: BEAST.lat,
+    lng: BEAST.lng,
   });
-  assert.equal(r.ok, true);
+  assert.equal(r.ok, false);
+  assert.equal(r.code, 'contribution_place_required');
 });
 
 check('dedupe window is one hour', () => {

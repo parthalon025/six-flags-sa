@@ -32,6 +32,9 @@ export const CONTRIBUTION_PROXIMITY_MAX_M = NEARBY_RADIUS_M;
 /** Waze-like repeat-edit window — per hour / per POI (design doc). */
 export const CONTRIBUTION_DEDUPE_WINDOW_MS = 60 * 60 * 1000;
 
+/** Durable kinds that always target a Place — proximity gate cannot be skipped. */
+export const PLACE_TARGETED_CONTRIBUTION_KINDS = new Set(['height_rule', 'poi_patch', 'drop_place']);
+
 function placeCentroid(venueId, placeId) {
   const pois = poisForVenue(venueId);
   if (!pois) return null;
@@ -47,8 +50,18 @@ function placeCentroid(venueId, placeId) {
  * @returns {{ ok: true } | { ok: false, code: string, error: string }}
  */
 export function assessContributionProximity(input) {
+  const kind = String(input.kind || '').trim();
   const placeId = input.placeId != null ? String(input.placeId).trim() : '';
-  if (!placeId) return { ok: true };
+  if (!placeId) {
+    if (PLACE_TARGETED_CONTRIBUTION_KINDS.has(kind)) {
+      return {
+        ok: false,
+        code: 'contribution_place_required',
+        error: 'placeId is required for this contribution kind',
+      };
+    }
+    return { ok: true };
+  }
 
   const lat = input.lat;
   const lng = input.lng;
