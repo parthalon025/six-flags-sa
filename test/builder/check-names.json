@@ -416,6 +416,8 @@
     "weather/confidence :: lightning in the observation yields high confidence",
     "weather/confidence :: a tall-ride wind hold caps outlook confidence at medium",
     "weather/confidence :: rain in the forecast without falling rain is medium confidence",
+    "weather/confidence :: three observed fields yield high observation confidence",
+    "weather/confidence :: two observed fields yield medium observation confidence",
     "weather/confidence :: existing outlook keys are unchanged when confidence is added",
     "weather/predicted :: outlookPredicted classifies a future hourly slice",
     "weather/predicted :: outlookPredicted matches outlookFor on a full current observation",

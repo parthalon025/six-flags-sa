@@ -65,6 +65,9 @@ const cacheable = (body) =>
 /** Coordinates are rounded before they are used as a key: one park, one entry. */
 const KEY_PRECISION = 2;
 
+/** Hourly slices returned — matches `forecast_hours` on the upstream request. */
+const FORECAST_HOURLY_SLICES = 3;
+
 /** Process-local second tier, behind the shared cache above. */
 const cache = new Map();
 
@@ -181,13 +184,16 @@ function shape(raw, at) {
   // across the park cares about the storm that is coming, not the one clear
   // minute they are standing in.
   const peak = (series) => {
-    const vals = (Array.isArray(series) ? series : []).slice(0, 3).map(num).filter((v) => v != null);
+    const vals = (Array.isArray(series) ? series : [])
+      .slice(0, FORECAST_HOURLY_SLICES)
+      .map(num)
+      .filter((v) => v != null);
     return vals.length ? Math.max(...vals) : null;
   };
 
   const hourly = [];
   const times = Array.isArray(h.time) ? h.time : [];
-  for (let i = 0; i < Math.min(times.length, 3); i += 1) {
+  for (let i = 0; i < Math.min(times.length, FORECAST_HOURLY_SLICES); i += 1) {
     const slice = {
       code: num(h.weather_code?.[i]),
       tempF: num(h.temperature_2m?.[i]),

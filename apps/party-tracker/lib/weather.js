@@ -261,6 +261,11 @@ export const CONFIDENCE = {
 
 const minConfidence = (a, b) => (a.rank <= b.rank ? a : b);
 
+/** Rain in the forecast but not falling yet — shared by confidence and outlook rules. */
+function rainNotYetFalling(obs) {
+  return obs?.chance != null && obs.chance >= RAIN_WATCH_CHANCE && !obs.wetNow;
+}
+
 /**
  * Trust in the observation itself, before exposure heuristics adjust it.
  *
@@ -277,7 +282,7 @@ export function confidenceFor(weather) {
   if (o.storming) return CONFIDENCE.high;
   if (o.wetNow || (o.windy && o.gust != null)) return CONFIDENCE.high;
 
-  if ((o.chance != null && o.chance >= RAIN_WATCH_CHANCE && !o.wetNow) || o.cold || o.hot) {
+  if (rainNotYetFalling(o) || o.cold || o.hot) {
     return CONFIDENCE.medium;
   }
 
@@ -294,7 +299,7 @@ function outlookConfidence(exposure, weather, outlook) {
     return minConfidence(base, CONFIDENCE.medium);
   }
 
-  if (w.chance != null && w.chance >= RAIN_WATCH_CHANCE && !w.wetNow && outlook.key === OUTLOOK.watch.key) {
+  if (rainNotYetFalling(w) && outlook.key === OUTLOOK.watch.key) {
     return minConfidence(base, CONFIDENCE.medium);
   }
 
@@ -361,7 +366,7 @@ export function outlookFor(poi, weather) {
   // Rain that has not started yet. Keyed on the rain signal itself and not on
   // the severity ladder: wind outranks rain on that ladder, so ranking here put
   // every outdoor ride in the park on a rain watch during a dry gale.
-  if (w.chance != null && w.chance >= RAIN_WATCH_CHANCE && e.shelter === 'open' && e.kind === 'ride' && !e.wet) {
+  if (rainNotYetFalling(w) && e.shelter === 'open' && e.kind === 'ride' && !e.wet) {
     return verdict(OUTLOOK.watch, 'Rain in the forecast');
   }
 

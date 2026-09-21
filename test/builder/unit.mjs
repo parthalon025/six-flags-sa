@@ -7026,6 +7026,18 @@ await check('rain in the forecast without falling rain is medium confidence', ()
   return true;
 });
 
+await check('three observed fields yield high observation confidence', () => {
+  const w = classifyWeather({ code: 0, tempF: 75, gustMph: 10 });
+  assert.equal(confidenceFor(w).key, CONFIDENCE.high.key);
+  return true;
+});
+
+await check('two observed fields yield medium observation confidence', () => {
+  const w = classifyWeather({ tempF: 75, gustMph: 10 });
+  assert.equal(confidenceFor(w).key, CONFIDENCE.medium.key);
+  return true;
+});
+
 await check('existing outlook keys are unchanged when confidence is added', () => {
   assert.equal(outlookFor(wxPoi('The Beast', 'coaster', 'Rivertown'), STORM).key, OUTLOOK.closed.key);
   assert.equal(outlookFor(wxPoi('The Beast', 'coaster', 'Rivertown'), FINE).key, OUTLOOK.running.key);
