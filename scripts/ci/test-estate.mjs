@@ -97,6 +97,7 @@ export const TEST_ESTATE = {
   'test/app/appUpdate.test.mjs': ['test:unit'],
   'test/app/band-plan.test.mjs': ['test:unit'],
   'test/app/contributions-thanks.test.mjs': ['test:unit'],
+  'test/app/contributions-abuse.test.mjs': ['test:unit'],
   'test/app/contribution-consolidate-vertical.test.mjs': ['test:unit'],
   'test/app/contribution-operator-path.test.mjs': ['test:unit'],
   'test/app/contributions-postgres.test.mjs': ['test:unit'],

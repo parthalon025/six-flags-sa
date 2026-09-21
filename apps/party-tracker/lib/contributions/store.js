@@ -3,6 +3,7 @@
  */
 
 import { usingPostgres, getPool } from '../db/postgres.js';
+import { CONTRIBUTION_DEDUPE_WINDOW_MS } from './abuse.js';
 
 const mem =
   globalThis.__parkboundContributions ??
@@ -39,10 +40,72 @@ function rowToApi(row) {
   };
 }
 
+async function findRecentDedupeTarget(input, now = new Date()) {
+  const placeId = input.placeId != null ? String(input.placeId).trim() : '';
+  if (!placeId) return null;
+  const since = new Date(now.getTime() - CONTRIBUTION_DEDUPE_WINDOW_MS);
+
+  if (usingPostgres()) {
+    const pool = await getPool();
+    const res = await pool.query(
+      `SELECT * FROM contributions
+       WHERE author_id = $1 AND venue_id = $2 AND place_id = $3 AND kind = $4
+         AND created_at >= $5
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [input.authorId, input.venueId, placeId, input.kind, since],
+    );
+    return res.rows[0] ? rowToApi(res.rows[0]) : null;
+  }
+
+  let best = null;
+  for (const row of mem.rows.values()) {
+    if (row.author_id !== input.authorId) continue;
+    if (row.venue_id !== input.venueId) continue;
+    if ((row.place_id || '') !== placeId) continue;
+    if (row.kind !== input.kind) continue;
+    const created = row.created_at instanceof Date ? row.created_at : new Date(row.created_at);
+    if (created < since) continue;
+    if (!best || created > best.created_at) best = row;
+  }
+  return best ? rowToApi(best) : null;
+}
+
+async function updateContributionRow(id, patch) {
+  if (usingPostgres()) {
+    const pool = await getPool();
+    const res = await pool.query(
+      `UPDATE contributions
+       SET payload = $2, lat = $3, lng = $4, created_at = now()
+       WHERE id = $1
+       RETURNING *`,
+      [id, JSON.stringify(patch.payload || {}), patch.lat ?? null, patch.lng ?? null],
+    );
+    return rowToApi(res.rows[0]);
+  }
+  const row = mem.rows.get(id);
+  if (!row) return null;
+  row.payload = { ...(patch.payload || {}) };
+  row.lat = patch.lat ?? null;
+  row.lng = patch.lng ?? null;
+  row.created_at = new Date();
+  mem.rows.set(id, row);
+  return rowToApi(row);
+}
+
 /** @param {object} input */
 export async function insertContribution(input) {
-  const id = input.id || newId('c_');
   const now = new Date();
+  const existing = await findRecentDedupeTarget(input, now);
+  if (existing) {
+    return updateContributionRow(existing.id, {
+      payload: input.payload,
+      lat: input.lat,
+      lng: input.lng,
+    });
+  }
+
+  const id = input.id || newId('c_');
   const row = {
     id,
     author_id: input.authorId,
