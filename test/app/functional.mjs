@@ -2674,6 +2674,55 @@ await check('filing a ride report POSTs an observation row', async () => {
 });
 
 /**
+ * E7.2: queue-band Side Quest taps also append wait observations — the
+ * onQueueBandReport → recordRideReportObservation path, not only ride down/open.
+ */
+await check('filing a queue-band report POSTs an observation row', async () => {
+  const posted = [];
+  const handler = async (route) => {
+    if (route.request().method() === 'POST') {
+      try {
+        posted.push(JSON.parse(route.request().postData() || '{}'));
+      } catch {
+        /* malformed body — still let the request through */
+      }
+    }
+    await route.fallback();
+  };
+  await a.route('**/api/observations**', handler);
+
+  await go(a, 'Quests');
+  const queueRow = a.locator('.questCard', { hasText: 'How long is the line?' });
+  await until(async () => (await queueRow.count()) > 0, {
+    timeout: 10000,
+    label: 'queue band quest',
+  });
+  const reportBtn = queueRow.locator('button.questAction');
+  if ((await reportBtn.getAttribute('aria-expanded')) === 'true') {
+    await reportBtn.click();
+    await a.waitForTimeout(200);
+  }
+  await reportBtn.click();
+  await a.waitForTimeout(400);
+  await queueRow.locator('.sideQuestForm .chip', { hasText: 'Changed' }).click();
+  await queueRow.locator('.sideQuestSubmit').click();
+
+  await until(async () => (posted.some((o) => o.source === 'party-queue') ? posted : null), {
+    timeout: JOIN_TIMEOUT,
+    label: 'queue-band report to POST /api/observations',
+  });
+
+  const obs = posted.find((o) => o.source === 'party-queue');
+  if (!obs.placeId) throw new Error(`missing placeId: ${JSON.stringify(obs)}`);
+  if (obs.waitMin !== 45) throw new Error(`expected waitMin 45, got ${obs.waitMin}`);
+  if (!obs.venueId) throw new Error('missing venueId');
+  if (!obs.id) throw new Error('missing stable client id');
+
+  await a.unroute('**/api/observations**', handler).catch(() => {});
+  return true;
+});
+
+/**
  * The half of live status that does not come from a forecast: one phone says a
  * ride is down and every other phone in the party hears it. Exercised over
  * whatever transport the party actually negotiated, which is the point — the
