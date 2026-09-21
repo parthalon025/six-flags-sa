@@ -50,6 +50,7 @@ const BACKSIDE_PATHS = [
   'test/app/observations.test.mjs',
   'test/app/observations-route.test.mjs',
   'test/app/ride-report-observations.test.mjs',
+  'test/app/observation-freshness.test.mjs',
   '.github/workflows/**',
   '.dependency-cruiser.cjs',
   'apps/party-tracker/app/api/**',

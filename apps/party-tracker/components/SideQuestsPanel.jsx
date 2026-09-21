@@ -22,6 +22,7 @@ import {
   rideReportFromLiveQuest,
   sortByProximity,
 } from '@/lib/sideQuests';
+import { liveKindFor } from '@/lib/observations/freshness';
 import { findPlace, titleOf } from '@/lib/venue/ids';
 import { withinBounds } from '@/lib/venue/store';
 import { createReport, defaultQuestQueue } from '@/lib/adventure/questQueue';
@@ -93,8 +94,8 @@ function questGain(quest) {
   return 'Settle a Gap';
 }
 
-function questKind(quest) {
-  if (isLiveQuest(quest)) return LIVE_KIND[quest.id] || 'LIVE';
+function questKind(quest, freshness = null) {
+  if (isLiveQuest(quest)) return liveKindFor(quest.id, freshness);
   return `GAP · ${String(quest.type || '').toUpperCase()}`;
 }
 

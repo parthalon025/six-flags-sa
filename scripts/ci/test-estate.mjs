@@ -103,6 +103,7 @@ export const TEST_ESTATE = {
   'test/app/observations.test.mjs': ['test:unit'],
   'test/app/observations-route.test.mjs': ['test:unit'],
   'test/app/ride-report-observations.test.mjs': ['test:unit'],
+  'test/app/observation-freshness.test.mjs': ['test:unit'],
   'test/app/postgres-probe.test.mjs': ['test:unit'],
   'test/app/ready-route.test.mjs': ['test:unit'],
   'test/app/custom-map.test.mjs': ['test:unit'],
