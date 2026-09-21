@@ -1368,9 +1368,9 @@ await check('a swipe on the body pulls the sheet, not just the handle', async ()
 });
 
 await check('a swipe part-way down the list scrolls the list and leaves the sheet where it is', async () => {
-  // The forecast check leaves Plan with a short body; arbitration needs a
-  // scrollable browse list.
-  await go(a, 'Places');
+  // The forecast check leaves Plan with a short body and a filtered search;
+  // arbitration needs a scrollable browse list.
+  await resetPlaces(a);
   await until(async () => (await a.locator('.poiRow').count()) >= 2, {
     timeout: 15000,
     label: 'the browse list',
