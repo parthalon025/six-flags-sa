@@ -181,10 +181,12 @@ that this adds a better path, not that it removes the old one.
 
 ## Prerequisites — do not start before these
 
-1. **WebRTC must actually carry traffic.** As of this writing it does not: a host
-   with no peers has no data channel, its first beacon throws, the manager fails
-   it over to the relay, and then nobody is listening for offers. QR signalling
-   is pointless until a data channel works over the existing relay-based path.
+1. **WebRTC carries traffic over the mailbox-signaled path** — verified in
+   `test/app/webrtc-relay.test.mjs` (#353): a host with no peers sends beacons
+   without error and keeps signaling alive; a joiner fails over to the relay
+   when the direct channel is slow, then the manager promotes when the channel
+   opens; roster snapshots converge on the direct path. QR signalling (#309) may
+   proceed once #367 (leave propagation) is closed.
 2. **Of the three open behavioural defects this doc originally listed, two are
    closed** (#311):
    - **Split-brain election** — `lib/party/election.js`'s `noteHostSeen` stands

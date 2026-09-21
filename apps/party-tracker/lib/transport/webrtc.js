@@ -261,8 +261,9 @@ export function createWebRTC({ base, role, iceServers } = {}) {
           settle();
         };
 
-        // Only a give-up deadline. Everything before it is the manager's to
-        // schedule around, because negotiation is not blocking anything by then.
+        // Give-up deadline starts after the open timeout: until then `open` is
+        // the only thing blocked, and negotiation must stay alive so a channel
+        // that lands a moment later can still stamp READY for the manager.
         negotiateTimer = setTimeout(() => {
           negotiateTimer = null;
           if (solo?.channel?.readyState === 'open') return;
@@ -274,7 +275,7 @@ export function createWebRTC({ base, role, iceServers } = {}) {
           // a timeout with nobody listening for offers.
           self.setStatus(STATUS.DEGRADED, String(err.message));
           settle(err);
-        }, NEGOTIATE_TIMEOUT_MS);
+        }, OPEN_TIMEOUT_MS + NEGOTIATE_TIMEOUT_MS);
 
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
