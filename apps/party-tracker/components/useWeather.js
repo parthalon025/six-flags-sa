@@ -61,7 +61,7 @@ function writeCache(value) {
  *   `hourly` is the next few forecast slices for Plan predicted outlooks.
  */
 export default function useWeather(center, enabled = true) {
-  const [reading, setReading] = useState(null); // { observed, at }
+  const [reading, setReading] = useState(null); // { observed, hourly, at }
   const [error, setError] = useState(null);
   const [offline, setOffline] = useState(false);
   const inFlight = useRef(false);

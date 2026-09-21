@@ -1368,6 +1368,13 @@ await check('a swipe on the body pulls the sheet, not just the handle', async ()
 });
 
 await check('a swipe part-way down the list scrolls the list and leaves the sheet where it is', async () => {
+  // The forecast check leaves Plan with a short body; arbitration needs a
+  // scrollable browse list.
+  await go(a, 'Places');
+  await until(async () => (await a.locator('.poiRow').count()) >= 2, {
+    timeout: 15000,
+    label: 'the browse list',
+  });
   // Back to a middle height, so the sheet has somewhere to go if it wrongly
   // takes the gesture: a test run at the end of the travel would pass on a
   // sheet that was simply clamped.
@@ -1376,11 +1383,14 @@ await check('a swipe part-way down the list scrolls the list and leaves the shee
   await a.waitForTimeout(500);
   for (let i = 0; i < 4; i++) await a.keyboard.press('ArrowDown');
   await a.waitForTimeout(700);
-  await a.evaluate(() => {
-    document.querySelector('.sheetBody').scrollTop = 400;
+  const scrolled = await a.evaluate(() => {
+    const el = document.querySelector('.sheetBody');
+    const max = el.scrollHeight - el.clientHeight;
+    if (max <= 0) return 0;
+    el.scrollTop = Math.min(400, max);
+    return el.scrollTop;
   });
   await a.waitForTimeout(200);
-  const scrolled = await a.evaluate(() => document.querySelector('.sheetBody').scrollTop);
   if (scrolled <= 0) throw new Error('the list did not scroll, so there is nothing to arbitrate');
   const before = await sheetHeight();
   await swipeSheetBody(160); // downwards, with the list able to scroll back up

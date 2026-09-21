@@ -144,6 +144,7 @@ const {
   exposureFor,
   outlookFor,
   outlookPredicted,
+  hasHourlyForPlanPrediction,
   planPredictedOutlooks,
   parkOutlook,
 } = await import('../../apps/party-tracker/lib/weather.js');
@@ -7061,6 +7062,13 @@ await check('outlookPredicted matches outlookFor on a full current observation',
   const later = outlookPredicted(wxPoi('The Beast', 'coaster', 'Rivertown'), obs);
   assert.equal(later.key, now.key);
   assert.equal(later.why, now.why);
+  return true;
+});
+
+await check('hasHourlyForPlanPrediction requires the Plan predicted hour index', () => {
+  assert.equal(hasHourlyForPlanPrediction([]), false);
+  assert.equal(hasHourlyForPlanPrediction([{ precipChance: 10 }]), false);
+  assert.equal(hasHourlyForPlanPrediction([{}, { precipChance: 85 }]), true);
   return true;
 });
 

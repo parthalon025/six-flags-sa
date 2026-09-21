@@ -421,6 +421,7 @@
     "weather/confidence :: existing outlook keys are unchanged when confidence is added",
     "weather/predicted :: outlookPredicted classifies a future hourly slice",
     "weather/predicted :: outlookPredicted matches outlookFor on a full current observation",
+    "weather/predicted :: hasHourlyForPlanPrediction requires the Plan predicted hour index",
     "weather/predicted :: planPredictedOutlooks maps hourly slices onto Plan stops",
     "weather/predicted :: existing outlook shape is unchanged aside from confidence",
     "status/merge :: a fresh report beats the forecast in both directions",

@@ -116,7 +116,7 @@ import {
 } from '@/lib/mapVisual';
 import { spotAt } from '@/lib/spot';
 import { liveFor, membersAt } from '@/lib/live';
-import { planPredictedOutlooks } from '@/lib/weather';
+import { hasHourlyForPlanPrediction, planPredictedOutlooks, PLAN_PREDICTED_HOUR_INDEX } from '@/lib/weather';
 import { paletteFor } from '@/lib/theme';
 import { defaultQuestQueue } from '@/lib/adventure/questQueue';
 import { flushQuestQueue } from '@/lib/adventure/questSync';
@@ -1376,10 +1376,9 @@ function ParkApp({ isSignedIn }) {
   const planPosition = useDeferredValue(position);
   const planContext = useMemo(() => {
     if (!planItems.length) return null;
-    const predicted =
-      weatherFeed.hourly?.length > 1
-        ? planPredictedOutlooks(planItems, POIS, weatherFeed.hourly, 1)
-        : null;
+    const predicted = hasHourlyForPlanPrediction(weatherFeed.hourly)
+      ? planPredictedOutlooks(planItems, POIS, weatherFeed.hourly, PLAN_PREDICTED_HOUR_INDEX)
+      : null;
     const out = {};
     for (const step of planItems) {
       const poi = POIS.find((p) => p.i === step.placeId || p.id === step.placeId);

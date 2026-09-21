@@ -391,6 +391,14 @@ export function outlookPredicted(poi, hourlyObs) {
   };
 }
 
+/** Hour index used for Plan predicted outlooks — one hour ahead of now. */
+export const PLAN_PREDICTED_HOUR_INDEX = 1;
+
+/** True when `hourly` has the slice `planPredictedOutlooks` reads. */
+export function hasHourlyForPlanPrediction(hourly) {
+  return Array.isArray(hourly) && hourly.length > PLAN_PREDICTED_HOUR_INDEX;
+}
+
 /**
  * Predicted outlooks for Plan stops at a future hourly slice.
  *
@@ -400,7 +408,7 @@ export function outlookPredicted(poi, hourlyObs) {
  * @param {number} hourIndex which hour ahead (default 1)
  * @returns {Record<string, ReturnType<outlookPredicted>>}
  */
-export function planPredictedOutlooks(planItems, pois, hourly, hourIndex = 1) {
+export function planPredictedOutlooks(planItems, pois, hourly, hourIndex = PLAN_PREDICTED_HOUR_INDEX) {
   const slice = hourly?.[hourIndex];
   if (!slice) return {};
 
