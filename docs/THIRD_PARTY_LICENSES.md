@@ -12,6 +12,7 @@ Each adapter documents its upstream license in `packages/venue-builder/lib/adapt
 | --- | --- |
 | next, react, react-dom | MIT |
 | qrcode | ISC |
+| jsqr | Apache-2.0 |
 | web-push | MIT |
 | playwright (dev) | Apache-2.0 |
 

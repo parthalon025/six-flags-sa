@@ -1,15 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createQrDetector } from '@/lib/qr/createQrDetector';
 
 /**
- * Camera join, using the platform's own barcode decoder.
+ * Camera QR scan for party join and self-contained pairing.
  *
  * `BarcodeDetector` is hardware-accelerated where it exists (Chrome and the
- * Android WebView) and absent where it does not — notably every browser on
- * iOS, which is a large share of a park. The honest answer there is to say so
- * and point at the six-character code, not to ship a WASM decoder that turns a
- * phone's camera into a space heater for the one thing the code already does.
+ * Android WebView) and absent on iOS. The normal join path stays honest there:
+ * point at the six-character code. Pairing mode alone may lazy-load jsQR so a
+ * hosting iPhone can scan an answer QR in-page (#310).
  *
  * Whatever happens, every track this component opened is stopped when it goes
  * away: a camera light left on is the most alarming bug a park app can have.
@@ -17,7 +17,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 const SCAN_INTERVAL_MS = 220;
 
-export default function QrScanner({ onResult, onCancel }) {
+/**
+ * @param {{
+ *   onResult?: (text: string) => void,
+ *   onCancel?: () => void,
+ *   pairingMode?: boolean,
+ * }} props
+ */
+export default function QrScanner({ onResult, onCancel, pairingMode = false }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const timerRef = useRef(null);
@@ -45,28 +52,30 @@ export default function QrScanner({ onResult, onCancel }) {
 
     async function begin() {
       if (typeof window === 'undefined') return;
-      const Detector = window.BarcodeDetector;
-      if (typeof Detector !== 'function') {
-        setState('unsupported');
+
+      let selection;
+      try {
+        selection = await createQrDetector({
+          pairingMode,
+          BarcodeDetector: window.BarcodeDetector,
+        });
+      } catch {
+        if (cancelled) return;
+        setState('error');
+        setDetail('Could not load the QR decoder for this browser.');
         return;
       }
-      try {
-        const formats = await Detector.getSupportedFormats?.();
-        if (Array.isArray(formats) && !formats.includes('qr_code')) {
-          setState('unsupported');
-          return;
-        }
-      } catch {
-        /* an implementation that will not enumerate still gets a try below */
+      if (selection.kind === 'unsupported') {
+        setState('unsupported');
+        return;
       }
       if (!navigator.mediaDevices?.getUserMedia) {
         setState('unsupported');
         return;
       }
 
-      let detector;
+      const detector = selection.detector;
       try {
-        detector = new Detector({ formats: ['qr_code'] });
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { ideal: 'environment' } },
           audio: false,
@@ -99,17 +108,16 @@ export default function QrScanner({ onResult, onCancel }) {
       timerRef.current = setInterval(async () => {
         const video = videoRef.current;
         if (!video || doneRef.current || video.readyState < 2) return;
-        let codes = [];
+        let raw = null;
         try {
-          codes = await detector.detect(video);
+          raw = await detector.detect(video);
         } catch {
           return; // a dropped frame is not a failure worth reporting
         }
-        const hit = codes.find((c) => c?.rawValue);
-        if (!hit) return;
+        if (!raw) return;
         doneRef.current = true;
         stop();
-        onResult?.(hit.rawValue);
+        onResult?.(raw);
       }, SCAN_INTERVAL_MS);
     }
 
@@ -118,15 +126,15 @@ export default function QrScanner({ onResult, onCancel }) {
       cancelled = true;
       stop();
     };
-  }, [onResult, stop]);
+  }, [onResult, pairingMode, stop]);
 
   if (state === 'unsupported') {
     return (
       <div className="scanner">
         <p className="fine" style={{ marginTop: 0 }}>
-          This browser has no barcode decoder — that is every browser on iOS, because they all
-          run Safari&apos;s engine and it does not expose one. Ask for the six-character code and
-          type it in, or open the invite link directly.
+          {pairingMode
+            ? 'This browser cannot scan QR codes for pairing. Try another phone or use a link instead.'
+            : 'This browser has no barcode decoder — that is every browser on iOS, because they all run Safari&apos;s engine and it does not expose one. Ask for the six-character code and type it in, or open the invite link directly.'}
         </p>
         <button type="button" className="btn small" onClick={onCancel}>
           Close
