@@ -2350,6 +2350,9 @@ await check('a Thanks lands once per guest and never for yourself', async () => 
       placeId: 'orion',
       kind: 'height',
       payload: { heightIn: 48 },
+      // E9 proximity (#301): contributions tied to a Place need a fix within NEARBY_RADIUS_M.
+      lat: 39.342993,
+      lng: -84.262729,
     }),
   });
   if (created.status !== 201) throw new Error(`contribution POST ${created.status}`);
