@@ -134,13 +134,18 @@ const {
 const { bearing, distance } = await import('../../apps/party-tracker/lib/geo.js');
 const {
   CONDITIONS,
+  CONFIDENCE,
   COLD_WATER_F,
   OUTLOOK,
   WIND_HARD_MPH,
   WIND_HOLD_MPH,
   classifyWeather,
+  confidenceFor,
   exposureFor,
   outlookFor,
+  outlookPredicted,
+  hasHourlyForPlanPrediction,
+  planPredictedOutlooks,
   parkOutlook,
 } = await import('../../apps/party-tracker/lib/weather.js');
 const { STATUS, statusFor, statusSummary } = await import('../../apps/party-tracker/lib/rideStatus.js');
@@ -6978,6 +6983,117 @@ await check('parkOutlook counts rides and ignores the gift shops', () => {
   assert.equal(out.total, 2);
   assert.equal(out.tally.closed, 2);
   assert.equal(out.worst.key, OUTLOOK.closed.key);
+  return true;
+});
+
+section('weather/confidence');
+
+await check('outlook labels never claim factual open or closed', () => {
+  for (const o of Object.values(OUTLOOK)) {
+    assert.ok(!/\b(is|are)\s+(open|closed)\b/i.test(o.label), o.label);
+    assert.ok(!/^open$/i.test(o.label.trim()), o.label);
+    assert.ok(!/^closed$/i.test(o.label.trim()), o.label);
+  }
+  return true;
+});
+
+await check('a partial reading yields low observation confidence', () => {
+  const thin = classifyWeather({ precipChance: 80 });
+  assert.equal(confidenceFor(thin).key, CONFIDENCE.low.key);
+  return true;
+});
+
+await check('lightning in the observation yields high confidence', () => {
+  const w = classifyWeather({ code: 95, tempF: 75, gustMph: 20 });
+  assert.equal(confidenceFor(w).key, CONFIDENCE.high.key);
+  const o = outlookFor(wxPoi('The Beast', 'coaster', 'Rivertown'), w);
+  assert.equal(o.confidence.key, CONFIDENCE.high.key);
+  return true;
+});
+
+await check('a tall-ride wind hold caps outlook confidence at medium', () => {
+  const w = classifyWeather({ gustMph: 38, tempF: 75 });
+  const o = outlookFor(wxPoi('WindSeeker', 'ride', 'Coney Mall'), w);
+  assert.equal(o.key, OUTLOOK.hold.key);
+  assert.equal(o.confidence.key, CONFIDENCE.medium.key);
+  return true;
+});
+
+await check('rain in the forecast without falling rain is medium confidence', () => {
+  const soon = classifyWeather({ precipChance: 80, tempF: 75 });
+  const o = outlookFor(wxPoi('The Racer', 'coaster', 'Coney Mall'), soon);
+  assert.equal(o.key, OUTLOOK.watch.key);
+  assert.equal(o.confidence.key, CONFIDENCE.medium.key);
+  return true;
+});
+
+await check('three observed fields yield high observation confidence', () => {
+  const w = classifyWeather({ code: 0, tempF: 75, gustMph: 10 });
+  assert.equal(confidenceFor(w).key, CONFIDENCE.high.key);
+  return true;
+});
+
+await check('two observed fields yield medium observation confidence', () => {
+  const w = classifyWeather({ tempF: 75, gustMph: 10 });
+  assert.equal(confidenceFor(w).key, CONFIDENCE.medium.key);
+  return true;
+});
+
+await check('existing outlook keys are unchanged when confidence is added', () => {
+  assert.equal(outlookFor(wxPoi('The Beast', 'coaster', 'Rivertown'), STORM).key, OUTLOOK.closed.key);
+  assert.equal(outlookFor(wxPoi('The Beast', 'coaster', 'Rivertown'), FINE).key, OUTLOOK.running.key);
+  return true;
+});
+
+section('weather/predicted');
+
+await check('outlookPredicted classifies a future hourly slice', () => {
+  const hour = { precipChance: 85, tempF: 72, gustMph: 8, code: 3 };
+  const o = outlookPredicted(wxPoi('The Racer', 'coaster', 'Coney Mall'), hour);
+  assert.equal(o.key, OUTLOOK.watch.key);
+  assert.ok(o.confidence);
+  assert.ok(o.confidence.rank <= CONFIDENCE.medium.rank);
+  return true;
+});
+
+await check('outlookPredicted matches outlookFor on a full current observation', () => {
+  const obs = { code: 95, tempF: 75, gustMph: 40, precipChance: 90 };
+  const now = outlookFor(wxPoi('The Beast', 'coaster', 'Rivertown'), classifyWeather(obs));
+  const later = outlookPredicted(wxPoi('The Beast', 'coaster', 'Rivertown'), obs);
+  assert.equal(later.key, now.key);
+  assert.equal(later.why, now.why);
+  return true;
+});
+
+await check('hasHourlyForPlanPrediction requires the Plan predicted hour index', () => {
+  assert.equal(hasHourlyForPlanPrediction([]), false);
+  assert.equal(hasHourlyForPlanPrediction([{ precipChance: 10 }]), false);
+  assert.equal(hasHourlyForPlanPrediction([{}, { precipChance: 85 }]), true);
+  return true;
+});
+
+await check('planPredictedOutlooks maps hourly slices onto Plan stops', () => {
+  const poi = wxPoi('The Racer', 'coaster', 'Coney Mall');
+  poi.i = 'the-racer';
+  const plan = [{ id: 's1', placeId: 'the-racer', label: 'Racer' }];
+  const pois = [poi];
+  const hourly = [
+    { precipChance: 10, tempF: 75 },
+    { precipChance: 85, tempF: 72, gustMph: 8 },
+  ];
+  const out = planPredictedOutlooks(plan, pois, hourly, 1);
+  assert.equal(out['the-racer'].key, OUTLOOK.watch.key);
+  assert.equal(out['the-racer'].confidence.key, CONFIDENCE.medium.key);
+  return true;
+});
+
+await check('existing outlook shape is unchanged aside from confidence', () => {
+  const before = outlookFor(wxPoi('The Beast', 'coaster', 'Rivertown'), GALE);
+  assert.equal(before.key, OUTLOOK.running.key);
+  assert.equal(before.rank, OUTLOOK.running.rank);
+  assert.equal(before.label, OUTLOOK.running.label);
+  assert.equal(before.why, null);
+  assert.ok(before.confidence);
   return true;
 });
 

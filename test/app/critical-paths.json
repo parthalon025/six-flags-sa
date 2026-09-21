@@ -246,6 +246,13 @@
       "check": "a GO NOW verdict in the list carries a Why? explanation"
     },
     {
+      "id": "e62-plan-forecast",
+      "slice": "E6",
+      "user_action": "See a hedged forecast on a Plan stop when hourly risk is ahead",
+      "suite": "functional",
+      "check": "a Plan stop at risk shows a hedged forecast sub-line"
+    },
+    {
       "id": "ride-status-stale-marker",
       "slice": "E7",
       "user_action": "A ride report old enough to hedge is visibly muted and never claims live/GO NOW",

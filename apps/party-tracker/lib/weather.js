@@ -145,10 +145,18 @@ export const CONDITIONS = {
 export const WIND_HOLD_MPH = 35;
 export const WIND_HARD_MPH = 45;
 
+/** Rain chance at or above this reads as "rain in the forecast" for outdoor rides. */
+export const RAIN_WATCH_CHANCE = 60;
+
 /** Below this the water park is either shut or empty. Degrees Fahrenheit. */
 export const COLD_WATER_F = 68;
 /** Heat advisory territory — nothing closes, but the day changes shape. */
 export const HEAT_F = 100;
+
+/** Rain in the forecast but not falling yet — shared by classify, confidence, and outlook rules. */
+function rainNotYetFalling(obs) {
+  return obs?.chance != null && obs.chance >= RAIN_WATCH_CHANCE && !obs.wetNow;
+}
 
 /**
  * Reduce a raw observation to the handful of facts that change a decision.
@@ -186,7 +194,7 @@ export function classifyWeather(obs) {
     (code != null && (RAIN.has(code) || SNOW.has(code) || FREEZING.has(code))) ||
     (precip != null && precip >= 0.02);
   if (wetNow) reasons.push(code != null && SNOW.has(code) ? 'Snow falling' : 'Rain falling');
-  else if (chance != null && chance >= 60) reasons.push(`${Math.round(chance)}% chance of rain`);
+  else if (rainNotYetFalling({ chance, wetNow })) reasons.push(`${Math.round(chance)}% chance of rain`);
 
   const cold = temp != null && temp < COLD_WATER_F;
   if (cold) reasons.push(`${Math.round(temp)}°F — cold for the water park`);
@@ -197,7 +205,7 @@ export function classifyWeather(obs) {
     ? CONDITIONS.storm
     : windy
       ? CONDITIONS.wind
-      : wetNow || (chance != null && chance >= 60)
+      : wetNow || rainNotYetFalling({ chance, wetNow })
         ? CONDITIONS.rain
         : cold
           ? CONDITIONS.cold
@@ -244,14 +252,73 @@ export const OUTLOOK = {
 };
 
 /**
+ * How much to trust the sky reading behind an outlook.
+ *
+ * `low` — a partial or single-field reading. `medium` — forecast-only signals or
+ * a verdict that leans on exposure heuristics (tall-from-name, rain-not-yet).
+ * `high` — a direct observation of something severe (lightning, rain falling, gusts).
+ */
+export const CONFIDENCE = {
+  low: { key: 'low', rank: 0, label: 'Low confidence' },
+  medium: { key: 'medium', rank: 1, label: 'Medium confidence' },
+  high: { key: 'high', rank: 2, label: 'High confidence' },
+};
+
+const minConfidence = (a, b) => (a.rank <= b.rank ? a : b);
+
+/**
+ * Trust in the observation itself, before exposure heuristics adjust it.
+ *
+ * @param weather classifyWeather result
+ */
+export function confidenceFor(weather) {
+  if (!weather?.obs) return CONFIDENCE.low;
+
+  const o = weather.obs;
+  const fields = [o.code, o.gust, o.temp, o.precip, o.chance].filter((v) => v != null);
+  if (fields.length === 0) return CONFIDENCE.low;
+  if (fields.length === 1) return CONFIDENCE.low;
+
+  if (o.storming) return CONFIDENCE.high;
+  if (o.wetNow || (o.windy && o.gust != null)) return CONFIDENCE.high;
+
+  if (rainNotYetFalling(o) || o.cold || o.hot) {
+    return CONFIDENCE.medium;
+  }
+
+  return fields.length >= 3 ? CONFIDENCE.high : CONFIDENCE.medium;
+}
+
+/** Exposure heuristics cap how sure an outlook can be. */
+function outlookConfidence(exposure, weather, outlook) {
+  const base = confidenceFor(weather);
+  const w = weather?.obs;
+  if (!w) return base;
+
+  if (w.windy && exposure.tall && outlook.rank >= OUTLOOK.hold.rank) {
+    return minConfidence(base, CONFIDENCE.medium);
+  }
+
+  if (rainNotYetFalling(w) && outlook.key === OUTLOOK.watch.key) {
+    return minConfidence(base, CONFIDENCE.medium);
+  }
+
+  if (w.storming && exposure.shelter === 'indoor' && outlook.key === OUTLOOK.watch.key) {
+    return minConfidence(base, CONFIDENCE.medium);
+  }
+
+  return base;
+}
+
+/**
  * @param poi     a POI record
  * @param weather the result of classifyWeather
- * @returns {{ key, rank, label, why: string|null }}
+ * @returns {{ key, rank, label, why: string|null, confidence }}
  */
 export function outlookFor(poi, weather) {
   const e = exposureFor(poi);
   const w = weather?.obs;
-  const verdict = (o, why = null) => ({ ...o, why });
+  const verdict = (o, why = null) => ({ ...o, why, confidence: outlookConfidence(e, weather, o) });
 
   // Geography has no opening hours, and neither does the forecast for it.
   if (e.kind === 'inert' || !w) return verdict(OUTLOOK.running);
@@ -299,11 +366,61 @@ export function outlookFor(poi, weather) {
   // Rain that has not started yet. Keyed on the rain signal itself and not on
   // the severity ladder: wind outranks rain on that ladder, so ranking here put
   // every outdoor ride in the park on a rain watch during a dry gale.
-  if (w.chance != null && w.chance >= 60 && e.shelter === 'open' && e.kind === 'ride' && !e.wet) {
+  if (rainNotYetFalling(w) && e.shelter === 'open' && e.kind === 'ride' && !e.wet) {
     return verdict(OUTLOOK.watch, 'Rain in the forecast');
   }
 
   return verdict(OUTLOOK.running);
+}
+
+/**
+ * Outlook at a future hour from an hourly forecast slice.
+ *
+ * Same verdict shape as `outlookFor`; confidence is capped at medium because the
+ * reading is forward-looking rather than observed.
+ *
+ * @param poi        a POI record
+ * @param hourlyObs  one hour of forecast fields classifyWeather understands
+ */
+export function outlookPredicted(poi, hourlyObs) {
+  const weather = classifyWeather(hourlyObs);
+  const outlook = outlookFor(poi, weather);
+  return {
+    ...outlook,
+    confidence: minConfidence(outlook.confidence, CONFIDENCE.medium),
+  };
+}
+
+/** Hour index used for Plan predicted outlooks — one hour ahead of now. */
+export const PLAN_PREDICTED_HOUR_INDEX = 1;
+
+/** True when `hourly` has the slice `planPredictedOutlooks` reads. */
+export function hasHourlyForPlanPrediction(hourly) {
+  return Array.isArray(hourly) && hourly.length > PLAN_PREDICTED_HOUR_INDEX;
+}
+
+/**
+ * Predicted outlooks for Plan stops at a future hourly slice.
+ *
+ * @param {Array} planItems `{ placeId, ... }` stops
+ * @param {Array} pois      venue POI records
+ * @param {Array} hourly    slices from `/api/weather`
+ * @param {number} hourIndex which hour ahead (default 1)
+ * @returns {Record<string, ReturnType<outlookPredicted>>}
+ */
+export function planPredictedOutlooks(planItems, pois, hourly, hourIndex = PLAN_PREDICTED_HOUR_INDEX) {
+  const slice = hourly?.[hourIndex];
+  if (!slice) return {};
+
+  const byId = new Map((pois || []).map((p) => [p.i || p.id, p]));
+  const out = {};
+  for (const step of planItems || []) {
+    const poi = byId.get(step.placeId);
+    if (!poi) continue;
+    const outlook = outlookPredicted(poi, slice);
+    if (outlook.key !== OUTLOOK.running.key) out[step.placeId] = outlook;
+  }
+  return out;
 }
 
 /**
