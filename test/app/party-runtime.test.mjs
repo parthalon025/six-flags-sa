@@ -582,6 +582,26 @@ await check('selfContained createParty exposes pairing hooks on the snapshot', a
   assert.equal(typeof pairing?.onAnswerScanned, 'function');
 });
 
+await check('selfContained createParty reuses an injected qrExchange', async () => {
+  const { createQrExchange } = await import(`${APP}lib/transport/qrExchange.js`);
+  const exchange = createQrExchange();
+  const hostRt = runtime();
+  await hostRt.createParty({ name: 'Hotspot', memberName: 'Host', selfContained: true, qrExchange: exchange });
+  await settle();
+
+  const clientRt = runtime();
+  await clientRt.joinParty(hostRt.getSnapshot().invite, {
+    memberName: 'Guest',
+    selfContained: true,
+    qrExchange: exchange,
+  });
+  await settle();
+
+  await exchange.host.onOfferReady('o1.harness-offer');
+  const seen = await exchange.client.waitForOffer();
+  assert.equal(seen, 'o1.harness-offer');
+});
+
 if (FAIL.length) {
   console.error(`party runtime tests: ${FAIL.length} failed`);
   for (const f of FAIL) console.error(' !', f);
