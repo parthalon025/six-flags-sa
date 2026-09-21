@@ -29,7 +29,7 @@ export default function PlanPanel({
   venue,
   me = null,
   weather = null,
-  now = Date.now(),
+  now,
   eligibility = null,
 }) {
   const [section, setSection] = useState('stops');
