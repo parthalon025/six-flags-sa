@@ -123,6 +123,7 @@ import { flushThanksQueue } from '@/lib/adventure/thanks';
 
 const PartyPanel = dynamic(() => import('@/components/PartyPanel'), { ssr: false });
 const PlaceList = dynamic(() => import('@/components/PlaceList'), { ssr: false });
+const GoNowSequences = dynamic(() => import('@/components/GoNowSequences'), { ssr: false });
 const PlanPanel = dynamic(() => import('@/components/PlanPanel'), { ssr: false });
 const MePanel = dynamic(() => import('@/components/MePanel'), { ssr: false });
 const SettingsPanel = dynamic(() => import('@/components/SettingsPanel'), { ssr: false });
@@ -3439,6 +3440,14 @@ function ParkApp({ isSignedIn }) {
                     </button>
                   </div>
                 )}
+                <GoNowSequences
+                  me={position}
+                  weather={weatherFeed.weather}
+                  rides={partyRides}
+                  members={others}
+                  now={clock}
+                  eligibility={eligibilityView}
+                />
                 <PlaceList
                   me={position}
                   eligibility={eligibilityView}

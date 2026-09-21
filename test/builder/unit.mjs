@@ -7267,6 +7267,76 @@ await check('recommendNow never recommends a ride the rider cannot ride', () => 
   return true;
 });
 
+/* ---------------------------------------- compareGoNowSequences (#331) --- */
+
+const { compareGoNowSequences } = await import('../../apps/party-tracker/lib/live.js');
+
+const NEAR_WEATHER = {
+  ...BEAST_HERE,
+  id: 'near-weather',
+  i: 'near-weather',
+  n: 'Near Sky',
+  lat: BEAST_HERE.lat + 0.0002,
+  lng: BEAST_HERE.lng,
+};
+const FAR_PARTY = {
+  ...BEAST_HERE,
+  id: 'far-party',
+  i: 'far-party',
+  n: 'Far Party',
+  lat: BEAST_HERE.lat + 0.003,
+  lng: BEAST_HERE.lng,
+};
+
+await check('compareGoNowSequences returns nothing when fewer than two GO NOW candidates', () => {
+  const me = { lat: BEAST_HERE.lat, lng: BEAST_HERE.lng };
+  assert.deepEqual(compareGoNowSequences([BEAST_HERE], null, FINE, me, [], 5_000_000), []);
+  return true;
+});
+
+await check('compareGoNowSequences builds near-first and party-first tradeoffs', () => {
+  const now = 5_000_000;
+  const me = { lat: BEAST_HERE.lat, lng: BEAST_HERE.lng };
+  const pois = [NEAR_WEATHER, FAR_PARTY];
+  const rides = {
+    [FAR_PARTY.id]: { status: RIDE_OPEN, byName: 'Ava', ts: now },
+  };
+  const sequences = compareGoNowSequences(pois, rides, FINE, me, [], now);
+  assert.ok(sequences.length >= 2 && sequences.length <= 3);
+  for (const seq of sequences) {
+    assert.ok(seq.stops.length >= 2 && seq.stops.length <= 3);
+    assert.ok(seq.stops.every((s) => s.factors?.length && s.why));
+    assert.ok(Number.isFinite(seq.totalWalkM) && seq.totalWalkM > 0);
+    assert.ok(typeof seq.tradeoff === 'string' && seq.tradeoff.length > 8);
+  }
+  const nearFirst = sequences.find((s) => s.strategy === 'near');
+  const partyFirst = sequences.find((s) => s.strategy === 'party');
+  assert.ok(nearFirst && partyFirst);
+  assert.equal(nearFirst.stops[0].poi.id, NEAR_WEATHER.id);
+  assert.equal(partyFirst.stops[0].poi.id, FAR_PARTY.id);
+  assert.ok(nearFirst.totalWalkM < partyFirst.totalWalkM);
+  return true;
+});
+
+await check('compareGoNowSequences never includes eligibility-blocked rides', () => {
+  const me = { lat: BEAST_TALL.lat, lng: BEAST_TALL.lng };
+  const blocked = fold(
+    [{ id: 'self', name: 'You', height: 36, withAdult: true }],
+    [BEAST_TALL, NEAR_WEATHER],
+  );
+  const sequences = compareGoNowSequences(
+    [BEAST_TALL, NEAR_WEATHER],
+    null,
+    FINE,
+    me,
+    [],
+    5_000_000,
+    { eligibility: blocked },
+  );
+  assert.equal(sequences.length, 0);
+  return true;
+});
+
 /* ------------------------------------------------------------ venue ids -- */
 
 section('venue/ids');

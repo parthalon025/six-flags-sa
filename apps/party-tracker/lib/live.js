@@ -224,6 +224,99 @@ function composeWhy(factors) {
   return bits.join(' · ');
 }
 
+function goNowCandidates(pois, rides, weather, me, members, now, opts) {
+  if (!me || !Number.isFinite(me.lat) || !Number.isFinite(me.lng)) return [];
+  const view = opts?.eligibility ?? null;
+  const scored = [];
+  for (const poi of pois || []) {
+    if (!isRideable(poi) && poi.c !== 'show') continue;
+    const metres = distance(me.lat, me.lng, poi.lat, poi.lng);
+    const membersNear = membersAt(poi, members);
+    const live = liveFor(poi, rides?.[poi.id] ?? null, weather, now, { metres, membersNear });
+    if (live.live !== 'goNow' && live.key !== 'goNow') continue;
+
+    const elig = eligibilityFactor(poi, view);
+    if (view?.at(identityOf(poi))?.blocks) continue;
+
+    const factors = [distanceFactor(metres), statusFactor(live), elig].filter((f) => f?.label);
+    const score = (live.source === 'party' ? 1000 : 0) - metres;
+    scored.push({ poi, live, metres, factors, why: composeWhy(factors), score });
+  }
+  scored.sort((a, b) => b.score - a.score);
+  return scored;
+}
+
+function legMetres(from, to) {
+  return distance(from.lat, from.lng, to.lat, to.lng);
+}
+
+function buildSequence(stops, me, strategy, tradeoff) {
+  let total = 0;
+  let cur = me;
+  const out = [];
+  for (const stop of stops) {
+    const leg = legMetres(cur, stop.poi);
+    total += leg;
+    const factors = [
+      distanceFactor(leg),
+      ...stop.factors.filter((f) => f.key !== 'distance'),
+    ].filter((f) => f?.label);
+    out.push({
+      poi: stop.poi,
+      live: stop.live,
+      metres: leg,
+      factors,
+      why: composeWhy(factors),
+    });
+    cur = stop.poi;
+  }
+  return { strategy, stops: out, totalWalkM: total, tradeoff };
+}
+
+function greedyNearSequence(candidates, me, maxStops) {
+  const pool = [...candidates];
+  const ordered = [];
+  let cur = me;
+  while (pool.length && ordered.length < maxStops) {
+    pool.sort(
+      (a, b) => legMetres(cur, a.poi) - legMetres(cur, b.poi),
+    );
+    const next = pool.shift();
+    ordered.push(next);
+    cur = next.poi;
+  }
+  return ordered;
+}
+
+function partyFirstSequence(candidates, me, maxStops) {
+  let partyPool = candidates.filter((c) => c.live.source === 'party');
+  let otherPool = candidates.filter((c) => c.live.source !== 'party');
+  const ordered = [];
+  let cur = me;
+  const takeNearest = (pool) => {
+    pool.sort((a, b) => legMetres(cur, a.poi) - legMetres(cur, b.poi));
+    return pool.shift();
+  };
+  while ((partyPool.length || otherPool.length) && ordered.length < maxStops) {
+    const next = partyPool.length ? takeNearest(partyPool) : takeNearest(otherPool);
+    if (!next) break;
+    ordered.push(next);
+    cur = next.poi;
+  }
+  return ordered;
+}
+
+function sequenceTradeoff(strategy, totalWalkM, shortestWalk) {
+  if (strategy === 'near') {
+    if (totalWalkM <= shortestWalk + 1) return 'Shortest walk between these stops';
+    return 'Shorter walk between these stops';
+  }
+  if (totalWalkM > shortestWalk + 15) {
+    return 'Party-confirmed open first · more walking between stops';
+  }
+  return 'Party-confirmed open first';
+}
+
 /**
  * Ranked GO NOW picks for the Explore rail — what should I do right now,
  * and why? Every pick carries `factors[]`, the plain-language evidence the
@@ -245,31 +338,54 @@ export function recommendNow(
   limit = 2,
   opts = {},
 ) {
-  if (!me || !Number.isFinite(me.lat) || !Number.isFinite(me.lng)) return [];
-  const view = opts?.eligibility ?? null;
+  return goNowCandidates(pois, rides, weather, me, members, now, opts)
+    .slice(0, limit)
+    .map(({ score: _score, ...pick }) => pick);
+}
 
-  const scored = [];
-  for (const poi of pois || []) {
-    if (!isRideable(poi) && poi.c !== 'show') continue;
-    const metres = distance(me.lat, me.lng, poi.lat, poi.lng);
-    const membersNear = membersAt(poi, members);
-    const live = liveFor(poi, rides?.[poi.id] ?? null, weather, now, { metres, membersNear });
-    if (live.live !== 'goNow' && live.key !== 'goNow') continue;
+/**
+ * Compare a few short GO NOW sequences (2–3 stops) with explainable tradeoffs.
+ * Uses straight-line walk legs — the same distance helper as single picks.
+ *
+ * @returns {Array<{ strategy, stops, totalWalkM, tradeoff }>}
+ */
+export function compareGoNowSequences(
+  pois,
+  rides,
+  weather,
+  me,
+  members = [],
+  now = Date.now(),
+  opts = {},
+) {
+  const candidates = goNowCandidates(pois, rides, weather, me, members, now, opts);
+  if (candidates.length < 2) return [];
 
-    const elig = eligibilityFactor(poi, view);
-    // Hard NOT drops the ride. Companion still GO NOW.
-    if (view?.at(identityOf(poi))?.blocks) continue;
+  const maxStops = Math.min(3, candidates.length);
+  const nearStops = greedyNearSequence(candidates, me, maxStops);
+  const partyStops = partyFirstSequence(candidates, me, maxStops);
 
-    const factors = [distanceFactor(metres), statusFactor(live), elig].filter((f) => f?.label);
+  const built = [];
+  const push = (strategy, stops) => {
+    if (stops.length < 2) return;
+    const key = stops.map((s) => s.poi.id).join('>');
+    if (built.some((b) => b.key === key)) return;
+    built.push({ key, strategy, stops });
+  };
 
-    // Prefer party-confirmed opens, then nearer rides — the same order the
-    // old rank/metres sort gave, just carried by one score so factors[] and
-    // the ranking always tell the same story.
-    const score = (live.source === 'party' ? 1000 : 0) - metres;
+  push('near', nearStops);
+  push('party', partyStops);
 
-    scored.push({ poi, live, metres, factors, why: composeWhy(factors), score });
+  if (built.length < 2 && candidates.length >= 2) {
+    push('score', candidates.slice(0, maxStops));
   }
 
-  scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, limit).map(({ score: _score, ...pick }) => pick);
+  const sequences = built.slice(0, 3).map(({ strategy, stops }) =>
+    buildSequence(stops, me, strategy, ''),
+  );
+  const shortest = Math.min(...sequences.map((s) => s.totalWalkM));
+  for (const seq of sequences) {
+    seq.tradeoff = sequenceTradeoff(seq.strategy, seq.totalWalkM, shortest);
+  }
+  return sequences;
 }
