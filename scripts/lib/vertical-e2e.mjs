@@ -48,6 +48,7 @@ const BACKSIDE_PATHS = [
   'test/scripts/**',
   'test/app/postgres-probe.test.mjs',
   'test/app/observations.test.mjs',
+  'test/app/ride-report-observations.test.mjs',
   '.github/workflows/**',
   '.dependency-cruiser.cjs',
   'apps/party-tracker/app/api/**',

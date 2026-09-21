@@ -18,6 +18,7 @@ import {
   isLiveQuest,
   isOnWalkway,
   nearestTargetDistance,
+  queueBandFromLiveQuest,
   rideReportFromLiveQuest,
   sortByProximity,
 } from '@/lib/sideQuests';
@@ -161,6 +162,7 @@ export default function SideQuestsPanel({
   session = null,
   onSession = null,
   onRideReport = null,
+  onQueueBandReport = null,
   onWorldProgress = null,
   onContribution = null,
   overlay = null,
@@ -407,6 +409,16 @@ export default function SideQuestsPanel({
     }
     const live = rideReportFromLiveQuest(quest, { status, pois, position });
     if (live && onRideReport) onRideReport(live.rideId, live.status);
+    const queueBand = queueBandFromLiveQuest(quest, { status, pois, position });
+    if (queueBand && onQueueBandReport) {
+      onQueueBandReport({
+        id: report.id,
+        venueId,
+        rideId: queueBand.rideId,
+        band: queueBand.band,
+        ts: report.createdAt,
+      });
+    }
     const action = isLiveQuest(quest) ? 'live' : 'first';
     const scoredKey = isLiveQuest(quest)
       ? scoreKey(venueId, kind, live?.rideId || target)
