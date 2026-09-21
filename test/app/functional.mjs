@@ -805,6 +805,69 @@ await check('a GO NOW verdict in the list carries a Why? explanation', async () 
   return true;
 });
 
+await check('a Plan stop at risk shows a hedged forecast sub-line', async () => {
+  const hourlyFixture = [
+    { precipChance: 10, tempF: 75, code: 0, gustMph: 8 },
+    { precipChance: 85, tempF: 72, gustMph: 8, code: 3 },
+  ];
+  const weatherBody = {
+    observed: {
+      code: 0,
+      tempF: 78,
+      gustMph: 6,
+      windMph: 4,
+      precipIn: 0,
+      precipChance: 5,
+      isDay: true,
+    },
+    hourly: hourlyFixture,
+    at: Date.now(),
+    source: 'test-fixture',
+  };
+  await a.route('**/api/weather**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(weatherBody),
+    });
+  });
+  await a.evaluate((body) => {
+    localStorage.setItem(
+      'ki-weather',
+      JSON.stringify({ observed: body.observed, hourly: body.hourly, at: body.at }),
+    );
+    localStorage.setItem('party-plan-draft-v1', JSON.stringify([]));
+  }, weatherBody);
+  await go(a, 'Rider height');
+  await a.locator('.tier:has-text("48")').click();
+  await a.waitForTimeout(500);
+  await go(a, 'Places');
+  await searchPlaces(a, 'beast');
+  const row = a.locator('.poiRow', { hasText: 'The Beast' }).first();
+  await row.locator('.poiMain').click();
+  await a.waitForTimeout(300);
+  if (!(await row.locator('.placeActions').count())) await row.locator('.poiMain').click();
+  await row.locator('button[aria-label="Add to Plan"]').click();
+  await a.waitForTimeout(400);
+  await go(a, 'Plan');
+  const stopsTab = a.locator('.settingsTopic', { hasText: 'Stops' });
+  if (await stopsTab.count()) await stopsTab.click();
+  const subLine = a.locator('.planStopText > span').first();
+  await until(
+    async () => {
+      await a.evaluate(() => window.dispatchEvent(new Event('online')));
+      const text = ((await subLine.innerText().catch(() => '')) || '').trim();
+      return /Forecast:/i.test(text) ? text : null;
+    },
+    { timeout: 20000, label: 'Plan stop forecast sub-line' },
+  );
+  const sub = (await subLine.innerText()).trim();
+  if (!/Forecast:/i.test(sub)) throw new Error(`missing forecast hedge: "${sub}"`);
+  if (!/Watch the sky|Rain in the forecast/i.test(sub)) {
+    throw new Error(`expected at-risk outlook copy: "${sub}"`);
+  }
+  return true;
+});
 
 await check('the palette toggle cycles data-theme through Trail and Park Midnight', async () => {
   // ADR-0012: the toggle cycles auto -> Trail (day) -> Park Midnight (night).
