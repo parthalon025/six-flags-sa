@@ -153,6 +153,11 @@ export const COLD_WATER_F = 68;
 /** Heat advisory territory — nothing closes, but the day changes shape. */
 export const HEAT_F = 100;
 
+/** Rain in the forecast but not falling yet — shared by classify, confidence, and outlook rules. */
+function rainNotYetFalling(obs) {
+  return obs?.chance != null && obs.chance >= RAIN_WATCH_CHANCE && !obs.wetNow;
+}
+
 /**
  * Reduce a raw observation to the handful of facts that change a decision.
  *
@@ -189,7 +194,7 @@ export function classifyWeather(obs) {
     (code != null && (RAIN.has(code) || SNOW.has(code) || FREEZING.has(code))) ||
     (precip != null && precip >= 0.02);
   if (wetNow) reasons.push(code != null && SNOW.has(code) ? 'Snow falling' : 'Rain falling');
-  else if (chance != null && chance >= RAIN_WATCH_CHANCE) reasons.push(`${Math.round(chance)}% chance of rain`);
+  else if (rainNotYetFalling({ chance, wetNow })) reasons.push(`${Math.round(chance)}% chance of rain`);
 
   const cold = temp != null && temp < COLD_WATER_F;
   if (cold) reasons.push(`${Math.round(temp)}°F — cold for the water park`);
@@ -200,7 +205,7 @@ export function classifyWeather(obs) {
     ? CONDITIONS.storm
     : windy
       ? CONDITIONS.wind
-      : wetNow || (chance != null && chance >= RAIN_WATCH_CHANCE)
+      : wetNow || rainNotYetFalling({ chance, wetNow })
         ? CONDITIONS.rain
         : cold
           ? CONDITIONS.cold
@@ -260,11 +265,6 @@ export const CONFIDENCE = {
 };
 
 const minConfidence = (a, b) => (a.rank <= b.rank ? a : b);
-
-/** Rain in the forecast but not falling yet — shared by confidence and outlook rules. */
-function rainNotYetFalling(obs) {
-  return obs?.chance != null && obs.chance >= RAIN_WATCH_CHANCE && !obs.wetNow;
-}
 
 /**
  * Trust in the observation itself, before exposure heuristics adjust it.
