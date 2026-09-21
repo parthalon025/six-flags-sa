@@ -154,6 +154,42 @@ await check('record + flush preserves original ts and is idempotent on client id
   assert.equal(posted.length, 1, 're-record with same id does not double-post when still queued');
 });
 
+await check('flushRideReportObservations drains queue-band entries on reconnect', async () => {
+  const pending = [
+    {
+      id: 'obs_queue_offline',
+      ts: 1_697_000_000_000,
+      kind: 'queue',
+      detail: {
+        venueId: 'kings-island',
+        placeId: 'orion',
+        waitMin: 45,
+        source: 'party-queue',
+        confidence: 'low',
+      },
+    },
+  ];
+  const posted = [];
+  const result = await flushRideReportObservations({
+    queue: {
+      async load() {
+        return [...pending];
+      },
+      async remove(id) {
+        const idx = pending.findIndex((e) => e.id === id);
+        if (idx >= 0) pending.splice(idx, 1);
+      },
+    },
+    append: async (row) => {
+      posted.push(row);
+    },
+  });
+  assert.deepEqual(result, { flushed: 1, failed: 0 });
+  assert.equal(posted[0].waitMin, 45);
+  assert.equal(posted[0].source, 'party-queue');
+  assert.equal(pending.length, 0);
+});
+
 await check('flushRideReportObservations drains offline queue on reconnect', async () => {
   const pending = [
     {

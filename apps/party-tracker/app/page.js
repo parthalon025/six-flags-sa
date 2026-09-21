@@ -2170,16 +2170,17 @@ function ParkApp({ isSignedIn }) {
     [POIS, partyRides, weatherFeed.weather, clock],
   );
 
-  const reportRide = useCallback((rideId, status) => {
+  const reportRide = useCallback((rideId, status, meta = {}) => {
     const applied = runtime.current?.reportRide(rideId, status);
     if (applied === null) showToast('Join a party to report a ride');
     else if (status === 'down' || status === 'open') {
       recordRideReportObservation({
+        ...(meta.id ? { id: `obs_${meta.id}` } : {}),
         venueId: venue?.id,
         rideId,
         status,
         authorId: authSession?.userId || null,
-        ts: Date.now(),
+        ts: meta.ts ?? Date.now(),
       }).catch(() => {});
     }
     return applied;

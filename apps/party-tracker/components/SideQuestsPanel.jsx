@@ -408,7 +408,9 @@ export default function SideQuestsPanel({
       if (contrib) onContribution(contrib);
     }
     const live = rideReportFromLiveQuest(quest, { status, pois, position });
-    if (live && onRideReport) onRideReport(live.rideId, live.status);
+    if (live && onRideReport) {
+      onRideReport(live.rideId, live.status, { id: report.id, ts: report.createdAt });
+    }
     const queueBand = queueBandFromLiveQuest(quest, { status, pois, position });
     if (queueBand && onQueueBandReport) {
       onQueueBandReport({
