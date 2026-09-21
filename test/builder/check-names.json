@@ -434,6 +434,7 @@
     "live/recommend :: recommendNow adds an eligibility factor once a rider height is known",
     "live/recommend :: recommendNow never recommends a ride the rider cannot ride",
     "live/recommend :: compareGoNowSequences returns nothing when fewer than two GO NOW candidates",
+    "live/recommend :: compareGoNowSequences still offers two orderings when every pick is weather-hedged",
     "live/recommend :: compareGoNowSequences builds near-first and party-first tradeoffs",
     "live/recommend :: compareGoNowSequences never includes eligibility-blocked rides",
     "venue/ids :: every place in every shipped venue gets a unique id",

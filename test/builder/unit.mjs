@@ -7294,6 +7294,16 @@ await check('compareGoNowSequences returns nothing when fewer than two GO NOW ca
   return true;
 });
 
+await check('compareGoNowSequences still offers two orderings when every pick is weather-hedged', () => {
+  const now = 5_000_000;
+  const me = { lat: BEAST_HERE.lat, lng: BEAST_HERE.lng };
+  const sequences = compareGoNowSequences([NEAR_WEATHER, FAR_PARTY], null, FINE, me, [], now);
+  assert.equal(sequences.length, 2);
+  const orders = sequences.map((s) => s.stops.map((x) => x.poi.id).join('>'));
+  assert.notEqual(orders[0], orders[1]);
+  return true;
+});
+
 await check('compareGoNowSequences builds near-first and party-first tradeoffs', () => {
   const now = 5_000_000;
   const me = { lat: BEAST_HERE.lat, lng: BEAST_HERE.lng };
