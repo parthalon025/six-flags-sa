@@ -3732,6 +3732,11 @@ function ParkApp({ isSignedIn }) {
                 inParty={Boolean(party?.active)}
                 openHeights={heightFocus}
                 venue={venue}
+                me={position}
+                weather={weatherFeed.weather}
+                members={others}
+                now={clock}
+                eligibility={eligibilityView}
               />
             )}
 

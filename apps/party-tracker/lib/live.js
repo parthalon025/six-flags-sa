@@ -311,6 +311,9 @@ function sequenceTradeoff(strategy, totalWalkM, shortestWalk) {
     if (totalWalkM <= shortestWalk + 1) return 'Shortest walk between these stops';
     return 'Shorter walk between these stops';
   }
+  if (strategy === 'far') {
+    return 'Farther stop first · more walking up front';
+  }
   if (totalWalkM > shortestWalk + 15) {
     return 'Party-confirmed open first · more walking between stops';
   }
@@ -376,6 +379,9 @@ export function compareGoNowSequences(
   push('near', nearStops);
   push('party', partyStops);
 
+  if (built.length < 2 && nearStops.length >= 2) {
+    push('far', [...nearStops].reverse());
+  }
   if (built.length < 2 && candidates.length >= 2) {
     push('score', candidates.slice(0, maxStops));
   }
