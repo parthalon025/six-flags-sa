@@ -30,6 +30,16 @@ export function rideReportFromLiveQuest(quest, { status, pois = [], position = n
   return { rideId, status: status === 'issue' ? 'down' : 'open' };
 }
 
+/** In-party queue-band tap for the nearest attraction (E7.2). */
+export function queueBandFromLiveQuest(quest, { status, pois = [], position = null } = {}) {
+  const id = quest?.id || quest?.type;
+  if (id !== 'queue_band') return null;
+  const rideId = nearestRideId(pois, position, quest?.targets);
+  if (!rideId) return null;
+  if (!status || !['confirmed', 'changed', 'issue'].includes(status)) return null;
+  return { rideId, band: status };
+}
+
 function nearestRideId(pois, position, targets) {
   if (!position || !Number.isFinite(position.lat) || !Number.isFinite(position.lng)) return null;
   const rides = (pois || []).filter(

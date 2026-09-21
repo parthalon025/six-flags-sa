@@ -10,6 +10,7 @@
     "./mapSymbols.js": "./mapSymbols.js",
     "./ontology.json": "./ontology.json",
     "./schemas.js": "./schemas.js",
+    "./observations.js": "./observations.js",
     "./consolidateExport.js": "./consolidateExport.js",
     "./questScore.js": "./questScore.js",
     "./godmode.js": "./godmode.js",

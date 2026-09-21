@@ -12,6 +12,7 @@ import { campChips, campDetails } from '@/lib/camping';
 import { entranceMeta } from '@/lib/entrance';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
 import { GLYPHS, WORDS } from '@/lib/brand';
+import { newMemberId } from '@/lib/core/ids';
 import { identityOf, placeNav } from '@/lib/venue/ids';
 import { placeContext } from '@/lib/venue/placeContext';
 
@@ -257,7 +258,11 @@ export function PlaceDetailBody({
             type="button"
             data-report={RIDE_DOWN}
             className={`btn small ${status?.report?.status === RIDE_DOWN ? 'on' : ''}`}
-            onClick={() => onReport(poi.id, status?.report?.status === RIDE_DOWN ? null : RIDE_DOWN)}
+            onClick={() => {
+              const retract = status?.report?.status === RIDE_DOWN;
+              if (retract) onReport(poi.id, null);
+              else onReport(poi.id, RIDE_DOWN, { id: newMemberId(), ts: Date.now() });
+            }}
             aria-pressed={status?.report?.status === RIDE_DOWN}
           >
             {status?.report?.status === RIDE_DOWN ? 'Reported down' : 'It\u2019s down'}
@@ -266,7 +271,11 @@ export function PlaceDetailBody({
             type="button"
             data-report={RIDE_OPEN}
             className={`btn small ${status?.report?.status === RIDE_OPEN ? 'on' : ''}`}
-            onClick={() => onReport(poi.id, status?.report?.status === RIDE_OPEN ? null : RIDE_OPEN)}
+            onClick={() => {
+              const retract = status?.report?.status === RIDE_OPEN;
+              if (retract) onReport(poi.id, null);
+              else onReport(poi.id, RIDE_OPEN, { id: newMemberId(), ts: Date.now() });
+            }}
             aria-pressed={status?.report?.status === RIDE_OPEN}
           >
             {status?.report?.status === RIDE_OPEN ? 'Reported running' : 'It\u2019s running'}
