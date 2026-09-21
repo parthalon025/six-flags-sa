@@ -226,6 +226,88 @@ await check('flushRideReportObservations drains offline queue on reconnect', asy
   assert.equal(pending.length, 0);
 });
 
+await check('record queues offline when POST fails then flush preserves original ts', async () => {
+  const reportTs = 1_696_500_000_000;
+  const queue = {
+    entries: [],
+    async load() {
+      return [...this.entries];
+    },
+    async remove(id) {
+      this.entries = this.entries.filter((e) => e.id !== id);
+    },
+    async append(entry) {
+      if (this.entries.some((e) => e.id === entry.id)) return;
+      this.entries.push(entry);
+    },
+  };
+  const posted = [];
+  await recordRideReportObservation(
+    {
+      id: 'obs_offline_record',
+      venueId: 'kings-island',
+      rideId: 'mystic-timbers',
+      status: 'down',
+      ts: reportTs,
+    },
+    {
+      queue,
+      append: async () => {
+        throw new Error('offline');
+      },
+    },
+  );
+  assert.equal(queue.entries.length, 1, 'failed POST leaves entry queued');
+  assert.equal(posted.length, 0);
+
+  const result = await flushRideReportObservations({
+    queue,
+    append: async (row) => {
+      posted.push(row);
+    },
+  });
+  assert.deepEqual(result, { flushed: 1, failed: 0 });
+  assert.equal(posted.length, 1);
+  assert.equal(posted[0].ts, new Date(reportTs).toISOString());
+  assert.equal(queue.entries.length, 0);
+});
+
+await check('double flushRideReportObservations does not double-post a drained entry', async () => {
+  const pending = [
+    {
+      id: 'obs_double_flush',
+      ts: 1_695_000_000_000,
+      kind: 'ride',
+      detail: {
+        venueId: 'kings-island',
+        placeId: 'orion',
+        status: 'open',
+        source: 'party-report',
+        confidence: 'low',
+      },
+    },
+  ];
+  const posted = [];
+  const queue = {
+    async load() {
+      return [...pending];
+    },
+    async remove(id) {
+      const idx = pending.findIndex((e) => e.id === id);
+      if (idx >= 0) pending.splice(idx, 1);
+    },
+  };
+  const append = async (row) => {
+    posted.push(row);
+  };
+
+  await flushRideReportObservations({ queue, append });
+  await flushRideReportObservations({ queue, append });
+
+  assert.equal(posted.length, 1, 'second flush on empty queue must not post again');
+  assert.equal(pending.length, 0);
+});
+
 if (FAIL.length) {
   console.error(`\nride report observations tests: ${FAIL.length} failed`);
   for (const f of FAIL) console.error(' ', f);
