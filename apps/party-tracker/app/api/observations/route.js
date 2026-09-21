@@ -44,6 +44,10 @@ export async function GET(request) {
     return json({ observation: row });
   }
 
+  if (!venueId && !placeId) {
+    return badRequest('venueId or placeId required');
+  }
+
   const opts = { limit: Number(url.searchParams.get('limit') || 100) };
   if (venueId) {
     if (!ID_RE.test(venueId)) return badRequest('Invalid venueId');
