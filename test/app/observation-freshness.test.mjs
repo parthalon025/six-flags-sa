@@ -98,6 +98,15 @@ await check('STATUS_WINDOWS_MS aligns status aging with ride stale threshold', a
   assert.equal(STATUS_WINDOWS_MS.status.aging, RIDE_STALE_AFTER_MS);
 });
 
+await check('statusPillClasses carries fresh and aging tiers from ride status', async () => {
+  const { statusFor } = await import('../../apps/party-tracker/lib/rideStatus.js');
+  const { statusPillClasses } = await import('../../apps/party-tracker/lib/live.js');
+  const fresh = statusFor({ c: 'coaster', id: 'orion' }, { status: 'open', ts: NOW - 5 * 60 * 1000 }, null, NOW);
+  const aging = statusFor({ c: 'coaster', id: 'orion' }, { status: 'open', ts: NOW - 20 * 60 * 1000 }, null, NOW);
+  assert.match(statusPillClasses(fresh), /\bfresh\b/);
+  assert.match(statusPillClasses(aging), /\baging\b/);
+});
+
 console.log(`\n${PASS.length} passed, ${FAIL.length} failed`);
 if (FAIL.length) {
   for (const f of FAIL) console.error('  ', f);
