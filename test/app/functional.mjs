@@ -2635,6 +2635,45 @@ await check('all three phones see all three members', async () => {
 console.log('\n--- ride reports ---');
 
 /**
+ * E7.2: a party ride report is not only ephemeral party state — it also appends
+ * an observation row on the server. Captured at the browser seam (guest POST)
+ * so the vertical proves the wiring from page.js through recordRideReportObservation.
+ */
+
+await check('filing a ride report POSTs an observation row', async () => {
+  const posted = [];
+  const handler = async (route) => {
+    if (route.request().method() === 'POST') {
+      try {
+        posted.push(JSON.parse(route.request().postData() || '{}'));
+      } catch {
+        /* malformed body — still let the request through */
+      }
+    }
+    await route.fallback();
+  };
+  await a.route('**/api/observations**', handler);
+
+  const row = await openRide(a, 'Mystic Timbers');
+  await reportBtn(row, 'down').click();
+
+  await until(async () => (posted.length > 0 ? posted : null), {
+    timeout: JOIN_TIMEOUT,
+    label: 'ride report to POST /api/observations',
+  });
+
+  const obs = posted[0];
+  if (!obs.placeId) throw new Error(`missing placeId: ${JSON.stringify(obs)}`);
+  if (obs.status !== 'down') throw new Error(`expected status down, got ${obs.status}`);
+  if (obs.source !== 'party-report') throw new Error(`expected party-report source, got ${obs.source}`);
+  if (!obs.venueId) throw new Error('missing venueId');
+  if (!obs.id) throw new Error('missing stable client id');
+
+  await a.unroute('**/api/observations**', handler).catch(() => {});
+  return true;
+});
+
+/**
  * The half of live status that does not come from a forecast: one phone says a
  * ride is down and every other phone in the party hears it. Exercised over
  * whatever transport the party actually negotiated, which is the point — the
