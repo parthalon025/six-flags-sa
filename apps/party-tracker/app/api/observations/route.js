@@ -1,5 +1,5 @@
 import { insertObservation, getObservation, listObservations } from '@/lib/observations/store';
-import { validateObservationAppend } from '@/lib/observations/validate';
+import { validateObservationAppend, ID_RE } from '@party-tracker/shared/observations.js';
 import { rateLimit } from '@/lib/rateLimit';
 import { badRequest, json, notFound, tooManyRequests, readJson, isId } from '@/app/api/_lib/http';
 
@@ -46,11 +46,11 @@ export async function GET(request) {
 
   const opts = { limit: Number(url.searchParams.get('limit') || 100) };
   if (venueId) {
-    if (!/^[a-z0-9-]{1,64}$/.test(venueId)) return badRequest('Invalid venueId');
+    if (!ID_RE.test(venueId)) return badRequest('Invalid venueId');
     opts.venueId = venueId;
   }
   if (placeId) {
-    if (!/^[a-z0-9-]{1,64}$/.test(placeId)) return badRequest('Invalid placeId');
+    if (!ID_RE.test(placeId)) return badRequest('Invalid placeId');
     opts.placeId = placeId;
   }
 

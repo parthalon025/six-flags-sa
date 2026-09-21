@@ -168,17 +168,6 @@ export const FIXTURES = {
     payload: { note: 'short wait' },
     createdAt: '2026-08-11T12:00:00.000Z',
   },
-  observation: {
-    id: 'obs_demo',
-    venueId: 'kings-island',
-    placeId: 'orion',
-    ts: '2026-08-11T12:00:00.000Z',
-    waitMin: 25,
-    status: 'down',
-    source: 'party-report',
-    confidence: 'low',
-    authorId: 'usr_demo',
-  },
 };
 
 /**
