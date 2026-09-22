@@ -100,6 +100,8 @@ export const TEST_ESTATE = {
   'test/app/contribution-consolidate-vertical.test.mjs': ['test:unit'],
   'test/app/contribution-operator-path.test.mjs': ['test:unit'],
   'test/app/contributions-postgres.test.mjs': ['test:unit'],
+  'test/app/observations.test.mjs': ['test:unit'],
+  'test/app/observations-route.test.mjs': ['test:unit'],
   'test/app/postgres-probe.test.mjs': ['test:unit'],
   'test/app/ready-route.test.mjs': ['test:unit'],
   'test/app/custom-map.test.mjs': ['test:unit'],
