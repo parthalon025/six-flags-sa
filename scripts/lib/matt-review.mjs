@@ -307,12 +307,11 @@ export function pinFixedPoint({ baseRef = 'origin/main', cwd = root } = {}) {
   const diffCommand = `git diff ${baseRef}...HEAD`;
   const commits = listCommitsSinceFixedPoint(baseRef, cwd);
   return {
+    ...context,
     baseRef,
     resolved,
-    mergeBase: context.mergeBase,
     diffCommand,
     commits,
-    files: context.files,
   };
 }
 
@@ -389,8 +388,7 @@ export function buildSpecPrompt({ files = [], spec, diffCommand = '', commits = 
 /** Pin the fixed point and build both axis prompts. */
 export function buildTwoAxisReview({ baseRef = 'origin/main', specPath, cwd = root } = {}) {
   const pinned = pinFixedPoint({ baseRef, cwd });
-  const context = buildMattReviewContext({ baseRef, cwd });
-  const { diffCommand, commits } = pinned;
+  const { diffCommand, commits, ...context } = pinned;
   const commitMessages = commits.map((c) => c.replace(/^[0-9a-f]+\s+/, ''));
   const branch = currentBranch(cwd);
   const standardsSources = identifyStandardsSources({ cwd });
