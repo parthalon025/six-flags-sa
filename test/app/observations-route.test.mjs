@@ -146,6 +146,11 @@ await check('GET by id returns single row', async () => {
   assert.equal(byId.observation.id, 'obs_route_guest');
 });
 
+await check('GET by id rejects non-identity-grade tokens with 400', async () => {
+  const res = await GET({ url: 'http://localhost/api/observations?id=bad%20id' });
+  assert.equal(res.status, 400);
+});
+
 if (FAIL.length) {
   console.error(`observations route tests: ${FAIL.length} failed`);
   for (const f of FAIL) console.error(' !', f);

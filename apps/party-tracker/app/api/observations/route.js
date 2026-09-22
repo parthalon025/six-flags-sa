@@ -1,7 +1,7 @@
 import { insertObservation, getObservation, listObservations } from '@/lib/observations/store';
 import { validateObservationAppend, ID_RE } from '@party-tracker/shared/observations.js';
 import { rateLimit } from '@/lib/rateLimit';
-import { badRequest, json, notFound, tooManyRequests, readJson, isId } from '@/app/api/_lib/http';
+import { badRequest, json, notFound, tooManyRequests, readJson } from '@/app/api/_lib/http';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 15;
@@ -38,7 +38,7 @@ export async function GET(request) {
   const id = url.searchParams.get('id') || '';
 
   if (id) {
-    if (!isId(id)) return badRequest('Invalid id');
+    if (!ID_RE.test(id)) return badRequest('Invalid id');
     const row = await getObservation(id);
     if (!row) return notFound();
     return json({ observation: row });
