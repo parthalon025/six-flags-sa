@@ -1,5 +1,6 @@
 import { insertContribution, getContribution, listContributions } from '@/lib/contributions/store';
 import { validateContributionPost } from '@/lib/contributions/validate';
+import { assessContributionProximity } from '@/lib/contributions/abuse';
 import { rateLimit } from '@/lib/rateLimit';
 import { badRequest, json, notFound, tooManyRequests, readJson, isId } from '@/app/api/_lib/http';
 
@@ -26,6 +27,11 @@ export async function POST(request) {
 
   const parsed = validateContributionPost(body);
   if (!parsed.ok) return badRequest(parsed.error);
+
+  const proximity = assessContributionProximity(parsed.contribution);
+  if (!proximity.ok) {
+    return json({ error: proximity.error, code: proximity.code }, 400);
+  }
 
   const row = await insertContribution(parsed.contribution);
   return json({ ok: true, contribution: row }, 201);
