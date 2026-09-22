@@ -308,6 +308,37 @@ assert.equal(reviewRequiredForFiles(null), true, 'unknown diff fails closed');
   rmSync(dir, { recursive: true, force: true });
 }
 
+// pinFixedPoint — merge-base missing when fixed point resolves but histories diverge
+{
+  const dir = mkdtempSync(join(tmpdir(), 'pin-nobase-'));
+  const git = (...args) =>
+    execFileSync('git', args, {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...scrubGitEnv(),
+        GIT_AUTHOR_NAME: 't',
+        GIT_AUTHOR_EMAIL: 't@t',
+        GIT_COMMITTER_NAME: 't',
+        GIT_COMMITTER_EMAIL: 't@t',
+      },
+    });
+  git('init', '-q', '-b', 'main');
+  writeFileSync(join(dir, 'a.js'), 'export const a = 1;\n');
+  git('add', '.');
+  git('commit', '-qm', 'base');
+  git('checkout', '--orphan', 'feature');
+  writeFileSync(join(dir, 'b.js'), 'export const b = 1;\n');
+  git('add', '.');
+  git('commit', '-qm', 'orphan feature');
+  assert.throws(
+    () => pinFixedPoint({ baseRef: 'main', cwd: dir }),
+    /cannot find merge-base/,
+    'unrelated histories fail at merge-base before sub-agents',
+  );
+  rmSync(dir, { recursive: true, force: true });
+}
+
 // buildTwoAxisReview — orchestrates both axes
 {
   const dir = mkdtempSync(join(tmpdir(), 'two-axis-'));
