@@ -1,7 +1,8 @@
 /**
  * OSM opening_hours on venue POIs — validate at publish time, format at read time.
  *
- * Full OSM evaluation is out of scope; we never claim "open now" without proof.
+ * The twin stores the validated raw string on `poi.oh`; `{ kind, raw }` is derived
+ * here so bundles stay small and we never claim "open now" without proof.
  */
 
 const MAX_LEN = 512;
@@ -30,10 +31,9 @@ export function parseOpeningHours(raw) {
 
 /**
  * @param {{ oh?: string, c?: string } | null | undefined} poi
- * @param {{ now?: number }} [opts]
  * @returns {{ detail: string, planLine: string } | null}
  */
-export function openingHoursForPoi(poi, opts = {}) {
+export function openingHoursForPoi(poi) {
   if (!poi?.oh) return null;
   const parsed = parseOpeningHours(poi.oh);
   if (!parsed) return null;
