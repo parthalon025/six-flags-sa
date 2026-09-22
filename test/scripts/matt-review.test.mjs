@@ -336,6 +336,17 @@ assert.equal(reviewRequiredForFiles(null), true, 'unknown diff fails closed');
     /cannot find merge-base/,
     'unrelated histories fail at merge-base before sub-agents',
   );
+  const { runTwoAxis, runPrompt } = await import('../../scripts/ci/matt-review.mjs');
+  assert.equal(
+    runTwoAxis({ baseRef: 'main', cwd: dir }),
+    1,
+    'CLI two-axis fails when merge-base is missing',
+  );
+  assert.equal(
+    runPrompt({ baseRef: 'main', cwd: dir }),
+    1,
+    'CLI prompt fails when merge-base is missing',
+  );
   rmSync(dir, { recursive: true, force: true });
 }
 
