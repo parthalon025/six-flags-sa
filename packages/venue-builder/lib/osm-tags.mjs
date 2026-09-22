@@ -13,6 +13,7 @@
  */
 
 import { WAY_FLAGS } from '@party-tracker/shared/wayFlags.js';
+import { validateOpeningHoursRaw } from '@party-tracker/shared/openingHours.js';
 
 const has = (tags, key, values) => {
   const v = tags[key];
@@ -499,8 +500,8 @@ export function campDetailsFromTags(tags) {
 export function openingHoursFromTags(tags) {
   const raw = tags.opening_hours;
   if (raw == null) return null;
-  const s = String(raw).trim();
-  return s || null;
+  const v = validateOpeningHoursRaw(String(raw));
+  return v.ok ? v.value : null;
 }
 
 export function classify(rules, tags) {

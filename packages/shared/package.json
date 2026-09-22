@@ -19,6 +19,7 @@
     "./isoTrack.js": "./isoTrack.js",
     "./zoomBands.js": "./zoomBands.js",
     "./mapCamera.js": "./mapCamera.js",
-    "./billing.js": "./billing.js"
+    "./billing.js": "./billing.js",
+    "./openingHours.js": "./openingHours.js"
   }
 }

@@ -82,6 +82,7 @@ import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
 import { bestEntrance, entranceMeta, entranceLine } from '@/lib/entrance';
 import { placeContext } from '@/lib/venue/placeContext';
+import { openingHoursForPoi } from '@party-tracker/shared/openingHours.js';
 import { navKeyOf } from '@/lib/navKey';
 import {
   applyMapSkin,
@@ -1384,7 +1385,8 @@ function ParkApp({ isSignedIn }) {
         planPosition && Number.isFinite(poi.lat) && Number.isFinite(poi.lng)
           ? formatWalk(distance(planPosition.lat, planPosition.lng, poi.lat, poi.lng))
           : null;
-      out[step.placeId] = { zone, walk };
+      const time = openingHoursForPoi(poi)?.planLine || null;
+      out[step.placeId] = { zone, walk, time };
     }
     return out;
   }, [planItems, POIS, venue, mapData, planPosition]);

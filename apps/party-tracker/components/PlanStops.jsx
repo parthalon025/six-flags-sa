@@ -14,7 +14,7 @@ import { reorder, unstar, withDown } from '@/lib/plan';
 
 /**
  * @param {object} props
- * @param {object} [props.context] `{ [placeId]: { zone, walk } }` — the caller
+ * @param {object} [props.context] `{ [placeId]: { zone, walk, time } }` — the caller
  *   works these out from its own venue and fix. A missing entry renders a card
  *   with no sub-line rather than an em dash.
  */
@@ -47,7 +47,7 @@ export default function PlanStops({
              phrase when there is one. */
           const sub = s.down
             ? [s.reason, where?.zone].filter(Boolean).join(' · ')
-            : [where?.zone, where?.walk].filter(Boolean).join(' · ');
+            : [where?.time, where?.zone, where?.walk].filter(Boolean).join(' · ');
           const name = s.label || s.placeId;
           return (
             <li key={s.id || `${s.placeId}-${i}`} className="planStop">
