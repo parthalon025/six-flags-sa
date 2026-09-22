@@ -805,6 +805,69 @@ await check('a GO NOW verdict in the list carries a Why? explanation', async () 
   return true;
 });
 
+await check('Compare routes shows two sequences with tradeoff copy', async () => {
+  // Same clear/day fixture as the GO NOW Why? check — outdoor hedged picks need it.
+  await a.route('**/api/weather**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        observed: {
+          code: 0,
+          tempF: 78,
+          gustMph: 6,
+          windMph: 4,
+          precipIn: 0,
+          precipChance: 5,
+          isDay: true,
+        },
+        at: Date.now(),
+        source: 'test-fixture',
+      }),
+    });
+  });
+  await a.evaluate(() => {
+    localStorage.setItem(
+      'ki-weather',
+      JSON.stringify({
+        observed: {
+          code: 0,
+          tempF: 78,
+          gustMph: 6,
+          windMph: 4,
+          precipIn: 0,
+          precipChance: 5,
+          isDay: true,
+        },
+        at: Date.now(),
+      }),
+    );
+    window.dispatchEvent(new Event('online'));
+  });
+  await go(a, 'Rider height');
+  await a.locator('.tier:has-text("48")').click();
+  await a.waitForTimeout(500);
+  await go(a, 'Places');
+  await until(async () => (await a.locator('.poiRow').count()) >= 2, {
+    timeout: 15000,
+    label: 'the browse list',
+  });
+  await until(
+    async () => {
+      await a.evaluate(() => window.dispatchEvent(new Event('online')));
+      return (await a.locator('.goNowSequences .goNowSequenceCard').count()) >= 2;
+    },
+    { timeout: 25000, label: 'two Compare routes sequences' },
+  );
+  const cards = a.locator('.goNowSequences .goNowSequenceCard');
+  const tradeoffs = await cards.locator('.goNowSequenceWhy').allInnerTexts();
+  if (tradeoffs.length < 2) throw new Error('expected two tradeoff lines');
+  for (const line of tradeoffs) {
+    if (!line || line.length < 12) throw new Error(`tradeoff too thin: "${line}"`);
+  }
+  return true;
+});
+
 
 await check('the palette toggle cycles data-theme through Trail and Park Midnight', async () => {
   // ADR-0012: the toggle cycles auto -> Trail (day) -> Park Midnight (night).

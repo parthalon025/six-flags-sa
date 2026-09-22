@@ -246,6 +246,13 @@
       "check": "a GO NOW verdict in the list carries a Why? explanation"
     },
     {
+      "id": "e83-compare-sequences",
+      "slice": "E8",
+      "user_action": "Compare two short GO NOW walk sequences with explainable tradeoffs",
+      "suite": "functional",
+      "check": "Compare routes shows two sequences with tradeoff copy"
+    },
+    {
       "id": "ride-status-stale-marker",
       "slice": "E7",
       "user_action": "A ride report old enough to hedge is visibly muted and never claims live/GO NOW",
