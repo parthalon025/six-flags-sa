@@ -348,6 +348,16 @@ assert.equal(reviewRequiredForFiles(null), true, 'unknown diff fails closed');
   git('checkout', 'main');
   assert.equal(runTwoAxis({ baseRef: 'main', cwd: dir }), 1, 'CLI two-axis fails on empty diff');
   assert.equal(runPrompt({ baseRef: 'main', cwd: dir }), 1, 'CLI prompt fails on empty diff');
+  assert.equal(
+    runTwoAxis({ baseRef: 'not-a-ref-xyz', cwd: dir }),
+    1,
+    'CLI two-axis fails when fixed point does not resolve',
+  );
+  assert.equal(
+    runPrompt({ baseRef: 'not-a-ref-xyz', cwd: dir }),
+    1,
+    'CLI prompt fails when fixed point does not resolve',
+  );
 
   rmSync(dir, { recursive: true, force: true });
 }
