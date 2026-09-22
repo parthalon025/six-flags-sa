@@ -297,23 +297,23 @@ export function pinFixedPoint({ baseRef = 'origin/main', cwd = root } = {}) {
   } catch {
     throw new Error(`two-axis review: fixed point does not resolve: ${baseRef}`);
   }
-  let mergeBase;
-  try {
-    mergeBase = git(['merge-base', 'HEAD', resolved], cwd).trim();
-  } catch {
+  const context = buildMattReviewContext({ baseRef, cwd });
+  if (context.mergeBase === null) {
     throw new Error(`two-axis review: cannot find merge-base for ${baseRef}`);
   }
-  const excludes = STAMP_EXCLUDES.map((p) => `:(exclude)${p}`);
-  const files = git(['diff', '--name-only', `${mergeBase}...HEAD`, '--', '.', ...excludes], cwd)
-    .split('\n')
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (files.length === 0) {
+  if (!context.files?.length) {
     throw new Error('two-axis review: empty diff — pin a fixed point with commits ahead of it');
   }
   const diffCommand = `git diff ${baseRef}...HEAD`;
   const commits = listCommitsSinceFixedPoint(baseRef, cwd);
-  return { baseRef, resolved, mergeBase, diffCommand, commits, files };
+  return {
+    baseRef,
+    resolved,
+    mergeBase: context.mergeBase,
+    diffCommand,
+    commits,
+    files: context.files,
+  };
 }
 
 function currentBranch(cwd) {
