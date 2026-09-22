@@ -14,6 +14,7 @@ import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/g
 import { GLYPHS, WORDS } from '@/lib/brand';
 import { identityOf, placeNav } from '@/lib/venue/ids';
 import { placeContext } from '@/lib/venue/placeContext';
+import { openingHoursForPoi } from '@party-tracker/shared/openingHours.js';
 
 const VERDICT = {
   eligible: { label: 'Can ride', cls: 'ok', icon: 'checkmark' },
@@ -141,6 +142,7 @@ export function PlaceDetailBody({
 
   // Contribution entries arrive as { id, authorId, line }; ride reports and
   // any legacy string stay lines without a Thanks target.
+  const hours = openingHoursForPoi(poi);
   const overlayLines = overlayCompletions.map((c, i) =>
     typeof c === 'string' ? { id: `line-${i}`, authorId: null, line: c } : c,
   );
@@ -198,6 +200,7 @@ export function PlaceDetailBody({
           })}
         </ul>
       )}
+      {hours && <p className="poiNote openingHoursNote">{hours.detail}</p>}
       {poi.note && <p className="poiNote">{poi.note}</p>}
       {camp.length > 0 && (
         <ul className="campChips">

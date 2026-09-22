@@ -5028,6 +5028,7 @@ await check('opening_hours is carried as a raw string when present', () => {
   assert.equal(openingHoursFromTags({ opening_hours: ' 24/7 ' }), '24/7');
   assert.equal(openingHoursFromTags({ name: 'Cafe' }), null);
   assert.equal(openingHoursFromTags({ opening_hours: '' }), null);
+  assert.equal(openingHoursFromTags({ opening_hours: 'x'.repeat(600) }), null);
   return true;
 });
 
