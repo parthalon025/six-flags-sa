@@ -1939,10 +1939,24 @@ await check('walking towards it shortens what is left', async () => {
 });
 
 await check('the steps list opens over the walk and closes again', async () => {
+  // Reroute after the simulated walk can land a beat later in CI — wait for
+  // the bar to show a distance before opening the sheet.
+  await until(
+    async () => {
+      const t = await a.locator('.navSummary span').innerText().catch(() => '');
+      return /ft|mi/.test(t);
+    },
+    { timeout: 20000, label: 'nav summary distance after walk simulation' },
+  );
   await a.locator('.navSummary').click();
-  await a.waitForTimeout(700);
-  const steps = await a.locator('.stepRow .stepText b').allInnerTexts();
-  if (steps.length < 3) throw new Error(`${steps.length} steps`);
+  const steps = await until(
+    async () => {
+      if (await a.locator('.navBar').count()) return false;
+      const texts = await a.locator('.stepRow .stepText b').allInnerTexts();
+      return texts.length >= 3 ? texts : false;
+    },
+    { timeout: 20000, label: 'turn-by-turn steps in route sheet' },
+  );
   if (!/^Head /.test(steps[0])) throw new Error(`starts with "${steps[0]}"`);
   if (!/^Arrive at /.test(steps[steps.length - 1])) throw new Error(`ends with "${steps.at(-1)}"`);
   if (await a.locator('.navBar').count()) throw new Error('bottom bar left under the sheet');
@@ -1953,6 +1967,10 @@ await check('the steps list opens over the walk and closes again', async () => {
 });
 
 await check('the compass button faces the map north and back', async () => {
+  await until(async () => (await a.locator('.navTool').count()) >= 2, {
+    timeout: 15000,
+    label: 'compass and voice nav tools',
+  });
   const cone = () =>
     a.locator('.puckCone').getAttribute('transform').then((t) => Number(t.match(/rotate\(([-\d.]+)/)[1]));
   const courseUp = await cone();
@@ -1968,6 +1986,10 @@ await check('the compass button faces the map north and back', async () => {
 });
 
 await check('spoken directions can be switched on', async () => {
+  await until(async () => (await a.locator('.navTool').count()) >= 1, {
+    timeout: 15000,
+    label: 'voice nav tool',
+  });
   const speaker = a.locator('.navTool').first();
   await speaker.click();
   await a.waitForTimeout(400);
