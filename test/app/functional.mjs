@@ -805,6 +805,69 @@ await check('a GO NOW verdict in the list carries a Why? explanation', async () 
   return true;
 });
 
+await check('Compare routes shows two sequences with tradeoff copy', async () => {
+  // Same clear/day fixture as the GO NOW Why? check — outdoor hedged picks need it.
+  await a.route('**/api/weather**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        observed: {
+          code: 0,
+          tempF: 78,
+          gustMph: 6,
+          windMph: 4,
+          precipIn: 0,
+          precipChance: 5,
+          isDay: true,
+        },
+        at: Date.now(),
+        source: 'test-fixture',
+      }),
+    });
+  });
+  await a.evaluate(() => {
+    localStorage.setItem(
+      'ki-weather',
+      JSON.stringify({
+        observed: {
+          code: 0,
+          tempF: 78,
+          gustMph: 6,
+          windMph: 4,
+          precipIn: 0,
+          precipChance: 5,
+          isDay: true,
+        },
+        at: Date.now(),
+      }),
+    );
+    window.dispatchEvent(new Event('online'));
+  });
+  await go(a, 'Rider height');
+  await a.locator('.tier:has-text("48")').click();
+  await a.waitForTimeout(500);
+  await go(a, 'Places');
+  await until(async () => (await a.locator('.poiRow').count()) >= 2, {
+    timeout: 15000,
+    label: 'the browse list',
+  });
+  await until(
+    async () => {
+      await a.evaluate(() => window.dispatchEvent(new Event('online')));
+      return (await a.locator('.goNowSequences .goNowSequenceCard').count()) >= 2;
+    },
+    { timeout: 25000, label: 'two Compare routes sequences' },
+  );
+  const cards = a.locator('.goNowSequences .goNowSequenceCard');
+  const tradeoffs = await cards.locator('.goNowSequenceWhy').allInnerTexts();
+  if (tradeoffs.length < 2) throw new Error('expected two tradeoff lines');
+  for (const line of tradeoffs) {
+    if (!line || line.length < 12) throw new Error(`tradeoff too thin: "${line}"`);
+  }
+  return true;
+});
+
 
 await check('the palette toggle cycles data-theme through Trail and Park Midnight', async () => {
   // ADR-0012: the toggle cycles auto -> Trail (day) -> Park Midnight (night).
@@ -1939,10 +2002,24 @@ await check('walking towards it shortens what is left', async () => {
 });
 
 await check('the steps list opens over the walk and closes again', async () => {
+  // Reroute after the simulated walk can land a beat later in CI — wait for
+  // the bar to show a distance before opening the sheet.
+  await until(
+    async () => {
+      const t = await a.locator('.navSummary span').innerText().catch(() => '');
+      return /ft|mi/.test(t);
+    },
+    { timeout: 20000, label: 'nav summary distance after walk simulation' },
+  );
   await a.locator('.navSummary').click();
-  await a.waitForTimeout(700);
-  const steps = await a.locator('.stepRow .stepText b').allInnerTexts();
-  if (steps.length < 3) throw new Error(`${steps.length} steps`);
+  const steps = await until(
+    async () => {
+      if (await a.locator('.navBar').count()) return false;
+      const texts = await a.locator('.stepRow .stepText b').allInnerTexts();
+      return texts.length >= 3 ? texts : false;
+    },
+    { timeout: 20000, label: 'turn-by-turn steps in route sheet' },
+  );
   if (!/^Head /.test(steps[0])) throw new Error(`starts with "${steps[0]}"`);
   if (!/^Arrive at /.test(steps[steps.length - 1])) throw new Error(`ends with "${steps.at(-1)}"`);
   if (await a.locator('.navBar').count()) throw new Error('bottom bar left under the sheet');
@@ -1953,6 +2030,10 @@ await check('the steps list opens over the walk and closes again', async () => {
 });
 
 await check('the compass button faces the map north and back', async () => {
+  await until(async () => (await a.locator('.navTool').count()) >= 2, {
+    timeout: 15000,
+    label: 'compass and voice nav tools',
+  });
   const cone = () =>
     a.locator('.puckCone').getAttribute('transform').then((t) => Number(t.match(/rotate\(([-\d.]+)/)[1]));
   const courseUp = await cone();
@@ -1968,6 +2049,10 @@ await check('the compass button faces the map north and back', async () => {
 });
 
 await check('spoken directions can be switched on', async () => {
+  await until(async () => (await a.locator('.navTool').count()) >= 1, {
+    timeout: 15000,
+    label: 'voice nav tool',
+  });
   const speaker = a.locator('.navTool').first();
   await speaker.click();
   await a.waitForTimeout(400);

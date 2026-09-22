@@ -1,0 +1,19 @@
+.goNowSequences { margin: 0 0 12px; }
+.goNowSequenceCard {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  align-items: start;
+  gap: 2px 8px;
+  padding: 10px 2px;
+}
+.goNowSequenceCard .goNowSequenceWhy,
+.goNowSequenceCard .goNowSequenceStops {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.goNowSequenceStops {
+  list-style: none;
+  padding: 0;
+}
+.goNowSequenceMeta { font-variant-numeric: tabular-nums; }

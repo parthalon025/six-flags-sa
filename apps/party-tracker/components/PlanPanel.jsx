@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import HeightPanel from '@/components/HeightPanel';
 import PlanStops from '@/components/PlanStops';
+import GoNowSequences from '@/components/GoNowSequences';
 
 /**
  * Plan tab — today's ordered stops plus optional rider-height tools when the
@@ -26,6 +27,12 @@ export default function PlanPanel({
   inParty = false,
   openHeights = null,
   venue,
+  me = null,
+  weather = null,
+  now,
+  eligibility = null,
+  /** Party members with live positions for GO NOW sequence tradeoffs. */
+  liveMembers = [],
 }) {
   const [section, setSection] = useState('stops');
   const stopCount = plan.length;
@@ -65,6 +72,14 @@ export default function PlanPanel({
 
       {(!hasHeights || section === 'stops') && (
         <>
+          <GoNowSequences
+            me={me}
+            weather={weather}
+            rides={rides}
+            members={liveMembers}
+            now={now}
+            eligibility={eligibility}
+          />
           <div className="label eyebrow">Today&apos;s stops</div>
           <PlanStops
             rides={rides}
