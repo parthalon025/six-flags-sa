@@ -133,6 +133,7 @@ export const TEST_ESTATE = {
   'test/app/server-store.test.mjs': ['test:unit'],
   'test/app/server-store-redis.test.mjs': ['test:unit'],
   'test/app/spot.test.mjs': ['test:unit'],
+  'test/app/opening-hours.test.mjs': ['test:unit'],
   'test/app/store-links.test.mjs': ['test:unit'],
   'test/app/transport-contract.test.mjs': ['test:unit'],
   'test/app/transport-registry.test.mjs': ['test:unit'],
