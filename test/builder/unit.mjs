@@ -7301,6 +7301,9 @@ await check('compareGoNowSequences still offers two orderings when every pick is
   assert.equal(sequences.length, 2);
   const orders = sequences.map((s) => s.stops.map((x) => x.poi.id).join('>'));
   assert.notEqual(orders[0], orders[1]);
+  const farFallback = sequences.find((s) => s.strategy === 'far');
+  assert.ok(farFallback, 'near and party collapse to the same route — far-first fallback should appear');
+  assert.match(farFallback.tradeoff, /Farther stop first/i);
   return true;
 });
 
