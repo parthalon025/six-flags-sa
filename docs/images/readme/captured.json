@@ -1,7 +1,7 @@
 {
   "height-filter.png": {
-    "commit": "995fd250e1fb776a5e49534ed5ded2dbeae0dbd9",
-    "capturedAt": "2026-08-29T17:41:01.259Z",
+    "commit": "389df7cdb7ba8a25bb4d1a81925a509f7a86a5ca",
+    "capturedAt": "2026-09-22T03:17:37.817Z",
     "sha256": "d2d725b314c28d460ac308039508b5280310f77de05686b68093b0c46491a500"
   },
   "map-day.png": {
@@ -15,8 +15,8 @@
     "sha256": "478bb8a81ecc44ebe040faa28b17f697bd61f859468343dc13af49516deb5787"
   },
   "party.png": {
-    "commit": "995fd250e1fb776a5e49534ed5ded2dbeae0dbd9",
-    "capturedAt": "2026-08-29T17:41:48.935Z",
+    "commit": "389df7cdb7ba8a25bb4d1a81925a509f7a86a5ca",
+    "capturedAt": "2026-09-22T03:17:37.818Z",
     "sha256": "dd7836dfee8cd7a48c2f647e5ed36230d89c8d22f0bf1090bbda5c672d5fa6fc"
   },
   "ride-callout.png": {

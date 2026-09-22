@@ -3765,21 +3765,6 @@ p.wxWhy.warn { color: var(--orange); }
 .heightPeers > li > span { flex: none; color: var(--label2); font-variant-numeric: tabular-nums; }
 .heightPeerDot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--fill2); }
 
-.goNowSequences { margin: 0 0 12px; }
-.goNowSequenceCard {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-rows: auto auto;
-  align-items: start;
-  gap: 2px 8px;
-  padding: 10px 2px;
-}
-.goNowSequenceCard .goNowSequenceWhy {
-  grid-column: 1 / -1;
-  margin: 0;
-}
-.goNowSequenceMeta { font-variant-numeric: tabular-nums; }
-
 /* ---- Explore's list, to the design's own measure ----
    Every number below is the design's. The list is the densest thing in the app
    and it was being drawn a size up throughout: a 17px name over a 13px line

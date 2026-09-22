@@ -1,5 +1,6 @@
 'use client';
 
+import './go-now-sequences.css';
 import { useMemo } from 'react';
 import { compareGoNowSequences } from '@/lib/live';
 import { usePois } from '@/lib/venue/useVenue';
