@@ -3734,7 +3734,7 @@ function ParkApp({ isSignedIn }) {
                 venue={venue}
                 me={position}
                 weather={weatherFeed.weather}
-                members={others}
+                liveMembers={others}
                 now={clock}
                 eligibility={eligibilityView}
               />

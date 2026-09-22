@@ -31,6 +31,8 @@ export default function PlanPanel({
   weather = null,
   now,
   eligibility = null,
+  /** Party members with live positions for GO NOW sequence tradeoffs. */
+  liveMembers = [],
 }) {
   const [section, setSection] = useState('stops');
   const stopCount = plan.length;
@@ -74,7 +76,7 @@ export default function PlanPanel({
             me={me}
             weather={weather}
             rides={rides}
-            members={members}
+            members={liveMembers}
             now={now}
             eligibility={eligibility}
           />
