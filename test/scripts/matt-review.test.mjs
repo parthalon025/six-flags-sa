@@ -17,6 +17,7 @@ import {
   buildSpecPrompt,
   buildStandardsPrompt,
   buildTwoAxisReview,
+  pinFixedPoint,
   identifySpecSource,
   identifyStandardsSources,
   mattReviewBlockReason,
@@ -259,6 +260,52 @@ assert.equal(reviewRequiredForFiles(null), true, 'unknown diff fails closed');
   const legacy = buildReviewPrompt({ files: ['apps/a.js'] });
   const standards = buildStandardsPrompt({ files: ['apps/a.js'] });
   assert.equal(legacy, standards, 'buildReviewPrompt delegates to buildStandardsPrompt');
+}
+
+// pinFixedPoint — rev-parse + non-empty diff before sub-agents (code-review skill step 1)
+{
+  const dir = mkdtempSync(join(tmpdir(), 'pin-fixed-'));
+  const git = (...args) =>
+    execFileSync('git', args, {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...scrubGitEnv(),
+        GIT_AUTHOR_NAME: 't',
+        GIT_AUTHOR_EMAIL: 't@t',
+        GIT_COMMITTER_NAME: 't',
+        GIT_COMMITTER_EMAIL: 't@t',
+      },
+    });
+  git('init', '-q', '-b', 'main');
+  mkdirSync(join(dir, 'scripts'), { recursive: true });
+  writeFileSync(join(dir, 'scripts/a.js'), 'export const a = 1;\n');
+  git('add', '.');
+  git('commit', '-qm', 'base');
+
+  assert.throws(
+    () => pinFixedPoint({ baseRef: 'main', cwd: dir }),
+    /empty diff/,
+    'no commits ahead of fixed point fails before sub-agents',
+  );
+  assert.throws(
+    () => pinFixedPoint({ baseRef: 'not-a-ref-xyz', cwd: dir }),
+    /does not resolve/,
+    'bad fixed point fails at rev-parse',
+  );
+
+  git('checkout', '-qb', 'feature');
+  writeFileSync(join(dir, 'scripts/a.js'), 'export const a = 2;\n');
+  git('add', '.');
+  git('commit', '-qm', 'change');
+
+  const pinned = pinFixedPoint({ baseRef: 'main', cwd: dir });
+  assert.match(pinned.diffCommand, /^git diff main\.\.\.HEAD$/);
+  assert.ok(pinned.resolved.length >= 7);
+  assert.deepEqual(pinned.files, ['scripts/a.js']);
+  assert.ok(pinned.commits.some((c) => /change/.test(c)));
+
+  rmSync(dir, { recursive: true, force: true });
 }
 
 // buildTwoAxisReview — orchestrates both axes

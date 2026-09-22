@@ -52,23 +52,25 @@ export function runWrite({ baseRef = 'origin/main', model, gitnexus, cwd = root 
 }
 
 export function runTwoAxis({ baseRef = 'origin/main', specPath, cwd = root } = {}) {
-  const review = buildTwoAxisReview({ baseRef, specPath, cwd });
-  if (review.files.length === 0) {
-    console.error('two-axis review: empty diff — pin a fixed point with commits ahead of it');
+  try {
+    const review = buildTwoAxisReview({ baseRef, specPath, cwd });
+    console.log(JSON.stringify(review, null, 2));
+    return 0;
+  } catch (err) {
+    console.error(err?.message || err);
     return 1;
   }
-  console.log(JSON.stringify(review, null, 2));
-  return 0;
 }
 
 export function runPrompt({ baseRef = 'origin/main', cwd = root } = {}) {
-  const review = buildTwoAxisReview({ baseRef, cwd });
-  if (review.files.length === 0) {
-    console.error('two-axis review: empty diff — pin a fixed point with commits ahead of it');
+  try {
+    const review = buildTwoAxisReview({ baseRef, cwd });
+    console.log(review.standardsPrompt);
+    return 0;
+  } catch (err) {
+    console.error(err?.message || err);
     return 1;
   }
-  console.log(review.standardsPrompt);
-  return 0;
 }
 
 const invoked =
