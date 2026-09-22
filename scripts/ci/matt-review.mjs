@@ -51,10 +51,10 @@ export function runWrite({ baseRef = 'origin/main', model, gitnexus, cwd = root 
   return 0;
 }
 
-export function runTwoAxis({ baseRef = 'origin/main', specPath, cwd = root } = {}) {
+function runPinnedTwoAxis({ baseRef, specPath, cwd, format }) {
   try {
     const review = buildTwoAxisReview({ baseRef, specPath, cwd });
-    console.log(JSON.stringify(review, null, 2));
+    format(review);
     return 0;
   } catch (err) {
     console.error(err?.message || err);
@@ -62,15 +62,21 @@ export function runTwoAxis({ baseRef = 'origin/main', specPath, cwd = root } = {
   }
 }
 
+export function runTwoAxis({ baseRef = 'origin/main', specPath, cwd = root } = {}) {
+  return runPinnedTwoAxis({
+    baseRef,
+    specPath,
+    cwd,
+    format: (review) => console.log(JSON.stringify(review, null, 2)),
+  });
+}
+
 export function runPrompt({ baseRef = 'origin/main', cwd = root } = {}) {
-  try {
-    const review = buildTwoAxisReview({ baseRef, cwd });
-    console.log(review.standardsPrompt);
-    return 0;
-  } catch (err) {
-    console.error(err?.message || err);
-    return 1;
-  }
+  return runPinnedTwoAxis({
+    baseRef,
+    cwd,
+    format: (review) => console.log(review.standardsPrompt),
+  });
 }
 
 const invoked =
