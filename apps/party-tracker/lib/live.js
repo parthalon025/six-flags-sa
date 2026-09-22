@@ -307,17 +307,27 @@ function partyFirstSequence(candidates, me, maxStops) {
 }
 
 function sequenceTradeoff(strategy, totalWalkM, shortestWalk) {
+  const extraWalkM = Math.round(totalWalkM - shortestWalk);
+  const isShortest = totalWalkM <= shortestWalk + 1;
+  const moreWalking =
+    totalWalkM > shortestWalk + 15
+      ? ` · about ${extraWalkM} m more walking than the shortest route`
+      : '';
+
   if (strategy === 'near') {
-    if (totalWalkM <= shortestWalk + 1) return 'Shortest walk between these stops';
-    return 'Shorter walk between these stops';
+    if (isShortest) return 'Nearest stops first · shortest total walk';
+    return `Nearest stops first${moreWalking}`;
+  }
+  if (strategy === 'party') {
+    return `Party-confirmed open first${moreWalking}`;
   }
   if (strategy === 'far') {
-    return 'Farther stop first · more walking up front';
+    return `Farther stop first · more walking up front${moreWalking}`;
   }
-  if (totalWalkM > shortestWalk + 15) {
-    return 'Party-confirmed open first · more walking between stops';
+  if (strategy === 'swap') {
+    return `Alternate stop order${moreWalking}`;
   }
-  return 'Party-confirmed open first';
+  return `Score-ranked stops${moreWalking}`;
 }
 
 /**
@@ -381,6 +391,9 @@ export function compareGoNowSequences(
 
   if (built.length < 2 && nearStops.length >= 2) {
     push('far', [...nearStops].reverse());
+  }
+  if (built.length < 2 && nearStops.length >= 2) {
+    push('swap', [nearStops[1], nearStops[0], ...nearStops.slice(2)]);
   }
   if (built.length < 2 && candidates.length >= 2) {
     push('score', candidates.slice(0, maxStops));

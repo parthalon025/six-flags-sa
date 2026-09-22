@@ -7347,6 +7347,51 @@ await check('compareGoNowSequences never includes eligibility-blocked rides', ()
   return true;
 });
 
+const MID_WEATHER = {
+  ...BEAST_HERE,
+  id: 'mid-weather',
+  i: 'mid-weather',
+  n: 'Mid Sky',
+  lat: BEAST_HERE.lat + 0.0015,
+  lng: BEAST_HERE.lng,
+};
+
+await check('compareGoNowSequences always returns at least two distinct orderings when two or more candidates', () => {
+  const now = 5_000_000;
+  const me = { lat: BEAST_HERE.lat, lng: BEAST_HERE.lng };
+  const pois = [NEAR_WEATHER, MID_WEATHER, FAR_PARTY];
+  const sequences = compareGoNowSequences(pois, null, FINE, me, [], now);
+  assert.ok(sequences.length >= 2 && sequences.length <= 3);
+  const keys = new Set(sequences.map((s) => s.stops.map((x) => x.poi.id).join('>')));
+  assert.equal(keys.size, sequences.length);
+  return true;
+});
+
+await check('compareGoNowSequences tradeoff contrasts walk with party-confirmed status', () => {
+  const now = 5_000_000;
+  const me = { lat: BEAST_HERE.lat, lng: BEAST_HERE.lng };
+  const pois = [NEAR_WEATHER, FAR_PARTY];
+  const rides = {
+    [FAR_PARTY.id]: { status: RIDE_OPEN, byName: 'Ava', ts: now },
+  };
+  const sequences = compareGoNowSequences(pois, rides, FINE, me, [], now);
+  const partyFirst = sequences.find((s) => s.strategy === 'party');
+  assert.ok(partyFirst);
+  assert.match(partyFirst.tradeoff, /party-confirmed/i);
+  const shortest = Math.min(...sequences.map((s) => s.totalWalkM));
+  if (partyFirst.totalWalkM > shortest + 15) {
+    assert.match(partyFirst.tradeoff, /more walking/i);
+  }
+  const nearFirst = sequences.find((s) => s.strategy === 'near');
+  assert.ok(nearFirst);
+  if (nearFirst.totalWalkM <= shortest + 1) {
+    assert.match(nearFirst.tradeoff, /shortest total walk/i);
+  } else {
+    assert.doesNotMatch(nearFirst.tradeoff, /shortest total walk/i);
+  }
+  return true;
+});
+
 /* ------------------------------------------------------------ venue ids -- */
 
 section('venue/ids');

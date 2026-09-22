@@ -41,6 +41,13 @@ export default function GoNowSequences({
               {formatWalk(seq.totalWalkM)}
             </span>
             <p className="fine goNowSequenceWhy">{seq.tradeoff}</p>
+            <ul className="fine goNowSequenceStops">
+              {seq.stops.map((stop) => (
+                <li key={stop.poi.id}>
+                  {stop.poi.n}: {stop.why}
+                </li>
+              ))}
+            </ul>
           </div>
         ))}
       </div>
