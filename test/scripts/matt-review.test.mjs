@@ -344,6 +344,7 @@ assert.equal(reviewRequiredForFiles(null), true, 'unknown diff fails closed');
 
   const { runTwoAxis, runPrompt } = await import('../../scripts/ci/matt-review.mjs');
   assert.equal(runTwoAxis({ baseRef: 'main', specPath: 'docs/spec.md', cwd: dir }), 0);
+  assert.equal(runPrompt({ baseRef: 'main', cwd: dir }), 0, 'CLI prompt succeeds on pinned diff');
 
   git('checkout', 'main');
   assert.equal(runTwoAxis({ baseRef: 'main', cwd: dir }), 1, 'CLI two-axis fails on empty diff');
