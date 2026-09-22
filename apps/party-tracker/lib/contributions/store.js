@@ -50,6 +50,7 @@ async function findRecentDedupeTarget(input, now = new Date()) {
     const res = await pool.query(
       `SELECT * FROM contributions
        WHERE author_id = $1 AND venue_id = $2 AND place_id = $3 AND kind = $4
+         AND status = 'pending'
          AND created_at >= $5
        ORDER BY created_at DESC
        LIMIT 1`,
@@ -64,6 +65,7 @@ async function findRecentDedupeTarget(input, now = new Date()) {
     if (row.venue_id !== input.venueId) continue;
     if ((row.place_id || '') !== placeId) continue;
     if (row.kind !== input.kind) continue;
+    if (row.status !== 'pending') continue;
     const created = row.created_at instanceof Date ? row.created_at : new Date(row.created_at);
     if (created < since) continue;
     if (!best || created > best.created_at) best = row;

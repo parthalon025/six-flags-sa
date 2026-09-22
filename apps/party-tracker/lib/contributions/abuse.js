@@ -33,7 +33,12 @@ export const CONTRIBUTION_PROXIMITY_MAX_M = NEARBY_RADIUS_M;
 export const CONTRIBUTION_DEDUPE_WINDOW_MS = 60 * 60 * 1000;
 
 /** Durable kinds that always target a Place — proximity gate cannot be skipped. */
-export const PLACE_TARGETED_CONTRIBUTION_KINDS = new Set(['height_rule', 'poi_patch', 'drop_place']);
+export const PLACE_TARGETED_CONTRIBUTION_KINDS = new Set([
+  'height',
+  'height_rule',
+  'poi_patch',
+  'drop_place',
+]);
 
 function placeCentroid(venueId, placeId) {
   const pois = poisForVenue(venueId);

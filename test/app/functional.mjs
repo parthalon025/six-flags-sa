@@ -2341,18 +2341,26 @@ await check('Me carries the journey: ladder, field stats, finder credit', async 
 await check('a Thanks lands once per guest and never for yourself', async () => {
   // The Death Stranding like, proven through the production server: create a
   // Contribution, thank it as a stranger, and assert what actually counted.
+  // Dedupe (#301) keys author+place+kind — rotate POI so a warm server does not
+  // reuse a row that already accumulated thanks from an earlier suite run.
+  const THANKS_FIXTURES = [
+    { placeId: 'orion', lat: 39.342993, lng: -84.262729 },
+    { placeId: 'adventure-express', lat: 39.344465, lng: -84.264865 },
+    { placeId: 'banshee', lat: 39.345666, lng: -84.265478 },
+    { placeId: 'the-beast', lat: 39.340142, lng: -84.266032 },
+  ];
+  const pick = THANKS_FIXTURES[Math.floor(Math.random() * THANKS_FIXTURES.length)];
   const created = await fetch(`${BASE}/api/contributions`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       authorId: 'usr_thx_finder',
       venueId: 'kings-island',
-      placeId: 'orion',
+      placeId: pick.placeId,
       kind: 'height',
       payload: { heightIn: 48 },
-      // E9 proximity (#301): contributions tied to a Place need a fix within NEARBY_RADIUS_M.
-      lat: 39.342993,
-      lng: -84.262729,
+      lat: pick.lat,
+      lng: pick.lng,
     }),
   });
   if (created.status !== 201) throw new Error(`contribution POST ${created.status}`);

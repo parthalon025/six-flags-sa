@@ -96,6 +96,17 @@ check('place-targeted kind without placeId is rejected', () => {
   assert.equal(r.code, 'contribution_place_required');
 });
 
+check('height quest kind without placeId is rejected', () => {
+  const r = assessContributionProximity({
+    venueId: 'kings-island',
+    kind: 'height',
+    lat: BEAST.lat,
+    lng: BEAST.lng,
+  });
+  assert.equal(r.ok, false);
+  assert.equal(r.code, 'contribution_place_required');
+});
+
 check('dedupe window is one hour', () => {
   assert.equal(CONTRIBUTION_DEDUPE_WINDOW_MS, 60 * 60 * 1000);
 });
@@ -103,7 +114,9 @@ check('dedupe window is one hour', () => {
 {
   const savedDb = process.env.DATABASE_URL;
   delete process.env.DATABASE_URL;
-  const { insertContribution } = await import('../../apps/party-tracker/lib/contributions/store.js');
+  const { insertContribution, acceptContribution } = await import(
+    '../../apps/party-tracker/lib/contributions/store.js'
+  );
 
   const asyncCheck = async (name, fn) => {
     try {
@@ -158,6 +171,30 @@ check('dedupe window is one hour', () => {
       lng: BEAST.lng,
     });
     assert.notEqual(patch.id, height.id);
+  });
+
+  await asyncCheck('resubmit after accept mints a new pending row', async () => {
+    const first = await insertContribution({
+      authorId: 'usr_dedupe_c',
+      venueId: 'kings-island',
+      placeId: 'adventure-express',
+      kind: 'height_rule',
+      payload: { min: 48 },
+      lat: BEAST.lat,
+      lng: BEAST.lng,
+    });
+    await acceptContribution(first.id);
+    const second = await insertContribution({
+      authorId: 'usr_dedupe_c',
+      venueId: 'kings-island',
+      placeId: 'adventure-express',
+      kind: 'height_rule',
+      payload: { min: 52 },
+      lat: BEAST.lat,
+      lng: BEAST.lng,
+    });
+    assert.notEqual(second.id, first.id);
+    assert.equal(second.status, 'pending');
   });
 
   if (savedDb) process.env.DATABASE_URL = savedDb;
