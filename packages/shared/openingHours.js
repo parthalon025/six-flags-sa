@@ -47,7 +47,7 @@ export function openingHoursForPoi(poi, opts = {}) {
   }
 
   const detail = `${label}: ${parsed.raw}`;
-  const planLine = `${isShow ? 'Showtimes' : 'Hours'} · ${compactPlanLine(parsed.raw)}`;
+  const planLine = `${label} · ${compactPlanLine(parsed.raw)}`;
   return { detail, planLine };
 }
 
