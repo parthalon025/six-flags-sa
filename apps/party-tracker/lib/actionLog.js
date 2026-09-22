@@ -43,6 +43,41 @@ export async function append(entry) {
   });
 }
 
+/** All entries, oldest first — used by observation flush. */
+export async function load() {
+  const db = await openDb();
+  if (!db) return [];
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const store = tx.objectStore(STORE);
+    const idx = store.index('ts');
+    const out = [];
+    idx.openCursor().onsuccess = (ev) => {
+      const cursor = ev.target.result;
+      if (!cursor) {
+        resolve(out);
+        return;
+      }
+      out.push(cursor.value);
+      cursor.continue();
+    };
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/** Remove one entry after a successful server append. */
+export async function remove(id) {
+  const db = await openDb();
+  if (!db) return false;
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    const store = tx.objectStore(STORE);
+    const req = store.delete(id);
+    req.onsuccess = () => resolve(true);
+    req.onerror = () => reject(req.error);
+  });
+}
+
 /** Recent entries, newest first. */
 export async function recent(limit = 50) {
   const db = await openDb();

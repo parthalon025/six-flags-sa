@@ -302,6 +302,20 @@
       "check": "a ride reported down on one phone reaches the other"
     },
     {
+      "id": "party-ride-observation",
+      "slice": "E7",
+      "user_action": "Filing a ride report appends an observation row on the server",
+      "suite": "functional",
+      "check": "filing a ride report POSTs an observation row"
+    },
+    {
+      "id": "party-queue-observation",
+      "slice": "E7",
+      "user_action": "Filing a queue-band Side Quest appends a wait observation on the server",
+      "suite": "functional",
+      "check": "filing a queue-band report POSTs an observation row"
+    },
+    {
       "id": "party-ride-report-retract",
       "slice": "Party",
       "user_action": "Retract a Ride report and it clears everywhere",

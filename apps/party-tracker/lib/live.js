@@ -170,7 +170,7 @@ export function statusPillClasses(st) {
       : '',
     st.live === 'weather' || st.key === 'closed' ? 'weather' : '',
     st.source === 'weather' ? 'guess' : '',
-    st.stale ? 'stale' : '',
+    st.freshness?.css || (st.stale ? 'stale' : ''),
   ]
     .filter(Boolean)
     .join(' ');

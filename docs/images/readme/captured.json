@@ -5,23 +5,23 @@
     "sha256": "d2d725b314c28d460ac308039508b5280310f77de05686b68093b0c46491a500"
   },
   "map-day.png": {
-    "commit": "995fd250e1fb776a5e49534ed5ded2dbeae0dbd9",
-    "capturedAt": "2026-08-29T17:40:33.201Z",
+    "commit": "06ed2fde881eb44073d43c1346aa4ff3e6394683",
+    "capturedAt": "2026-09-21T19:46:29.634Z",
     "sha256": "560ef0247d6e588c8143681449f1163fe812100c177e62cd68c51006c2a948a7"
   },
   "map-night.png": {
-    "commit": "995fd250e1fb776a5e49534ed5ded2dbeae0dbd9",
-    "capturedAt": "2026-08-29T17:40:35.735Z",
+    "commit": "06ed2fde881eb44073d43c1346aa4ff3e6394683",
+    "capturedAt": "2026-09-21T19:46:29.634Z",
     "sha256": "478bb8a81ecc44ebe040faa28b17f697bd61f859468343dc13af49516deb5787"
   },
   "party.png": {
-    "commit": "995fd250e1fb776a5e49534ed5ded2dbeae0dbd9",
-    "capturedAt": "2026-08-29T17:41:48.935Z",
+    "commit": "06ed2fde881eb44073d43c1346aa4ff3e6394683",
+    "capturedAt": "2026-09-21T19:46:29.634Z",
     "sha256": "dd7836dfee8cd7a48c2f647e5ed36230d89c8d22f0bf1090bbda5c672d5fa6fc"
   },
   "ride-callout.png": {
-    "commit": "995fd250e1fb776a5e49534ed5ded2dbeae0dbd9",
-    "capturedAt": "2026-08-29T17:40:55.963Z",
+    "commit": "0be50d3cfe88447b0d65267b9cb828c8e643772e",
+    "capturedAt": "2026-09-21T08:50:00.000Z",
     "sha256": "a5dbfb52687b8d9dfbff5a9c372d01efa5106bb35a2f44599eed20b1320548f8"
   },
   "walking.png": {

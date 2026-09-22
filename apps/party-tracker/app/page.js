@@ -120,6 +120,10 @@ import { paletteFor } from '@/lib/theme';
 import { defaultQuestQueue } from '@/lib/adventure/questQueue';
 import { flushQuestQueue } from '@/lib/adventure/questSync';
 import { flushThanksQueue } from '@/lib/adventure/thanks';
+import {
+  flushRideReportObservations,
+  recordRideReportObservation,
+} from '@/lib/observations/rideReportSync';
 
 const PartyPanel = dynamic(() => import('@/components/PartyPanel'), { ssr: false });
 const PlaceList = dynamic(() => import('@/components/PlaceList'), { ssr: false });
@@ -413,17 +417,22 @@ function ParkApp({ isSignedIn }) {
       })
       .catch(() => {});
   }, []);
+  const flushRideReports = useCallback(() => {
+    flushRideReportObservations().catch(() => {});
+  }, []);
   useEffect(() => {
     flushQuests();
-  }, [authSession?.userId, flushQuests]);
+    flushRideReports();
+  }, [authSession?.userId, flushQuests, flushRideReports]);
   useEffect(() => {
     const onOnline = () => {
       flushQuests();
+      flushRideReports();
       flushThanksQueue().catch(() => {});
     };
     window.addEventListener('online', onOnline);
     return () => window.removeEventListener('online', onOnline);
-  }, [flushQuests]);
+  }, [flushQuests, flushRideReports]);
   const overlayCompletionsFor = useCallback(
     // Objects, not lines: PlaceDetail needs the id + author to offer the
     // Thanks tap on facts somebody else settled.
@@ -2161,11 +2170,31 @@ function ParkApp({ isSignedIn }) {
     [POIS, partyRides, weatherFeed.weather, clock],
   );
 
-  const reportRide = useCallback((rideId, status) => {
+  const reportRide = useCallback((rideId, status, meta = {}) => {
     const applied = runtime.current?.reportRide(rideId, status);
     if (applied === null) showToast('Join a party to report a ride');
+    else if (status === 'down' || status === 'open') {
+      recordRideReportObservation({
+        ...(meta.id ? { id: `obs_${meta.id}` } : {}),
+        venueId: venue?.id,
+        rideId,
+        status,
+        authorId: authSession?.userId || null,
+        ts: meta.ts ?? Date.now(),
+      }).catch(() => {});
+    }
     return applied;
-  }, [showToast]);
+  }, [authSession?.userId, showToast, venue?.id]);
+  const reportQueueBand = useCallback((report) => {
+    recordRideReportObservation({
+      id: report.id ? `obs_${report.id}` : undefined,
+      venueId: report.venueId || venue?.id,
+      rideId: report.rideId,
+      band: report.band,
+      authorId: authSession?.userId || null,
+      ts: report.ts ?? Date.now(),
+    }).catch(() => {});
+  }, [authSession?.userId, venue?.id]);
 
   const nearest = useMemo(() => {
     if (!position) return null;
@@ -3679,6 +3708,7 @@ function ParkApp({ isSignedIn }) {
                 session={authSession}
                 onSession={setAuthSession}
                 onRideReport={party?.active ? reportRide : null}
+                onQueueBandReport={party?.active ? reportQueueBand : null}
                 onWorldProgress={recordWorldQuest}
                 onContribution={handleContribution}
                 overlay={localOverlay}

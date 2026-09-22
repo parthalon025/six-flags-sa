@@ -15,6 +15,7 @@
 
 import { RIDE_DOWN, RIDE_OPEN, RIDE_REPORT_TTL_MS, RIDE_STALE_AFTER_MS } from './core/state.js';
 import { formatAge } from './geo.js';
+import { freshnessFor, observationShapeFromReport } from './observations/freshness.js';
 import { OUTLOOK, outlookFor } from './weather.js';
 
 /** What the row actually says. `tone` maps to the existing ok/warn/bad palette.
@@ -49,6 +50,7 @@ const minutesSince = (ts, now) => Math.max(0, Math.round((now - ts) / 60000));
  *   source: 'party'|'weather'|'none',
  *   detail: string|null,   // one line of why, ready to render
  *   stale: boolean,        // the report is old enough to hedge
+ *   freshness,             // green / yellow / red tier from E7.3
  *   outlook,               // the forecast's opinion, kept even when overridden
  *   report                 // the party's, likewise
  * }}
@@ -58,7 +60,8 @@ export function statusFor(poi, report, weather, now = Date.now()) {
   const fromWeather = FROM_OUTLOOK[outlook.key] || STATUS.running;
 
   const usable = report && (report.status === RIDE_DOWN || report.status === RIDE_OPEN);
-  const stale = usable ? now - report.ts > RIDE_STALE_AFTER_MS : false;
+  const freshness = usable ? freshnessFor(observationShapeFromReport(report), now) : null;
+  const stale = usable ? now - report.ts >= RIDE_STALE_AFTER_MS : false;
 
   if (usable && !stale) {
     const who = report.byName || 'Someone';
@@ -70,6 +73,7 @@ export function statusFor(poi, report, weather, now = Date.now()) {
       source: 'party',
       detail: `${who}, ${when}${report.note ? ` — ${report.note}` : ''}`,
       stale: false,
+      freshness,
       outlook,
       report,
     };
@@ -93,6 +97,7 @@ export function statusFor(poi, report, weather, now = Date.now()) {
         source: 'party',
         detail: `${who}, ${when} — nobody has confirmed since`,
         stale: true,
+        freshness,
         outlook,
         report,
       };
@@ -102,6 +107,7 @@ export function statusFor(poi, report, weather, now = Date.now()) {
       source: fromWeather.key === STATUS.running.key ? 'none' : 'weather',
       detail: outlook.why,
       stale: true,
+      freshness,
       outlook,
       report,
     };
@@ -112,6 +118,7 @@ export function statusFor(poi, report, weather, now = Date.now()) {
     source: fromWeather.key === STATUS.running.key ? 'none' : 'weather',
     detail: outlook.why,
     stale: false,
+    freshness: null,
     outlook,
     report: null,
   };
