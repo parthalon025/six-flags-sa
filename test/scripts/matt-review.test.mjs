@@ -413,6 +413,13 @@ assert.equal(reviewRequiredForFiles(null), true, 'unknown diff fails closed');
       'CLI two-axis fails when fixed point does not resolve',
     );
     assert.match(pinErr, /fixed point does not resolve/, 'bad ref surfaces on stderr');
+    pinErr = '';
+    assert.equal(
+      runPrompt({ baseRef: 'not-a-ref-xyz', cwd: dir }),
+      1,
+      'CLI prompt fails when fixed point does not resolve',
+    );
+    assert.match(pinErr, /fixed point does not resolve/, 'prompt bad ref surfaces on stderr');
     console.error = prevErr;
   }
 
