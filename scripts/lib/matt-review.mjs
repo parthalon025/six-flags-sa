@@ -15,6 +15,7 @@
  *   buildReviewPrompt({ files, diffStat })
  *   buildStandardsPrompt({ files, diffStat, standardsSources, diffCommand, commits })
  *   buildSpecPrompt({ files, spec, diffCommand, commits })
+ *   pinFixedPoint({ baseRef, cwd })
  *   buildTwoAxisReview({ baseRef, specPath, cwd })
  *   identifyStandardsSources({ cwd })
  *   identifySpecSource({ branch, commitMessages, specPath, cwd })
@@ -278,11 +279,40 @@ export function identifySpecSource({ branch, commitMessages = [], specPath, cwd 
   return null;
 }
 
-function listCommitsSinceMergeBase(mergeBase, cwd) {
-  return git(['log', '--oneline', `${mergeBase}..HEAD`], cwd)
+function listCommitsSinceFixedPoint(baseRef, cwd) {
+  return git(['log', '--oneline', `${baseRef}..HEAD`], cwd)
     .split('\n')
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+/**
+ * Pin the fixed point for a two-axis review: resolve the ref, confirm a non-empty
+ * diff, and capture the diff command + commit list before spawning sub-agents.
+ */
+export function pinFixedPoint({ baseRef = 'origin/main', cwd = root } = {}) {
+  let resolved;
+  try {
+    resolved = git(['rev-parse', '--verify', baseRef], cwd).trim();
+  } catch {
+    throw new Error(`two-axis review: fixed point does not resolve: ${baseRef}`);
+  }
+  const context = buildMattReviewContext({ baseRef, cwd });
+  if (context.mergeBase === null) {
+    throw new Error(`two-axis review: cannot find merge-base for ${baseRef}`);
+  }
+  if (!context.files?.length) {
+    throw new Error('two-axis review: empty diff — pin a fixed point with commits ahead of it');
+  }
+  const diffCommand = `git diff ${baseRef}...HEAD`;
+  const commits = listCommitsSinceFixedPoint(baseRef, cwd);
+  return {
+    ...context,
+    baseRef,
+    resolved,
+    diffCommand,
+    commits,
+  };
 }
 
 function currentBranch(cwd) {
@@ -357,9 +387,8 @@ export function buildSpecPrompt({ files = [], spec, diffCommand = '', commits = 
 
 /** Pin the fixed point and build both axis prompts. */
 export function buildTwoAxisReview({ baseRef = 'origin/main', specPath, cwd = root } = {}) {
-  const context = buildMattReviewContext({ baseRef, cwd });
-  const diffCommand = `git diff ${baseRef}...HEAD`;
-  const commits = listCommitsSinceMergeBase(context.mergeBase, cwd);
+  const pinned = pinFixedPoint({ baseRef, cwd });
+  const { diffCommand, commits, ...context } = pinned;
   const commitMessages = commits.map((c) => c.replace(/^[0-9a-f]+\s+/, ''));
   const branch = currentBranch(cwd);
   const standardsSources = identifyStandardsSources({ cwd });
