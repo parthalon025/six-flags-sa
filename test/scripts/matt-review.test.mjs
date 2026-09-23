@@ -389,18 +389,75 @@ assert.equal(reviewRequiredForFiles(null), true, 'unknown diff fails closed');
   assert.equal(runPrompt({ baseRef: 'main', cwd: dir }), 0, 'CLI prompt succeeds on pinned diff');
 
   git('checkout', 'main');
-  assert.equal(runTwoAxis({ baseRef: 'main', cwd: dir }), 1, 'CLI two-axis fails on empty diff');
-  assert.equal(runPrompt({ baseRef: 'main', cwd: dir }), 1, 'CLI prompt fails on empty diff');
-  assert.equal(
-    runTwoAxis({ baseRef: 'not-a-ref-xyz', cwd: dir }),
-    1,
-    'CLI two-axis fails when fixed point does not resolve',
+  assert.throws(
+    () => buildTwoAxisReview({ baseRef: 'main', cwd: dir }),
+    /empty diff/,
+    'buildTwoAxisReview fails before sub-agents when diff is empty',
   );
-  assert.equal(
-    runPrompt({ baseRef: 'not-a-ref-xyz', cwd: dir }),
-    1,
-    'CLI prompt fails when fixed point does not resolve',
-  );
+  {
+    let pinErr = '';
+    const logPinErr = (msg) => {
+      pinErr += `${msg}\n`;
+    };
+    const prevErr = console.error;
+    console.error = logPinErr;
+    assert.equal(runTwoAxis({ baseRef: 'main', cwd: dir }), 1, 'CLI two-axis fails on empty diff');
+    assert.match(pinErr, /empty diff/, 'pin failure surfaces on stderr');
+    pinErr = '';
+    assert.equal(runPrompt({ baseRef: 'main', cwd: dir }), 1, 'CLI prompt fails on empty diff');
+    assert.match(pinErr, /empty diff/, 'prompt pin failure surfaces on stderr');
+    pinErr = '';
+    assert.equal(
+      runTwoAxis({ baseRef: 'not-a-ref-xyz', cwd: dir }),
+      1,
+      'CLI two-axis fails when fixed point does not resolve',
+    );
+    assert.match(pinErr, /fixed point does not resolve/, 'bad ref surfaces on stderr');
+    console.error = prevErr;
+  }
+
+  rmSync(dir, { recursive: true, force: true });
+}
+
+// pinFixedPoint — commit list uses baseRef..HEAD when main advances past the branch point
+{
+  const dir = mkdtempSync(join(tmpdir(), 'pin-commits-'));
+  const git = (...args) =>
+    execFileSync('git', args, {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...scrubGitEnv(),
+        GIT_AUTHOR_NAME: 't',
+        GIT_AUTHOR_EMAIL: 't@t',
+        GIT_COMMITTER_NAME: 't',
+        GIT_COMMITTER_EMAIL: 't@t',
+      },
+    });
+  git('init', '-q', '-b', 'main');
+  mkdirSync(join(dir, 'scripts'), { recursive: true });
+  writeFileSync(join(dir, 'scripts/a.js'), 'export const a = 1;\n');
+  git('add', '.');
+  git('commit', '-qm', 'base');
+  git('checkout', '-qb', 'feature');
+  writeFileSync(join(dir, 'scripts/a.js'), 'export const a = 2;\n');
+  git('add', '.');
+  git('commit', '-qm', 'feature-only');
+  git('checkout', 'main');
+  writeFileSync(join(dir, 'scripts/a.js'), 'export const a = 9;\n');
+  git('add', '.');
+  git('commit', '-qm', 'main-only');
+  git('checkout', 'feature');
+
+  const pinned = pinFixedPoint({ baseRef: 'main', cwd: dir });
+  const expectedLog = git('log', '--oneline', 'main..HEAD')
+    .split('\n')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  assert.deepEqual(pinned.commits, expectedLog, 'commits follow git log baseRef..HEAD');
+  assert.equal(pinned.commits.length, 1);
+  assert.match(pinned.commits[0], /feature-only/);
+  assert.ok(!pinned.commits.some((c) => /main-only/.test(c)), 'main-only commits stay out of the list');
 
   rmSync(dir, { recursive: true, force: true });
 }
